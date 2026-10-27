@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:stateflows:state-machine:1.0",
+  "title": "Stateflows state-machine definition",
+  "description": "Explicit CLR capability bindings and registered behavior-class references. CLR and expanded graph validation are required in addition to this schema.",
+  "type": "object",
+  "required": ["formatVersion", "name"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "formatVersion": { "const": "1.0" },
+    "name": { "$ref": "#/$defs/name" },
+    "version": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647, "default": 1 },
+    "resource": { "type": "string" },
+    "definitions": { "$ref": "#/$defs/bindings" },
+    "initial": { "$ref": "#/$defs/name" },
+    "vertices": { "$ref": "#/$defs/vertices" },
+    "defaultInitializers": { "$ref": "#/$defs/bindings" },
+    "initializers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["triggers", "handlers"],
+        "properties": {
+          "triggers": { "$ref": "#/$defs/triggers" },
+          "handlers": { "$ref": "#/$defs/bindings" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "finalizers": { "$ref": "#/$defs/bindings" },
+    "observers": { "$ref": "#/$defs/bindings" },
+    "interceptors": { "$ref": "#/$defs/bindings" },
+    "exceptionHandlers": { "$ref": "#/$defs/bindings" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "typeReference": {
+      "type": "object",
+      "required": ["clrType"],
+      "properties": { "clrType": { "type": "string", "minLength": 1 } },
+      "additionalProperties": false
+    },
+    "binding": {
+      "type": "object",
+      "required": ["clrType"],
+      "properties": {
+        "clrType": { "type": "string", "minLength": 1 },
+        "configurationType": { "type": "string", "minLength": 1 },
+        "configuration": { "$ref": "#/$defs/value" }
+      },
+      "dependentRequired": { "configurationType": ["configuration"] },
+      "additionalProperties": false
+    },
+    "bindings": { "type": "array", "items": { "$ref": "#/$defs/binding" } },
+    "name": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "$ref": "#/$defs/typeReference" }
+      ]
+    },
+    "triggers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/typeReference" }
+    },
+    "eventTriggers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/typeReference" },
+          {
+            "type": "object",
+            "required": ["eventName"],
+            "properties": { "eventName": { "type": "string", "minLength": 1 } },
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "behaviorClass": {
+      "type": "object",
+      "required": ["type", "name"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "behaviorHandler": {
+      "type": "object",
+      "required": ["behaviorClass"],
+      "properties": { "behaviorClass": { "$ref": "#/$defs/behaviorClass" } },
+      "additionalProperties": false
+    },
+    "handler": {
+      "oneOf": [
+        { "$ref": "#/$defs/binding" },
+        { "$ref": "#/$defs/behaviorHandler" }
+      ]
+    },
+    "handlers": { "type": "array", "items": { "$ref": "#/$defs/handler" } },
+    "guard": {
+      "oneOf": [
+        { "$ref": "#/$defs/handler" },
+        {
+          "type": "object",
+          "required": ["all"],
+          "properties": {
+            "all": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/guard" } }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["any"],
+          "properties": {
+            "any": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/guard" } }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "value": {
+      "description": "JSON data; $type is a host-registered data type alias. Typed scalars and collections use $value. Reserved serialization properties are validated by the binding layer.",
+      "oneOf": [
+        { "type": ["null", "boolean", "number", "string"] },
+        { "type": "array", "items": { "$ref": "#/$defs/value" } },
+        {
+          "type": "object",
+          "properties": {
+            "$type": { "type": "string", "minLength": 1 },
+            "$value": { "$ref": "#/$defs/value" }
+          },
+          "dependentRequired": { "$value": ["$type"] },
+          "additionalProperties": { "$ref": "#/$defs/value" },
+          "if": { "required": ["$value"] },
+          "then": { "maxProperties": 2 }
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/value" }
+    },
+    "transition": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["event", "default", "internal"] },
+        "triggers": { "$ref": "#/$defs/eventTriggers" },
+        "target": { "$ref": "#/$defs/name" },
+        "local": { "type": "boolean", "default": true },
+        "else": { "type": "boolean", "default": false },
+        "definitions": { "$ref": "#/$defs/bindings" },
+        "guard": { "$ref": "#/$defs/guard" },
+        "effects": { "$ref": "#/$defs/handlers" },
+        "metadata": { "$ref": "#/$defs/metadata" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "default" } }, "required": ["kind"] },
+          "then": { "required": ["target"], "not": { "required": ["triggers"] } },
+          "else": { "required": ["triggers"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "internal" } }, "required": ["kind"] },
+          "then": { "not": { "anyOf": [{ "required": ["target"] }, { "required": ["local"] }] } },
+          "else": { "required": ["target"] }
+        },
+        {
+          "if": { "properties": { "else": { "const": true } }, "required": ["else"] },
+          "then": { "not": { "required": ["guard"] } }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "transitions": { "type": "array", "items": { "$ref": "#/$defs/transition" } },
+    "deferrals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["triggers"],
+        "properties": {
+          "triggers": { "$ref": "#/$defs/triggers" },
+          "guard": { "$ref": "#/$defs/guard" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "region": {
+      "type": "object",
+      "properties": {
+        "initial": { "$ref": "#/$defs/name" },
+        "history": { "$ref": "#/$defs/name" },
+        "vertices": { "$ref": "#/$defs/vertices" }
+      },
+      "additionalProperties": false
+    },
+    "vertexBase": {
+      "type": "object",
+      "required": ["kind", "name"],
+      "properties": {
+        "kind": { "type": "string" },
+        "name": { "$ref": "#/$defs/name" },
+        "metadata": { "$ref": "#/$defs/metadata" }
+      }
+    },
+    "stateCapabilities": {
+      "type": "object",
+      "properties": {
+        "definitions": { "$ref": "#/$defs/bindings" },
+        "onEntry": { "$ref": "#/$defs/handlers" },
+        "onExit": { "$ref": "#/$defs/handlers" },
+        "deferrals": { "$ref": "#/$defs/deferrals" },
+        "transitions": { "$ref": "#/$defs/transitions" },
+        "do": { "$ref": "#/$defs/behaviorHandler" }
+      }
+    },
+    "regionalCapabilities": {
+      "type": "object",
+      "properties": {
+        "onInitialize": { "$ref": "#/$defs/handlers" },
+        "onFinalize": { "$ref": "#/$defs/handlers" }
+      }
+    },
+    "vertex": {
+      "oneOf": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/vertexBase" },
+            { "$ref": "#/$defs/stateCapabilities" },
+            { "properties": { "kind": { "const": "state" } } }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/vertexBase" },
+            { "$ref": "#/$defs/stateCapabilities" },
+            { "$ref": "#/$defs/regionalCapabilities" },
+            {
+              "properties": {
+                "kind": { "const": "composite" },
+                "region": { "$ref": "#/$defs/region" }
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/vertexBase" },
+            { "$ref": "#/$defs/stateCapabilities" },
+            { "$ref": "#/$defs/regionalCapabilities" },
+            {
+              "properties": {
+                "kind": { "const": "orthogonal" },
+                "regions": { "type": "array", "items": { "$ref": "#/$defs/region" } }
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/vertexBase" },
+            { "properties": { "kind": { "const": "final" } } }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/vertexBase" },
+            {
+              "properties": {
+                "kind": { "enum": ["choice", "junction", "fork", "join", "history"] },
+                "transitions": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      { "$ref": "#/$defs/transition" },
+                      { "properties": { "kind": { "const": "default" } } }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "vertices": { "type": "array", "items": { "$ref": "#/$defs/vertex" } }
+  }
+}

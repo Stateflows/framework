@@ -1,10 +1,14 @@
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Engine;
+using Stateflows.Common.Context.Classes;
 using Stateflows.Entities.Registration;
 
 namespace Stateflows.Entities.Engine
@@ -15,14 +19,13 @@ namespace Stateflows.Entities.Engine
         IServiceProvider serviceProvider
     ) : IEventProcessor
     {
-        public string BehaviorType => global::Stateflows.BehaviorType.Entity;
+        public string[] BehaviorTypes => [BehaviorType.Entity];
 
         [DebuggerHidden]
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
-        {
-            try
+        public Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
+            => ContextExecution.RunAsync(storage, id, exceptions, async execution =>
             {
-                var stateflowsContext = await storage.HydrateAsync(id);
+                var stateflowsContext = execution.Context;
 
                 stateflowsContext.ExecutionTriggerHolder = eventHolder;
 
@@ -42,49 +45,75 @@ namespace Stateflows.Entities.Engine
                     stateflowsContext.ContextParentId = embedding.ParentId;
                 }
 
-                var executor = new Executor(registration, stateflowsContext, serviceProvider);
+                using var behaviorContext = new BehaviorContext(stateflowsContext, serviceProvider);
+                var inspection = await EntityInspection.CreateAsync(register, registration, behaviorContext);
+                var executor = new Executor(registration, stateflowsContext, serviceProvider, inspection);
+                var reportedStatus = executor.ReportedStatus;
 
-                var result = executor.TryInitialize(eventHolder.Payload);
+                var noImplicitInitialization =
+                    eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
+                    eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
 
-                stateflowsContext.Status = executor.BehaviorStatus;
-            
-                if (stateflowsContext.Status != BehaviorStatus.Initialized)
+                var commonInterceptor = serviceProvider.GetRequiredService<CommonInterceptor>();
+                using var commonEventContext = new EventContext<TEvent>(stateflowsContext, serviceProvider, eventHolder);
+                EventStatus result;
+                try
                 {
-                    executor.EnsureInitialized();
-                    stateflowsContext.Status = executor.BehaviorStatus;
-                }
-
-                if (result != EventStatus.Initialized)
-                {
-                    result = executor.DoProcessAsync(eventHolder);
-                    if (result == EventStatus.Consumed)
+                    result = await commonInterceptor.ProcessEventAsync(commonEventContext,
+                        () => inspection.ProcessEventAsync(eventHolder, async () =>
                     {
-                        stateflowsContext.Status = BehaviorStatus.Initialized;
+                        if (!await executor.ValidateFieldWriteAsync(eventHolder))
+                        {
+                            execution.Persist = false;
+                            return EventStatus.Invalid;
+                        }
+
+                        var status = await executor.TryInitializeAsync(eventHolder.Payload);
+                        if (status == EventStatus.Failed)
+                        {
+                            return status;
+                        }
+
+                        if (status != EventStatus.Initialized)
+                        {
+                            if (!executor.Initialized && !noImplicitInitialization)
+                            {
+                                await executor.EnsureInitializedAsync();
+                            }
+
+                            status = executor.Initialized || Executor.IsProcessedWhenNotInitialized(eventHolder)
+                                ? await executor.DoProcessAsync(eventHolder)
+                                : EventStatus.NotInitialized;
+                        }
+
+                        return status;
+                    }));
+                }
+                finally
+                {
+                    if (eventHolder.IsRespondedTo())
+                    {
+                        await commonInterceptor.DoRequestRespondedAsync(
+                            commonEventContext, eventHolder, eventHolder.GetResponseHolder());
                     }
                 }
-                
+
                 if (stateflowsContext.Status == BehaviorStatus.Initialized)
                 {
                     stateflowsContext.Version = registration.Version;
                 }
 
-
-                stateflowsContext.LastExecutedAt = DateTime.Now;
-
-                await storage.DehydrateAsync(stateflowsContext);
+                if (executor.ReportedStatus != reportedStatus)
+                {
+                    var entityInfo = executor.GetEntityInfo();
+                    ((IBehaviorContext)behaviorContext).Publish(entityInfo);
+                    ((IBehaviorContext)behaviorContext).Publish<BehaviorInfo>(entityInfo);
+                }
 
                 return result;
-            }
-            catch (Exception e)
-            {
-                exceptions.Add(e);
-                return EventStatus.Failed;
-            }
-        }
+            });
 
         public Task CancelProcessingAsync(BehaviorId id)
             => Task.CompletedTask;
     }
 }
-
-

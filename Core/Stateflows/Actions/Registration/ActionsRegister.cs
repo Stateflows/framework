@@ -10,6 +10,7 @@ using Stateflows.Actions.Exceptions;
 using Stateflows.Actions.Models;
 using Stateflows.Actions.Registration.Builders;
 using Stateflows.Actions.Registration.Interfaces;
+using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Interfaces;
@@ -24,12 +25,20 @@ namespace Stateflows.Actions.Registration
 
         public readonly List<ActionObserverFactoryAsync> GlobalObserverFactories = [];
 
-        private readonly MethodInfo ActionTypeAddedAsyncMethod =
-            typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.ActionTypeAddedAsync));
+        private readonly MethodInfo ActionTypeAddedAsyncMethod = typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.ActionTypeAddedAsync));
+
+        private readonly MethodInfo CustomEventAddedAsyncMethod = typeof(IActionVisitor).GetMethods()
+            .Single(m => m.Name == nameof(IActionVisitor.CustomEventAddedAsync) && m.IsGenericMethodDefinition);
+
+        internal Stateflows.Events.EventsRegister EventsRegister { get; set; }
 
         public readonly Dictionary<string, ActionModel> Actions = new();
 
         private readonly Dictionary<string, int> CurrentVersions = new();
+
+        private string[]? supportedClassTypes = null;
+        internal string[] SupportedClassTypes
+            => supportedClassTypes ??= Actions.Values.Select(f => f.BehaviorClassType).Distinct().ToArray();
 
         public BehaviorClass? OwnerClass { get; set; }
         public BehaviorClass? ParentClass { get; set; }
@@ -68,8 +77,17 @@ namespace Stateflows.Actions.Registration
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
 
-                await v.ActionAddingAsync(actionName, version, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
+                await v.ActionAddingAsync(actionName, version, actionModel.BehaviorClassType, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
                 await v.ActionAddedAsync(actionName, version);
+                var eventTypes = new List<Type>();
+                eventTypes.AddRange(actionModel.ConsumedEventTypes);
+                eventTypes.AddRange(actionModel.ConsumedTokenTypes);
+                var methods = eventTypes.Select(t => CustomEventAddedAsyncMethod.MakeGenericMethod(t)).ToArray();
+                foreach (var method in methods)
+                {
+                    await (Task)method.Invoke(v, [actionName, version, new[] { BehaviorStatus.Initialized }]);
+                }
+                await VisitConsumedEventNamesAsync(v, actionModel);
             };
 
             actionModel = new ActionModel()
@@ -114,22 +132,45 @@ namespace Stateflows.Actions.Registration
             var ownerClass = OwnerClass;
             var parentClass = ParentClass;
 
+            // Func<IActionVisitor, Task> visitingAction = async v =>
+            // {
+            //     var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+            //         .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
+            //
+            //     await v.ActionAddingAsync(actionName, version, ownerClass, parentClass, hasDefaultInstance);
+            //     await v.ActionAddedAsync(actionName, version);
+            //     await (Task)method.Invoke(v, [actionName, version]);
+            // };
+            
+            ActionModel actionModel = null;
+            
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                    .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
+                    .Any(t => t.BehaviorClass.Type == actionModel.BehaviorClassType && t.BehaviorClass.Name == actionName);
 
-                await v.ActionAddingAsync(actionName, version, ownerClass, parentClass, hasDefaultInstance);
+                await v.ActionAddingAsync(actionName, version, actionModel.BehaviorClassType, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
                 await v.ActionAddedAsync(actionName, version);
-                await (Task)method.Invoke(v, [actionName, version]);
+                await (Task)ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType).Invoke(v, [actionName, version]);
+                var eventTypes = new List<Type>();
+                eventTypes.AddRange(actionModel.ConsumedEventTypes);
+                eventTypes.AddRange(actionModel.ConsumedTokenTypes);
+                var methods = eventTypes.Select(t => CustomEventAddedAsyncMethod.MakeGenericMethod(t)).ToArray();
+                foreach (var method in methods)
+                {
+                    await (Task)method.Invoke(v, [actionName, version, new[] { BehaviorStatus.Initialized }]);
+                }
+                await VisitConsumedEventNamesAsync(v, actionModel);
             };
 
-            var actionModel = new ActionModel()
+            actionModel = new ActionModel()
             {
                 Name = actionName,
                 Version = version,
                 // Delegate = actionDelegate,
                 VisitingAction = visitingAction,
+                OwnerClass = ownerClass,
+                ParentClass = parentClass,
             };
 
             buildAction?.Invoke(new ActionBuilder(actionModel));
@@ -155,7 +196,10 @@ namespace Stateflows.Actions.Registration
                         "action"
                     );
 
-                    actionModel.ConfigurationAction?.Invoke(instance);
+                    foreach (var configAction in actionModel.ConfigurationActions)
+                    {
+                        configAction.Invoke(instance);
+                    }
 
                     await instance.ExecuteAsync(context.CancellationToken);
                 }
@@ -174,19 +218,45 @@ namespace Stateflows.Actions.Registration
             }
         }
 
+        private async Task VisitConsumedEventNamesAsync(IActionVisitor visitor, ActionModel actionModel)
+        {
+            if (actionModel.ConsumedEventNames.Count == 0)
+            {
+                return;
+            }
+
+            if (EventsRegister == null)
+            {
+                throw new InvalidOperationException("Structural events register is not available.");
+            }
+
+            foreach (var eventName in actionModel.ConsumedEventNames)
+            {
+                await visitor.CustomEventAddedAsync(EventsRegister.GetEvent(eventName), actionModel.Name, actionModel.Version, [BehaviorStatus.Initialized]);
+            }
+        }
+
         [DebuggerHidden]
         public void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
             => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), b => buildAction?.Invoke(new ActionBuilder<TAction>(((ActionBuilder)b).Model)));
 
-        public Task VisitActionsAsync(IActionVisitor visitor)
+        public async Task VisitActionsAsync(IActionVisitor visitor)
         {
             foreach (var action in Actions.Where(kv => kv.Key.EndsWith(".current")).Select(kv => kv.Value))
             {
-                action.VisitingAction(visitor);
+                await action.VisitingAction(visitor);
             }
+        }
 
-            return Task.CompletedTask;
+        public async Task VisitActionAsync(string activityName, int version, IActionVisitor visitor)
+        {
+            foreach (var action in Actions
+                         .Where(item => item.Key == $"{activityName}.{version}")
+                         .Select(item => item.Value))
+            {
+                await action.VisitingAction(visitor);
+            }
         }
 
         #region Observability

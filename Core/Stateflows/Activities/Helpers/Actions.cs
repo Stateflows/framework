@@ -6,10 +6,14 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
+    /// <summary>Builds actions that set, update, or remove a named global value.</summary>
+    /// <remarks>The returned delegate operates on the behavior's global value store when the action executes.</remarks>
     public struct ActionNodeGlobalValueExpression
     {
         private readonly string ValueName;
 
+        /// <summary>Creates an expression for a named global value.</summary>
+        /// <param name="valueName">Name of the value in the global value store.</param>
         public ActionNodeGlobalValueExpression(string valueName)
         {
             ValueName = valueName;
@@ -54,10 +58,13 @@ namespace Stateflows.Activities
         }
     }
 
+    /// <summary>Selects a named value within a global value set for declarative actions.</summary>
     public struct StateActionGlobalNamespaceExpression
     {
         private readonly string ValueSetName;
 
+        /// <summary>Creates an expression for a named global value set.</summary>
+        /// <param name="valueSetName">Name of the global value set.</param>
         public StateActionGlobalNamespaceExpression(string valueSetName)
         {
             ValueSetName = valueSetName;
@@ -88,6 +95,7 @@ namespace Stateflows.Activities
         }
     }
     
+    /// <summary>Starts declarative action expressions over global values.</summary>
     public struct ActionNodeGlobalSelector
     {
         /// <summary>
@@ -107,11 +115,14 @@ namespace Stateflows.Activities
             => new StateActionGlobalNamespaceExpression(valueSetName);
     }
     
+    /// <summary>Provides built-in activity actions and declarative global-value action helpers.</summary>
     public static class Actions
     {
         /// <summary>
         /// Declares an empty action that does nothing.
         /// </summary>
+        /// <param name="_">The action context, unused by this action.</param>
+        /// <returns>A completed task.</returns>
         public static Task Empty(IActivityActionContext _)
             => Task.CompletedTask;
 

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -17,13 +18,28 @@ internal static class Utils
             BehaviorType.StateMachine => "stateMachines",
             BehaviorType.Activity => "activities",
             BehaviorType.Action => "actions",
-            _ => throw new ArgumentOutOfRangeException()
+            BehaviorType.Entity => "entities",
+            _ => $"{behaviorType.ToCamelCase()}s"
         };
     
-    internal static IEnumerable<HateoasLink> ToHateoasLinks(this BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> hateoasLinks)
+    internal static IEnumerable<HateoasLink> ToHateoasLinks(this BehaviorInfo behaviorInfo, string method, string path, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> hateoasLinks)
     {
         var links = new List<HateoasLink>();
 
+        if (behaviorInfo is null)
+        {
+            Debug.WriteLine($"~~~> {method} {path} - ToHateoasLinks(): BehaviorInfo is null, returning empty links.");
+            
+            return links; 
+        }
+        
+        if (hateoasLinks is null)
+        {
+            Debug.WriteLine($"~~~> {method} {path} - ToHateoasLinks(): HateoasLinks dictionary is null, returning empty links.");
+            
+            return links;
+        }
+        
         links.AddRange(
             behaviorInfo.ExpectedEvents.SelectMany(expectedEvent =>
                 hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:{(behaviorInfo.Id.Instance == string.Empty ? "default" : "standard")}:event:{expectedEvent.ToShortName().ToCamelCase()}", out var eventLinks)
@@ -64,6 +80,11 @@ internal static class Utils
 
     internal static IDictionary<string, object> ToMetadata(this BehaviorInfo behaviorInfo)
     {
+        if (behaviorInfo is null)
+        {
+            return new Dictionary<string, object>();
+        }
+        
         var metadata = new Dictionary<string, object>
         {
             { nameof(behaviorInfo.Id).ToCamelCase(), behaviorInfo.Id },
@@ -95,6 +116,11 @@ internal static class Utils
             metadata.TryAdd(metadataKeyValue.Key, metadataKeyValue.Value);
         }
 
+        if (behaviorInfo.Properties.Count > 0)
+        {
+            metadata["properties"] = behaviorInfo.Properties;
+        }
+
         return metadata;
     }
 
@@ -106,21 +132,21 @@ internal static class Utils
                 Href = $"/{routePrefix}{link.Item1.Href.Replace("{instance}", behaviorInfo.Id.Instance)}"
             });
     
-    public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+    public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, string method, string path, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
-        var response = new ResponseBody<TResponse>(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata());
-        var jsonResult = StateflowsJsonConverter.SerializeObject(response, true);
+        var response = new ResponseBody<TResponse>(result, notifications, behaviorInfo.ToHateoasLinks(method, path, customHateoasLinks), behaviorInfo.ToMetadata());
+        var jsonResult = StructuralJson.SerializeObject(response);
         return jsonResult.ToResult(result.Status);
     }
     
-    public static IResult ToResult(this SendResult result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+    public static IResult ToResult(this SendResult result, string method, string path, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
-        var response = new ResponseBody(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata());
-        var jsonResult = StateflowsJsonConverter.SerializeObject(response, true);
+        var response = new ResponseBody(result, notifications, behaviorInfo.ToHateoasLinks(method, path, customHateoasLinks), behaviorInfo.ToMetadata());
+        var jsonResult = StructuralJson.SerializeObject(response);
         return jsonResult.ToResult(result.Status);
     }
 
-    private static IResult ToResult(this string jsonResult, EventStatus eventStatus)
+    internal static IResult ToResult(this string jsonResult, EventStatus eventStatus)
         => eventStatus switch
         {
             EventStatus.Initialized => Results.Content(jsonResult, "application/json", statusCode: 201), // 201 created
@@ -130,9 +156,11 @@ internal static class Utils
             EventStatus.Invalid => Results.Content(jsonResult, "application/json", statusCode: 400),
             EventStatus.Deferred => Results.Content(jsonResult, "application/json", statusCode: 202), // 202 accepted
             EventStatus.Consumed => Results.Content(jsonResult, "application/json", statusCode: 200),
+            EventStatus.Duplicated => Results.Content(jsonResult, "application/json", statusCode: 200),
             EventStatus.NotConsumed => Results.Content(jsonResult, "application/json", statusCode: 409),
             EventStatus.Failed => Results.Content(jsonResult, "application/json", statusCode: 500), // 500 server error
             EventStatus.Forwarded => Results.Content(jsonResult, "application/json", statusCode: 202), // 202 accepted
+            EventStatus.Overloaded => Results.Content(jsonResult, "application/json", statusCode: 503), // 503 service unavailable, retryable
             _ => Results.Content(jsonResult, "application/json", statusCode: 500), // 500 server error
         };
 
@@ -156,26 +184,10 @@ internal static class Utils
 
     internal static async Task<(bool Success, IResult? Result)> AuthorizeEventAsync(Type eventType, IServiceProvider serviceProvider, HttpContext context)
     {
-        var authorizeAttributes = eventType.GetCustomAttributes<AuthorizeAttribute>().ToArray();
+        var authorizeAttributes = eventType.GetCustomAttributes().OfType<IAuthorizeData>().ToArray();
         if (authorizeAttributes.Any())
         {
-            try
-            {
-                var authorizationService = serviceProvider.GetRequiredService<IAuthorizationService>();
-                            
-                foreach (var authorizeAttribute in authorizeAttributes)
-                {
-                    if (!await AuthorizationHelper.IsAuthorizedAsync(authorizeAttribute, context.User,
-                            authorizationService))
-                    {
-                        return (false, Results.Unauthorized());
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                return (false, Results.Problem(e.Message));
-            }
+            return await AuthorizationHelper.AuthorizeAsync(authorizeAttributes, serviceProvider, context);
         }
 
         return (true, null);

@@ -10,24 +10,30 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(BehaviorInfoRequest);
 
-        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
-
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
-            if (context.Event is BehaviorInfoRequest request)
+            try
             {
-                var executor = context.Behavior.GetExecutor();
-
-                request.Respond(new BehaviorInfo()
+                if (context.Event is BehaviorInfoRequest request)
                 {
-                    Id = executor.Context.Id,
-                    BehaviorStatus = executor.BehaviorStatus,
-                    ExpectedEvents = await executor.GetExpectedEventNamesAsync(),
-                });
+                    var executor = context.Behavior.GetExecutor();
 
-                return EventStatus.Consumed;
+                    request.Respond(new BehaviorInfo()
+                    {
+                        Id = executor.Context.Id,
+                        BehaviorStatus = executor.BehaviorStatus,
+                        ExpectedEvents = executor.GetExpectedEventNames(),
+                    });
+
+                    return Task.FromResult(EventStatus.Consumed);
+                }
+
+                return Task.FromResult(EventStatus.NotConsumed);
             }
-
-            return EventStatus.NotConsumed;
+            catch (Exception exception)
+            {
+                return Task.FromException<EventStatus>(exception);
+            }
         }
     }
 }

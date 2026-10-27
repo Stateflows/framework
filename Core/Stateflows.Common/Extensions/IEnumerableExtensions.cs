@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Stateflows.Common.Utilities;
 using System.Diagnostics;
 
 namespace Stateflows.Common.Extensions
@@ -55,7 +53,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.RunProtected<T>(
                 action,
-                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e.GetType().Name, e.Message)
+                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e)
             );
 
         [DebuggerHidden]
@@ -63,7 +61,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.RunProtected<T>(
                 action,
-                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e.GetType().Name, e.Message),
+                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e),
                 defaultResult
             );
     }

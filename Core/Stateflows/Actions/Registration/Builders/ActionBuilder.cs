@@ -13,7 +13,7 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
     
     public IActionBuilder AddInterceptor(ActionInterceptorFactoryAsync interceptorFactory)
     {
-        model.InterceptorFactories.Add(interceptorFactory);
+        Model.InterceptorFactories.Add(interceptorFactory);
 
         return this;
     }
@@ -82,13 +82,59 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
 
     public IActionBuilder SetResourceName(string resourceName)
     {
-        model.ResourceName = resourceName;
+        Model.ResourceName = resourceName;
+
+        return this;
+    }
+    
+    public IActionBuilder SetCustomBehaviorClassType(string behaviorClassType)
+    {
+        Model.BehaviorClassType = behaviorClassType;
 
         return this;
     }
 
     IActionBuilder IActionUtils<IActionBuilder>.SetIsStateless(bool isStateless)
         => SetIsStateless(isStateless);
+
+    public IActionBuilder AddConsumedEvent<TEvent>()
+    {
+        Model.ConsumedEventTypes.Add(typeof(TEvent));
+
+        return this;
+    }
+
+    public IActionBuilder AddConsumedEvent(string eventName)
+    {
+        System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+        if (!Model.ConsumedEventNames.Contains(eventName))
+        {
+            Model.ConsumedEventNames.Add(eventName);
+        }
+
+        return this;
+    }
+
+    public IActionBuilder AddProducedEvent<TEvent>()
+    {
+        Model.ProducedEventTypes.Add(typeof(TEvent));
+
+        return this;
+    }
+
+    public IActionBuilder AddConsumedToken<TToken>()
+    {
+        Model.ConsumedTokenTypes.Add(typeof(TToken));
+
+        return this;
+    }
+
+    public IActionBuilder AddProducedToken<TToken>()
+    {
+        Model.ProducedTokenTypes.Add(typeof(TToken));
+
+        return this;
+    }
 
     IActionBuilder IActionUtils<IActionBuilder>.SetResourceName(string resourceName)
         => SetResourceName(resourceName);
@@ -106,7 +152,7 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
 {
     public IActionBuilder<TAction> Configure(System.Action<TAction> action)
     {
-        model.ConfigurationAction = o => action((TAction)o);
+        model.ConfigurationActions.Add(o => action((TAction)o));
         
         return this;
     }
@@ -114,8 +160,30 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.SetResourceName(string resourceName)
         => SetResourceName(resourceName) as IActionBuilder<TAction>;
 
+    public IActionBuilder<TAction> SetCustomBehaviorClassType(string behaviorClassType)
+    {
+        Model.BehaviorClassType = behaviorClassType;
+
+        return this;
+    }
+
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.SetIsStateless(bool isStateless)
         => SetIsStateless(isStateless) as IActionBuilder<TAction>;
+
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedEvent<TEvent>()
+        => AddConsumedEvent<TEvent>() as IActionBuilder<TAction>;
+
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedEvent(string eventName)
+        => AddConsumedEvent(eventName) as IActionBuilder<TAction>;
+
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddProducedEvent<TEvent>()
+        => AddProducedEvent<TEvent>() as IActionBuilder<TAction>;
+
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedToken<TToken>()
+        => AddConsumedToken<TToken>() as IActionBuilder<TAction>;
+
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddProducedToken<TToken>()
+        => AddProducedToken<TToken>() as IActionBuilder<TAction>;
 
     IActionBuilder<TAction> IActionObservability<IActionBuilder<TAction>>.AddInterceptor(ActionInterceptorFactoryAsync interceptorFactory)
         => AddInterceptor(interceptorFactory) as IActionBuilder<TAction>;

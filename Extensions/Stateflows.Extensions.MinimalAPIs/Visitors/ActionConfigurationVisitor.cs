@@ -8,7 +8,8 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
 {
     private BehaviorClass? OwnerClass = null;
 
-    public override Task ActionAddingAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    public override Task ActionAddingAsync(string actionName, int actionVersion, string? behaviorClassType = null,
+        BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
         OwnerClass = ownerClass;
         return Task.CompletedTask;

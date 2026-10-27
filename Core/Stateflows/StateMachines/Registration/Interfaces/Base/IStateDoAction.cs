@@ -5,24 +5,33 @@ using Stateflows.Actions.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
+    /// <summary>Assigns an embedded action whose lifetime is bound to the current state's activation.</summary>
+    /// <typeparam name="TReturn">The state builder stage after assigning its do behavior.</typeparam>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
     public interface IStateDoAction<out TReturn>
     {
-        /// <summary>
-        /// Embeds Action in current state.<br/>
-        /// Embedded Action will be initialized on state entry and finalized on state exit. Every event accepted by embedded Action will be sent to it first and retransmitted to embedding State Machine in case of rejection by embedded one.
-        /// </summary>
-        /// <typeparam name="TAction">Action class; must implement <see cref="IAction"/> interface</typeparam>
-        /// <param name="buildAction">Build action</param>
+        /// <summary>Embeds an Action whose lifetime is bound to the current state's activation.</summary>
+        /// <typeparam name="TAction">Embedded behavior implementation of <see cref="IAction" />. Its definition is
+        /// registered for this embedding site.</typeparam>
+        /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
+        /// </param>
+        /// <returns>The state builder stage with its do behavior assigned.</returns>
+        /// <remarks>The embedded behavior is initialized on state entry and finalized on state exit. Events accepted by it
+        /// are offered to it first; rejected events are retransmitted to the embedding State Machine.</remarks>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         [DebuggerHidden]
         public TReturn AddDoAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction;
 
-        /// <summary>
-        /// Registers Action to be embedded in current state.<br/>
-        /// Embedded Action will be initialized on state entry and finalized on state exit. Every event accepted by embedded Action will be sent to it first and retransmitted to embedding State Machine in case of rejection by embedded one.
-        /// </summary>
-        /// <param name="actionDelegate"></param>
-        /// <param name="buildAction">Build action</param>
+        /// <summary>Embeds an Action whose lifetime is bound to the current state's activation.</summary>
+        /// <param name="actionDelegate">Asynchronous implementation receiving the embedded Action's execution context.
+        /// </param>
+        /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
+        /// </param>
+        /// <returns>The state builder stage with its do behavior assigned.</returns>
+        /// <remarks>The embedded behavior is initialized on state entry and finalized on state exit. Events accepted by it
+        /// are offered to it first; rejected events are retransmitted to the embedding State Machine.</remarks>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         public TReturn AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null);
     }
 }

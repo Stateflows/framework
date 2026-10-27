@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Engine;
@@ -11,10 +11,10 @@ using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsEngine : IStateflowsEngine
+    internal class StateflowsEngine : IStateflowsEngine, IAsyncDisposable
     {
         internal readonly StateflowsBuilder StateflowsBuilder;
-        private readonly IServiceScope Scope;
+        private readonly AsyncServiceScope Scope;
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
         private readonly IStateflowsLock Lock;
         private readonly CommonInterceptor Interceptor;
@@ -27,15 +27,20 @@ namespace Stateflows.Common
         public StateflowsEngine(IServiceProvider serviceProvider, StateflowsBuilder stateflowsBuilder)
         {
             StateflowsBuilder = stateflowsBuilder;
-            Scope = serviceProvider.CreateScope();
+            Scope = serviceProvider.CreateAsyncScope();
             Lock = ServiceProvider.GetRequiredService<IStateflowsLock>();
             Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
             TenantAccessor = ServiceProvider.GetRequiredService<ITenantAccessor>();
             TenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
             ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
             Validators = ServiceProvider.GetRequiredService<IEnumerable<IStateflowsValidator>>().ToArray();
-            Processors = ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
+            Processors = ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>()
+                .SelectMany(p => p.BehaviorTypes.Select(t => new { BehaviorTypes = t, Processor = p }))
+                .ToDictionary(p => p.BehaviorTypes, p => p.Processor);
         }
+
+        public ValueTask DisposeAsync()
+            => Scope.DisposeAsync();
 
         [DebuggerHidden]
         public async Task HandleEventAsync(ExecutionToken token)
@@ -57,7 +62,8 @@ namespace Stateflows.Common
                     status = await token.EventHolder.ProcessEventAsync(this, token.TargetId, token.Exceptions, token.Responses);
                 }
 
-                token.Status = token.Validation.IsValid
+                token.Validation = token.EventHolder.Validation;
+                token.Status = status == EventStatus.Failed || token.Validation.IsValid
                     ? status
                     : EventStatus.Invalid;
 
@@ -80,7 +86,7 @@ namespace Stateflows.Common
                 return result;
             }
             
-            TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
+            TenantAccessor.CurrentTenantId = TenantProvider.GetCurrentTenantId();
             
             if (eventHolder.Payload is Finalize { Mode: FinalizationMode.Immediate })
             {
@@ -89,7 +95,7 @@ namespace Stateflows.Common
             }
 
             await using var lockHandle = await (
-                id.Type == BehaviorType.Action
+                id.Type is not BehaviorType.Activity and not BehaviorType.Entity and not BehaviorType.StateMachine
                     ? Lock.AquireNoLockAsync(id)
                     : Lock.AquireLockAsync(id)
             );

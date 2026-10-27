@@ -416,7 +416,7 @@ namespace Activity.IntegrationTests.Tests
         [TestMethod]
         public void ProducerOutputTypeMismatch_ThrowsAtBuildTime()
         {
-            Assert.ThrowsException<NodeDefinitionException>(() =>
+            Assert.Throws<NodeDefinitionException>(() =>
                 new ServiceCollection().AddStateflows(b => b.AddActivities(ab => ab
                     .AddActivity("invalid-producer-edge", b => b
                         .AddInitial(b => b.AddControlFlow<DogProducer>())
@@ -435,7 +435,7 @@ namespace Activity.IntegrationTests.Tests
         [TestMethod]
         public void IncomingTokenTypeMismatch_ThrowsAtBuildTime()
         {
-            Assert.ThrowsException<NodeDefinitionException>(() =>
+            Assert.Throws<NodeDefinitionException>(() =>
                 new ServiceCollection().AddStateflows(b => b.AddActivities(ab => ab
                     .AddActivity("invalid-consumer-edge", b => b
                         .AddInitial(b => b.AddControlFlow("produce"))
@@ -458,7 +458,7 @@ namespace Activity.IntegrationTests.Tests
         [TestMethod]
         public void IncomingTokenTypeMismatch2_ThrowsAtBuildTime()
         {
-            Assert.ThrowsException<NodeDefinitionException>(() =>
+            Assert.Throws<NodeDefinitionException>(() =>
                 new ServiceCollection().AddStateflows(b => b.AddActivities(ab => ab
                     .AddActivity("invalid-consumer-edge-2", b => b
                         .AddInitial(b => b.AddControlFlow("produce"))

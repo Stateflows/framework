@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using Stateflows.Common;
@@ -24,28 +25,28 @@ namespace Stateflows.StateMachines.Engine
             return true;
         }
         
-        public override bool OnStateMachineInitializationException(IStateMachineInitializationContext context, Exception exception)
-            => HandleException(context.Behavior.Id, exception, context.Headers);
+        public override Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
+            => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
 
-        public override bool OnStateMachineFinalizationException(IStateMachineActionContext context, Exception exception)
-            => HandleException(context.Behavior.Id, exception, context.Headers);
+        public override Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
+            => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
 
-        public override bool OnTransitionGuardException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => HandleException(context.Behavior.Id, exception, context.Headers);
+        public override Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+            => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
 
-        public override bool OnTransitionEffectException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => HandleException(context.Behavior.Id, exception, context.Headers);
+        public override Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+            => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
 
-        public override bool OnStateInitializationException(IStateActionContext context, Exception exception)
-            => HandleException(context.Behavior.Id, exception, context.Headers);
+        public override Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
 
-        public override bool OnStateFinalizationException(IStateActionContext context, Exception exception)
-            => HandleException(context.Behavior.Id, exception, context.Headers);
+        public override Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
 
-        public override bool OnStateEntryException(IStateActionContext context, Exception exception)
-            => HandleException(context.Behavior.Id, exception, context.Headers);
+        public override Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
 
-        public override bool OnStateExitException(IStateActionContext context, Exception exception)
-            => HandleException(context.Behavior.Id, exception, context.Headers);
+        public override Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
     }
 }

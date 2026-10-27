@@ -167,6 +167,20 @@ namespace Entity.IntegrationTests.Tests
     {
         public List<string> AddedEntities { get; } = [];
         public List<Type> AddedTypes { get; } = [];
+        public Dictionary<string, (FieldAccess Access, bool Computed, object? DefaultValue)> AddedFields { get; } = [];
+        public List<string> AddedInitializers { get; } = [];
+
+        public override Task FieldAddedAsync<TTemplate, TField>(string entityName, int entityVersion, string fieldName, TField defaultValue, bool computed, FieldAccess access)
+        {
+            AddedFields[$"{entityName}.{fieldName}"] = (access, computed, defaultValue);
+            return Task.CompletedTask;
+        }
+
+        public override Task InitializerAddedAsync<TTemplate, TInitializationEvent>(string entityName, int entityVersion)
+        {
+            AddedInitializers.Add($"{entityName}:{typeof(TInitializationEvent).Name}");
+            return Task.CompletedTask;
+        }
 
         public override Task EntityAddedAsync<TTemplate>(string entityName, int entityVersion)
         {
@@ -220,6 +234,11 @@ namespace Entity.IntegrationTests.Tests
                         .AddField(t => t.StringValue, field => field.AddDefaultValue("configured in builder"))
                         .AddField(t => t.IntValue, field => field.AddDefaultValue(11))
                     )
+                    .AddEntity<IFieldAccessEntityTemplate>("visitedAccess")
+                    .AddEntity<IBuilderDefaultValueEntityTemplate>("visitedBuilderAccess", entity => entity
+                        .AddField(t => t.StringValue, field => field.SetAccess(FieldAccess.Get))
+                        .AddField(t => t.IntValue, field => field.SetAccess(FieldAccess.Set))
+                    )
                     .AddFromAssembly(Assembly.GetExecutingAssembly())
                 )
                 ;
@@ -232,7 +251,7 @@ namespace Entity.IntegrationTests.Tests
             var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
             var tenantAccessor = ServiceProvider.GetRequiredService<ITenantAccessor>();
             var tenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
-            tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
+            tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
             return await storage.HydrateAsync(new EntityClass(entityName).ToId(instance));
         }
 
@@ -379,7 +398,7 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual("Lorem", projection.StringValue);
             Assert.AreEqual(5, projection.Length);
 
-            tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
+            tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
             var context = await storage.HydrateAsync(new EntityClass("typedAuto").ToId("x"));
             length = context.Values.TryGetValue("$field:Length", out var lengthValue)
                 ? lengthValue switch
@@ -395,8 +414,8 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual(5, length);
             Assert.AreEqual("Lorem", fieldValue);
             Assert.IsTrue(context.Values.ContainsKey("$dependencies:field:Length"));
-            Assert.IsTrue(context.Values.ContainsKey($"$dependencies:projection:{typeof(AutoTypedProjection).AssemblyQualifiedName}"));
-            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(AutoTypedProjection).AssemblyQualifiedName}"));
+            Assert.IsTrue(context.Values.ContainsKey($"$dependencies:projection:{typeof(AutoTypedProjection).FullName}"));
+            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(AutoTypedProjection).FullName}"));
         }
 
         [TestMethod]
@@ -431,7 +450,7 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual("Ipsum", projection.Suffix);
             Assert.AreEqual("Lorem:Ipsum", projection.CombinedValue);
 
-            tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
+            tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
             var context = await storage.HydrateAsync(new EntityClass("typedAutoInherited").ToId("x"));
             baseValue = context.Values.TryGetValue("$field:BaseValue", out var baseValueObject)
                 ? baseValueObject as string
@@ -443,8 +462,8 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual("Lorem", baseValue);
             Assert.AreEqual("Ipsum", suffix);
             Assert.IsTrue(context.Values.ContainsKey("$field:CombinedValue"));
-            Assert.IsTrue(context.Values.ContainsKey($"$dependencies:projection:{typeof(InheritedAutoTypedProjection).AssemblyQualifiedName}"));
-            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(InheritedAutoTypedProjection).AssemblyQualifiedName}"));
+            Assert.IsTrue(context.Values.ContainsKey($"$dependencies:projection:{typeof(InheritedAutoTypedProjection).FullName}"));
+            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(InheritedAutoTypedProjection).FullName}"));
         }
 
         [TestMethod]
@@ -458,6 +477,34 @@ namespace Entity.IntegrationTests.Tests
             CollectionAssert.AreEqual(new List<string> { "attributedEntity.3" }, visitor.AddedEntities);
             Assert.AreEqual(1, visitor.AddedTypes.Count);
             Assert.AreEqual(typeof(AttributedEntity), visitor.AddedTypes[0]);
+        }
+
+        [TestMethod]
+        public async Task VisitsFieldsWithConfiguredAccessAndInitializers()
+        {
+            var register = ServiceProvider.GetRequiredService<IEntitiesRegister>();
+            var visitor = new RecordingEntityVisitor();
+
+            await register.VisitEntitiesAsync(visitor);
+
+            Assert.AreEqual((FieldAccess.Get | FieldAccess.Set, false, (object?)null), visitor.AddedFields["visitedAccess.ReadWrite"]);
+            Assert.AreEqual((FieldAccess.Get, false, (object?)0), visitor.AddedFields["visitedAccess.ReadOnly"]);
+            Assert.AreEqual((FieldAccess.Set, false, (object?)false), visitor.AddedFields["visitedAccess.WriteOnly"]);
+            Assert.AreEqual((FieldAccess.None, false, (object?)null), visitor.AddedFields["visitedAccess.NoAccess"]);
+            Assert.AreEqual((FieldAccess.None, true, (object?)0), visitor.AddedFields["visitedAccess.DoubleReadOnly"]);
+
+            // access configured with the builder after the field is added
+            Assert.AreEqual(FieldAccess.Get, visitor.AddedFields["visitedBuilderAccess.StringValue"].Access);
+            Assert.AreEqual(FieldAccess.Set, visitor.AddedFields["visitedBuilderAccess.IntValue"].Access);
+
+            // default values are visited
+            Assert.AreEqual("Lorem ipsum", visitor.AddedFields["typedDefaults.StringValue"].DefaultValue);
+            Assert.AreEqual(7, visitor.AddedFields["typedDefaults.IntValue"].DefaultValue);
+            Assert.AreEqual(11, visitor.AddedFields["builderDefaults.IntValue"].DefaultValue);
+
+            CollectionAssert.Contains(visitor.AddedInitializers, $"plain:{nameof(PlainInitializationEvent)}");
+            CollectionAssert.Contains(visitor.AddedInitializers, $"typed:{nameof(TypedInitializationEvent)}");
+            Assert.IsFalse(visitor.AddedInitializers.Any(i => i.StartsWith("typedAuto:")));
         }
 
         [TestMethod]
@@ -523,7 +570,7 @@ namespace Entity.IntegrationTests.Tests
         {
             var services = new ServiceCollection();
 
-            var exception = Assert.ThrowsException<InvalidOperationException>(() =>
+            var exception = Assert.Throws<InvalidOperationException>(() =>
                 services.AddStateflows(builder => builder
                     .UseFullNamesFor(TypedElements.All)
                     .AddEntities(entities => entities
@@ -541,7 +588,7 @@ namespace Entity.IntegrationTests.Tests
         {
             var services = new ServiceCollection();
 
-            var exception = Assert.ThrowsException<InvalidOperationException>((Action)(() =>
+            var exception = Assert.Throws<InvalidOperationException>((Action)(() =>
                 services.AddStateflows(builder => builder
                     .UseFullNamesFor(TypedElements.All)
                     .AddEntities(entities => entities

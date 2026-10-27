@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Actions.Registration;
+using Stateflows.Actions.Exceptions;
 
 namespace Stateflows.Actions.Models
 {
@@ -10,6 +12,7 @@ namespace Stateflows.Actions.Models
     {
         internal string ResourceName { get; set; } = null;
         public string Name { get; set; }
+        public string BehaviorClassType { get; set; } = BehaviorType.Action;
         public int Version { get; set; }
         
         public BehaviorClass? ParentClass { get; set; }
@@ -19,7 +22,7 @@ namespace Stateflows.Actions.Models
         public ActionDelegateAsync Delegate { get; set; }
         public Func<IActionVisitor, Task> VisitingAction { get; set; }
 
-        public System.Action<object>? ConfigurationAction { get; set; } = null;
+        public List<System.Action<object>> ConfigurationActions { get; set; } = [];
 
         public List<ActionExceptionHandlerFactoryAsync> ExceptionHandlerFactories { get; set; } = [];
         
@@ -27,15 +30,38 @@ namespace Stateflows.Actions.Models
         
         public List<ActionObserverFactoryAsync> ObserverFactories { get; set; } = [];
 
+        public List<Type> ConsumedEventTypes { get; } = [];
+        public List<string> ConsumedEventNames { get; } = [];
+        public List<Type> ProducedEventTypes { get; } = [];
+        public List<Type> ConsumedTokenTypes { get; } = [];
+        public List<Type> ProducedTokenTypes { get; } = [];
+
         internal void Build(StateflowsBuilder stateflowsBuilder)
         {
             if (stateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName))
             {
-                stateflowsBuilder.ResourcesByBehaviorClass[new BehaviorClass(BehaviorType.Action, Name)] = resourceName;
+                stateflowsBuilder.ResourcesByBehaviorClass[new BehaviorClass(BehaviorClassType, Name)] = resourceName;
             }
             else
             {
                 throw new InvalidOperationException($"Resource group {ResourceName ?? string.Empty} does not exist");
+            }
+
+            foreach (var eventType in ConsumedEventTypes.Concat(ProducedEventTypes))
+            {
+                stateflowsBuilder.Events.RegisterClr(eventType);
+            }
+
+            foreach (var eventName in ConsumedEventNames)
+            {
+                try
+                {
+                    stateflowsBuilder.Events.GetEvent(eventName);
+                }
+                catch (ArgumentException e)
+                {
+                    throw new ActionDefinitionException($"Action '{Name}' consumes event '{eventName}' which is not registered.", new ActionClass(Name), e);
+                }
             }
         }
     }

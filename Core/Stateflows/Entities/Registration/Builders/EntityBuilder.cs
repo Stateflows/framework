@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Engine;
 using Stateflows.Entities.Enums;
@@ -61,6 +62,12 @@ namespace Stateflows.Entities.Registration.Builders
                     ));
                 }
             };
+
+            Registration.VisitingTasks.Add(async visitor =>
+            {
+                await visitor.InitializerAddedAsync<TTemplate, TInitializationEvent>(Registration.Name, Registration.Version);
+            });
+
             return this;
         }
 
@@ -74,15 +81,23 @@ namespace Stateflows.Entities.Registration.Builders
             if (Registration.Model.Fields.ContainsKey(fieldName))
                 throw new InvalidOperationException($"Field '{fieldName}' is already registered in entity '{Registration.Name}'");
 
-            var fieldModel = new FieldModel<TTemplate, TField>(Registration.Model, fieldName, FieldAccess.None);
+            var fieldModel = new FieldModel<TTemplate, TField>(Registration.Model, fieldName, FieldAccess.None, memberExpression.Member);
             
             Registration.Model.Fields.Add(fieldName, fieldModel);
             
             buildAction?.Invoke(new FieldBuilder<TTemplate, TField>(fieldModel));
             
+            // Access may be configured after the field is added (attributes, FieldBuilder), so it is read at visit time.
             Registration.VisitingTasks.Add(async visitor =>
             {
-                // await visitor.FieldAddedAsync<TTemplate, TField>(Registration.Name, Registration.Version, fieldName, (TField)fieldModel.DefaultValue, fieldModel.IsComputed);
+                await visitor.FieldAddedAsync<TTemplate, TField>(
+                    Registration.Name,
+                    Registration.Version,
+                    fieldName,
+                    fieldModel.HasDefaultValue && fieldModel.DefaultValue is TField defaultValue ? defaultValue : default!,
+                    fieldModel.IsComputed,
+                    fieldModel.Access
+                );
             });
 
             return this;
@@ -94,22 +109,23 @@ namespace Stateflows.Entities.Registration.Builders
             {
                 MutationType = typeof(TMutationEvent),
                 MutationAction = mutationAction,
-                Invoke = (values, behaviorContext, eventObj) =>
+                InvokeAsync = async (values, behaviorContext, inspection, eventObj) =>
                 {
                     var oldValues = GetTrackedFieldValuesSnapshot(values);
 
                     var (_, entity) = EntityProxy<TTemplate>.Create(values, Registration.Model);
-                    mutationAction(new MutationContext<TTemplate, TMutationEvent>(
-                        entity,
-                        (TMutationEvent)eventObj
-                    ));
+                    await inspection.MutationAsync(entity, (TMutationEvent)eventObj, () =>
+                    {
+                        mutationAction(new MutationContext<TTemplate, TMutationEvent>(entity, (TMutationEvent)eventObj));
+                        return Task.CompletedTask;
+                    });
 
                     var newValues = GetTrackedFieldValuesSnapshot(values);
                     var changedFieldNames = GetChangedFieldNames(oldValues, newValues);
                     if (changedFieldNames.Count != 0)
                     {
-                        var allChangedFields = EntityContextValues.StabilizeComputedFields(Registration.Model, values, changedFieldNames);
-                        EntityContextValues.RefreshDependentProjections(Registration.Model, values, behaviorContext, allChangedFields);
+                        var allChangedFields = await EntityContextValues.StabilizeComputedFieldsAsync(Registration.Model, values, inspection, changedFieldNames);
+                        await EntityContextValues.RefreshDependentProjectionsAsync(Registration.Model, values, behaviorContext, inspection, allChangedFields);
                     }
                 }
             };
@@ -128,10 +144,14 @@ namespace Stateflows.Entities.Registration.Builders
             {
                 ProjectionType = typeof(TProjectionTemplate),
                 ProjectionAction = projectionAction,
-                Invoke = (values, _) =>
+                InvokeAsync = async (values, inspection) =>
                 {
                     var (proxy, entity) = EntityProxy<TTemplate>.Create(values, Registration.Model);
-                    var projection = projectionAction(entity);
+                    var observedEntity = inspection.HasOperationContexts
+                        ? EntityProxy<TTemplate>.Create(values, Registration.Model).Item2
+                        : entity;
+                    var projection = await inspection.ProjectionAsync(
+                        observedEntity, publishScope, () => Task.FromResult(projectionAction(entity)));
                     EntityContextValues.SetProjectionDependencies(values, typeof(TProjectionTemplate), proxy.ReadFields);
                     EntityContextValues.SetProjectionValue(values, typeof(TProjectionTemplate), projection);
                     return projection;
@@ -163,5 +183,44 @@ namespace Stateflows.Entities.Registration.Builders
 
             return this;
         }
+
+        public IEntityBuilder<TTemplate> AddObserver(EntityObserverFactoryAsync observerFactoryAsync)
+        {
+            Registration.ObserverFactories.Add(observerFactoryAsync);
+
+            return this;
+        }
+
+        public IEntityBuilder<TTemplate> AddObserver<TObserver>()
+            where TObserver : class, IEntityObserver
+            => AddObserver(async (serviceProvider, context) =>
+                await EntitiesRegister.CreateModelElementInstanceAsync<TObserver>(serviceProvider, context, "observer")
+            );
+
+        public IEntityBuilder<TTemplate> AddExceptionHandler(EntityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        {
+            Registration.ExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
+
+            return this;
+        }
+
+        public IEntityBuilder<TTemplate> AddExceptionHandler<THandler>()
+            where THandler : class, IEntityExceptionHandler
+            => AddExceptionHandler(async (serviceProvider, context) =>
+                await EntitiesRegister.CreateModelElementInstanceAsync<THandler>(serviceProvider, context, "exception handler")
+            );
+
+        public IEntityBuilder<TTemplate> AddInterceptor(EntityInterceptorFactoryAsync interceptorFactoryAsync)
+        {
+            Registration.InterceptorFactories.Add(interceptorFactoryAsync);
+
+            return this;
+        }
+
+        public IEntityBuilder<TTemplate> AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IEntityInterceptor
+            => AddInterceptor(async (serviceProvider, context) =>
+                await EntitiesRegister.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, context, "interceptor")
+            );
     }
 }

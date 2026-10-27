@@ -11,14 +11,17 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Subscription
 {
-    internal class NotificationsHub : IHostedService, INotificationsHub
+    internal class NotificationsHub : IHostedService, INotificationsHub, IAsyncDisposable
     {
+        private readonly AsyncServiceScope Scope;
+        private readonly IServiceProvider ServiceProvider;
+
         public NotificationsHub(IServiceProvider serviceProvider)
         {
-            var scope = serviceProvider.CreateScope();
-            var scopedProvider = scope.ServiceProvider;
-            Storage = scopedProvider.GetService<IStateflowsNotificationsStorage>();
-            CommonInterceptor = scopedProvider.GetService<CommonInterceptor>();
+            Scope = serviceProvider.CreateAsyncScope();
+            ServiceProvider = Scope.ServiceProvider;
+            Storage = ServiceProvider.GetRequiredService<IStateflowsNotificationsStorage>();
+            CommonInterceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
         }
 
         private readonly IStateflowsNotificationsStorage Storage;
@@ -93,6 +96,12 @@ namespace Stateflows.Common.Subscription
             CancellationTokenSource.Cancel();
 
             return Task.CompletedTask;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await Scope.DisposeAsync();
+            CancellationTokenSource.Dispose();
         }
     }
 }

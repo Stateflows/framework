@@ -4,12 +4,16 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
+    /// <summary>Composes completion-transition predicates into conjunctions and nested guard expressions.</summary>
+    /// <typeparam name="TReturn">The fluent transition builder returned after guard registration.</typeparam>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
     public interface IDefaultGuard<out TReturn> : IBaseDefaultGuard<TReturn>
     {
-        /// <summary>
-        /// Adds a guard expression to the current transition.
-        /// </summary>
-        /// <param name="guardExpression">The guard expression to add.</param>
+        /// <summary>Adds a composed predicate to the current transition.</summary>
+        /// <param name="guardExpression">Callback adding predicates and nested Boolean expressions. Predicates at the root
+        /// are combined with AND.</param>
+        /// <returns>The current transition builder after adding the composed predicate.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
         TReturn AddGuardExpression(Func<IDefaultGuardBuilder, IDefaultGuardBuilder> guardExpression)
         {
             var builder = new GuardBuilder<Completion>(((IVertexBuilder)this).Vertex);
@@ -18,11 +22,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddGuard(builder.GetAndGuard());
         }
 
-        /// <summary>
-        /// Adds multiple typed guard handlers to the current transition.
-        /// </summary>
-        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
-        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <summary>Registers typed predicates for the current transition.</summary>
+        /// <typeparam name="TGuard1">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard2">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <returns>The current transition builder after adding the guard conjunction.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
         TReturn AddGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -31,12 +37,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 .AddGuard<TGuard2>()
             );
 
-        /// <summary>
-        /// Adds multiple typed guard handlers to the current transition.
-        /// </summary>
-        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
-        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
-        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
+        /// <summary>Registers typed predicates for the current transition.</summary>
+        /// <typeparam name="TGuard1">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard2">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard3">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <returns>The current transition builder after adding the guard conjunction.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
         TReturn AddGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -47,13 +56,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 .AddGuard<TGuard3>()
             );
 
-        /// <summary>
-        /// Adds multiple typed guard handlers to the current transition.
-        /// </summary>
-        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
-        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
-        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
-        /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
+        /// <summary>Registers typed predicates for the current transition.</summary>
+        /// <typeparam name="TGuard1">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard2">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard3">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard4">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <returns>The current transition builder after adding the guard conjunction.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -66,14 +79,19 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 .AddGuard<TGuard4>()
             );
 
-        /// <summary>
-        /// Adds multiple typed guard handlers to the current transition.
-        /// </summary>
-        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
-        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
-        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
-        /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
-        /// <typeparam name="TGuard5">The type of the fifth guard handler.</typeparam>
+        /// <summary>Registers typed predicates for the current transition.</summary>
+        /// <typeparam name="TGuard1">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard2">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard3">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard4">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <typeparam name="TGuard5">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
+        /// true for this predicate to accept.</typeparam>
+        /// <returns>The current transition builder after adding the guard conjunction.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard

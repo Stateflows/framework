@@ -1,20 +1,28 @@
 ﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base;
 
+/// <summary>Assigns an embedded machine whose lifetime is bound to the current state's activation.</summary>
+/// <typeparam name="TReturn">The state builder returned after embedding the submachine.</typeparam>
+/// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
 public interface IStateSubmachine<out TReturn>
 {
-    /// <summary>
-    /// Embeds State Machine in current state.<br/><br/>
-    /// Embedded State Machine will be initialized on state entry and finalized on state exit. Every event accepted by embedded State Machine will be sent to it first and retransmitted to embedding State Machine in case of rejection by embedded one.
-    /// </summary>
-    /// <typeparam name="TStateMachine">State Machine class; must implement <see cref="IStateMachine"/> interface</typeparam>
-    /// <param name="buildAction">Build action</param>
+    /// <summary>Embeds a State Machine whose lifetime is bound to the current state's activation.</summary>
+    /// <typeparam name="TStateMachine">Embedded State Machine implementation whose definition supplies the submachine's
+    /// graph.</typeparam>
+    /// <param name="buildAction">Optional callback configuring the typed submachine's utilities and middleware without
+    /// redefining its graph.</param>
+    /// <returns>The state builder with the submachine configured.</returns>
+    /// <remarks>The embedded behavior is initialized on state entry and finalized on state exit. Events accepted by it
+    /// are offered to it first; rejected events are retransmitted to the embedding State Machine.</remarks>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
     public TReturn AddSubmachine<TStateMachine>(StateMachineUtilsBuildAction buildAction = null)
         where TStateMachine : class, IStateMachine;
 
-    /// <summary>
-    /// Registers State Machine to be embedded in current state.<br/>
-    /// Embedded State Machine will be initialized on state entry and finalized on state exit. Every event accepted by embedded State Machine will be sent to it first and retransmitted to embedding State Machine in case of rejection by embedded one.
-    /// </summary>
-    /// <param name="stateMachineBuildAction">State Machine build action</param>
+    /// <summary>Embeds a State Machine whose lifetime is bound to the current state's activation.</summary>
+    /// <param name="stateMachineBuildAction">Callback configuring the embedded State Machine's states, transitions, and
+    /// lifecycle.</param>
+    /// <returns>The state builder with the submachine configured.</returns>
+    /// <remarks>The embedded behavior is initialized on state entry and finalized on state exit. Events accepted by it
+    /// are offered to it first; rejected events are retransmitted to the embedding State Machine.</remarks>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
     public TReturn AddSubmachine(StateMachineBuildAction stateMachineBuildAction);
 }

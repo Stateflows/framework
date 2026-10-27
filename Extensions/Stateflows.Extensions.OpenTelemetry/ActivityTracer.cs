@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,68 +13,94 @@ using Stateflows.Extensions.OpenTelemetry.Headers;
 
 namespace Stateflows.Extensions.OpenTelemetry
 {
+    /// <summary>Creates diagnostic activities for activity, node, and flow execution callbacks.</summary>
+    /// <param name="logger">The logger used to report activity processing outcomes.</param>
     public class ActivityTracer(ILogger<ActivityTracer> logger) : IActivityObserver, IActivityInterceptor, IActivityExceptionHandler
     {
         private bool Skip = false;
-        
+
         private TracingActivity? EventProcessingActivity;
-        public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+        /// <inheritdoc/>
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
-            var noTracing =
-                context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
-                context.Headers.Values.Any(h => h is NoTracing);
-            
-            Skip = noTracing;
-            
-            if (!noTracing)
+            Before(context);
+
+            var status = EventStatus.Failed;
+            try
             {
-                var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
-                if (header is ActivityHeader activityHeader)
+                return status = await next();
+            }
+            catch (Exception exception)
+            {
+                if (!Skip && EventProcessingActivity != null)
                 {
-                    EventProcessingActivity = StateMachineTracer.Source.StartActivity(
-                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
-                        ActivityKind.Internal,
-                        parentContext: activityHeader.ActivityContext
+                    EventProcessingActivity.SetTag("EventStatus", EventStatus.Failed);
+                    StopProcessingActivity(context, EventStatus.Failed, exception);
+                }
+                throw;
+            }
+            finally
+            {
+                After(context, status);
+            }
+
+            void Before(IEventContext<TEvent> context)
+            {
+                var noTracing =
+                    context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
+                    context.Headers.Values.Any(h => h is NoTracing);
+
+                Skip = noTracing;
+
+                if (!noTracing)
+                {
+                    var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
+                    if (header is ActivityHeader activityHeader)
+                    {
+                        EventProcessingActivity = StateMachineTracer.Source.StartActivity(
+                            $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{Event.GetName(context.Event).ToShortName()}'",
+                            ActivityKind.Internal,
+                            parentContext: activityHeader.ActivityContext
+                        );
+                    }
+
+                    EventProcessingActivity ??= StateMachineTracer.Source.StartActivity(
+                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{Event.GetName(context.Event).ToShortName()}'"
+                    );
+
+                    EventProcessingActivity?.AddTag("ActivityId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
+                    EventProcessingActivity?.AddTag("Event", Event.GetName(context.Event).ToShortName());
+
+                    logger.LogTrace(
+                        message: "Activity '{ActivityId}' received event '{Event}', processing",
+                        $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
+                        Event.GetName(context.Event).ToShortName()
                     );
                 }
-                
-                EventProcessingActivity ??= StateMachineTracer.Source.StartActivity(
-                    $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
-                );
-                
-                EventProcessingActivity.AddTag("ActivityId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
-                EventProcessingActivity.AddTag("Event", context.Event.GetType().GetEventName().ToShortName());
 
-                logger.LogTrace(
-                    message: "Activity '{ActivityId}' received event '{Event}', processing",
-                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                    context.Event.GetType().GetEventName().ToShortName()
-                );
-            }
-            
-            return true;
-        }
-
-        public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
-        {
-            lock (ExecutionActivities)
-            {
-                ExecutionActivities.Clear();
-            }
-            
-            EventProcessingActivity?.AddTag("EventStatus", eventStatus);
-
-            lock (FlowActivationActivities)
-            {
-                FlowActivationActivities.Clear();
-                // NodeIncomingFlowsActivities.Clear();
             }
 
-            if (!Skip)
+            void After(IEventContext<TEvent> context, EventStatus eventStatus)
             {
-                if (eventStatus != EventStatus.Failed)
+                lock (ExecutionActivities)
                 {
-                    StopProcessingActivity(context, eventStatus);
+                    ExecutionActivities.Clear();
+                }
+
+                EventProcessingActivity?.AddTag("EventStatus", eventStatus);
+
+                lock (FlowActivationActivities)
+                {
+                    FlowActivationActivities.Clear();
+                    // NodeIncomingFlowsActivities.Clear();
+                }
+
+                if (!Skip)
+                {
+                    if (eventStatus != EventStatus.Failed)
+                    {
+                        StopProcessingActivity(context, eventStatus);
+                    }
                 }
             }
         }
@@ -85,7 +112,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 logger.LogTrace(
                     message: "Activity '{ActivityId}' processed event '{Event}' with result '{EventStatus}'",
                     $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                    context.ExecutionTrigger.GetType().GetEventName().ToShortName(),
+                    Event.GetName(context.ExecutionTrigger).ToShortName(),
                     eventStatus
                 );
             }
@@ -97,7 +124,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     args: new object[]
                     {
                         $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                        context.ExecutionTrigger.GetType().GetEventName().ToShortName()
+                        Event.GetName(context.ExecutionTrigger).ToShortName()
                     }
                 );
 
@@ -111,156 +138,363 @@ namespace Stateflows.Extensions.OpenTelemetry
                 EventProcessingActivity = null;
             }
         }
-        
+
         private Activity? InitializerActivity;
         private bool ImplicitInitialization;
-        public void BeforeActivityInitialize(IActivityInitializationContext context, bool implicitInitialization)
+        /// <inheritdoc/>
+        public async Task OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
-            ImplicitInitialization = implicitInitialization;
-            if (Skip && !ImplicitInitialization) return;
-            
-            if (EventProcessingActivity == null)
+            Before(context, implicitInitialization);
+            var result = await next();
+            After(context, implicitInitialization, result);
+
+            void Before(IActivityInitializationContext context, bool implicitInitialization)
             {
-                var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
-                if (header is ActivityHeader activityHeader)
+                ImplicitInitialization = implicitInitialization;
+                if (Skip && !ImplicitInitialization) return;
+
+                if (EventProcessingActivity == null)
                 {
-                    InitializerActivity = StateMachineTracer.Source.StartActivity(
-                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
-                        ActivityKind.Internal,
-                        parentContext: activityHeader.ActivityContext
+                    var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
+                    if (header is ActivityHeader activityHeader)
+                    {
+                        InitializerActivity = StateMachineTracer.Source.StartActivity(
+                            $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
+                            ActivityKind.Internal,
+                            parentContext: activityHeader.ActivityContext
+                        );
+                    }
+
+                    InitializerActivity ??= StateMachineTracer.Source.StartActivity(
+                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
                     );
+
+                    EventProcessingActivity = InitializerActivity;
                 }
-                
-                InitializerActivity ??= StateMachineTracer.Source.StartActivity(
-                    $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
-                );
-                
-                EventProcessingActivity = InitializerActivity;
-            }
-            else
-            {
-                var traceName = $"Activity initialized{(ImplicitInitialization ? " implicitly" : "")}";
-                InitializerActivity = StateMachineTracer.Source.StartActivity(traceName);
-            }
-        }
-
-        public void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
-        {
-            if (Skip && !implicitInitialization) return;
-
-            if (InitializerActivity != null)
-            {
-                if (!initialized)
+                else
                 {
-                    InitializerActivity.DisplayName =
-                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' not initialized";
+                    var traceName = $"Activity initialized{(ImplicitInitialization ? " implicitly" : "")}";
+                    InitializerActivity = StateMachineTracer.Source.StartActivity(traceName);
                 }
+            }
 
-                InitializerActivity.Stop();
+            void After(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
+            {
+                if (Skip && !implicitInitialization) return;
+
+                if (InitializerActivity != null)
+                {
+                    if (!initialized)
+                    {
+                        InitializerActivity.DisplayName =
+                            $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' not initialized";
+                    }
+
+                    InitializerActivity.Stop();
+                }
             }
         }
 
         private Activity? FinalizerActivity;
-        public void BeforeActivityFinalize(IActivityFinalizationContext context)
+        /// <inheritdoc/>
+        public async Task OnActivityFinalizeAsync(IActivityFinalizationContext context, Func<Task> next)
         {
-            if (Skip) return;
+            Before(context);
+            await next();
+            After(context);
 
-            if (EventProcessingActivity != null)
+            void Before(IActivityFinalizationContext context)
             {
-                FinalizerActivity = StateMachineTracer.Source.StartActivity(
-                    $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' finalized",
-                    ActivityKind.Internal,
-                    EventProcessingActivity.Context
+                if (Skip) return;
+
+                if (EventProcessingActivity != null)
+                {
+                    FinalizerActivity = StateMachineTracer.Source.StartActivity(
+                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' finalized",
+                        ActivityKind.Internal,
+                        EventProcessingActivity.Context
+                    );
+                }
+
+                FinalizerActivity ??= StateMachineTracer.Source.StartActivity(
+                    $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' finalized"
                 );
             }
 
-            FinalizerActivity ??= StateMachineTracer.Source.StartActivity(
-                $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' finalized"
-            );
-        }
-
-        public void AfterActivityFinalize(IActivityFinalizationContext context)
-        {
-            if (Skip) return;
-
-            if (FinalizerActivity != null)
+            void After(IActivityFinalizationContext context)
             {
-                FinalizerActivity.Stop();
-                FinalizerActivity = null;
+                if (Skip) return;
+
+                if (FinalizerActivity != null)
+                {
+                    FinalizerActivity.Stop();
+                    FinalizerActivity = null;
+                }
             }
         }
-        // public void BeforeActivityFinalize(IActivityFinalizationContext context)
-        // { }
-        //
-        // public void AfterActivityFinalize(IActivityFinalizationContext context)
-        // { }
 
         private readonly Dictionary<string, TracingActivity> InitializationActivities = new Dictionary<string, TracingActivity>();
-        public void BeforeNodeInitialize(IActivityNodeContext context)
+        /// <inheritdoc/>
+        public async Task OnNodeInitializeAsync(IActivityNodeContext context, Func<Task> next)
         {
-            var activity = StateMachineTracer.Source.StartActivity($"Node ({context.Node.Name.ToShortName()})");
-            if (activity == null) return;
-            lock (InitializationActivities)
-            {
-                InitializationActivities.TryAdd(context.Node.Name, activity);
-            }
-        }
+            Before(context);
+            await next();
+            After(context);
 
-        public void AfterNodeInitialize(IActivityNodeContext context)
-        {
-            lock (InitializationActivities)
+            void Before(IActivityNodeContext context)
             {
-                if (InitializationActivities.TryGetValue(context.Node.Name, out var activity))
+                var activity = StateMachineTracer.Source.StartActivity($"Node ({context.Node.Name.ToShortName()})");
+                if (activity == null) return;
+                lock (InitializationActivities)
                 {
-                    activity.DisplayName += " initialized";
-                    activity.Stop();
-                    InitializationActivities.Remove(context.Node.Name);
+                    InitializationActivities.TryAdd(context.Node.Name, activity);
+                }
+            }
+
+            void After(IActivityNodeContext context)
+            {
+                lock (InitializationActivities)
+                {
+                    if (InitializationActivities.TryGetValue(context.Node.Name, out var activity))
+                    {
+                        activity.DisplayName += " initialized";
+                        activity.Stop();
+                        InitializationActivities.Remove(context.Node.Name);
+                    }
                 }
             }
         }
 
         private readonly Dictionary<string, TracingActivity> FinalizationActivities = new Dictionary<string, TracingActivity>();
-        public void BeforeNodeFinalize(IActivityNodeContext context)
+        /// <inheritdoc/>
+        public async Task OnNodeFinalizeAsync(IActivityNodeContext context, Func<Task> next)
         {
-            TracingActivity? parentActivity = null;
-            lock (ExecutionActivities)
-            {
-                ExecutionActivities.TryGetValue(context.Node.Name, out parentActivity);
-            }
+            Before(context);
+            await next();
+            After(context);
 
-            var traceName = $"Node ({context.Node.Name.ToShortName()})";
-            var activity = parentActivity == null
-                ? StateMachineTracer.Source.StartActivity(traceName)
-                : StateMachineTracer.Source.StartActivity(
-                    traceName,
-                    ActivityKind.Internal,
-                    parentActivity.Context
-                );
-            
-            if (activity == null) return;
-            lock (FinalizationActivities)
+            void Before(IActivityNodeContext context)
             {
-                FinalizationActivities.TryAdd(context.Node.Name, activity);
-            }
-        }
-
-        public void AfterNodeFinalize(IActivityNodeContext context)
-        {
-            lock (FinalizationActivities)
-                if (FinalizationActivities.TryGetValue(context.Node.Name, out var activity))
+                TracingActivity? parentActivity = null;
+                lock (ExecutionActivities)
                 {
-                    activity.DisplayName += " finalized";
-                    activity.Stop();
-                    FinalizationActivities.Remove(context.Node.Name);
+                    ExecutionActivities.TryGetValue(context.Node.Name, out parentActivity);
                 }
+
+                var traceName = $"Node ({context.Node.Name.ToShortName()})";
+                var activity = parentActivity == null
+                    ? StateMachineTracer.Source.StartActivity(traceName)
+                    : StateMachineTracer.Source.StartActivity(
+                        traceName,
+                        ActivityKind.Internal,
+                        parentActivity.Context
+                    );
+
+                if (activity == null) return;
+                lock (FinalizationActivities)
+                {
+                    FinalizationActivities.TryAdd(context.Node.Name, activity);
+                }
+            }
+
+            void After(IActivityNodeContext context)
+            {
+                lock (FinalizationActivities)
+                    if (FinalizationActivities.TryGetValue(context.Node.Name, out var activity))
+                    {
+                        activity.DisplayName += " finalized";
+                        activity.Stop();
+                        FinalizationActivities.Remove(context.Node.Name);
+                    }
+            }
         }
 
         private readonly Dictionary<string, TracingActivity> ActivationActivities = new Dictionary<string, TracingActivity>();
         private readonly List<string> ActivatedEventAcceptNodes = new List<string>();
-        public void BeforeNodeActivate(IActivityNodeContext context, bool activated)
+        /// <inheritdoc/>
+        public async Task OnNodeActivateAsync(IActivityNodeContext context, bool activated, Func<Task> next)
         {
-            if (!activated)
+            Before(context, activated);
+            await next();
+            After(context);
+
+            void Before(IActivityNodeContext context, bool activated)
             {
+                if (!activated)
+                {
+                    TracingActivity? parentActivity = null;
+                    if (context.Node.TryGetCurrentFlow(out var flow))
+                    {
+                        var flowIdentifier = $"{flow.SourceNode.Name}-{flow.TokenType.GetTokenName()}->{flow.TargetNode.Name}";
+                        lock (FlowActivationActivities)
+                        {
+                            FlowActivationActivities.TryGetValue(flowIdentifier, out parentActivity);
+                        }
+                    }
+
+                    var traceName = $"Node ({context.Node.Name.ToShortName()})";
+                    var flowCount = context.Node.IncomingFlows.Count();
+                    var activatedFlowCount = context.Node.IncomingFlows.Count(f => f.Activated);
+                    traceName += $" omitted: {activatedFlowCount} of {flowCount} flows activated";
+
+                    var activity = parentActivity != null
+                        ? StateMachineTracer.Source.StartActivity(
+                            traceName,
+                            ActivityKind.Internal,
+                            parentActivity.Context
+                        )
+                        : StateMachineTracer.Source.StartActivity(traceName);
+
+                    if (activity == null) return;
+
+                    lock (ActivationActivities)
+                    {
+                        ActivationActivities.TryAdd(context.Node.Name, activity);
+                    }
+
+                    return;
+                }
+
+                if (
+                    context.Node.NodeType == NodeType.AcceptEventAction ||
+                    context.Node.NodeType == NodeType.TimeEventAction
+                )
+                {
+                    TracingActivity? parentActivity = null;
+                    if (context.Node.IncomingFlows.Any() &&
+                        context.Node.TryGetCurrentFlow(out var flow) &&
+                        flow.TargetNode.Name == context.Node.Name
+                    )
+                    {
+                        var flowIdentifier = $"{flow.SourceNode.Name}-{flow.TokenType.GetTokenName()}->{flow.TargetNode.Name}";
+                        lock (FlowActivationActivities)
+                        {
+                            FlowActivationActivities.TryGetValue(flowIdentifier, out parentActivity);
+                        }
+                    }
+
+                    if (parentActivity == null && context.Node.TryGetParentNode(out var parentNode))
+                    {
+                        lock (InitializationActivities)
+                        {
+                            InitializationActivities.TryGetValue(parentNode.Name, out parentActivity);
+                        }
+                    }
+
+                    // lock (ActivatedEventAcceptNodes)
+                    // {
+                    //     if (ActivatedEventAcceptNodes.Contains(context.Node.Name))
+                    //     {
+                            var traceName =
+                                $"Node ({context.Node.Name.ToShortName()}) activated, awaiting for incoming event";
+
+                            var activity = parentActivity != null
+                                ? StateMachineTracer.Source.StartActivity(
+                                    traceName,
+                                    ActivityKind.Internal,
+                                    parentActivity.Context
+                                )
+                                : StateMachineTracer.Source.StartActivity(traceName);
+
+                            if (activity == null) return;
+
+                            lock (ActivationActivities)
+                            {
+                                ActivationActivities.TryAdd(context.Node.Name, activity);
+                            }
+
+                            // activity?.Stop();
+
+                            // ActivatedEventAcceptNodes.Remove(context.Node.Name);
+                        }
+                    // }
+
+                    // lock (ActivatedEventAcceptNodes)
+                    // {
+                    //     ActivatedEventAcceptNodes.Add(context.Node.Name);
+                    // }
+                // }
+            }
+
+            void After(IActivityNodeContext context)
+            {
+                // TracingActivity? parentActivity = null;
+                // if (context.Node.TryGetCurrentFlow(out var flow) && flow.SourceNode.Name == context.Node.Name)
+                // {
+                //     var flowIdentifier = $"{flow.SourceNode.Name}-{flow.TokenType.GetTokenName()}->{flow.TargetNode.Name}";
+                //     lock (FlowActivationActivities)
+                //     {
+                //         FlowActivationActivities.TryGetValue(flowIdentifier, out parentActivity);
+                //     }
+                // }
+
+                // if (
+                //     context.Node.NodeType == NodeType.AcceptEventAction ||
+                //     context.Node.NodeType == NodeType.TimeEventAction
+                // )
+                // {
+                //     if (parentActivity == null && context.Node.TryGetParentNode(out var parentNode))
+                //     {
+                //         lock (InitializationActivities)
+                //         {
+                //             InitializationActivities.TryGetValue(parentNode.Name, out parentActivity);
+                //         }
+                //     }
+                //
+                //     lock (ActivatedEventAcceptNodes)
+                //     {
+                //         if (ActivatedEventAcceptNodes.Contains(context.Node.Name))
+                //         {
+                //             var traceName =
+                //                 $"Node ({context.Node.Name.ToShortName()}) activated, awaiting for incoming event";
+                //
+                //             var activity = parentActivity != null
+                //                 ? StateMachineTracer.Source.StartActivity(
+                //                     traceName,
+                //                     ActivityKind.Internal,
+                //                     parentActivity.Context
+                //                 )
+                //                 : StateMachineTracer.Source.StartActivity(traceName);
+                //
+                //             activity?.Stop();
+                //
+                //             ActivatedEventAcceptNodes.Remove(context.Node.Name);
+                //         }
+                //     }
+                // }
+
+                lock (ActivationActivities)
+                {
+                    if (ActivationActivities.TryGetValue(context.Node.Name, out var activity))
+                    {
+                        activity.Stop();
+                        ActivationActivities.Remove(context.Node.Name);
+                    }
+                }
+            }
+        }
+
+        private readonly Dictionary<string, TracingActivity> ExecutionActivities = new Dictionary<string, TracingActivity>();
+        /// <inheritdoc/>
+        public async Task OnNodeExecuteAsync(IActivityNodeContext context, Func<Task> next)
+        {
+            Before(context);
+            await next();
+            After(context);
+
+            void Before(IActivityNodeContext context)
+            {
+                if (context.Node.NodeType == NodeType.AcceptEventAction)
+                {
+                    lock (ActivatedEventAcceptNodes)
+                    {
+                        if (ActivatedEventAcceptNodes.Contains(context.Node.Name))
+                        {
+                            ActivatedEventAcceptNodes.Remove(context.Node.Name);
+                        }
+                    }
+                }
+
                 TracingActivity? parentActivity = null;
                 if (context.Node.TryGetCurrentFlow(out var flow))
                 {
@@ -271,11 +505,36 @@ namespace Stateflows.Extensions.OpenTelemetry
                     }
                 }
 
+                if (parentActivity == null &&
+                    (
+                        context.Node.NodeType == NodeType.Initial ||
+                        context.Node.NodeType == NodeType.Input
+                    ) &&
+                    context.Node.TryGetParentNode(out var parentNode)
+                   )
+                {
+                    lock (InitializationActivities)
+                    {
+                        InitializationActivities.TryGetValue(parentNode.Name, out parentActivity);
+                    }
+                }
+
+                if (parentActivity == null &&
+                    (
+                        context.Node.NodeType == NodeType.AcceptEventAction ||
+                        context.Node.NodeType == NodeType.TimeEventAction
+                    ) &&
+                    context.Node.TryGetParentNode(out parentNode)
+                   )
+                {
+                    lock (ExecutionActivities)
+                    {
+                        ExecutionActivities.TryGetValue(parentNode.Name, out parentActivity);
+                    }
+                }
+
                 var traceName = $"Node ({context.Node.Name.ToShortName()})";
-                var flowCount = context.Node.IncomingFlows.Count();
-                var activatedFlowCount = context.Node.IncomingFlows.Count(f => f.Activated);
-                traceName += $" omitted: {activatedFlowCount} of {flowCount} flows activated";
-            
+
                 var activity = parentActivity != null
                     ? StateMachineTracer.Source.StartActivity(
                         traceName,
@@ -283,315 +542,130 @@ namespace Stateflows.Extensions.OpenTelemetry
                         parentActivity.Context
                     )
                     : StateMachineTracer.Source.StartActivity(traceName);
-            
+
                 if (activity == null) return;
-
-                lock (ActivationActivities)
+                lock (ExecutionActivities)
                 {
-                    ActivationActivities.TryAdd(context.Node.Name, activity);
-                }
-
-                return;
-            }
-            
-            if (
-                context.Node.NodeType == NodeType.AcceptEventAction ||
-                context.Node.NodeType == NodeType.TimeEventAction
-            )
-            {
-                TracingActivity? parentActivity = null;
-                if (context.Node.IncomingFlows.Any() &&
-                    context.Node.TryGetCurrentFlow(out var flow) && 
-                    flow.TargetNode.Name == context.Node.Name
-                )
-                {
-                    var flowIdentifier = $"{flow.SourceNode.Name}-{flow.TokenType.GetTokenName()}->{flow.TargetNode.Name}";
-                    lock (FlowActivationActivities)
-                    {
-                        FlowActivationActivities.TryGetValue(flowIdentifier, out parentActivity);
-                    }
-                }
-                
-                if (parentActivity == null && context.Node.TryGetParentNode(out var parentNode))
-                {
-                    lock (InitializationActivities)
-                    {
-                        InitializationActivities.TryGetValue(parentNode.Name, out parentActivity);
-                    }
-                }
-                
-                // lock (ActivatedEventAcceptNodes)
-                // {
-                //     if (ActivatedEventAcceptNodes.Contains(context.Node.Name))
-                //     {
-                        var traceName =
-                            $"Node ({context.Node.Name.ToShortName()}) activated, awaiting for incoming event";
-            
-                        var activity = parentActivity != null
-                            ? StateMachineTracer.Source.StartActivity(
-                                traceName,
-                                ActivityKind.Internal,
-                                parentActivity.Context
-                            )
-                            : StateMachineTracer.Source.StartActivity(traceName);
-            
-                        if (activity == null) return;
-
-                        lock (ActivationActivities)
-                        {
-                            ActivationActivities.TryAdd(context.Node.Name, activity);
-                        }
-            
-                        // activity?.Stop();
-            
-                        // ActivatedEventAcceptNodes.Remove(context.Node.Name);
-                    }
-                // }
-                
-                // lock (ActivatedEventAcceptNodes)
-                // {
-                //     ActivatedEventAcceptNodes.Add(context.Node.Name);
-                // }
-            // }
-        }
-
-        public void AfterNodeActivate(IActivityNodeContext context)
-        {
-            // TracingActivity? parentActivity = null;
-            // if (context.Node.TryGetCurrentFlow(out var flow) && flow.SourceNode.Name == context.Node.Name)
-            // {
-            //     var flowIdentifier = $"{flow.SourceNode.Name}-{flow.TokenType.GetTokenName()}->{flow.TargetNode.Name}";
-            //     lock (FlowActivationActivities)
-            //     {
-            //         FlowActivationActivities.TryGetValue(flowIdentifier, out parentActivity);
-            //     }
-            // }
-            
-            // if (
-            //     context.Node.NodeType == NodeType.AcceptEventAction ||
-            //     context.Node.NodeType == NodeType.TimeEventAction
-            // )
-            // {
-            //     if (parentActivity == null && context.Node.TryGetParentNode(out var parentNode))
-            //     {
-            //         lock (InitializationActivities)
-            //         {
-            //             InitializationActivities.TryGetValue(parentNode.Name, out parentActivity);
-            //         }
-            //     }
-            //     
-            //     lock (ActivatedEventAcceptNodes)
-            //     {
-            //         if (ActivatedEventAcceptNodes.Contains(context.Node.Name))
-            //         {
-            //             var traceName =
-            //                 $"Node ({context.Node.Name.ToShortName()}) activated, awaiting for incoming event";
-            //
-            //             var activity = parentActivity != null
-            //                 ? StateMachineTracer.Source.StartActivity(
-            //                     traceName,
-            //                     ActivityKind.Internal,
-            //                     parentActivity.Context
-            //                 )
-            //                 : StateMachineTracer.Source.StartActivity(traceName);
-            //
-            //             activity?.Stop();
-            //
-            //             ActivatedEventAcceptNodes.Remove(context.Node.Name);
-            //         }
-            //     }
-            // }
-
-            lock (ActivationActivities)
-            {
-                if (ActivationActivities.TryGetValue(context.Node.Name, out var activity))
-                {
-                    activity.Stop();
-                    ActivationActivities.Remove(context.Node.Name);
-                }
-            }
-        }
-
-        private readonly Dictionary<string, TracingActivity> ExecutionActivities = new Dictionary<string, TracingActivity>();
-        public void BeforeNodeExecute(IActivityNodeContext context)
-        {
-            if (context.Node.NodeType == NodeType.AcceptEventAction)
-            {
-                lock (ActivatedEventAcceptNodes)
-                {
-                    if (ActivatedEventAcceptNodes.Contains(context.Node.Name))
-                    {
-                        ActivatedEventAcceptNodes.Remove(context.Node.Name);
-                    }
+                    ExecutionActivities.TryAdd(context.Node.Name, activity);
                 }
             }
 
-            TracingActivity? parentActivity = null;
-            if (context.Node.TryGetCurrentFlow(out var flow))
-            {
-                var flowIdentifier = $"{flow.SourceNode.Name}-{flow.TokenType.GetTokenName()}->{flow.TargetNode.Name}";
-                lock (FlowActivationActivities)
-                {
-                    FlowActivationActivities.TryGetValue(flowIdentifier, out parentActivity);
-                }
-            }
-
-            if (parentActivity == null &&
-                (
-                    context.Node.NodeType == NodeType.Initial ||
-                    context.Node.NodeType == NodeType.Input
-                ) &&
-                context.Node.TryGetParentNode(out var parentNode)
-               )
-            {
-                lock (InitializationActivities)
-                {
-                    InitializationActivities.TryGetValue(parentNode.Name, out parentActivity);
-                }
-            }
-
-            if (parentActivity == null &&
-                (
-                    context.Node.NodeType == NodeType.AcceptEventAction ||
-                    context.Node.NodeType == NodeType.TimeEventAction
-                ) &&
-                context.Node.TryGetParentNode(out parentNode)
-               )
+            void After(IActivityNodeContext context)
             {
                 lock (ExecutionActivities)
                 {
-                    ExecutionActivities.TryGetValue(parentNode.Name, out parentActivity);
-                }
-            }
-
-            var traceName = $"Node ({context.Node.Name.ToShortName()})";
-            
-            var activity = parentActivity != null
-                ? StateMachineTracer.Source.StartActivity(
-                    traceName,
-                    ActivityKind.Internal,
-                    parentActivity.Context
-                )
-                : StateMachineTracer.Source.StartActivity(traceName);
-            
-            if (activity == null) return;
-            lock (ExecutionActivities)
-            {
-                ExecutionActivities.TryAdd(context.Node.Name, activity);
-            }
-        }
-
-        public void AfterNodeExecute(IActivityNodeContext context)
-        {
-            lock (ExecutionActivities)
-            {
-                if (ExecutionActivities.TryGetValue(context.Node.Name, out var activity))
-                {
-                    if (!activity.DisplayName.EndsWith(" executed"))
+                    if (ExecutionActivities.TryGetValue(context.Node.Name, out var activity))
                     {
-                        activity.DisplayName += " executed";
-                    }
+                        if (!activity.DisplayName.EndsWith(" executed"))
+                        {
+                            activity.DisplayName += " executed";
+                        }
 
-                    activity.Stop();
+                        activity.Stop();
+                    }
                 }
             }
         }
 
         private readonly Dictionary<string, TracingActivity> FlowActivationActivities = new Dictionary<string, TracingActivity>();
-        public void BeforeFlowActivate(IActivityBeforeFlowContext context)
+        /// <inheritdoc/>
+        public async Task OnFlowActivateAsync(IActivityBeforeFlowContext context, Func<Task<IActivityAfterFlowContext>> next)
         {
-            TracingActivity parentActivity;
-            lock (ExecutionActivities)
-            {
-                ExecutionActivities.TryGetValue(context.SourceNode.Name, out parentActivity);
-            }
+            Before(context);
+            var result = await next();
+            After(result, result.Activated);
 
-            if (parentActivity == null)
+            void Before(IActivityBeforeFlowContext context)
             {
-                lock (ActivationActivities)
+                TracingActivity parentActivity;
+                lock (ExecutionActivities)
                 {
-                    ActivationActivities.TryGetValue(context.SourceNode.Name, out parentActivity);
+                    ExecutionActivities.TryGetValue(context.SourceNode.Name, out parentActivity);
+                }
+
+                if (parentActivity == null)
+                {
+                    lock (ActivationActivities)
+                    {
+                        ActivationActivities.TryGetValue(context.SourceNode.Name, out parentActivity);
+                    }
+                }
+
+                if (parentActivity != null)
+                {
+                    var tokenName = context.TokenType.GetTokenName();
+                    var flowIdentifier = $"{context.SourceNode.Name}-{tokenName}->{context.TargetNode.Name}";
+                    tokenName = tokenName.ToShortName();
+                    var targetTokenName = context.TargetTokenType.GetTokenName().ToShortName();
+
+                    var activity = StateMachineTracer.Source.StartActivity(
+                        context.TokenType == typeof(ControlToken)
+                            ? $"Control flow ({context.SourceNode.Name.ToShortName()}) 🡢 ({context.TargetNode.Name.ToShortName()})"
+                            : tokenName == targetTokenName
+                                ? $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})"
+                                : $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName}/{targetTokenName} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})",
+                        ActivityKind.Internal,
+                        parentActivity!.Context
+                    );
+
+                    if (activity == null) return;
+
+                    lock (FlowActivationActivities)
+                    {
+                        FlowActivationActivities.TryAdd(flowIdentifier, activity);
+                    }
                 }
             }
 
-            if (parentActivity != null)
+            void After(IActivityAfterFlowContext context, bool activated)
             {
                 var tokenName = context.TokenType.GetTokenName();
                 var flowIdentifier = $"{context.SourceNode.Name}-{tokenName}->{context.TargetNode.Name}";
-                tokenName = tokenName.ToShortName();
-                var targetTokenName = context.TargetTokenType.GetTokenName().ToShortName();
-
-                var activity = StateMachineTracer.Source.StartActivity(
-                    context.TokenType == typeof(ControlToken)
-                        ? $"Control flow ({context.SourceNode.Name.ToShortName()}) 🡢 ({context.TargetNode.Name.ToShortName()})"
-                        : tokenName == targetTokenName
-                            ? $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})"
-                            : $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName}/{targetTokenName} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})",
-                    ActivityKind.Internal,
-                    parentActivity!.Context
-                );
-
-                if (activity == null) return;
-
                 lock (FlowActivationActivities)
-                {
-                    FlowActivationActivities.TryAdd(flowIdentifier, activity);
-                }
+                    if (FlowActivationActivities.TryGetValue(flowIdentifier, out var activity))
+                    {
+                        var displayName = activity.DisplayName;
+                        activity.Stop();
+                        if (!activated)
+                        {
+                            if (context.Weight > 1)
+                            {
+                                displayName += $": not activated (offered {context.TokenCount} of {context.Weight})";
+                            }
+                            else
+                            {
+                                displayName += $": not activated (offered {context.TokenCount})";
+                            }
+                        }
+
+                        if (context.SourceTokenCount != context.TargetTokenCount)
+                        {
+                            displayName = displayName.Replace(
+                                $"(passed {context.SourceTokenCount})🡢",
+                                $"(passed {context.TargetTokenCount} of {context.SourceTokenCount})🡢"
+                            );
+                        }
+
+                        activity.DisplayName = displayName;
+
+                        // if (!NodeIncomingFlowsActivities.TryGetValue(context.TargetNode.Name, out var flows))
+                        // {
+                        //     flows = new List<TracingActivity>();
+                        //     NodeIncomingFlowsActivities.Add(context.TargetNode.Name, flows);
+                        // }
+
+                        // flows.Add(activity);
+                    }
             }
         }
 
-        public void AfterFlowActivate(IActivityAfterFlowContext context, bool activated)
-        {
-            var tokenName = context.TokenType.GetTokenName();
-            var flowIdentifier = $"{context.SourceNode.Name}-{tokenName}->{context.TargetNode.Name}";
-            lock (FlowActivationActivities)
-                if (FlowActivationActivities.TryGetValue(flowIdentifier, out var activity))
-                {
-                    var displayName = activity.DisplayName;
-                    activity.Stop();
-                    if (!activated)
-                    {
-                        if (context.Weight > 1)
-                        {
-                            displayName += $": not activated (offered {context.TokenCount} of {context.Weight})";
-                        }
-                        else
-                        {
-                            displayName += $": not activated (offered {context.TokenCount})";
-                        }
-                    }
+        /// <inheritdoc/>
+        public Task OnFlowGuardAsync<TToken>(IGuardContext<TToken> context, Func<Task<bool>> next)
+            => next();
 
-                    if (context.SourceTokenCount != context.TargetTokenCount)
-                    {
-                        displayName = displayName.Replace(
-                            $"(passed {context.SourceTokenCount})🡢",
-                            $"(passed {context.TargetTokenCount} of {context.SourceTokenCount})🡢"
-                        );
-                    }
-
-                    activity.DisplayName = displayName;
-
-                    // if (!NodeIncomingFlowsActivities.TryGetValue(context.TargetNode.Name, out var flows))
-                    // {
-                    //     flows = new List<TracingActivity>();
-                    //     NodeIncomingFlowsActivities.Add(context.TargetNode.Name, flows);
-                    // }
-
-                    // flows.Add(activity);
-                }
-        }
-
-        public void BeforeFlowGuard<TToken>(IGuardContext<TToken> context)
-        { }
-
-        public void AfterFlowGuard<TToken>(IGuardContext<TToken> context, bool guardResult)
-        { }
-
-        public void BeforeFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken> context)
-        { }
-
-        public void AfterFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken, TTransformedToken> context)
-        { }
+        /// <inheritdoc/>
+        public Task OnFlowTransformAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Func<Task<TTransformedToken>> next)
+            => next();
 
         // public void AfterHydrate(IActivityActionContext context)
         // { }
@@ -599,9 +673,10 @@ namespace Stateflows.Extensions.OpenTelemetry
         // public void BeforeDehydrate(IActivityActionContext context)
         // { }
 
-        public bool OnActivityInitializationException(IActivityInitializationContext context, Exception exception)
+        /// <inheritdoc/>
+        public Task<bool> OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
         {
-            if (Skip && !ImplicitInitialization) return false;
+            if (Skip && !ImplicitInitialization) return Task.FromResult(false);
 
             if (InitializerActivity != null)
             {
@@ -613,25 +688,31 @@ namespace Stateflows.Extensions.OpenTelemetry
             StopProcessingActivity(context, EventStatus.Failed, exception);
             EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public bool OnActivityFinalizationException(IActivityFinalizationContext context, Exception exception)
-            => false;
+        /// <inheritdoc/>
+        public Task<bool> OnActivityFinalizationExceptionAsync(IActivityFinalizationContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public bool OnNodeInitializationException(IActivityNodeContext context, Exception exception)
-            => false;
+        /// <inheritdoc/>
+        public Task<bool> OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public bool OnNodeFinalizationException(IActivityNodeContext context, Exception exception)
-            => false;
+        /// <inheritdoc/>
+        public Task<bool> OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public bool OnNodeExecutionException(IActivityNodeContext context, Exception exception)
-            => false;
+        /// <inheritdoc/>
+        public Task<bool> OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public bool OnFlowGuardException<TToken>(IGuardContext<TToken> context, Exception exception)
-            => false;
+        /// <inheritdoc/>
+        public Task<bool> OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
+            => Task.FromResult(false);
 
-        public bool OnFlowTransformationException<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
-            => false;
+        /// <inheritdoc/>
+        public Task<bool> OnFlowTransformationExceptionAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
+            => Task.FromResult(false);
     }
 }

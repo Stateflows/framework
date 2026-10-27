@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Stateflows.Actions.Context.Interfaces;
 using Stateflows.Actions.Engine;
-using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Utilities;

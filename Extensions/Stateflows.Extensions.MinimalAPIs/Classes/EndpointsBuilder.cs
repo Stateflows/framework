@@ -28,7 +28,8 @@ internal class EndpointsBuilder(
             parameter.ParameterType == typeof(IStateEndpointContext) ||
             parameter.ParameterType == typeof(IStateMachineEndpointContext) ||
             parameter.ParameterType == typeof(IActivityNodeEndpointContext) ||
-            parameter.ParameterType == typeof(IActivityEndpointContext)
+            parameter.ParameterType == typeof(IActivityEndpointContext) ||
+                parameter.ParameterType == typeof(IActionEndpointContext)
         );
 
         if (!endpointEnabled)
@@ -97,7 +98,8 @@ internal class EndpointsBuilder(
                 parameter.ParameterType == typeof(IStateEndpointContext) ||
                 parameter.ParameterType == typeof(IStateMachineEndpointContext) ||
                 parameter.ParameterType == typeof(IActivityNodeEndpointContext) ||
-                parameter.ParameterType == typeof(IActivityEndpointContext)
+                parameter.ParameterType == typeof(IActivityEndpointContext) ||
+                parameter.ParameterType == typeof(IActionEndpointContext)
             );
 
             if (!endpointEnabled)

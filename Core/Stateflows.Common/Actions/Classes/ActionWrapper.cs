@@ -3,23 +3,17 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Actions;
-using Stateflows.Activities;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Actions.Classes
 {
-    internal class ActionWrapper : IActionBehavior, IInjectionScope
+    internal class ActionWrapper(IBehavior consumer) : IActionBehavior, IInjectionScope
     {
         BehaviorId IBehavior.Id => Behavior.Id;
 
         public IServiceProvider ServiceProvider => (Behavior as IInjectionScope)?.ServiceProvider;
         
-        private IBehavior Behavior { get; }
-
-        public ActionWrapper(IBehavior consumer)
-        {
-            Behavior = consumer;
-        }
+        private IBehavior Behavior { get; } = consumer;
 
         public Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction, IDictionary<string, EventHeader> headers = null)
         {
@@ -56,11 +50,11 @@ namespace Stateflows.Common.Actions.Classes
             DateTime? lastNotificationsCheck = null)
             => Behavior.GetNotificationsAsync(notificationNames, lastNotificationsCheck);
 
-        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null)
-            => Behavior.WatchAsync(handler, replayNotificationsSince);
+        public Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificationsSince = null)
+            => Behavior.WatchAsync(asyncHandler, replayNotificationsSince);
 
-        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificationsSince = null)
-            => Behavior.WatchAsync(notificationNames, handler, replayNotificationsSince);
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificationsSince = null)
+            => Behavior.WatchAsync(notificationNames, asyncHandler, replayNotificationsSince);
 
         public void Dispose()
         {

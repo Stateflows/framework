@@ -1,9 +1,11 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -11,8 +13,9 @@ namespace Stateflows.StateMachines.Engine
     {
         private readonly List<Vertex> ExitedStates = [];
 
-        public override void AfterStateExit(IStateActionContext context)
+        public override async Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
         {
+            await next();
             var vertex = ((StateActionContext)context).Vertex;
 
             if (!(vertex.ParentRegion?.IsHistoryEnabled ?? false))
@@ -21,8 +24,9 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        public override void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
+        public override async Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
         {
+            await next();
             if (context.Target != null)
             {
                 foreach (var vertexName in ExitedStates.Select(v => v.Name))
@@ -31,7 +35,7 @@ namespace Stateflows.StateMachines.Engine
                     {
                         if (context.TryGetStateContext(vertexName, out var stateContext))
                         {
-                            stateContext.Values.ClearAsync().GetAwaiter().GetResult();
+                            context.Behavior.GetExecutor().AddPendingTask(stateContext.Values.ClearAsync());
                         }
                     }
                 }

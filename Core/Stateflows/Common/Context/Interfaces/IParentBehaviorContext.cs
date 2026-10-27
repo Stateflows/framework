@@ -2,6 +2,7 @@
 
 namespace Stateflows.Common
 {
+    /// <summary>Provides messaging and entity operations for the parent containing the current behavior.</summary>
     public interface IParentBehaviorContext :
         ISends<IParentBehaviorContext>,
         IPublishes<IParentBehaviorContext>,
@@ -9,7 +10,7 @@ namespace Stateflows.Common
         IEntityOperations<IParentBehaviorContext>
     {
         /// <summary>
-        /// Represents identifier of parent behavior
+        /// Identifies the parent behavior instance.
         /// </summary>
         BehaviorId Id { get; }
     }

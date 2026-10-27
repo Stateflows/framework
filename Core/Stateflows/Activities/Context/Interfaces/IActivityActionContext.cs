@@ -2,6 +2,8 @@
 
 namespace Stateflows.Activities;
 
+/// <summary>Provides behavior-level capabilities to an activity action.</summary>
+/// <remarks>The context exposes synchronization and a snapshot of the activity's currently active node tree.</remarks>
 public interface IActivityActionContext : IBehaviorActionContext
 {
     /// <summary>

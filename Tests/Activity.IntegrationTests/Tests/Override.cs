@@ -328,10 +328,7 @@ namespace Activity.IntegrationTests.Tests
                     .AddActivity("overrideJoin", b => b
                         .UseActivity<ActivityWithJoinFork>(b => b
                             .UseJoin(b => b
-                                .AddControlFlow("preFinal")
-                            )
-                            .AddAction("preFinal", async c => { }, b => b
-                                .AddControlFlow("final")
+                                .UseControlFlow("final", _ => { })
                             )
                         )
                     )

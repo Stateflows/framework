@@ -2,14 +2,9 @@
 
 namespace Stateflows.Common.Actions.Classes
 {
-    internal class ActionLocator : IActionLocator
+    internal class ActionLocator(IBehaviorLocator locator) : IActionLocator
     {
-        public IBehaviorLocator Locator { get; }
-
-        public ActionLocator(IBehaviorLocator locator)
-        {
-            Locator = locator;
-        }
+        public IBehaviorLocator Locator { get; } = locator;
 
         public bool TryLocateAction(ActionId id, out IActionBehavior activity)
             => Locator.TryLocateAction(id, out activity);

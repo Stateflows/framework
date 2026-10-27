@@ -7,10 +7,13 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
+    /// <summary>Builds deferred transition effects that mutate one machine-global value.</summary>
     public struct TransitionEffectGlobalValueExpression
     {
         private readonly string ValueName;
 
+        /// <summary>Selects the machine-global value for subsequent mutation callbacks.</summary>
+        /// <param name="valueName">The machine-global context value key.</param>
         public TransitionEffectGlobalValueExpression(string valueName)
         {
             ValueName = valueName;
@@ -55,10 +58,13 @@ namespace Stateflows.StateMachines
         }
     }
 
+    /// <summary>Builds transition effects addressing machine-global values under a dot-separated prefix.</summary>
     public struct TransitionEffectGlobalNamespaceExpression
     {
         private readonly string NamespaceName;
 
+        /// <summary>Selects the machine-global namespace prefix.</summary>
+        /// <param name="namespaceName">The prefix to which a dot and value name are appended.</param>
         public TransitionEffectGlobalNamespaceExpression(string namespaceName)
         {
             NamespaceName = namespaceName;
@@ -89,11 +95,16 @@ namespace Stateflows.StateMachines
         }
     }
 
+    /// <summary>Builds effects that mutate a value in the transition's source or target state.</summary>
+    /// <remarks>Target expressions require a transition with a target; internal transitions do not provide one.</remarks>
     public struct TransitionEffectStateValueExpression
     {
         private readonly string ValueName;
         private readonly bool IsSource;
 
+        /// <summary>Selects a state-local value for deferred transition effects.</summary>
+        /// <param name="valueName">The selected state's context value key.</param>
+        /// <param name="isSource">True to use the source state; false to use the target state.</param>
         public TransitionEffectStateValueExpression(string valueName, bool isSource)
         {
             ValueName = valueName;
@@ -156,11 +167,16 @@ namespace Stateflows.StateMachines
         }
     }
 
+    /// <summary>Builds effects addressing a source or target state's values under a namespace prefix.</summary>
+    /// <remarks>Target expressions require a targeted transition, not an internal transition.</remarks>
     public struct TransitionEffectStateNamespaceExpression
     {
         private readonly string NamespaceName;
         private readonly bool IsSource;
 
+        /// <summary>Selects a namespace in a transition endpoint's state-local values.</summary>
+        /// <param name="namespaceName">The prefix to which a dot and value name are appended.</param>
+        /// <param name="isSource">True to select source values; false to select target values.</param>
         public TransitionEffectStateNamespaceExpression(string namespaceName, bool isSource)
         {
             NamespaceName = namespaceName;
@@ -199,33 +215,40 @@ namespace Stateflows.StateMachines
         }
     }
 
+    /// <summary>Selects machine-global values and namespaces for transition-effect expressions.</summary>
     public struct TransitionEffectGlobalSelector
     {
         /// <summary>
-        /// Provides declarative effects. based on the global namespace's value with given name.
+        /// Selects a machine-global value for deferred transition effects.
         /// </summary>
-        /// <param name="valueName">Name of the global namespace's value used in guard.</param>
+        /// <param name="valueName">The machine-global context value key.</param>
         /// <returns>Declarative effects.</returns>
         public TransitionEffectGlobalValueExpression Value(string valueName)
             => new TransitionEffectGlobalValueExpression(valueName);
         
+        /// <summary>Selects a machine-global namespace for deferred transition effects.</summary>
+        /// <param name="namespaceName">The dot-separated context value prefix.</param>
+        /// <returns>An expression addressing values beneath that prefix.</returns>
         public TransitionEffectGlobalNamespaceExpression Namespace(string namespaceName)
             => new TransitionEffectGlobalNamespaceExpression(namespaceName);
     }
 
+    /// <summary>Selects values and namespaces on one transition endpoint for effect expressions.</summary>
     public struct TransitionEffectStateSelector
     {
         private readonly bool IsSource;
 
+        /// <summary>Selects which transition endpoint's value store is used.</summary>
+        /// <param name="isSource">True for source-state values; false for target-state values.</param>
         public TransitionEffectStateSelector(bool isSource)
         {
             IsSource = isSource;
         }
 
         /// <summary>
-        /// Provides declarative effects. based on the state namespace's value with given name.
+        /// Selects a value from the chosen transition endpoint for deferred effects.
         /// </summary>
-        /// <param name="valueName">Name of the state namespace's value used in guard.</param>
+        /// <param name="valueName">The selected state's context value key.</param>
         /// <returns>Declarative effects.</returns>
         public TransitionEffectStateValueExpression Value(string valueName)
         {
@@ -233,6 +256,9 @@ namespace Stateflows.StateMachines
             return new TransitionEffectStateValueExpression(valueName, self.IsSource);
         }
         
+        /// <summary>Selects a namespace from the chosen transition endpoint for deferred effects.</summary>
+        /// <param name="namespaceName">The dot-separated state-value prefix.</param>
+        /// <returns>An expression addressing state values beneath that prefix.</returns>
         public TransitionEffectStateNamespaceExpression Namespace(string namespaceName)
         {
             var self = this;
@@ -240,11 +266,15 @@ namespace Stateflows.StateMachines
         }
     }
     
+    /// <summary>Provides reusable transition effects and deferred global, source-state, and target-state value mutations.</summary>
     public static class Effects
     {
         /// <summary>
         /// Declares an empty effect that does nothing.
         /// </summary>
+        /// <typeparam name="TEvent">The trigger payload type.</typeparam>
+        /// <param name="_">The transition context, intentionally unused.</param>
+        /// <returns>An already completed task.</returns>
         public static Task Empty<TEvent>(ITransitionContext<TEvent> _)
             => Task.CompletedTask;
 

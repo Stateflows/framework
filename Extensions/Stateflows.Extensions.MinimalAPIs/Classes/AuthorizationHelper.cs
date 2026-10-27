@@ -1,16 +1,26 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
+/// <summary>Provides authorization-attribute evaluation for HTTP integration.</summary>
 public static class AuthorizationHelper
 {
+    /// <summary>Checks authentication, a named policy, any specified role, and specified authentication schemes.</summary>
+    /// <param name="attribute">Authorization requirements to evaluate.</param>
+    /// <param name="user">Principal making the request.</param>
+    /// <param name="authorizationService">Service used to evaluate a named policy.</param>
+    /// <returns>True if the principal is authenticated and all specified requirement categories pass.</returns>
+    /// <remarks>This helper evaluates one attribute; it does not combine endpoint policies or issue HTTP challenges.</remarks>
     public static async Task<bool> IsAuthorizedAsync(
         AuthorizeAttribute attribute,
         ClaimsPrincipal user,
         IAuthorizationService authorizationService)
     {
-        if (!user.Identity?.IsAuthenticated ?? false)
+        if (user.Identity?.IsAuthenticated != true)
         {
             return false;
         }
@@ -43,5 +53,29 @@ public static class AuthorizationHelper
 
         // All checks passed
         return true;
+    }
+
+    internal static async Task<(bool Success, IResult? Result)> AuthorizeAsync(
+        IEnumerable<IAuthorizeData> attributes, IServiceProvider services, HttpContext context)
+    {
+        var policyProvider = services.GetRequiredService<IAuthorizationPolicyProvider>();
+        var policy = await AuthorizationPolicy.CombineAsync(policyProvider, attributes);
+        if (policy == null)
+        {
+            return (true, null);
+        }
+
+        var evaluator = services.GetRequiredService<IPolicyEvaluator>();
+        var authentication = await evaluator.AuthenticateAsync(policy, context);
+        var authorization = await evaluator.AuthorizeAsync(policy, authentication, context, context);
+        if (authorization.Succeeded)
+        {
+            return (true, null);
+        }
+
+        var schemes = policy.AuthenticationSchemes.ToArray();
+        return (false, authorization.Challenged
+            ? Results.Challenge(authenticationSchemes: schemes)
+            : Results.Forbid(authenticationSchemes: schemes));
     }
 }

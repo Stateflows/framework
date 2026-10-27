@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Stateflows.Common;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -19,6 +20,7 @@ internal class EndpointConfigurationRule
     public string? BehaviorType { get; init; }
     public BehaviorClass? BehaviorClass { get; init; }
     public Type? Event { get; init; }
+    public string? EventName { get; init; }
     public bool? IsDefaultInstance { get; init; } = null;
 
     public bool Disable { get; init; } = false;
@@ -40,7 +42,7 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
                 {
                     if (rule.IsDefaultInstance == null || rule.IsDefaultInstance == isDefaultInstance)
                     {
-                        if (rule.Event == null || rule.Event == typeof(TEvent))
+                        if (MatchesEvent(rule, typeof(TEvent), Event<TEvent>.Name))
                         {
                             if (rule.Disable)
                             {
@@ -68,13 +70,51 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
                 {
                     if (rule.IsDefaultInstance == null || rule.IsDefaultInstance == isDefaultInstance)
                     {
-                        if (rule.Event == null || rule.Event == typeof(TEvent))
+                        if (MatchesEvent(rule, typeof(TEvent), Event<TEvent>.Name))
                         {
                             rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
                         }
                     }
                 }
             }
+        }
+    }
+
+    private static bool MatchesEvent(EndpointConfigurationRule rule, Type? eventType, string eventName)
+        => (rule.Event == null || rule.Event == eventType) &&
+           (rule.EventName == null || rule.EventName == eventName);
+
+    private IEnumerable<EndpointConfigurationRule> GetStructuralEventRules(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance)
+        => Rules.Where(rule =>
+            rule.Kind is EndpointKind.Event or EndpointKind.All &&
+            (rule.BehaviorType == null || rule.BehaviorType == behaviorClass.Type) &&
+            (rule.BehaviorClass == null || rule.BehaviorClass == behaviorClass) &&
+            (rule.IsDefaultInstance == null || rule.IsDefaultInstance == isDefaultInstance) &&
+            rule.Event == null &&
+            MatchesEvent(rule, null, eventDefinition.Name)
+        );
+
+    public override bool BeforeStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
+    {
+        foreach (var rule in GetStructuralEventRules(behaviorClass, eventDefinition, isDefaultInstance))
+        {
+            if (rule.Disable)
+            {
+                return false;
+            }
+
+            route = rule.RouteUpdater?.Invoke(route) ?? route;
+        }
+
+        return true;
+    }
+
+    public override void AfterStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, string method, string route,
+        IEndpointConventionBuilder routeHandlerBuilder)
+    {
+        foreach (var rule in GetStructuralEventRules(behaviorClass, eventDefinition, isDefaultInstance))
+        {
+            rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
         }
     }
 

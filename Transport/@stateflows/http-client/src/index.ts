@@ -1,1 +1,0 @@
-export { UseHttp } from "./classes/http-transport-factory";

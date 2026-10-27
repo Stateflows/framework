@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
@@ -13,6 +10,9 @@ namespace Stateflows.StateMachines.Models
 {
     internal class Vertex
     {
+        internal string? SourcePath { get; set; }
+        internal Dictionary<string, string> DeferralPaths { get; } = [];
+
         public Graph Graph { get; set; }
         public Region ParentRegion { get; set; }
         public string Name { get; set; }
@@ -36,7 +36,9 @@ namespace Stateflows.StateMachines.Models
         public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElse);
         public IEnumerable<Edge> IncomingEdges => Graph.AllEdges.Where(edge => edge.Target == this);
         public Dictionary<string, Logic<StateMachinePredicateAsync>> Deferrals { get; set; } = new();
-        public List<Region> Regions { get; set; } = new List<Region>();
+        public Dictionary<string, Type> DeferralTypes { get; } = new();
+        public HashSet<string> StructuralDeferrals { get; } = new(StringComparer.Ordinal);
+        public List<Region> Regions { get; set; } = [];
         public Region DefaultRegion
         {
             get
@@ -62,7 +64,10 @@ namespace Stateflows.StateMachines.Models
         public StateActionInitializationBuilder BehaviorInitializationBuilder { get; set; }
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
-        public readonly List<Type> BehaviorEventTypes = [];
+        public List<Type> BehaviorEventTypes { get; set; } = [];
+        public HashSet<string> BehaviorStructuralEvents { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<string, object> Metadata { get; } = [];
 
         public BehaviorId GetBehaviorId(StateMachineId hostId) => new(BehaviorType, BehaviorName, hostId.Instance);
 

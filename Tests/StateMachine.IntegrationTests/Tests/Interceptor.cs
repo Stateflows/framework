@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -32,9 +34,16 @@ namespace StateMachine.IntegrationTests.Tests
 
         public class Interceptor : StateMachineInterceptor
         {
-            public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+            public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
             {
-                Intercepted = true;
+                try
+                {
+                    return await next();
+                }
+                finally
+                {
+                    Intercepted = true;
+                }
             }
         }
 

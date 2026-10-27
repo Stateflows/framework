@@ -24,7 +24,7 @@ namespace Stateflows.Activities.Utils
             this.node = node;
         }
         
-        public bool HandleException(RootContext rootContext, Node nodeOfOrigin, TException exception)
+        private async Task<bool> HandleExceptionAsync(RootContext rootContext, Node nodeOfOrigin, TException exception)
         {
             if (exception == null)
             {
@@ -33,30 +33,30 @@ namespace Stateflows.Activities.Utils
             
             var actionContext = new ActionContext(rootContext, nodeScope, node, new List<TokenHolder>() { exception.ToExceptionHolder() });
             var context = new ExceptionHandlerContext<TException>(actionContext, node, nodeOfOrigin, nodeScope);
-            exceptionHandlerDelegate(context);
+            await exceptionHandlerDelegate(context);
             
             return true;
         }
         
-        public bool OnActivityInitializationException(IActivityInitializationContext context, Exception exception)
-            => HandleException((context as IRootContext).Context, node, exception as TException);
+        public Task<bool> OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
+            => HandleExceptionAsync((context as IRootContext).Context, node, exception as TException);
 
-        public bool OnActivityFinalizationException(IActivityFinalizationContext context, Exception exception)
-            => HandleException((context as IRootContext).Context, node, exception as TException);
+        public Task<bool> OnActivityFinalizationExceptionAsync(IActivityFinalizationContext context, Exception exception)
+            => HandleExceptionAsync((context as IRootContext).Context, node, exception as TException);
 
-        public bool OnNodeInitializationException(IActivityNodeContext context, Exception exception)
-            => HandleException((context as IRootContext).Context, (context.Node as NodeContext).Node, exception as TException);
+        public Task<bool> OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception)
+            => HandleExceptionAsync((context as IRootContext).Context, (context.Node as NodeContext).Node, exception as TException);
 
-        public bool OnNodeFinalizationException(IActivityNodeContext context, Exception exception)
-            => HandleException((context as IRootContext).Context, (context.Node as NodeContext).Node, exception as TException);
+        public Task<bool> OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception)
+            => HandleExceptionAsync((context as IRootContext).Context, (context.Node as NodeContext).Node, exception as TException);
 
-        public bool OnNodeExecutionException(IActivityNodeContext context, Exception exception)
-            => HandleException((context as IRootContext).Context, (context.Node as NodeContext).Node, exception as TException);
+        public Task<bool> OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
+            => HandleExceptionAsync((context as IRootContext).Context, (context.Node as NodeContext).Node, exception as TException);
 
-        public bool OnFlowGuardException<TToken>(IGuardContext<TToken> context, Exception exception)
-            => HandleException((context as IRootContext).Context, (context.SourceNode as NodeContext).Node, exception as TException);
+        public Task<bool> OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
+            => HandleExceptionAsync((context as IRootContext).Context, (context.SourceNode as NodeContext).Node, exception as TException);
 
-        public bool OnFlowTransformationException<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
-            => HandleException((context as IRootContext).Context, (context.SourceNode as NodeContext).Node, exception as TException);
+        public Task<bool> OnFlowTransformationExceptionAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
+            => HandleExceptionAsync((context as IRootContext).Context, (context.SourceNode as NodeContext).Node, exception as TException);
     }
 }

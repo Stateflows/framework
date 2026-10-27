@@ -12,8 +12,8 @@ namespace Stateflows.StateMachines.Context.Classes
         public DeferralContext(RootContext context, Vertex vertex) : base(context, vertex, Constants.Deferral)
         { }
 
-        public TEvent Event => ((EventHolder<TEvent>)Context.EventHolder).Payload;
-        public Guid EventId => ((EventHolder<TEvent>)Context.EventHolder).Id;
-        public IDictionary<string, EventHeader> EventHeaders => ((EventHolder<TEvent>)Context.EventHolder).Headers;
+        public TEvent Event => new EventContext<TEvent>(Context).Event;
+        public Guid EventId => Context.EventHolder.Id;
+        public IDictionary<string, EventHeader> EventHeaders => Context.EventHolder.Headers;
     }
 }

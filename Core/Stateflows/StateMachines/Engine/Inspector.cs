@@ -34,25 +34,22 @@ namespace Stateflows.StateMachines.Engine
             ExceptionHandlerFactories.AddRange(Executor.Graph.ExceptionHandlerFactories);
             ExceptionHandlerFactories.AddRange(Executor.Register.GlobalExceptionHandlerFactories);
 
-            InterceptorFactories.AddRange(Executor.Graph.InterceptorFactories);
             InterceptorFactories.AddRange(Executor.Register.GlobalInterceptorFactories);
+            InterceptorFactories.AddRange(Executor.Graph.InterceptorFactories);
 
-            ObserverFactories.AddRange(Executor.Graph.ObserverFactories);
             ObserverFactories.AddRange(Executor.Register.GlobalObserverFactories);
+            ObserverFactories.AddRange(Executor.Graph.ObserverFactories);
         }
 
         public async Task BuildAsync(IStateMachineActionContext context)
         {
             Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.ServiceProvider, context)));
-            ReverseObservers = Observers.Reverse().ToArray();
             
             Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.ServiceProvider, context)));
-            ReverseInterceptors = Interceptors.Reverse().ToArray();
             
             ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider, context)));
 
             Plugins = Executor.ServiceProvider.GetRequiredService<IEnumerable<IStateMachinePlugin>>().ToArray();
-            ReversePlugins = Plugins.Reverse().ToArray();
         }
 
         public ActionInspection InitializeInspection;
@@ -73,353 +70,195 @@ namespace Stateflows.StateMachines.Engine
         private readonly List<StateMachineObserverFactoryAsync> ObserverFactories = [];
 
         private IStateMachineObserver[] Observers;
-        private IStateMachineObserver[] ReverseObservers;
         private IStateMachineInterceptor[] Interceptors;
-        private IStateMachineInterceptor[] ReverseInterceptors;
         private IStateMachineExceptionHandler[] ExceptionHandlers;
         private IStateMachinePlugin[] Plugins;
-        private IStateMachinePlugin[] ReversePlugins;
 
-        public void BeforeStateMachineInitialize(StateMachineInitializationContext context, bool implicitInitialization)
+        private Task ObserveAsync(Func<Task> next, Func<IStateMachineObserver, Func<Task>, Task> observe)
+            => ObserverPipeline.RunAsync<IStateMachineObserver>(Plugins,
+                () => ObserverPipeline.RunAsync(Observers, next, observe), observe);
+
+        private Task<TResult> ObserveAsync<TResult>(Func<Task<TResult>> next, Func<IStateMachineObserver, Func<Task<TResult>>, Task> observe)
+            => ObserverPipeline.RunAsync<IStateMachineObserver, TResult>(Plugins,
+                () => ObserverPipeline.RunAsync(Observers, next, observe), observe);
+
+        public async Task<bool> OnStateMachineInitializeAsync(StateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
-            if (InitializeInspection != null)
+            if (InitializeInspection != null) InitializeInspection.Active = true;
+            try
             {
-                InitializeInspection.Active = true;
+                return await ObserveAsync(next, (observer, inner) => observer.OnStateMachineInitializeAsync(context, implicitInitialization, inner));
             }
-
-            Plugins.RunSafe(o => o.BeforeStateMachineInitialize(context, implicitInitialization), nameof(BeforeStateMachineInitialize), Logger);
-            Observers.RunSafe(o => o.BeforeStateMachineInitialize(context, implicitInitialization), nameof(BeforeStateMachineInitialize), Logger);
-        }
-
-        public void AfterStateMachineInitialize(StateMachineInitializationContext context, bool implicitInitialization, bool initialized)
-        {
-            ReverseObservers.RunSafe(o => o.AfterStateMachineInitialize(context, implicitInitialization, initialized), nameof(AfterStateMachineInitialize), Logger);
-            ReversePlugins.RunSafe(o => o.AfterStateMachineInitialize(context, implicitInitialization, initialized), nameof(AfterStateMachineInitialize), Logger);
-
-            if (InitializeInspection != null)
+            finally
             {
-                InitializeInspection.Active = false;
+                if (InitializeInspection != null) InitializeInspection.Active = false;
             }
         }
 
-        public void BeforeStateMachineFinalize(StateMachineActionContext context)
+        public async Task OnStateMachineFinalizeAsync(StateMachineActionContext context, Func<Task> next)
         {
-            if (FinalizeInspection != null)
+            if (FinalizeInspection != null) FinalizeInspection.Active = true;
+            try
             {
-                FinalizeInspection.Active = true;
+                await ObserveAsync(next, (observer, inner) => observer.OnStateMachineFinalizeAsync(context, inner));
             }
-
-            Plugins.RunSafe(o => o.BeforeStateMachineFinalize(context), nameof(BeforeStateMachineFinalize), Logger);
-            Observers.RunSafe(o => o.BeforeStateMachineFinalize(context), nameof(BeforeStateMachineFinalize), Logger);
-        }
-
-        public void AfterStateMachineFinalize(StateMachineActionContext context)
-        {
-            ReverseObservers.RunSafe(o => o.AfterStateMachineFinalize(context), nameof(AfterStateMachineFinalize), Logger);
-            ReversePlugins.RunSafe(o => o.AfterStateMachineFinalize(context), nameof(AfterStateMachineFinalize), Logger);
-
-            if (FinalizeInspection != null)
+            finally
             {
-                FinalizeInspection.Active = false;
+                if (FinalizeInspection != null) FinalizeInspection.Active = false;
             }
         }
 
-        public void BeforeStateInitialize(StateActionContext context)
+        public async Task OnStateInitializeAsync(StateActionContext context, Func<Task> next)
         {
-            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var inspection)) inspection.BeginAction(Constants.Initialize);
+            try
             {
-                stateInspection.BeginAction(Constants.Initialize);
+                await ObserveAsync(next, (observer, inner) => observer.OnStateInitializeAsync(context, inner));
             }
-
-            Plugins.RunSafe(o => o.BeforeStateInitialize(context), nameof(BeforeStateInitialize), Logger);
-            Observers.RunSafe(o => o.BeforeStateInitialize(context), nameof(BeforeStateInitialize), Logger);
-        }
-
-        public void AfterStateInitialize(StateActionContext context)
-        {
-            ReverseObservers.RunSafe(o => o.AfterStateInitialize(context), nameof(AfterStateInitialize), Logger);
-            ReversePlugins.RunSafe(o => o.AfterStateInitialize(context), nameof(AfterStateInitialize), Logger);
-
-            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
+            finally
             {
-                stateInspection.EndAction(Constants.Initialize);
+                inspection?.EndAction(Constants.Initialize);
             }
         }
 
-        public void BeforeStateFinalize(StateActionContext context)
+        public async Task OnStateFinalizeAsync(StateActionContext context, Func<Task> next)
         {
-            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var inspection)) inspection.BeginAction(Constants.Finalize);
+            try
             {
-                stateInspection.BeginAction(Constants.Finalize);
+                await ObserveAsync(next, (observer, inner) => observer.OnStateFinalizeAsync(context, inner));
             }
-
-            Plugins.RunSafe(o => o.BeforeStateFinalize(context), nameof(BeforeStateFinalize), Logger);
-            Observers.RunSafe(o => o.BeforeStateFinalize(context), nameof(BeforeStateFinalize), Logger);
-        }
-
-        public void AfterStateFinalize(StateActionContext context)
-        {
-            ReverseObservers.RunSafe(o => o.AfterStateFinalize(context), nameof(AfterStateFinalize), Logger);
-            ReversePlugins.RunSafe(o => o.AfterStateFinalize(context), nameof(AfterStateFinalize), Logger);
-
-            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
+            finally
             {
-                stateInspection.EndAction(Constants.Finalize);
+                inspection?.EndAction(Constants.Finalize);
             }
         }
 
-        public void BeforeStateEntry(StateActionContext context)
+        public async Task OnStateEntryAsync(StateActionContext context, Func<Task> next)
         {
-            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var inspection)) inspection.BeginAction(Constants.Entry);
+            try
             {
-                stateInspection.BeginAction(Constants.Entry);
+                await ObserveAsync(next, (observer, inner) => observer.OnStateEntryAsync(context, inner));
             }
-
-            Plugins.RunSafe(o => o.BeforeStateEntry(context), nameof(BeforeStateEntry), Logger);
-            Observers.RunSafe(o => o.BeforeStateEntry(context), nameof(BeforeStateEntry), Logger);
-        }
-
-        public void AfterStateEntry(StateActionContext context)
-        {
-            ReverseObservers.RunSafe(o => o.AfterStateEntry(context), nameof(AfterStateEntry), Logger);
-            ReversePlugins.RunSafe(o => o.AfterStateEntry(context), nameof(AfterStateEntry), Logger);
-
-            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
+            finally
             {
-                stateInspection.EndAction(Constants.Entry);
+                inspection?.EndAction(Constants.Entry);
             }
         }
 
-        public void BeforeStateExit(StateActionContext context)
+        public async Task OnStateExitAsync(StateActionContext context, Func<Task> next)
         {
-            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var inspection)) inspection.BeginAction(Constants.Exit);
+            try
             {
-                stateInspection.BeginAction(Constants.Exit);
+                await ObserveAsync(next, (observer, inner) => observer.OnStateExitAsync(context, inner));
             }
-
-            Plugins.RunSafe(o => o.BeforeStateExit(context), nameof(BeforeStateExit), Logger);
-            Observers.RunSafe(o => o.BeforeStateExit(context), nameof(BeforeStateExit), Logger);
-        }
-
-        public void AfterStateExit(StateActionContext context)
-        {
-            ReverseObservers.RunSafe(o => o.AfterStateExit(context), nameof(AfterStateExit), Logger);
-            ReversePlugins.RunSafe(o => o.AfterStateExit(context), nameof(AfterStateExit), Logger);
-
-            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
+            finally
             {
-                stateInspection.EndAction(Constants.Exit);
+                inspection?.EndAction(Constants.Exit);
             }
         }
 
-        public void BeforeTransitionGuard<TEvent>(GuardContext<TEvent> context)
+        public async Task<bool> OnTransitionGuardAsync<TEvent>(GuardContext<TEvent> context, Func<Task<bool>> next)
         {
-            if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
+            if (InspectionTransitions.TryGetValue(context.Edge, out var inspection)) ((ActionInspection)inspection.Guard).Active = true;
+            try
             {
-                ((ActionInspection)stateInspection.Guard).Active = true;
+                return await ObserveAsync(next, (observer, inner) => observer.OnTransitionGuardAsync<TEvent>(context, inner));
             }
-
-            Plugins.RunSafe(o => o.BeforeTransitionGuard(context), nameof(BeforeTransitionGuard), Logger);
-            Observers.RunSafe(o => o.BeforeTransitionGuard(context), nameof(BeforeTransitionGuard), Logger);
-        }
-
-        public void AfterTransitionGuard<TEvent>(GuardContext<TEvent> context, bool guardResult)
-        {
-            ReverseObservers.RunSafe(o => o.AfterTransitionGuard(context, guardResult), nameof(AfterTransitionGuard), Logger);
-            ReversePlugins.RunSafe(o => o.AfterTransitionGuard(context, guardResult), nameof(AfterTransitionGuard), Logger);
-
-            if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
+            finally
             {
-                ((ActionInspection)stateInspection.Guard).Active = false;
+                if (inspection != null) ((ActionInspection)inspection.Guard).Active = false;
             }
         }
 
-        public void BeforeEffect<TEvent>(TransitionContext<TEvent> context)
+        public async Task OnTransitionEffectAsync<TEvent>(TransitionContext<TEvent> context, Func<Task> next)
         {
-            if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
+            if (InspectionTransitions.TryGetValue(context.Edge, out var inspection)) ((ActionInspection)inspection.Effect).Active = true;
+            try
             {
-                ((ActionInspection)stateInspection.Effect).Active = true;
+                await ObserveAsync(next, (observer, inner) => observer.OnTransitionEffectAsync<TEvent>(context, inner));
             }
-
-            Plugins.RunSafe(o => o.BeforeTransitionEffect(context), nameof(BeforeEffect), Logger);
-            Observers.RunSafe(o => o.BeforeTransitionEffect(context), nameof(BeforeEffect), Logger);
-        }
-
-        public void AfterEffect<TEvent>(TransitionContext<TEvent> context)
-
-        {
-            ReverseObservers.RunSafe(o => o.AfterTransitionEffect(context), nameof(AfterEffect), Logger);
-            ReversePlugins.RunSafe(o => o.AfterTransitionEffect(context), nameof(AfterEffect), Logger);
-
-            if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
+            finally
             {
-                ((ActionInspection)stateInspection.Effect).Active = false;
+                if (inspection != null) ((ActionInspection)inspection.Effect).Active = false;
             }
         }
 
-        public bool BeforeProcessEvent<TEvent>(Context.Classes.EventContext<TEvent> context, Common.Context.Classes.EventContext<TEvent> commonContext)
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context, Common.Context.Classes.EventContext<TEvent> commonContext, Func<Task<EventStatus>> next)
         {
-            var plugin = Plugins.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
-            var global = GlobalInterceptor.BeforeProcessEvent(commonContext);
-            var local = Interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
-
-            return global && local && plugin;
-        }
-
-        public void AfterProcessEvent<TEvent>(Context.Classes.EventContext<TEvent> context, Common.Context.Classes.EventContext<TEvent> commonContext, EventStatus eventStatus)
-        {
-            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
-            GlobalInterceptor.AfterProcessEvent(commonContext, eventStatus);
-            ReversePlugins.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
-
-            if (context.Context.EventHolder.IsRespondedTo())
+            try
             {
-                GlobalInterceptor
-                    .RequestResponded(
+                return await GlobalInterceptor.ProcessEventAsync(commonContext, () =>
+                    InterceptorPipeline.RunAsync(Plugins,
+                        () => InterceptorPipeline.RunAsync(Interceptors, next, (interceptor, inner) => interceptor.ProcessEventAsync(context, inner)), (interceptor, inner) => interceptor.ProcessEventAsync(context, inner)));
+            }
+            finally
+            {
+                if (context.Context.EventHolder.IsRespondedTo())
+                {
+                    await GlobalInterceptor.DoRequestRespondedAsync(
                         context,
                         context.Context.EventHolder,
-                        context.Context.EventHolder.GetResponseHolder()
-                    );
+                        context.Context.EventHolder.GetResponseHolder());
+                }
             }
         }
 
-        private static bool ShouldPropagateException(bool handled)
-            => !handled;
-
-        public bool OnStateMachineInitializationException(StateMachineInitializationContext context, Exception exception)
+        private async Task<bool> HandleExceptionAsync(
+            BaseContext context, Exception exception, Func<IStateMachineExceptionHandler, Task<bool>> handle,
+            Func<IStateMachinePlugin, Task<bool>> notify, string method)
         {
-            var handled = ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializationException(context, exception), nameof(OnStateMachineInitializationException), Logger, false);
-
-            if (!handled)
+            var stateflowsContext = context.Context.Context;
+            var acknowledged = await ExecutionExceptionHandling.HandleAsync(
+                stateflowsContext, ExceptionHandlers, handle, method, Logger);
+            if (!acknowledged)
             {
-                Plugins.RunSafe(i => i.OnStateMachineInitializationException(context, exception), nameof(OnStateMachineInitializationException), Logger);
+                await ExecutionExceptionHandling.HandleAsync(stateflowsContext, Plugins, notify, method, Logger);
             }
-
-            if (ShouldPropagateException(handled))
-            {
-                context.Context.AddException(exception);
-            }
-
-            return handled;
+            stateflowsContext.ExecutionExceptions.Enqueue(exception);
+            return acknowledged;
         }
 
-        public bool OnStateMachineFinalizationException(StateMachineActionContext context, Exception exception)
-        {
-            var handled = ExceptionHandlers.RunSafe(h => h.OnStateMachineFinalizationException(context, exception), nameof(OnStateMachineFinalizationException), Logger, false);
+        public Task<bool> OnStateMachineInitializationExceptionAsync(StateMachineInitializationContext context, Exception exception)
+            => HandleExceptionAsync(context, exception,
+                h => h.OnStateMachineInitializationExceptionAsync(context, exception),
+                p => p.OnStateMachineInitializationExceptionAsync(context, exception), nameof(OnStateMachineInitializationExceptionAsync));
 
-            if (!handled)
-            {
-                Plugins.RunSafe(i => i.OnStateMachineFinalizationException(context, exception), nameof(OnStateMachineFinalizationException), Logger);
-            }
+        public Task<bool> OnStateMachineFinalizationExceptionAsync(StateMachineActionContext context, Exception exception)
+            => HandleExceptionAsync(context, exception,
+                h => h.OnStateMachineFinalizationExceptionAsync(context, exception),
+                p => p.OnStateMachineFinalizationExceptionAsync(context, exception), nameof(OnStateMachineFinalizationExceptionAsync));
 
-            if (ShouldPropagateException(handled))
-            {
-                context.Context.AddException(exception);
-            }
+        public Task<bool> OnTransitionGuardExceptionAsync<TEvent>(GuardContext<TEvent> context, Exception exception)
+            => HandleExceptionAsync(context, exception,
+                h => h.OnTransitionGuardExceptionAsync(context, exception),
+                p => p.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync));
 
-            return handled;
-        }
+        public Task<bool> OnTransitionEffectExceptionAsync<TEvent>(TransitionContext<TEvent> context, Exception exception)
+            => HandleExceptionAsync(context, exception,
+                h => h.OnTransitionEffectExceptionAsync(context, exception),
+                p => p.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync));
 
-        public bool OnTransitionGuardException<TEvent>(GuardContext<TEvent> context, Exception exception)
-        {
-            var handled = ExceptionHandlers.RunSafe(h => h.OnTransitionGuardException(context, exception), nameof(OnTransitionGuardException), Logger, false);
+        public Task<bool> OnStateInitializeExceptionAsync(StateActionContext context, Exception exception)
+            => HandleExceptionAsync(context, exception,
+                h => h.OnStateInitializationExceptionAsync(context, exception),
+                p => p.OnStateInitializationExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync));
 
-            if (!handled)
-            {
-                Plugins.RunSafe(i => i.OnTransitionGuardException(context, exception), nameof(OnTransitionGuardException), Logger);
-            }
+        public Task<bool> OnStateFinalizeExceptionAsync(StateActionContext context, Exception exception)
+            => HandleExceptionAsync(context, exception,
+                h => h.OnStateFinalizationExceptionAsync(context, exception),
+                p => p.OnStateFinalizationExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync));
 
-            if (ShouldPropagateException(handled))
-            {
-                context.Context.AddException(exception);
-            }
+        public Task<bool> OnStateEntryExceptionAsync(StateActionContext context, Exception exception)
+            => HandleExceptionAsync(context, exception,
+                h => h.OnStateEntryExceptionAsync(context, exception),
+                p => p.OnStateEntryExceptionAsync(context, exception), nameof(OnStateEntryExceptionAsync));
 
-            return handled;
-        }
-
-        public bool OnTransitionEffectException<TEvent>(TransitionContext<TEvent> context, Exception exception)
-        {
-            var handled = ExceptionHandlers.RunSafe(h => h.OnTransitionEffectException(context, exception), nameof(OnTransitionEffectException), Logger, false);
-
-            if (!handled)
-            {
-                Plugins.RunSafe(h => h.OnTransitionEffectException(context, exception), nameof(OnTransitionEffectException), Logger);
-            }
-
-            if (ShouldPropagateException(handled))
-            {
-                context.Context.AddException(exception);
-            }
-
-            return handled;
-        }
-
-        public bool OnStateInitializeException(StateActionContext context, Exception exception)
-        {
-            var handled = ExceptionHandlers.RunSafe(h => h.OnStateInitializationException(context, exception), nameof(OnStateInitializeException), Logger, false);
-
-            if (!handled)
-            {
-                Plugins.RunSafe(i => i.OnStateInitializationException(context, exception), nameof(OnStateInitializeException), Logger);
-            }
-
-            if (ShouldPropagateException(handled))
-            {
-                context.Context.AddException(exception);
-            }
-
-            return handled;
-        }
-
-        public bool OnStateFinalizeException(StateActionContext context, Exception exception)
-        {
-            var handled = ExceptionHandlers.RunSafe(h => h.OnStateFinalizationException(context, exception), nameof(OnStateFinalizeException), Logger, false);
-
-            if (!handled)
-            {
-                Plugins.RunSafe(i => i.OnStateFinalizationException(context, exception), nameof(OnStateFinalizeException), Logger);
-            }
-
-            if (ShouldPropagateException(handled))
-            {
-                context.Context.AddException(exception);
-            }
-
-            return handled;
-        }
-
-        public bool OnStateEntryException(StateActionContext context, Exception exception)
-        {
-            var handled = ExceptionHandlers.RunSafe(h => h.OnStateEntryException(context, exception), nameof(OnStateEntryException), Logger, false);
-
-            if (!handled)
-            {
-                Plugins.RunSafe(i => i.OnStateEntryException(context, exception), nameof(OnStateEntryException), Logger);
-            }
-
-            if (ShouldPropagateException(handled))
-            {
-                context.Context.AddException(exception);
-            }
-
-            return handled;
-        }
-
-        public bool OnStateExitException(StateActionContext context, Exception exception)
-        {
-            var handled = ExceptionHandlers.RunSafe(h => h.OnStateExitException(context, exception), nameof(OnStateExitException), Logger, false);
-
-            if (!handled)
-            {
-                Plugins.RunSafe(i => i.OnStateExitException(context, exception), nameof(OnStateExitException), Logger);
-            }
-
-            if (ShouldPropagateException(handled))
-            {
-                context.Context.AddException(exception);
-            }
-
-            return handled;
-        }
+        public Task<bool> OnStateExitExceptionAsync(StateActionContext context, Exception exception)
+            => HandleExceptionAsync(context, exception,
+                h => h.OnStateExitExceptionAsync(context, exception),
+                p => p.OnStateExitExceptionAsync(context, exception), nameof(OnStateExitExceptionAsync));
     }
 }

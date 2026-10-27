@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 using StateMachine.IntegrationTests.Classes.Events;
@@ -7,14 +9,14 @@ namespace StateMachine.IntegrationTests.Tests
 {
     public class RequestInterceptor : StateMachineInterceptor
     {
-        public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+        public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
             if (context.Event is Req req)
             {
                 req.Respond(new Resp());
             }
-            
-            return true;
+
+            return await next();
         }
     }
 

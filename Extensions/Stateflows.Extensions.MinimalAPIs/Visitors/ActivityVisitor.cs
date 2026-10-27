@@ -1,4 +1,3 @@
-﻿using System.Reflection;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -9,7 +8,6 @@ using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
-using Stateflows.Extensions.MinimalAPIs.Attributes;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -17,16 +15,11 @@ internal class ActivityVisitor(
     IEndpointRouteBuilder routeBuilder,
     Interceptor interceptor,
     ITypeMapper typeMapper
-) : Activities.ActivityVisitor, IBehaviorClassVisitor, ITypeVisitor
+) : BehaviorVisitor(routeBuilder, typeMapper), IActivityVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Interceptor Interceptor => interceptor;
     private readonly Dictionary<string, bool> Initializers = new();
-    private readonly Dictionary<string, List<Type>> Triggers = new();
-    private static readonly MethodInfo RegisterRequestMethod = typeof(ActivityVisitor).GetMethod(
-        nameof(RegisterRequestEndpoint),
-        BindingFlags.Instance | BindingFlags.NonPublic
-    )!;
 
     private string CurrentActivityName = string.Empty;
     private BehaviorClass? OwnerClass = null;
@@ -38,9 +31,16 @@ internal class ActivityVisitor(
         RegisterEventEndpoint<T>(CurrentActivityName);
     }
 
-    public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
+    public static Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; } = new();
 
-    public override Task InitializerAddedAsync<TInitializationEvent>(string activityName, int activityVersion)
+    Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> IBehaviorClassVisitor.HateoasLinks => HateoasLinks;
+
+    Task IActivityVisitor.ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
+    {
+        return ActivityTypeAddedAsync<TActivity>(activityName, activityVersion);
+    }
+
+    public Task InitializerAddedAsync<TInitializationEvent>(string activityName, int activityVersion)
     {
         if (OwnerClass != null)
         {
@@ -56,7 +56,31 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task AcceptEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
+    Task IActivityVisitor.DefaultInitializerAddedAsync(string activityName, int activityVersion)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.FinalizerAddedAsync(string activityName, int activityVersion)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.NodeAddedAsync(string activityName, int activityVersion, string nodeName, NodeType nodeType,
+        string parentNodeName)
+    {
+        NodeTypes[(activityName, nodeName)] = nodeType;
+        return Task.CompletedTask;
+    }
+
+    // Node types are taken from the model, so endpoint contexts don't need to hydrate behavior state.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string ActivityName, string NodeName), NodeType> NodeTypes = new();
+
+    internal static NodeType GetNodeType(string activityName, string nodeName)
+        => NodeTypes.TryGetValue((activityName, nodeName), out var nodeType) ? nodeType : default;
+
+    Task IActivityVisitor.NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
+    {
+        return NodeTypeAddedAsync<TNode>(activityName, activityVersion, nodeName);
+    }
+
+    public Task AcceptEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
         string? parentNodeName = null)
     {
         if (OwnerClass != null)
@@ -71,7 +95,64 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task ActivityAddingAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    public Task AcceptEventNodeAddedAsync(EventDefinition definition, string activityName, int activityVersion, string nodeName,
+        string? parentNodeName = null)
+    {
+        if (OwnerClass != null || !StructuralTriggers.Add((activityName, definition.Name)))
+        {
+            return Task.CompletedTask;
+        }
+
+        RouteBuilder.RegisterStructuralEventEndpoint(Interceptor, BehaviorType.Activity, activityName, definition,
+            HateoasLinks, HasDefaultInstance);
+
+        return Task.CompletedTask;
+    }
+
+    Task IActivityVisitor.AcceptEventNodeTypeAddedAsync<TEvent, TAcceptEventAction>(string activityName, int activityVersion,
+        string nodeName)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.SendEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
+        string parentNodeName)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.SendEventNodeTypeAddedAsync<TEvent, TSendEventAction>(string activityName, int activityVersion, string nodeName)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.PublishEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
+        string parentNodeName)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.PublishEventNodeTypeAddedAsync<TEvent, TPublishEventAction>(string activityName, int activityVersion,
+        string nodeName)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.ControlFlowAddedAsync(string activityName, int activityVersion, string sourceNodeName, string targetNodeName,
+        bool isElse)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.ControlFlowTypeAddedAsync<TControlFlow>(string activityName, int activityVersion, string sourceNodeName,
+        string targetNodeName, bool isElse)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.FlowAddedAsync<TToken>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName,
+        bool isElse)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.FlowTypeAddedAsync<TToken, TFlow>(string activityName, int activityVersion, string sourceNodeName,
+        string targetNodeName, bool isElse)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.TransformationFlowAddedAsync<TToken, TTransformedToken>(string activityName, int activityVersion,
+        string sourceNodeName, string targetNodeName, bool isElse)
+        => Task.CompletedTask;
+
+    Task IActivityVisitor.TransformationFlowTypeAddedAsync<TToken, TTransformedToken, TFlowTransformation>(string activityName,
+        int activityVersion, string sourceNodeName, string targetNodeName, bool isElse)
+        => Task.CompletedTask;
+
+    public Task ActivityAddingAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
         HasDefaultInstance = hasDefaultInstance;
         OwnerClass = ownerClass;
@@ -79,7 +160,7 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task ActivityAddedAsync(string activityName, int activityVersion)
+    public Task ActivityAddedAsync(string activityName, int activityVersion)
     {
         if (OwnerClass != null)
         {
@@ -97,7 +178,8 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
+    public Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
+        where TActivity : class, IActivity
     {
         if (OwnerClass != null)
         {
@@ -120,58 +202,11 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    private void RegisterEventEndpoint<TEvent>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
+    protected override void RegisterEventEndpoint<TEvent>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
         => activity.RegisterEventEndpoint<TEvent>(interceptor, BehaviorType.Activity, activityName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 
-    private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
-        where TRequest : IRequest<TResponse>
+    protected override void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
         => activity.RegisterRequestEndpoint<TRequest, TResponse>(interceptor, BehaviorType.Activity, activityName, HateoasLinks, HasDefaultInstance, supportedStatuses);
-
-    private void RegisterEventEndpoint<TEvent>(string activityName, BehaviorStatus[]? supportedStatuses = null)
-    {
-        var eventType = typeof(TEvent);
-        if (
-            eventType.GetCustomAttributes<NoApiMappingAttribute>().Any() ||
-            eventType.IsAssignableTo(typeof(SystemEvent)) ||
-            eventType.IsAssignableTo(typeof(Exception))
-        )
-        {
-            return;
-        }
-
-        if (!Triggers.TryGetValue(activityName, out var triggers))
-        {
-            triggers = [];
-            Triggers.Add(activityName, triggers);
-        }
-
-        if (!triggers.Contains(typeof(TEvent)))
-        {
-            triggers.Add(eventType);
-
-            if (eventType.IsRequest())
-            {
-                var responseType = eventType
-                    .GetInterfaces()
-                    .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>))
-                    .GetGenericArguments()
-                    .First();
-
-                var method = RegisterRequestMethod.MakeGenericMethod(eventType, responseType);
-                method.Invoke(
-                    this,
-                    BindingFlags.Instance | BindingFlags.NonPublic,
-                    null,
-                    [activityName, routeBuilder, supportedStatuses],
-                    null
-                );
-            }
-            else
-            {
-                RegisterEventEndpoint<TEvent>(activityName, routeBuilder, supportedStatuses);
-            }
-        }
-    }
 
     private void RegisterRemainingEndpoints(string activityName)
     {
@@ -247,7 +282,7 @@ internal class ActivityVisitor(
                                     : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             requestResult.Status = EventStatus.Consumed;
-                            return requestResult.ToResult([], requestResult.Response, HateoasLinks);
+                            return requestResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], requestResult.Response, HateoasLinks);
                         }
                     }
 
@@ -315,7 +350,7 @@ internal class ActivityVisitor(
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }))
                                 .Response;
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
 
@@ -360,11 +395,11 @@ internal class ActivityVisitor(
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<ActivityInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         //
-                        // return result.ToResult([], behaviorInfo, HateoasLinks);
+                        // return result.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
 
                         var sendResult = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -405,11 +440,11 @@ internal class ActivityVisitor(
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<BehaviorInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         //
-                        // return result.ToResult([], behaviorInfo, HateoasLinks);
+                        // return result.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
 
                         var sendResult = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -492,7 +527,7 @@ internal class ActivityVisitor(
                                     : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             requestResult.Status = EventStatus.Consumed;
-                            return requestResult.ToResult([], requestResult.Response, HateoasLinks);
+                            return requestResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], requestResult.Response, HateoasLinks);
                         }
                     }
 
@@ -559,7 +594,7 @@ internal class ActivityVisitor(
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }))
                                 .Response;
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
 
@@ -583,7 +618,8 @@ internal class ActivityVisitor(
         }
     }
 
-    public override Task NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
+    public Task NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
+        where TNode : class, IActivityNode
     {
         if (OwnerClass != null)
         {
@@ -610,7 +646,7 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task CustomEventAddedAsync<TEvent>(string activityName, int activityVersion, BehaviorStatus[] supportedStatuses)
+    public Task CustomEventAddedAsync<TEvent>(string activityName, int activityVersion, BehaviorStatus[] supportedStatuses)
     {
         if (OwnerClass != null)
         {

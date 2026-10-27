@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Version>$(STATEFLOWS_VERSION)</Version>
@@ -16,7 +16,7 @@
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageOutputPath>..\..\NuGet</PackageOutputPath>
-        <LangVersion>12</LangVersion>
+        <LangVersion>default</LangVersion>
         <RootNamespace>Stateflows</RootNamespace>
         <!-- Relative path from this .csproj to the Angular browser build output -->
         <DashboardDistPath>$(MSBuildProjectDirectory)\Dashboard\dist\stateflows-dashboard\browser</DashboardDistPath>
@@ -28,6 +28,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
+        <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
     </ItemGroup>
 
     <!--

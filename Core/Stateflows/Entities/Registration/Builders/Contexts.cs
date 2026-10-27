@@ -17,10 +17,4 @@ namespace Stateflows.Entities.Registration.Builders
         public TTemplate Entity => entity;
         public TInitializationEvent InitializationEvent => initializationEvent;
     }
-
-    internal class ProjectionContext<TTemplate>(TTemplate entity)
-        : IProjectionContext<TTemplate>
-    {
-        public TTemplate Entity => entity;
-    }
 }

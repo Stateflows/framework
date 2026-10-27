@@ -9,7 +9,6 @@ using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.StateMachines.Engine;
-using Stateflows.StateMachines.Classes;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.EventHandlers;
@@ -18,6 +17,8 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
+    /// <summary>Registers state-machine definitions and their runtime services with Stateflows.</summary>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/behaviors">behavior registration</see>.</remarks>
     public static class StateMachinesDependencyInjection
     {
         private static readonly Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new();
@@ -51,6 +52,10 @@ namespace Stateflows.StateMachines
             }
         }
 
+        /// <summary>Enables the state-machine runtime and optionally registers its definitions and global middleware.</summary>
+        /// <param name="stateflowsBuilder">The Stateflows registration builder.</param>
+        /// <param name="buildAction">Optional registration callback; omitting it still enables state-machine services.</param>
+        /// <returns>The original Stateflows builder for registering other behavior types.</returns>
         [DebuggerHidden]
         public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder,
             StateMachinesBuildAction buildAction = null)
@@ -66,6 +71,11 @@ namespace Stateflows.StateMachines
             return stateflowsBuilder;
         }
 
+        /// <summary>Registers a default instance for a typed state machine using its resolved behavior name.</summary>
+        /// <typeparam name="TStateMachine">The registered state-machine definition type.</typeparam>
+        /// <param name="stateflowsBuilder">The Stateflows registration builder.</param>
+        /// <param name="initializationRequestFactoryAsync">Optional factory for the default instance's initialization request.</param>
+        /// <returns>The original Stateflows builder for continued registration.</returns>
         [DebuggerHidden]
         public static IStateflowsBuilder AddDefaultInstance<TStateMachine>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
             where TStateMachine : class, IStateMachine
@@ -91,7 +101,6 @@ namespace Stateflows.StateMachines
                         .AddScoped<IStateMachinePlugin, Engine.Exceptions>()
                         .AddSingleton(register)
                         .AddSingleton<IStateMachinesRegister>(register)
-                        .AddScoped<IStateMachineContextProvider, StateMachineContextProvider>()
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()

@@ -12,17 +12,21 @@ namespace Stateflows.Common.Registration.Builders
         private readonly List<IStateflowsTypeMapper> TypeMappers = [];
 
         internal readonly ITypeMapper TypeMapper;
+        internal readonly Stateflows.Events.EventsRegister Events = new();
         
         internal readonly Dictionary<string, Resource> ResourceNames = [];
         
-        internal readonly Dictionary<BehaviorClass, Resource> ResourcesByBehaviorClass = [];
+        internal Dictionary<BehaviorClass, Resource> ResourcesByBehaviorClass { get; set; } = [];
 
         public IServiceCollection ServiceCollection { get; }
 
         public StateflowsBuilder(IServiceCollection services)
         {
             ServiceCollection = services;
-            TypeMapper = new TypeMapper(TypeMappers);
+            TypeMapper = new TypeMapper(TypeMappers, Events.RegisterClr);
+            services.AddSingleton<Stateflows.Common.IEventsRegister>(Events);
+            services.AddSingleton<Stateflows.Common.IEventFactory>(Events);
+            services.AddSingleton<Stateflows.Common.IStateflowsValidator>(Events);
             AddResource("", b => { });
         }
 

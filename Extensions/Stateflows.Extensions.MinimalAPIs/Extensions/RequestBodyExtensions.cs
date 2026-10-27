@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,8 @@ using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Utilities;
+using Stateflows.Entities;
 using Stateflows.Extensions.MinimalAPIs.Attributes;
 using Stateflows.Extensions.MinimalAPIs.Headers;
 using Stateflows.StateMachines;
@@ -16,12 +19,13 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 internal static class RequestBodyExtensions
 {
-    private static async Task<BehaviorInfo> GetBehaviorInfo(this IBehavior behavior)
+    internal static async Task<BehaviorInfo> GetBehaviorInfo(this IBehavior behavior)
     {
         var behaviorInfo = behavior.Id.Type switch
         {
             BehaviorType.StateMachine => (await behavior.RequestAsync(new StateMachineInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response,
             BehaviorType.Activity => (await behavior.RequestAsync(new ActivityInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response,
+            BehaviorType.Entity => (await behavior.RequestAsync(new EntityInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response,
             _ => (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response
         };
         return behaviorInfo;
@@ -34,7 +38,8 @@ internal static class RequestBodyExtensions
         string behaviorName,
         Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks,
         bool hasDefaultInstance = false,
-        BehaviorStatus[]? supportedStatuses = null
+        BehaviorStatus[]? supportedStatuses = null,
+        IAuthorizeData[]? authorization = null
     )
     {
         var eventType = typeof(TEvent);
@@ -46,6 +51,7 @@ internal static class RequestBodyExtensions
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
         if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
+            EndpointRouteRegistry.EnsureUnique(routeBuilder, method, route, Event<TEvent>.Name, isStructural: false);
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
                     route,
@@ -76,7 +82,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
                         
-                        var processingAction = () => payload.SendEndpointAsync(
+                        var processingAction = () => payload.SendEndpointAsync(method, route,
                             StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization,
                             customHateoasLinks, context);
 
@@ -118,7 +124,8 @@ internal static class RequestBodyExtensions
                         }
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
-                        var processingAction = () => payload.SendEndpointAsync(payload.Event, behavior, implicitInitialization,
+                        
+                        var processingAction = () => payload.SendEndpointAsync(method, route, payload.Event, behavior, implicitInitialization,
                             customHateoasLinks, context);
 
                         if (stream)
@@ -133,6 +140,8 @@ internal static class RequestBodyExtensions
                 );
 
             routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
+            if (authorization is { Length: > 0 })
+                routeHandlerBuilder.RequireAuthorization(authorization);
 
             interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
@@ -163,6 +172,7 @@ internal static class RequestBodyExtensions
         var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{eventName}";
         if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: true, ref method, ref defaultInstanceRoute))
         {
+            EndpointRouteRegistry.EnsureUnique(routeBuilder, method, defaultInstanceRoute, Event<TEvent>.Name, isStructural: false);
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
                     defaultInstanceRoute,
@@ -191,7 +201,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var processingAction = () => payload.SendEndpointAsync(
+                        var processingAction = () => payload.SendEndpointAsync(method, route,
                             StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, true,
                             customHateoasLinks, context);
 
@@ -231,7 +241,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var processingAction = () => payload.SendEndpointAsync(payload.Event, behavior, true,
+                        var processingAction = () => payload.SendEndpointAsync(method, route, payload.Event, behavior, true,
                             customHateoasLinks, context);
 
                         if (stream)
@@ -247,6 +257,8 @@ internal static class RequestBodyExtensions
 
             routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
+            if (authorization is { Length: > 0 })
+                routeHandlerBuilder.RequireAuthorization(authorization);
             interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: true, method, defaultInstanceRoute, routeHandlerBuilder);
 
             customHateoasLinks.AddLink(
@@ -275,7 +287,9 @@ internal static class RequestBodyExtensions
                         ..watchedNotificationTypes
                     ]
                     : watchedNotificationTypes
-            );
+            )
+                .Distinct()
+                .ToArray();
         }
     }
 
@@ -315,6 +329,7 @@ internal static class RequestBodyExtensions
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
         if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
+            EndpointRouteRegistry.EnsureUnique(routeBuilder, method, route, Event<TRequest>.Name, isStructural: false);
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
                     route,
@@ -346,7 +361,7 @@ internal static class RequestBodyExtensions
                         MergeNotificationNames(watchedNotificationTypes, payload);
                         
                         var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(
-                            StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior,
+                            method, route, StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior,
                             implicitInitialization, customHateoasLinks, context
                         );
 
@@ -388,7 +403,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior,
+                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(method, route, payload.Event, behavior,
                             implicitInitialization, customHateoasLinks, context);
 
                         if (stream)
@@ -429,6 +444,8 @@ internal static class RequestBodyExtensions
         {
             var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{Utils.GetEventName<TRequest>()}";
 
+            EndpointRouteRegistry.EnsureUnique(routeBuilder, method, defaultInstanceRoute, Event<TRequest>.Name, isStructural: false);
+
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
                     defaultInstanceRoute,
@@ -457,7 +474,7 @@ internal static class RequestBodyExtensions
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
                         var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(
-                            StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, true,
+                            method, route, StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, true,
                             customHateoasLinks, context);
 
                         if (stream)
@@ -471,7 +488,7 @@ internal static class RequestBodyExtensions
                     }
                 )
                 : routeBuilder.MapMethods(
-                    route,
+                    defaultInstanceRoute,
                     [method],
                     async (
                         HttpContext context,
@@ -496,7 +513,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, true, customHateoasLinks, context);
+                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(method, route, payload.Event, behavior, true, customHateoasLinks, context);
 
                         if (stream)
                         {
@@ -528,12 +545,15 @@ internal static class RequestBodyExtensions
         }
     }
 
-    private static async Task SSENotificationsWatchAsync(HttpContext httpContext, IBehavior behavior, RequestBody payload, Func<Task> processingAction)
+    internal static async Task SSENotificationsWatchAsync(HttpContext httpContext, IBehavior behavior, RequestBody payload, Func<Task> processingAction)
     {
         httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
 
+        var n = payload.RequestedNotifications?.ToList() ?? [];
+        n.Add("String");
+        
         await using var watcher = await behavior.WatchAsync(
-            payload.RequestedNotifications,
+            n.ToArray(),
             async eventHolder => await httpContext.WriteEventAsync(eventHolder)
         );
 
@@ -547,14 +567,17 @@ internal static class RequestBodyExtensions
         await processingTask;
     }
 
-    private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, TEvent @event, IBehavior behavior,
+    internal static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, string method, string path, TEvent @event, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
         var notifications = new List<EventHolder>();
-        await behavior.WatchAsync(
-            payload.RequestedNotifications,
-            notifications.Add
-        );
+        var notificationNames = payload.RequestedNotifications?.Where(n => !string.IsNullOrEmpty(n)).ToArray() ?? [];
+        IAsyncDisposable? watcher = notificationNames.Any()
+            ? await behavior.WatchAsync(
+                notificationNames,
+                notifications.Add
+            )
+            : null;
 
         if (EqualityComparer<TEvent>.Default.Equals(@event, default))
         {
@@ -564,7 +587,7 @@ internal static class RequestBodyExtensions
             );
 
             var behaviorInfo = await behavior.GetBehaviorInfo();
-            return result.ToResult([], behaviorInfo, customHateoasLinks);
+            return result.ToResult(method ?? "[no method]", path ?? "[no path]", [], behaviorInfo, customHateoasLinks);
         }
         else
         {
@@ -587,19 +610,22 @@ internal static class RequestBodyExtensions
             //     ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
             //     : [];
 
-            return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
+            return result.ToResult(method ?? "[no method]", path ?? "[no path]", notifications, behaviorInfo, customHateoasLinks);
         }
     }
 
-    private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, TRequest request, IBehavior behavior,
+    internal static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, string method, string path, TRequest request, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
         where TRequest : IRequest<TResponse>
     {
         var notifications = new List<EventHolder>();
-        await behavior.WatchAsync(
-            payload.RequestedNotifications,
-            notifications.Add
-        );
+        var notificationNames = payload.RequestedNotifications?.Where(n => !string.IsNullOrEmpty(n)).ToArray() ?? [];
+        IAsyncDisposable? watcher = notificationNames.Any()
+            ? await behavior.WatchAsync(
+                notificationNames,
+                notifications.Add
+            )
+            : null;
 
         if (EqualityComparer<TRequest>.Default.Equals(request, default))
         {
@@ -610,7 +636,7 @@ internal static class RequestBodyExtensions
 
             var behaviorInfo = await behavior.GetBehaviorInfo();
 
-            return result.ToResult([], behaviorInfo, customHateoasLinks);
+            return result.ToResult(method ?? "[no method]", path ?? "[no path]", [], behaviorInfo, customHateoasLinks);
         }
         else
         {
@@ -633,7 +659,7 @@ internal static class RequestBodyExtensions
             //     ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
             //     : [];
 
-            return requestResult.ToResult(notifications, behaviorInfo, customHateoasLinks);
+            return requestResult.ToResult(method ?? "[no method]", path ?? "[no path]", notifications, behaviorInfo, customHateoasLinks);
         }
     }
 }

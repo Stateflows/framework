@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
 
@@ -6,66 +7,55 @@ namespace Stateflows.Activities
 {
     internal abstract class ActivityPlugin : IActivityPlugin
     {
-        public virtual bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
-            => true;
+        public virtual Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+            => next();
 
-        public virtual void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus) {}
+        public virtual Task OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
+            => next();
 
-        public virtual void BeforeActivityInitialize(IActivityInitializationContext context, bool implicitInitialization) {}
+        public virtual Task OnActivityFinalizeAsync(IActivityFinalizationContext context, Func<Task> next)
+            => next();
 
-        public virtual void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized) {}
+        public virtual Task OnNodeInitializeAsync(IActivityNodeContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeActivityFinalize(IActivityFinalizationContext context) {}
+        public virtual Task OnNodeFinalizeAsync(IActivityNodeContext context, Func<Task> next)
+            => next();
 
-        public virtual void AfterActivityFinalize(IActivityFinalizationContext context) {}
+        public virtual Task OnNodeActivateAsync(IActivityNodeContext context, bool activated, Func<Task> next)
+            => next();
 
-        public virtual void BeforeNodeInitialize(IActivityNodeContext context) {}
+        public virtual Task OnNodeExecuteAsync(IActivityNodeContext context, Func<Task> next)
+            => next();
 
-        public virtual void AfterNodeInitialize(IActivityNodeContext context) {}
+        public virtual Task OnFlowActivateAsync(IActivityBeforeFlowContext context, Func<Task<IActivityAfterFlowContext>> next)
+            => next();
 
-        public virtual void BeforeNodeFinalize(IActivityNodeContext context) {}
+        public virtual Task OnFlowTransformAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Func<Task<TTransformedToken>> next)
+            => next();
 
-        public virtual void AfterNodeFinalize(IActivityNodeContext context) {}
+        public virtual Task OnFlowGuardAsync<TToken>(IGuardContext<TToken> context, Func<Task<bool>> next)
+            => next();
 
-        public virtual void BeforeNodeActivate(IActivityNodeContext context, bool activated) {}
+        public virtual Task<bool> OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void AfterNodeActivate(IActivityNodeContext context) {}
+        public virtual Task<bool> OnActivityFinalizationExceptionAsync(IActivityFinalizationContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void BeforeNodeExecute(IActivityNodeContext context) {}
+        public virtual Task<bool> OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void AfterNodeExecute(IActivityNodeContext context) {}
+        public virtual Task<bool> OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void BeforeFlowActivate(IActivityBeforeFlowContext context) {}
+        public virtual Task<bool> OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void AfterFlowActivate(IActivityAfterFlowContext context, bool activated) {}
-        
-        public virtual void BeforeFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken> context) {}
+        public virtual Task<bool> OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void AfterFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken, TTransformedToken> context) {}
-
-        public virtual void BeforeFlowGuard<TToken>(IGuardContext<TToken> context) {}
-
-        public virtual void AfterFlowGuard<TToken>(IGuardContext<TToken> context, bool guardResult) {}
-
-        public virtual bool OnActivityInitializationException(IActivityInitializationContext context, Exception exception)
-            => false;
-
-        public virtual bool OnActivityFinalizationException(IActivityFinalizationContext context, Exception exception)
-            => false;
-
-        public virtual bool OnNodeInitializationException(IActivityNodeContext context, Exception exception)
-            => false;
-
-        public virtual bool OnNodeFinalizationException(IActivityNodeContext context, Exception exception)
-            => false;
-
-        public virtual bool OnNodeExecutionException(IActivityNodeContext context, Exception exception)
-            => false;
-
-        public virtual bool OnFlowGuardException<TToken>(IGuardContext<TToken> context, Exception exception)
-            => false;
-
-        public virtual bool OnFlowTransformationException<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
-            => false;
+        public virtual Task<bool> OnFlowTransformationExceptionAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
+            => Task.FromResult(false);
     }
 }

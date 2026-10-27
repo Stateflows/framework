@@ -5,11 +5,15 @@ using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore;
 
 namespace Stateflows.Classes;
 
+/// <summary>Runs a background cleanup loop for expired and superseded retained notifications.</summary>
+/// <typeparam name="TDbContext">The Entity Framework context implementing the Stateflows storage contract.</typeparam>
 public class NotificationsCleaner<TDbContext> : IHostedService
     where TDbContext : DbContext, IStateflowsDbContext_v1
 {
     private Task cleaningTask = null;
     
+    /// <summary>Creates the notification cleanup service.</summary>
+    /// <param name="serviceProvider">The provider used to create a scoped DbContext for cleanup work.</param>
     public NotificationsCleaner(IServiceProvider serviceProvider)
     {
         ServiceProvider = serviceProvider;
@@ -18,6 +22,9 @@ public class NotificationsCleaner<TDbContext> : IHostedService
     private readonly IServiceProvider ServiceProvider;
     private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
     
+    /// <summary>Starts the periodic cleanup loop.</summary>
+    /// <param name="cancellationToken">The hosted-service startup token; this implementation does not consume it.</param>
+    /// <returns>A completed task after the cleanup loop is started.</returns>
     public Task StartAsync(CancellationToken cancellationToken)
     {
         cleaningTask = CleaningLoopAsync(CancellationTokenSource.Token);
@@ -42,7 +49,7 @@ public class NotificationsCleaner<TDbContext> : IHostedService
 
                 var date = DateTime.Now.AddMinutes(-1);
 
-                using var scope = ServiceProvider.CreateScope();
+                await using var scope = ServiceProvider.CreateAsyncScope();
                 var context = scope.ServiceProvider.GetRequiredService<TDbContext>();
 
                 await context.Notifications_v1.Where(n =>
@@ -68,6 +75,9 @@ public class NotificationsCleaner<TDbContext> : IHostedService
         }
     }
 
+    /// <summary>Cancels the cleanup loop and waits for it to stop.</summary>
+    /// <param name="cancellationToken">The hosted-service shutdown token; the loop is stopped using its internal cancellation source.</param>
+    /// <returns>A completed task after the loop has been synchronously awaited.</returns>
     public Task StopAsync(CancellationToken cancellationToken)
     {
         try

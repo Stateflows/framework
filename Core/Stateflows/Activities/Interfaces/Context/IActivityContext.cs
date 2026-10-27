@@ -2,6 +2,7 @@
 
 namespace Stateflows.Activities
 {
+    /// <summary>Describes the current activity behavior instance and its active node tree.</summary>
     public interface IActivityContext : IBehaviorContext
     {
         /// <summary>

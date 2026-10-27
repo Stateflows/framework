@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Threading.Tasks;
+using System;
 using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Activities;
@@ -17,26 +18,39 @@ namespace Stateflows.Extensions.PlantUml.Classes
             Inspection = inspection;
         }
 
-        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+        public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
+            var status = EventStatus.Failed;
             try
             {
-                if (Inspection.StateHasChanged)
-                {
-                    context.Behavior.Publish(
-                        new PlantUmlInfo()
-                        {
-                            PlantUml = Inspection.GetPlantUml()
-                        }
-                    );
-                }
+                return status = await next();
             }
-            catch (Exception e)
+            finally
             {
-                Trace.WriteLine($"⦗→s⦘ PlantUML exception '{e.GetType().Name}' thrown with message '{e.Message}'; stack trace:");
-                foreach (var line in e.StackTrace.Split('\n'))
+                After(context, status);
+            }
+
+            void After(IEventContext<TEvent> context, EventStatus eventStatus)
+            {
+                try
                 {
-                    Trace.WriteLine($"⦗→s⦘     {line}");
+                    if (Inspection.StateHasChanged)
+                    {
+                        context.Behavior.Publish(
+                            new PlantUmlInfo()
+                            {
+                                PlantUml = Inspection.GetPlantUml()
+                            }
+                        );
+                    }
+                }
+                catch (Exception e)
+                {
+                    Trace.WriteLine($"⦗→s⦘ PlantUML exception '{e.GetType().Name}' thrown with message '{e.Message}'; stack trace:");
+                    foreach (var line in e.StackTrace.Split('\n'))
+                    {
+                        Trace.WriteLine($"⦗→s⦘     {line}");
+                    }
                 }
             }
         }

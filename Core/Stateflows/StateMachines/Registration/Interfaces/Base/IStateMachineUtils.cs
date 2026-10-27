@@ -2,6 +2,13 @@
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
+    /// <summary>Configures local middleware, failure acknowledgement handlers, and resource identity for a machine.
+    /// </summary>
+    /// <typeparam name="TReturn">The machine builder returned after configuration.</typeparam>
+    /// <remarks>Local middleware runs inside global middleware. Observers must await their continuations exactly once;
+    /// interceptors may short-circuit. See <see href="https://github.com/Stateflows/framework/wiki/observability">
+    /// observability</see>.</remarks>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
     public interface IStateMachineUtils<out TReturn>
     {
         // /// <summary>
@@ -11,66 +18,79 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         // /// <param name="polymorphicTriggers">Value of the polymorphic triggers flag.</param>
         // TReturn SetPolymorphicTriggers(bool polymorphicTriggers);
         
-        /// <summary>
-        /// Adds an interceptor to the state machine.
-        /// </summary>
-        /// <param name="interceptorFactoryAsync">The factory method to create the interceptor.</param>
+        /// <summary>Registers event-processing middleware for this State Machine definition.</summary>
+        /// <param name="interceptorFactoryAsync">Asynchronous factory receiving the execution's service provider and
+        /// machine action context and producing the local event-processing interceptor.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
         TReturn AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync);
         
-        /// <summary>
-        /// Adds an interceptor to the state machine.
-        /// </summary>
-        /// <param name="interceptorFactory">The factory method to create the interceptor.</param>
+        /// <summary>Registers event-processing middleware for this State Machine definition.</summary>
+        /// <param name="interceptorFactory">Factory receiving the execution's service provider and machine action context
+        /// and producing the local event-processing interceptor.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
         TReturn AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
             => AddInterceptor((serviceProvider, context) => Task.FromResult(interceptorFactory(serviceProvider, context)));
         
-        /// <summary>
-        /// Adds an interceptor to the state machine.
-        /// </summary>
-        /// <typeparam name="TInterceptor">The type of the interceptor.</typeparam>
+        /// <summary>Registers event-processing middleware for this State Machine definition.</summary>
+        /// <typeparam name="TInterceptor">Typed machine-local event interceptor implementing
+        /// <see cref="IStateMachineInterceptor" />.</typeparam>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
         TReturn AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor;
 
-        /// <summary>
-        /// Adds an observer to the state machine.
-        /// </summary>
-        /// <param name="observerFactoryAsync">The factory method to create the observer.</param>
+        /// <summary>Registers an observer for this State Machine definition.</summary>
+        /// <param name="observerFactoryAsync">Asynchronous factory receiving the execution's service provider and machine
+        /// action context and producing the local observer.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
         TReturn AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync);
 
-        /// <summary>
-        /// Adds an observer to the state machine.
-        /// </summary>
-        /// <param name="observerFactory">The factory method to create the observer.</param>
+        /// <summary>Registers an observer for this State Machine definition.</summary>
+        /// <param name="observerFactory">Factory receiving the execution's service provider and machine action context and
+        /// producing the local observer.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
         TReturn AddObserver(StateMachineObserverFactory observerFactory)
             => AddObserver((serviceProvider, context) => Task.FromResult(observerFactory(serviceProvider, context)));
 
-        /// <summary>
-        /// Adds an observer to the state machine.
-        /// </summary>
-        /// <typeparam name="TObserver">The type of the observer.</typeparam>
+        /// <summary>Registers an observer for this State Machine definition.</summary>
+        /// <typeparam name="TObserver">Typed machine-local observer implementing <see cref="IStateMachineObserver" />.
+        /// </typeparam>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
         TReturn AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver;
 
-        /// <summary>
-        /// Adds an exception handler to the state machine.
-        /// </summary>
-        /// <param name="exceptionHandlerFactoryAsync">The factory method to create the exception handler.</param>
+        /// <summary>Registers an exception acknowledgement handler for this State Machine definition.</summary>
+        /// <param name="exceptionHandlerFactoryAsync">Asynchronous factory receiving the execution's service provider and
+        /// machine action context and producing the local exception acknowledgement handler.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
         TReturn AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
 
-        /// <summary>
-        /// Adds an exception handler to the state machine.
-        /// </summary>
-        /// <param name="exceptionHandlerFactory">The factory method to create the exception handler.</param>
+        /// <summary>Registers an exception acknowledgement handler for this State Machine definition.</summary>
+        /// <param name="exceptionHandlerFactory">Factory receiving the execution's service provider and machine action
+        /// context and producing the local exception acknowledgement handler.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
         TReturn AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
             => AddExceptionHandler((serviceProvider, context) => Task.FromResult(exceptionHandlerFactory(serviceProvider, context)));
 
-        /// <summary>
-        /// Adds an exception handler to the state machine.
-        /// </summary>
-        /// <typeparam name="TExceptionHandler">The type of the exception handler.</typeparam>
+        /// <summary>Registers an exception acknowledgement handler for this State Machine definition.</summary>
+        /// <typeparam name="TExceptionHandler">Typed machine-local exception acknowledgement handler implementing
+        /// <see cref="IStateMachineExceptionHandler" />.</typeparam>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/observability" />
         TReturn AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler;
         
+        /// <summary>Sets the resource name associated with the machine definition.</summary>
+        /// <param name="resourceName">The resource identifier exposed by the registered behavior class.</param>
+        /// <returns>The current machine builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/runtime" />
         TReturn SetResourceName(string resourceName);
     }
 }

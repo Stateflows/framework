@@ -20,7 +20,7 @@ namespace Stateflows.Common.Cache
         
         public async Task SetAsync(string key, string value)
         {
-            var tenantId = await TenantProvider.GetCurrentTenantIdAsync();
+            var tenantId = TenantProvider.GetCurrentTenantId();
 
             lock (Cache)
             {
@@ -30,7 +30,7 @@ namespace Stateflows.Common.Cache
 
         public async Task UpdateAsync(string key, Func<string, string> valueUpdater, string defaultValue = null)
         {
-            var tenantId = await TenantProvider.GetCurrentTenantIdAsync();
+            var tenantId = TenantProvider.GetCurrentTenantId();
 
             lock (Cache)
             {
@@ -47,7 +47,7 @@ namespace Stateflows.Common.Cache
 
         public async Task<(bool Success, string Value)> TryGetAsync(string key)
         {
-            var tenantId = await TenantProvider.GetCurrentTenantIdAsync();
+            var tenantId = TenantProvider.GetCurrentTenantId();
             bool result = false;
             string value = null;
 
@@ -61,7 +61,7 @@ namespace Stateflows.Common.Cache
 
         public async Task RemoveAsync(string key)
         {
-            var tenantId = await TenantProvider.GetCurrentTenantIdAsync();
+            var tenantId = TenantProvider.GetCurrentTenantId();
 
             lock (Cache)
             {

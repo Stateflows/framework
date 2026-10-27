@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
@@ -14,6 +14,9 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Activities.Registration.Interfaces.Internal;
+using Stateflows.Entities.Registration.Interfaces;
+using Stateflows.Common.Registration.Interfaces;
+using Stateflows.Entities;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -35,21 +38,6 @@ namespace Stateflows.Activities.Registration.Builders
         {
             Graph = new Graph(name, version, stateflowsBuilder, ownerClass, parentClass);
         }
-
-        // private IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)
-        // {
-        //     if (!Graph.Initializers.TryGetValue(initializerName, out var initializer))
-        //     {
-        //         initializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
-        //
-        //         Graph.Initializers.Add(initializerName, initializer);
-        //         Graph.InitializerTypes.Add(initializerType);
-        //     }
-        //
-        //     initializer.Actions.Add(initializerAction);
-        //
-        //     return this;
-        // }
 
         public IActivityBuilder AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync)
         {
@@ -91,6 +79,7 @@ namespace Stateflows.Activities.Registration.Builders
 
                 Graph.Initializers.Add(initializerName, initializer);
                 Graph.InitializerTypes.Add(typeof(TInitializationEvent));
+                Graph.StateflowsBuilder.Events.RegisterClr(typeof(TInitializationEvent));
             }
 
             initializer.Actions.Add(async c =>
@@ -103,29 +92,7 @@ namespace Stateflows.Activities.Registration.Builders
                     (c as ActivityInitializationContext)?.InputTokens
                 );
 
-                try
-                {
-                    result = await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    if (e is StateflowsDefinitionException)
-                    {
-                        throw;
-                    }
-                    else
-                    {
-                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                        if (!c.Context.Executor.Inspector.OnActivityInitializationException(context, context.InitializationEventHolder, e))
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
-                    }
-                }
+                result = await actionAsync(context);
 
                 return result;
             });
@@ -320,6 +287,57 @@ namespace Stateflows.Activities.Registration.Builders
 
             return this;
         }
+        
+        [DebuggerHidden]
+        private string GetEntityName(string entityName)
+            => $"{Graph.Name}.entity.{entityName}";
+        
+        private ActivityBuilder AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction = null)
+            where TTemplate : class
+        {
+            entityName = GetEntityName(entityName);
+            Graph.StateflowsBuilder.AddEntities(b => b.AddEntity<TTemplate>(entityName, buildAction), Graph.Class, Graph.Class);
+            
+            return this;
+        }
+
+        IActivityBuilder IEntityOwnerBase<IActivityBuilder>.AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate>(entityName, buildAction);
+
+        IOverridenActivityBuilder IEntityOwnerBase<IOverridenActivityBuilder>.AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate>(entityName, buildAction);
+
+        private ActivityBuilder AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction = null)
+            where TTemplate : class
+            where TEntity : class, IEntity<TTemplate>
+        {
+            entityName = GetEntityName(entityName);
+            Graph.StateflowsBuilder.AddEntities(b => b.AddEntity<TTemplate, TEntity>(entityName, 1, buildAction), Graph.Class, Graph.Class);
+
+            return this;
+        }
+
+        IActivityBuilder IEntityOwnerBase<IActivityBuilder>.SetPropertiesProjection<TProjection>(string entityName)
+            => AddPropertiesProjection<TProjection>(entityName);
+
+        IOverridenActivityBuilder IEntityOwnerBase<IOverridenActivityBuilder>.SetPropertiesProjection<TProjection>(string entityName)
+            => AddPropertiesProjection<TProjection>(entityName);
+
+        
+        private ActivityBuilder AddPropertiesProjection<TProjection>(string entityName)
+            where TProjection : class
+        {
+            Graph.StateflowsBuilder.ServiceCollection.TryAddScoped<IBehaviorInterceptor, PropertyProjectionInterceptor>();
+            PropertyProjectionInterceptor.AddPropertyProjection<TProjection>(Graph.Class, entityName);
+
+            return this;
+        }
+
+        IActivityBuilder IEntityOwnerBase<IActivityBuilder>.AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate, TEntity>(entityName, buildAction);
+        
+        IOverridenActivityBuilder IEntityOwnerBase<IOverridenActivityBuilder>.AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate, TEntity>(entityName, buildAction);
 
         IOverridenActivityBuilder IActivityActionBase<IOverridenActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as IOverridenActivityBuilder;
@@ -363,14 +381,6 @@ namespace Stateflows.Activities.Registration.Builders
 
         IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseDataStore(string dataStoreNodeName, OverridenDataStoreBuildAction buildAction)
             => UseDataStore(dataStoreNodeName, buildAction) as IOverridenActivityBuilder;
-
-        // public IOverridenActivityBuilder UseAcceptEventAction<TEvent>(string actionNodeName,
-        //     OverridenAcceptEventActionBuildAction<TEvent> buildAction)
-        //     => UseAcceptEventAction<TEvent>(actionNodeName, buildAction);
-
-        // public IOverridenActivityBuilder UseTimeEventAction<TTimeEvent>(string actionNodeName,
-        //     OverridenTimeEventNodeBuildAction buildAction) where TTimeEvent : TimeEvent, new()
-        //     => UseTimeEventAction<TTimeEvent>(actionNodeName, buildAction);
 
         IOverridenActivityBuilder IPublishEventBase<IOverridenActivityBuilder>.AddPublishEventAction<TEvent>(string actionNodeName,
             PublishEventActionDelegateAsync<TEvent> actionAsync, PublishEventActionBuildAction buildAction)

@@ -29,7 +29,7 @@ namespace Stateflows.Activities.Engine
                 }
 
                 var timeEvent = Activator.CreateInstance(eventType) as TimeEvent;
-                timeEvent.SetTriggerTime(DateTime.Now);
+                timeEvent.SetTriggerTime(DateTime.UtcNow);
                 timeEvent.ConsumerSignature = node.Identifier;
                 Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
                 Context.NodeTimeEvents[node.Identifier] = timeEvent.Id;
@@ -120,94 +120,113 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public override void AfterActivityFinalize(IActivityFinalizationContext context)
+        public override async Task OnActivityFinalizeAsync(IActivityFinalizationContext context, Func<Task> next)
         {
+            await next();
             UnregisterAcceptEventNodes(((IRootContext)context).Context.Executor.Graph.DanglingTimeEventActionNodes);
         }
 
-        public override void AfterNodeFinalize(IActivityNodeContext context)
+        public override async Task OnNodeFinalizeAsync(IActivityNodeContext context, Func<Task> next)
         {
+            await next();
             UnregisterAcceptEventNodes(((ActionContext)context).Node.DanglingTimeEventActionNodes);
         }
 
-        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+        public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}' with result '{eventStatus}'");
+            if (!Before(context)) return EventStatus.Undelivered;
 
-            Context = ((BaseContext)context).Context;
-
-            if (Context.Context.PendingTimeEvents.Any())
+            var status = EventStatus.Failed;
+            try
             {
-                Context.Context.TriggerTime = Context.Context.PendingTimeEvents.Values
-                    .OrderBy(timeEvent => timeEvent.TriggerTime)
-                    .First()
-                    .TriggerTime;
+                return status = await next();
             }
-            else
+            finally
             {
-                Context.Context.TriggerTime = null;
+                After(context, status);
             }
 
-            Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
-        }
-
-        public override void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
-        {
-            if (initialized)
+            bool Before(IEventContext<TEvent> context)
             {
-                var rootContext = ((IRootContext)context);
-                
-                var currentNode = rootContext.Context.Executor.Graph;
-                foreach (var node in currentNode.DanglingAcceptEventActionNodes)
+                var result = true;
+
+                Context = ((IRootContext)context).Context;
+
+                if (context.Event is TimeEvent timeEvent)
                 {
-                    var actionContext = new ActionContext(rootContext.Context, rootContext.NodeScope, node, Array.Empty<TokenHolder>());
-                    Context.Executor.Inspector.BeforeNodeActivate(actionContext, true);
-                
-                    RegisterAcceptEventNode(node, Guid.NewGuid());
-                    
-                    Context.Executor.Inspector.AfterNodeActivate(actionContext);
+                    result = Context.Context.PendingTimeEvents.ContainsKey(timeEvent.Id);
                 }
+
+                if (context.Event is Startup startupEvent)
+                {
+                    result = Context.Context.PendingStartupEvents.ContainsKey(startupEvent.Id);
+                }
+
+                if (result)
+                {
+                    Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event)}', processing");
+                }
+
+                return result;
+            }
+
+            void After(IEventContext<TEvent> context, EventStatus eventStatus)
+            {
+                Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event)}' with result '{eventStatus}'");
+
+                Context = ((BaseContext)context).Context;
+
+                if (Context.Context.PendingTimeEvents.Any())
+                {
+                    Context.Context.TriggerTime = Context.Context.PendingTimeEvents.Values
+                        .OrderBy(timeEvent => timeEvent.TriggerTime)
+                        .First()
+                        .TriggerTime;
+                }
+                else
+                {
+                    Context.Context.TriggerTime = null;
+                }
+
+                Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
             }
         }
 
-        public override void AfterNodeInitialize(IActivityNodeContext context)
+        public override async Task OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
-            var currentNode = ((ActionContext)context).Node;
+            var initialized = await next();
+            if (!initialized) return;
+
             var rootContext = (IRootContext)context;
-            
+            var currentNode = rootContext.Context.Executor.Graph;
             foreach (var node in currentNode.DanglingAcceptEventActionNodes)
             {
                 var actionContext = new ActionContext(rootContext.Context, rootContext.NodeScope, node, Array.Empty<TokenHolder>());
-                Context.Executor.Inspector.BeforeNodeActivate(actionContext, true);
-                
-                RegisterAcceptEventNode(node, Guid.NewGuid());
-                
-                Context.Executor.Inspector.AfterNodeActivate(actionContext);
+                await Context.Executor.Inspector.OnNodeActivateAsync(actionContext, true, () =>
+                {
+                    RegisterAcceptEventNode(node, Guid.NewGuid());
+                    return Task.CompletedTask;
+                });
             }
         }
 
-        public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+        public override async Task OnNodeInitializeAsync(IActivityNodeContext context, Func<Task> next)
         {
-            var result = true;
+            await next();
 
-            Context = ((IRootContext)context).Context;
+            var currentNode = ((ActionContext)context).Node;
+            var rootContext = (IRootContext)context;
 
-            if (context.Event is TimeEvent timeEvent)
+            foreach (var node in currentNode.DanglingAcceptEventActionNodes)
             {
-                result = Context.Context.PendingTimeEvents.ContainsKey(timeEvent.Id);
+                var actionContext = new ActionContext(rootContext.Context, rootContext.NodeScope, node, Array.Empty<TokenHolder>());
+                await Context.Executor.Inspector.OnNodeActivateAsync(actionContext, true, () =>
+                {
+                    RegisterAcceptEventNode(node, Guid.NewGuid());
+                    return Task.CompletedTask;
+                });
             }
-
-            if (context.Event is Startup startupEvent)
-            {
-                result = Context.Context.PendingStartupEvents.ContainsKey(startupEvent.Id);
-            }
-
-            if (result)
-            {
-                Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', processing");
-            }
-
-            return result;
         }
+
     }
 }

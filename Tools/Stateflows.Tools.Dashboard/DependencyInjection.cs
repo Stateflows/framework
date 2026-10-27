@@ -1,4 +1,3 @@
-using System.IO;
 using System.Reflection;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Builder;
@@ -27,6 +26,8 @@ namespace Stateflows
             configure?.Invoke(options);
             builder.ServiceCollection.AddSingleton(options);
 
+            builder.AddPlantUml();
+
             return builder;
         }
 
@@ -47,6 +48,7 @@ namespace Stateflows
             
             builder.MapStateflowsMinimalAPIsEndpoints(b => b
                 .SetApiRoutePrefix("stateflows-dashboard")
+                .ConfigureAllEndpoints(c => c.ConfigureHandler(h => h.ExcludeFromDescription()))
             );
 
             // Resolve options — prefer DI-registered instance so that settings from

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Stateflows.Common;
@@ -11,42 +13,52 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class Behaviors : StateMachinePlugin
     {
-        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+        public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
-            if (context.Behavior.IsEmbedded)
+            var status = EventStatus.Failed;
+            try
             {
-                if (eventStatus == EventStatus.NotConsumed)
+                return status = await next();
+            }
+            finally
+            {
+                if (context.Behavior.IsEmbedded)
                 {
-                    var headers = context.Headers
-                        .Where(p => p.Value is not BehaviorEmbedding)
-                        .ToDictionary();
-                    
-                    var noBubblingAttribute = context.Event.GetType().GetCustomAttribute<NoBubblingAttribute>();
-                    if (!headers.Values.Any(h => h is NoBubbling) && noBubblingAttribute == null)
+                    if (status == EventStatus.NotConsumed)
                     {
-                        var noForwardingAttribute = context.Event.GetType().GetCustomAttribute<NoForwardingAttribute>();
-                        if (!headers.Values.Any(h => h is NoForwarding) && noForwardingAttribute == null)
-                        {
-                            headers[nameof(NoForwarding)] = new NoForwarding();
-                        }
+                        var headers = context.Headers
+                            .Where(p => p.Value is not BehaviorEmbedding)
+                            .ToDictionary();
 
-                        if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
+                        var noBubblingAttribute = context.Event.GetType().GetCustomAttribute<NoBubblingAttribute>();
+                        if (!headers.Values.Any(h => h is NoBubbling) && noBubblingAttribute == null)
                         {
-                            parentBehaviorContext.Send(context.Event, headers);
-                        };
+                            var noForwardingAttribute = context.Event.GetType().GetCustomAttribute<NoForwardingAttribute>();
+                            if (!headers.Values.Any(h => h is NoForwarding) && noForwardingAttribute == null)
+                            {
+                                headers[nameof(NoForwarding)] = new NoForwarding();
+                            }
+
+                            if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
+                            {
+                                parentBehaviorContext.Send(context.Event, headers);
+                            };
+                        }
                     }
                 }
-
-                // if (eventStatus == EventStatus.Consumed)
-                // {
-                //     context.Behavior.Send(new Completion());
-                // }
             }
+
         }
 
-        public override void AfterStateEntry(IStateActionContext context)
+        public override async Task OnStateEntryAsync(IStateActionContext context, Func<Task> next)
         {
+            await next();
             var vertex = ((StateActionContext)context).Vertex;
+
+            // if (vertex.BehaviorType == "AIAgent")
+            // {
+            //     return;
+            // }
 
             var stateValues = ((IRootContext)context).Context.GetStateValues(vertex.Name);
 
@@ -57,13 +69,13 @@ namespace Stateflows.StateMachines.Engine
                 if (context.TryLocateBehavior(behaviorId, out var behavior))
                 {
                     stateValues.BehaviorId = behaviorId;
-                    
+
                     var initializationRequest = (
                         vertex.BehaviorInitializationBuilder != null
                             ? vertex.BehaviorInitializationBuilder(context)
                             : new Initialize()
                     ).ToTypedEventHolder();
-                    
+
                     _ = initializationRequest.SendAsync(
                         behavior,
                         new Dictionary<string, EventHeader>
@@ -103,21 +115,32 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        public override void BeforeStateExit(IStateActionContext context)
+        public override async Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
         {
-            var vertex = ((StateActionContext)context).Vertex;
+            Before(context);
+            await next();
 
-            if (vertex.BehaviorName != null)
+            void Before(IStateActionContext context)
             {
-                var stateValues = ((IRootContext)context).Context.GetStateValues(vertex.Name);
+                var vertex = ((StateActionContext)context).Vertex;
 
-                if (
-                    stateValues.BehaviorId.HasValue &&
-                    context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
-                )
+                // if (vertex.BehaviorType == "AIAgent")
+                // {
+                //     return;
+                // }
+
+                if (vertex.BehaviorName != null)
                 {
-                    _ = behavior.SendAsync(new Finalize());
-                    stateValues.BehaviorId = null;
+                    var stateValues = ((IRootContext)context).Context.GetStateValues(vertex.Name);
+
+                    if (
+                        stateValues.BehaviorId.HasValue &&
+                        context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
+                    )
+                    {
+                        _ = behavior.SendAsync(new Finalize());
+                        stateValues.BehaviorId = null;
+                    }
                 }
             }
         }

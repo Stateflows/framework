@@ -11,8 +11,16 @@ using Stateflows.StateMachines;
 
 namespace Stateflows
 {
+    /// <summary>Schedules events for delivery to a behavior instance.</summary>
     public static class BehaviorExtensions
     {
+        /// <summary>Schedules an event for delivery at a specified date and time.</summary>
+        /// <typeparam name="TEvent">The event type to publish.</typeparam>
+        /// <param name="behavior">The behavior that receives the event.</param>
+        /// <param name="time">The scheduled delivery time.</param>
+        /// <param name="event">The event instance to deliver.</param>
+        /// <param name="headers">Optional headers to attach to the scheduled event.</param>
+        /// <returns>A task containing whether the schedule was accepted and its identifier; a rejected request returns an empty identifier.</returns>
         public static Task<(bool Success, Guid ScheduleId)> ScheduleTimeAsync<TEvent>(this IBehavior behavior, DateTime time, TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => ScheduleAsync(behavior, new ScheduleTime()
             {
@@ -21,6 +29,13 @@ namespace Stateflows
                 Recipients = new List<BehaviorId>() { behavior.Id }
             });
         
+        /// <summary>Schedules an event for delivery after a delay.</summary>
+        /// <typeparam name="TEvent">The event type to publish.</typeparam>
+        /// <param name="behavior">The behavior that receives the event.</param>
+        /// <param name="delay">The delay before delivery.</param>
+        /// <param name="event">The event instance to deliver.</param>
+        /// <param name="headers">Optional headers to attach to the scheduled event.</param>
+        /// <returns>A task containing whether the schedule was accepted and its identifier; a rejected request returns an empty identifier.</returns>
         public static Task<(bool Success, Guid ScheduleId)> ScheduleDelayAsync<TEvent>(this IBehavior behavior, TimeSpan delay, TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => ScheduleAsync(behavior, new ScheduleDelay()
             {
@@ -29,6 +44,13 @@ namespace Stateflows
                 Recipients = new List<BehaviorId>() { behavior.Id }
             });
 
+        /// <summary>Schedules repeated delivery of an event at a fixed interval.</summary>
+        /// <typeparam name="TEvent">The event type to publish.</typeparam>
+        /// <param name="behavior">The behavior that receives the event.</param>
+        /// <param name="interval">The interval between deliveries.</param>
+        /// <param name="event">The event instance to deliver on each occurrence.</param>
+        /// <param name="headers">Optional headers to attach to each scheduled event.</param>
+        /// <returns>A task containing whether the schedule was accepted and its identifier; a rejected request returns an empty identifier.</returns>
         public static Task<(bool Success, Guid ScheduleId)> ScheduleIntervalAsync<TEvent>(this IBehavior behavior, TimeSpan interval, TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => ScheduleAsync(behavior, new ScheduleInterval()
             {
@@ -37,6 +59,13 @@ namespace Stateflows
                 Recipients = new List<BehaviorId>() { behavior.Id }
             });
 
+        /// <summary>Schedules repeated delivery of an event using a cron expression.</summary>
+        /// <typeparam name="TEvent">The event type to publish.</typeparam>
+        /// <param name="behavior">The behavior that receives the event.</param>
+        /// <param name="cronExpression">The cron schedule expression.</param>
+        /// <param name="event">The event instance to deliver on each occurrence.</param>
+        /// <param name="headers">Optional headers to attach to each scheduled event.</param>
+        /// <returns>A task containing whether the schedule was accepted and its identifier; a rejected request returns an empty identifier.</returns>
         public static Task<(bool Success, Guid ScheduleId)> ScheduleCronAsync<TEvent>(this IBehavior behavior, string cronExpression, TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => ScheduleAsync(behavior, new ScheduleCron()
             {
@@ -45,6 +74,12 @@ namespace Stateflows
                 Recipients = new List<BehaviorId>() { behavior.Id }
             });
 
+        /// <summary>Removes a previously accepted schedule.</summary>
+        /// <param name="behavior">The behavior used to access the scheduler.</param>
+        /// <param name="scheduleId">The identifier returned by a scheduling operation.</param>
+        /// <returns>A task that completes when the unschedule request has been sent.</returns>
+        /// <exception cref="NotSupportedException">The behavior implementation does not expose the injection scope required to locate the scheduler.</exception>
+        /// <remarks>If the scheduler behavior cannot be located, this method completes without removing a schedule.</remarks>
         public static async Task UnscheduleAsync(this IBehavior behavior, Guid scheduleId)
         {
             if (!(behavior is IInjectionScope injectionScope)) throw new NotSupportedException($"{behavior.GetType()} implementation of IBehavior does not support events scheduling");

@@ -4,6 +4,7 @@ using Stateflows.Common;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common.Utilities;
+using Stateflows.Utils;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -58,6 +59,12 @@ namespace Stateflows.Activities.Context.Classes
 
         public void OutputRange<TToken>(IEnumerable<TToken> tokens)
             => InputTokens.AddRange(tokens.Select(token => token.ToTokenHolder()).ToArray());
+
+        public void PassTokensOfTypeOn<TToken>()
+            => OutputRange(InputTokens.OfTokenType<TToken>());
+
+        public void PassAllTokensOn()
+            => OutputRange(InputTokens);
 
         public object LockHandle => Activity.LockHandle;
         public IReadOnlyTree<INodeContext> ActiveNodes => Activity.ActiveNodes;

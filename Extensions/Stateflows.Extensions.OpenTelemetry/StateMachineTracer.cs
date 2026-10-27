@@ -1,4 +1,6 @@
+using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Diagnostics;
@@ -10,454 +12,661 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Extensions.OpenTelemetry
 {
-    public class StateMachineTracer : IStateMachineObserver, IStateMachineInterceptor, IStateMachineExceptionHandler
+    /// <summary>Creates diagnostic activities for state-machine event processing, lifecycle hooks, and transitions.</summary>
+    /// <param name="logger">The logger used to report state-machine processing outcomes.</param>
+    public class StateMachineTracer(ILogger<StateMachineTracer> logger)
+        : IStateMachineObserver, IStateMachineInterceptor, IStateMachineExceptionHandler
     {
-        private readonly ILogger<StateMachineTracer> Logger;
-        public StateMachineTracer(ILogger<StateMachineTracer> logger)
-        {
-            Logger = logger;
-        }
-
         private bool Skip = false;
-        
-        internal static readonly ActivitySource Source = new ActivitySource(nameof(Stateflows));
+
+        internal static readonly ActivitySource Source = new(nameof(Stateflows));
 
         private Activity? EventProcessingActivity;
-        public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+        /// <inheritdoc/>
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
-            var noTracing =
-                context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
-                context.Headers.Values.Any(h => h is NoTracing);
-            
-            Skip = noTracing;
-            
-            if (!noTracing)
+            Before(context);
+
+            var status = EventStatus.Failed;
+            try
             {
-                var eventName = context.Event is Completion
-                    ? "Completion"
-                    : context.Event.GetType().GetEventName().ToShortName();
-                
-                var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
-                if (header is ActivityHeader activityHeader)
-                {
-                    EventProcessingActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}",
-                        ActivityKind.Internal,
-                        parentContext: activityHeader.ActivityContext
-                    );
-                }
-                
-                EventProcessingActivity ??= Source.StartActivity(
-                    $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}"
-                );
-                
-                EventProcessingActivity.AddTag("StateMachineId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
-                EventProcessingActivity.AddTag("Event", eventName);
-                
-                Logger.LogTrace(
-                    message: "State Machine '{StateMachineId}' received event '{Event}', processing",
-                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                    eventName
-                );
+                return status = await next();
             }
-            
-            return true;
+            catch (Exception exception)
+            {
+                if (!Skip && EventProcessingActivity != null)
+                {
+                    EventProcessingActivity.SetTag("EventStatus", EventStatus.Failed);
+                    StopProcessingActivity(context, EventStatus.Failed, exception);
+                }
+                throw;
+            }
+            finally
+            {
+                After(context, status);
+            }
+
+            void Before(IEventContext<TEvent> context)
+            {
+                try
+                {
+                    var noTracing =
+                        context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
+                        context.Headers.Values.Any(h => h is NoTracing);
+
+                    Skip = noTracing;
+
+                    if (!noTracing)
+                    {
+                        var eventName = context.Event is Completion
+                            ? "Completion"
+                            : Event.GetName(context.Event).ToShortName();
+
+                        var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
+                        if (header is ActivityHeader activityHeader)
+                        {
+                            EventProcessingActivity = Source.StartActivity(
+                                $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}",
+                                ActivityKind.Internal,
+                                parentContext: activityHeader.ActivityContext
+                            );
+                        }
+
+                        EventProcessingActivity ??= Source.StartActivity(
+                            $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}",
+                            ActivityKind.Internal,
+                            default(ActivityContext),
+                            [
+                                new KeyValuePair<string, object?>("StateMachineId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}"),
+                                new KeyValuePair<string, object?>("Event", eventName)
+                            ]
+                        );
+
+                        logger.LogTrace(
+                            message: "State Machine '{StateMachineId}' received event '{Event}', processing",
+                            $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
+                            eventName
+                        );
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(ProcessEventAsync), e);
+                }
+
+            }
+
+            void After(IEventContext<TEvent> context, EventStatus eventStatus)
+            {
+                try
+                {
+                    if (context.Behavior.Id.Type != BehaviorType.StateMachine)
+                    {
+                        return;
+                    }
+
+                    EventProcessingActivity?.AddTag("EventStatus", eventStatus);
+
+                    if (!Skip)
+                    {
+                        if (eventStatus != EventStatus.Failed)
+                        {
+                            StopProcessingActivity(context, eventStatus);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(ProcessEventAsync), e);
+                }
+            }
         }
 
-        public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
-        {
-            if (context.Behavior.Id.Type != BehaviorType.StateMachine)
-            {
-                return;
-            }
-            
-            EventProcessingActivity?.AddTag("EventStatus", eventStatus);
-            
-            if (!Skip)
-            {
-                if (eventStatus != EventStatus.Failed)
-                {
-                    StopProcessingActivity(context, eventStatus);
-                }
-            }
-        }
-        
         private Activity? GuardActivity;
         private Activity? DefaultGuardActivity;
-        public void BeforeTransitionGuard<TEvent>(ITransitionContext<TEvent> context)
+        /// <inheritdoc/>
+        public async Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task<bool>> next)
         {
-            if (Skip && !ImplicitInitialization) return;
+            Before(context);
+            var result = await next();
+            After(context, result);
 
-            var eventName = context.Event!.GetType().GetEventName().ToShortName();
-            var triggerEventName = context.TriggerType.GetEventName().ToShortName();
-            if (eventName != Event<Completion>.Name.ToShortName())
+            void Before(ITransitionContext<TEvent> context)
             {
-                if (DefaultGuardActivity != null)
+                try
                 {
-                    DefaultGuardActivity.Stop();
-                    DefaultGuardActivity = null;
-                }
-                
-                if (GuardActivity != null)
-                {
-                    GuardActivity.Stop();
-                    GuardActivity = null;
-                }
+                    if (Skip && !ImplicitInitialization) return;
 
-                GuardActivity = Source.StartActivity(
-                    triggerEventName == eventName
-                        ? context.Target == null
-                            ? $"Internal transition ({context.Source.Name.ToShortName()})/{eventName}"
-                            : $"Transition ({context.Source.Name.ToShortName()}) –{eventName}🡢 ({context.Target?.Name.ToShortName()})"
-                        : context.Target == null
-                            ? $"Internal transition ({context.Source.Name.ToShortName()})/{triggerEventName} triggered by {eventName}"
-                            : $"Transition ({context.Source.Name.ToShortName()}) –{triggerEventName}🡢 ({context.Target?.Name.ToShortName()}) triggered by {eventName}",
-                    ActivityKind.Internal,
-                    StateEntryActivity?.Context ?? EventProcessingActivity.Context
-                );
+                    var eventName = Event.GetName(context.Event!).ToShortName();
+                    var triggerEventName = context.Event is StructuralEvent structural
+                        ? structural.Name.ToShortName()
+                        : context.TriggerType.GetEventName().ToShortName();
+                    if (eventName != Event<Completion>.Name.ToShortName())
+                    {
+                        if (DefaultGuardActivity != null)
+                        {
+                            DefaultGuardActivity.Stop();
+                            DefaultGuardActivity = null;
+                        }
 
-                if (
-                    (
-                        /*(
-                            context.ExecutionTrigger is CompoundRequest compoundRequest &&
-                            compoundRequest.Events.All(e => e.BoxedPayload != (object)context.Event)
-                        ) ||
-                        (
-                            context.ExecutionTrigger is not CompoundRequest &&*/
-                            context.ExecutionTrigger != (object)context.Event
-                        // )
-                    ) &&
-                    GuardActivity != null
-                )
+                        if (GuardActivity != null)
+                        {
+                            GuardActivity.Stop();
+                            GuardActivity = null;
+                        }
+
+                        GuardActivity = Source.StartActivity(
+                            triggerEventName == eventName
+                                ? context.Target == null
+                                    ? $"Internal transition ({context.Source.Name.ToShortName()})/{eventName}"
+                                    : $"Transition ({context.Source.Name.ToShortName()}) –{eventName}🡢 ({context.Target?.Name.ToShortName()})"
+                                : context.Target == null
+                                    ? $"Internal transition ({context.Source.Name.ToShortName()})/{triggerEventName} triggered by {eventName}"
+                                    : $"Transition ({context.Source.Name.ToShortName()}) –{triggerEventName}🡢 ({context.Target?.Name.ToShortName()}) triggered by {eventName}",
+                            ActivityKind.Internal,
+                            StateEntryActivity?.Context ?? EventProcessingActivity?.Context ?? default(ActivityContext)
+                        );
+
+                        if (context.ExecutionTrigger != (object)context.Event && GuardActivity != null)
+                        {
+                            GuardActivity.DisplayName = GuardActivity.DisplayName.Replace(eventName, $"deferred {eventName}");
+                        }
+                    }
+                    else
+                    {
+                        if (DefaultGuardActivity != null)
+                        {
+                            DefaultGuardActivity.Stop();
+                            DefaultGuardActivity = null;
+                        }
+
+                        if (GuardActivity != null)
+                        {
+                            GuardActivity.Stop();
+                            GuardActivity = null;
+                        }
+
+                        DefaultGuardActivity = Source.StartActivity(
+                            context.Target == null
+                                ? $"Default transition ({context.Source.Name.ToShortName()})"
+                                : $"Default transition ({context.Source.Name.ToShortName()}) 🡢 ({context.Target?.Name.ToShortName()})",
+                            ActivityKind.Internal,
+                            StateEntryActivity?.Context ?? EventProcessingActivity?.Context ?? default(ActivityContext)
+                        );
+                    }
+                }
+                catch (Exception e)
                 {
-                    GuardActivity.DisplayName = GuardActivity.DisplayName.Replace(eventName, $"deferred {eventName}");
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnTransitionGuardAsync), e);
                 }
             }
-            else
+
+            void After(ITransitionContext<TEvent> context, bool guardResult)
             {
-                if (DefaultGuardActivity != null)
+                try
                 {
-                    DefaultGuardActivity.Stop();
-                    DefaultGuardActivity = null;
+                    if (Skip && !ImplicitInitialization) return;
+
+                    var eventName = Event.GetName(context.Event!).ToShortName();
+                    if (eventName != Event<Completion>.Name.ToShortName())
+                    {
+                        if (guardResult || GuardActivity == null) return;
+
+                        GuardActivity.Stop();
+                        GuardActivity.DisplayName += " blocked by guard";
+                    }
+                    else
+                    {
+                        if (guardResult || DefaultGuardActivity == null) return;
+
+                        DefaultGuardActivity.Stop();
+                        DefaultGuardActivity.DisplayName += " blocked by guard";
+                    }
                 }
-                
-                if (GuardActivity != null)
+                catch (Exception e)
                 {
-                    GuardActivity.Stop();
-                    GuardActivity = null;
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnTransitionGuardAsync), e);
                 }
-                
-                DefaultGuardActivity = Source.StartActivity(
-                    $"Default transition ({context.Source.Name.ToShortName()}) 🡢 ({context.Target?.Name.ToShortName()})",
-                    ActivityKind.Internal,
-                    StateEntryActivity?.Context ?? EventProcessingActivity.Context
-                );
             }
         }
 
-        public void AfterTransitionGuard<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
-        {
-            if (Skip && !ImplicitInitialization) return;
-
-            var eventName = context.Event!.GetType().GetEventName().ToShortName();
-            if (eventName != Event<Completion>.Name.ToShortName())
-            {
-                if (guardResult || GuardActivity == null) return;
-                
-                GuardActivity.Stop();
-                GuardActivity.DisplayName += " blocked by guard";
-            }
-            else
-            {
-                if (guardResult || DefaultGuardActivity == null) return;
-                
-                DefaultGuardActivity.Stop();
-                DefaultGuardActivity.DisplayName += " blocked by guard";
-            }
-        }
-        
         private Activity? EffectActivity;
-        public void BeforeTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
+        /// <inheritdoc/>
+        public async Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
         {
-            if (Skip && !ImplicitInitialization) return;
+            Before(context);
+            await next();
+            After(context);
 
-            var parentContext = DefaultGuardActivity?.Context ??
-                                GuardActivity?.Context ?? EventProcessingActivity?.Context;
-            var eventName = context.Event!.GetType().GetEventName().ToShortName();
-            var traceName = context.Target == null
-                ? $"Internal transition effect"
-                : eventName == Event<Completion>.Name.ToShortName()
-                    ? $"Default transition effect"
-                    : $"Transition effect";
-            
-            EffectActivity = parentContext != null
-                ? Source.StartActivity(
-                    traceName,
-                    ActivityKind.Internal,
-                    (ActivityContext)parentContext
-                )
-                : Source.StartActivity(traceName);
-        }
+            void Before(ITransitionContext<TEvent> context)
+            {
+                try
+                {
+                    if (Skip && !ImplicitInitialization) return;
 
-        public void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
-        {
-            if (Skip && !ImplicitInitialization) return;
+                    var parentContext = DefaultGuardActivity?.Context ??
+                        GuardActivity?.Context ??
+                        EventProcessingActivity?.Context ??
+                        default(ActivityContext);
 
-            EffectActivity?.Stop();
+                    var eventName = Event.GetName(context.Event!).ToShortName();
+                    var traceName = context.Target == null
+                        ? $"Internal transition effect"
+                        : eventName == Event<Completion>.Name.ToShortName()
+                            ? $"Default transition effect"
+                            : $"Transition effect";
+
+                    EffectActivity = parentContext != null
+                        ? Source.StartActivity(
+                            traceName,
+                            ActivityKind.Internal,
+                            (ActivityContext)parentContext
+                        )
+                        : Source.StartActivity(traceName);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnTransitionEffectAsync), e);
+                }
+            }
+
+            void After(ITransitionContext<TEvent> context)
+            {
+                try
+                {
+                    if (Skip && !ImplicitInitialization) return;
+
+                    EffectActivity?.Stop();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnTransitionEffectAsync), e);
+                }
+            }
         }
 
         private Activity? InitializerActivity;
         private bool ImplicitInitialization;
-        public void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization)
+        /// <inheritdoc/>
+        public async Task OnStateMachineInitializeAsync(IStateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
-            ImplicitInitialization = implicitInitialization;
-            if (Skip && !ImplicitInitialization) return;
-            
-            if (EventProcessingActivity == null)
+            Before(context, implicitInitialization);
+            var result = await next();
+            After(context, implicitInitialization, result);
+
+            void Before(IStateMachineInitializationContext context, bool implicitInitialization)
             {
-                var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
-                if (header is ActivityHeader activityHeader)
+                try
                 {
-                    InitializerActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
-                        ActivityKind.Internal,
-                        parentContext: activityHeader.ActivityContext
-                    );
+                    ImplicitInitialization = implicitInitialization;
+                    if (Skip && !ImplicitInitialization) return;
+
+                    if (EventProcessingActivity == null)
+                    {
+                        var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
+                        if (header is ActivityHeader activityHeader)
+                        {
+                            InitializerActivity = Source.StartActivity(
+                                $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
+                                ActivityKind.Internal,
+                                parentContext: activityHeader.ActivityContext
+                            );
+                        }
+
+                        InitializerActivity ??= Source.StartActivity(
+                            $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
+                        );
+
+                        EventProcessingActivity = InitializerActivity;
+                    }
+                    else
+                    {
+                        InitializerActivity = Source.StartActivity($"State Machine initialized{(ImplicitInitialization ? " implicitly" : "")}");
+                    }
                 }
-                
-                InitializerActivity ??= Source.StartActivity(
-                    $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
-                );
-                
-                EventProcessingActivity = InitializerActivity;
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateMachineInitializeAsync), e);
+                }
             }
-            else
+
+            void After(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
             {
-                InitializerActivity = Source.StartActivity($"State Machine initialized{(ImplicitInitialization ? " implicitly" : "")}");
+                try
+                {
+                    if (Skip && !ImplicitInitialization) return;
+
+                    if (InitializerActivity != null)
+                    {
+                        if (!initialized)
+                        {
+                            InitializerActivity.DisplayName =
+                                $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' not initialized";
+                        }
+
+                        InitializerActivity.Stop();
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateMachineInitializeAsync), e);
+                }
             }
         }
 
-        public void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
-        {
-            if (Skip && !ImplicitInitialization) return;
-            
-            if (InitializerActivity != null)
-            {
-                if (!initialized)
-                {
-                    InitializerActivity.DisplayName =
-                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' not initialized";
-                }
-
-                InitializerActivity.Stop();
-            }
-        }
-        
         private Activity? FinalizerActivity;
-        public void BeforeStateMachineFinalize(IStateMachineActionContext context)
+        /// <inheritdoc/>
+        public async Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next)
         {
-            if (Skip && !ImplicitInitialization) return;
-            
-            FinalizerActivity = Source.StartActivity("State machine finalized");
+            Before(context);
+            await next();
+            After(context);
+
+            void Before(IStateMachineActionContext context)
+            {
+                try
+                {
+                    if (Skip && !ImplicitInitialization) return;
+
+                    FinalizerActivity = Source.StartActivity("State Machine finalized");
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateMachineFinalizeAsync), e);
+                }
+            }
+
+            void After(IStateMachineActionContext context)
+            {
+                try
+                {
+                    if (Skip && !ImplicitInitialization) return;
+
+                    FinalizerActivity?.Stop();
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateMachineFinalizeAsync), e);
+                }
+            }
         }
 
-        public void AfterStateMachineFinalize(IStateMachineActionContext context)
-        {
-            if (Skip && !ImplicitInitialization) return;
-            
-            FinalizerActivity?.Stop();
-        }
+        /// <inheritdoc/>
+        public Task OnStateInitializeAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
-        public void BeforeStateInitialize(IStateActionContext context)
-        { }
-
-        public void AfterStateInitialize(IStateActionContext context)
-        { }
-
-        public void BeforeStateFinalize(IStateActionContext context)
-        { }
-
-        public void AfterStateFinalize(IStateActionContext context)
-        { }
+        /// <inheritdoc/>
+        public Task OnStateFinalizeAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
         private Activity? StateEntryActivity;
-        public void BeforeStateEntry(IStateActionContext context)
+        /// <inheritdoc/>
+        public async Task OnStateEntryAsync(IStateActionContext context, Func<Task> next)
         {
-            if (Skip && !ImplicitInitialization) return;
+            Before(context);
+            await next();
+            After(context);
 
-            var parentContext = DefaultGuardActivity?.Context ?? GuardActivity?.Context ?? EventProcessingActivity?.Context;
-            if (parentContext != null)
+            void Before(IStateActionContext context)
             {
-                StateEntryActivity = Source.StartActivity(
-                    $"State ({context.State.Name.ToShortName()})/entry",
-                    ActivityKind.Internal,
-                    (ActivityContext)parentContext
-                );
+                try
+                {
+                    if (Skip && !ImplicitInitialization) return;
+
+                    var parentContext = DefaultGuardActivity?.Context ??
+                        GuardActivity?.Context ??
+                        EventProcessingActivity?.Context ??
+                        default(ActivityContext);
+
+                    if (parentContext != null)
+                    {
+                        StateEntryActivity = Source.StartActivity(
+                            $"State ({context.State.Name.ToShortName()})/entry",
+                            ActivityKind.Internal,
+                            (ActivityContext)parentContext
+                        );
+                    }
+                    else
+                    {
+                        StateEntryActivity = Source.StartActivity($"State ({context.State.Name.ToShortName()})/entry");
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateEntryAsync), e);
+                }
             }
-            else
+
+            void After(IStateActionContext context)
             {
-                StateEntryActivity = Source.StartActivity($"State ({context.State.Name.ToShortName()})/entry");
+                if (Skip && !ImplicitInitialization) return;
+
+                StateEntryActivity?.Stop();
             }
         }
 
-        public void AfterStateEntry(IStateActionContext context)
-        {
-            if (Skip && !ImplicitInitialization) return;
-            
-            StateEntryActivity?.Stop();
-        }
-        
         private Activity? StateExitActivity;
-        public void BeforeStateExit(IStateActionContext context)
+        /// <inheritdoc/>
+        public async Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
         {
-            if (Skip && !ImplicitInitialization) return;
+            Before(context);
+            await next();
+            After(context);
 
-            var parentContext = DefaultGuardActivity?.Context ??
-                                GuardActivity?.Context ?? 
-                                EventProcessingActivity?.Context;
-
-            var traceName = $"State ({context.State.Name.ToShortName()})/exit";
-            StateExitActivity = parentContext != null
-                ? Source.StartActivity(
-                    traceName,
-                    ActivityKind.Internal,
-                    (ActivityContext)parentContext
-                )
-                : Source.StartActivity(traceName);
-        }
-
-        public void AfterStateExit(IStateActionContext context)
-        {
-            if (Skip && !ImplicitInitialization) return;
-            
-            StateExitActivity?.Stop();
-        }
-
-        public bool OnStateMachineInitializationException(IStateMachineInitializationContext context, Exception exception)
-        {
-            if (Skip && !ImplicitInitialization) return false;
-
-            if (InitializerActivity != null)
+            void Before(IStateActionContext context)
             {
-                InitializerActivity.Stop();
-                InitializerActivity.SetStatus(ActivityStatusCode.Error);
-                InitializerActivity.AddException(exception);
+                try
+                {
+                    if (Skip && !ImplicitInitialization) return;
+
+                    var parentContext = DefaultGuardActivity?.Context ??
+                        GuardActivity?.Context ??
+                        EventProcessingActivity?.Context ??
+                        default(ActivityContext);
+
+                    var traceName = $"State ({context.State.Name.ToShortName()})/exit";
+                    StateExitActivity = parentContext != null
+                        ? Source.StartActivity(
+                            traceName,
+                            ActivityKind.Internal,
+                            (ActivityContext)parentContext
+                        )
+                        : Source.StartActivity(traceName);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateExitAsync), e);
+                }
             }
 
-            StopProcessingActivity(context, EventStatus.Failed, exception);
-            EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
+            void After(IStateActionContext context)
+            {
+                if (Skip && !ImplicitInitialization) return;
 
-            return false;
+                StateExitActivity?.Stop();
+            }
         }
 
-        public bool OnStateMachineFinalizationException(IStateMachineActionContext context, Exception exception)
+        /// <inheritdoc/>
+        public Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
         {
-            if (Skip && !ImplicitInitialization) return false;
-
-            if (FinalizerActivity != null)
+            try
             {
-                FinalizerActivity.Stop();
-                FinalizerActivity.SetStatus(ActivityStatusCode.Error);
-                FinalizerActivity.AddException(exception);
+                if (Skip && !ImplicitInitialization) return Task.FromResult(false);
+
+                if (InitializerActivity != null)
+                {
+                    InitializerActivity.Stop();
+                    InitializerActivity.SetStatus(ActivityStatusCode.Error);
+                    InitializerActivity.AddException(exception);
+                }
+
+                StopProcessingActivity(context, EventStatus.Failed, exception);
+                EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
+                EventProcessingActivity?.AddException(exception);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateMachineInitializationExceptionAsync), e);
             }
 
-            StopProcessingActivity(context, EventStatus.Failed, exception);
-            EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
-
-            return false;
+            return Task.FromResult(false);
         }
 
-        public bool OnTransitionGuardException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+        /// <inheritdoc/>
+        public Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
         {
-            if (Skip && !ImplicitInitialization) return false;
-
-            if (GuardActivity != null)
+            try
             {
-                GuardActivity.Stop();
-                GuardActivity.SetStatus(ActivityStatusCode.Error);
-                GuardActivity.AddException(exception);
-                GuardActivity = null;
+                if (Skip && !ImplicitInitialization) return Task.FromResult(false);
+
+                if (FinalizerActivity != null)
+                {
+                    FinalizerActivity.Stop();
+                    FinalizerActivity.SetStatus(ActivityStatusCode.Error);
+                    FinalizerActivity.AddException(exception);
+                }
+
+                StopProcessingActivity(context, EventStatus.Failed, exception);
+                EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
+                EventProcessingActivity?.AddException(exception);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateMachineFinalizationExceptionAsync), e);
             }
 
-            StopProcessingActivity(context, EventStatus.Failed, exception);
-            EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
-
-            return false;
+            return Task.FromResult(false);
         }
 
-        public bool OnTransitionEffectException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+        /// <inheritdoc/>
+        public Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
-            if (Skip && !ImplicitInitialization) return false;
-
-            if (EffectActivity != null)
+            try
             {
-                EffectActivity.Stop();
-                EffectActivity.SetStatus(ActivityStatusCode.Error);
-                EffectActivity.AddException(exception);
+                if (Skip && !ImplicitInitialization) return Task.FromResult(false);
+
+                if (GuardActivity != null)
+                {
+                    GuardActivity.Stop();
+                    GuardActivity.SetStatus(ActivityStatusCode.Error);
+                    GuardActivity.AddException(exception);
+                    GuardActivity = null;
+                }
+
+                StopProcessingActivity(context, EventStatus.Failed, exception);
+                EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
+                EventProcessingActivity?.AddException(exception);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnTransitionGuardExceptionAsync), e);
             }
 
-            StopProcessingActivity(context, EventStatus.Failed, exception);
-            EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
-
-            return false;
+            return Task.FromResult(false);
         }
 
-        public bool OnStateInitializationException(IStateActionContext context, Exception exception)
+        /// <inheritdoc/>
+        public Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
-            if (Skip && !ImplicitInitialization) return false;
-
-            return false;
-        }
-
-        public bool OnStateFinalizationException(IStateActionContext context, Exception exception)
-        {
-            if (Skip && !ImplicitInitialization) return false;
-
-            return false;
-        }
-
-        public bool OnStateEntryException(IStateActionContext context, Exception exception)
-        {
-            if (Skip && !ImplicitInitialization) return false;
-
-            if (StateEntryActivity != null)
+            try
             {
-                StateEntryActivity.Stop();
-                StateEntryActivity.SetStatus(ActivityStatusCode.Error);
-                StateEntryActivity.AddException(exception);
+                if (Skip && !ImplicitInitialization) return Task.FromResult(false);
+
+                if (EffectActivity != null)
+                {
+                    EffectActivity.Stop();
+                    EffectActivity.SetStatus(ActivityStatusCode.Error);
+                    EffectActivity.AddException(exception);
+                }
+
+                StopProcessingActivity(context, EventStatus.Failed, exception);
+                EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
+                EventProcessingActivity?.AddException(exception);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnTransitionEffectExceptionAsync), e);
             }
 
-            StopProcessingActivity(context, EventStatus.Failed, exception);
-            EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
-
-            return false;
+            return Task.FromResult(false);
         }
 
-        public bool OnStateExitException(IStateActionContext context, Exception exception)
+        /// <inheritdoc/>
+        public Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
         {
-            if (Skip && !ImplicitInitialization) return false;
+            if (Skip && !ImplicitInitialization) return Task.FromResult(false);
 
-            if (StateExitActivity != null)
+            return Task.FromResult(false);
+        }
+
+        /// <inheritdoc/>
+        public Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
+        {
+            if (Skip && !ImplicitInitialization) return Task.FromResult(false);
+
+            return Task.FromResult(false);
+        }
+
+        /// <inheritdoc/>
+        public Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
+        {
+            try
             {
-                StateExitActivity.Stop();
-                StateExitActivity.SetStatus(ActivityStatusCode.Error);
-                StateExitActivity.AddException(exception);
+                if (Skip && !ImplicitInitialization) return Task.FromResult(false);
+
+                if (StateEntryActivity != null)
+                {
+                    StateEntryActivity.Stop();
+                    StateEntryActivity.SetStatus(ActivityStatusCode.Error);
+                    StateEntryActivity.AddException(exception);
+                }
+
+                StopProcessingActivity(context, EventStatus.Failed, exception);
+                EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
+                EventProcessingActivity?.AddException(exception);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateEntryExceptionAsync), e);
             }
 
-            StopProcessingActivity(context, EventStatus.Failed, exception);
+            return Task.FromResult(false);
+        }
 
-            return false;
+        /// <inheritdoc/>
+        public Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
+        {
+            try
+            {
+                if (Skip && !ImplicitInitialization) return Task.FromResult(false);
+
+                if (StateExitActivity != null)
+                {
+                    StateExitActivity.Stop();
+                    StateExitActivity.SetStatus(ActivityStatusCode.Error);
+                    StateExitActivity.AddException(exception);
+                }
+
+                StopProcessingActivity(context, EventStatus.Failed, exception);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateExitExceptionAsync), e);
+            }
+
+            return Task.FromResult(false);
         }
 
         private void StopProcessingActivity(IBehaviorActionContext context, EventStatus eventStatus, Exception exception = null!)
         {
             var eventName = context.ExecutionTrigger is Completion
                 ? "Completion"
-                : context.ExecutionTrigger.GetType().GetEventName().ToShortName();
-            
+                : Event.GetName(context.ExecutionTrigger).ToShortName();
+
             if (exception == null!)
             {
-                Logger.LogTrace(
+                logger.LogTrace(
                     message: "State Machine '{StateMachineId}' processed event '{Event}' with result '{EventStatus}'",
                     $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                     eventName,
@@ -466,7 +675,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
             else
             {
-                Logger.LogError(
+                logger.LogError(
                     message: "State Machine '{StateMachineId}' failed to process event '{Event}'",
                     exception: exception,
                     args:
@@ -477,6 +686,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 );
 
                 EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
+                EventProcessingActivity?.AddException(exception);
             }
 
             if (DefaultGuardActivity != null)
@@ -484,7 +694,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 DefaultGuardActivity.Stop();
                 DefaultGuardActivity = null;
             }
-         
+
             if (GuardActivity != null)
             {
                 GuardActivity.Stop();
@@ -498,11 +708,5 @@ namespace Stateflows.Extensions.OpenTelemetry
                 EventProcessingActivity = null;
             }
         }
-
-        // public void AfterHydrate(IStateMachineActionContext context)
-        // { }
-        //
-        // public void BeforeDehydrate(IStateMachineActionContext context)
-        // { }
     }
 }

@@ -6,8 +6,7 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 internal class StateMachineEndpointFilter(
     IStateMachineLocator locator,
-    IBehaviorLocator behaviorLocator,
-    IStateMachineContextProvider stateMachineContextProvider
+    IBehaviorLocator behaviorLocator
 ) : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
@@ -19,87 +18,67 @@ internal class StateMachineEndpointFilter(
         }
         
         var instance = context.HttpContext.Request.RouteValues["instance"] as string ?? string.Empty;
-        
-        if (metadata.RequireContext)
+        var stateMachineId = new StateMachineId(metadata.BehaviorClass.Name, instance);
+
+        if (!locator.TryLocateStateMachine(stateMachineId, out var stateMachine))
         {
-            var (success, contextHolder) =
-                await stateMachineContextProvider.TryProvideAsync(new StateMachineId(metadata.BehaviorClass.Name, instance));
-
-            if (!success)
-            {
-                return Results.NotFound();
-            }
-
-            await using (contextHolder)
-            {
-                if (
-                    metadata.ScopeName != null
-                        ? contextHolder.CurrentStates.GetAllNodes().Select(n => n.Value).Contains(metadata.ScopeName)
-                        : contextHolder.BehaviorStatus == BehaviorStatus.Initialized
-                )
-                {
-                    if (metadata.StateMachineContext.Value != null)
-                    {
-                        metadata.StateMachineContext.Value.Locator = behaviorLocator;
-                        metadata.StateMachineContext.Value.StateMachine = contextHolder.GetStateMachineContext();
-                        metadata.StateMachineContext.Value.Status = contextHolder.BehaviorStatus;
-                        metadata.StateMachineContext.Value.ExpectedEventNames = await contextHolder.GetExpectedEventNamesAsync();
-                        metadata.StateMachineContext.Value.HateoasLinks = metadata.HateoasLinks;
-                        metadata.StateMachineContext.Value.ElementsTree = contextHolder.CurrentStates;
-                    }
-
-                    if (metadata.StateContext.Value != null)
-                    {
-                        metadata.StateContext.Value.Locator = behaviorLocator;
-                        metadata.StateContext.Value.StateMachine = contextHolder.GetStateMachineContext();
-                        metadata.StateContext.Value.State = contextHolder.GetStateContext(metadata.ScopeName);
-                        metadata.StateContext.Value.Status = contextHolder.BehaviorStatus;
-                        metadata.StateContext.Value.ExpectedEventNames = await contextHolder.GetExpectedEventNamesAsync();
-                        metadata.StateContext.Value.HateoasLinks = metadata.HateoasLinks;
-                        metadata.StateContext.Value.ElementsTree = contextHolder.CurrentStates;
-                    }
-
-                    if (metadata.BehaviorContext.Value != null)
-                    {
-                        metadata.BehaviorContext.Value.Locator = behaviorLocator;
-                        metadata.BehaviorContext.Value.Behavior = contextHolder.GetStateMachineContext();
-                        metadata.BehaviorContext.Value.Status = contextHolder.BehaviorStatus;
-                        metadata.BehaviorContext.Value.ExpectedEventNames = await contextHolder.GetExpectedEventNamesAsync();
-                        metadata.BehaviorContext.Value.HateoasLinks = metadata.HateoasLinks;
-                        metadata.BehaviorContext.Value.ElementsTree = contextHolder.CurrentStates;
-                    }
-
-                    return await next(context);
-                }
-                else
-                {
-                    return Results.NotFound();
-                }
-            }
+            return Results.NotFound();
         }
-        else
-        {
-            if (!locator.TryLocateStateMachine(new StateMachineId(metadata.BehaviorClass.Name, instance), out var stateMachine))
-            {
-                return Results.NotFound();
-            }
 
-            var smInfo = await stateMachine.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+        // Behavior state is never hydrated outside of behavior execution; endpoints work on status info only.
+        var smInfo = await stateMachine.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
 
-            if (smInfo is { Response: not null } &&
-                (
-                    metadata.ScopeName != null
-                        ? smInfo.Response.CurrentStates.GetAllNodes().Select(n => n.Value).Contains(metadata.ScopeName)
-                        : smInfo.Response.BehaviorStatus == BehaviorStatus.Initialized
-                )
+        if (smInfo is not { Response: not null } ||
+            !(
+                metadata.ScopeName != null
+                    ? smInfo.Response.CurrentStates?.GetAllNodes().Select(n => n.Value).Contains(metadata.ScopeName) ?? false
+                    : smInfo.Response.BehaviorStatus == BehaviorStatus.Initialized
             )
-            {
-                return await next(context);
-            }
-            else
-            {
-                return Results.NotFound();
-            }
+        )
+        {
+            return Results.NotFound();
         }
+
+        if (!metadata.RequireContext)
+        {
+            return await next(context);
+        }
+
+        var behaviorContext = new BehaviorContext(stateMachineId, behaviorLocator, context.HttpContext.RequestServices);
+        var info = smInfo.Response;
+
+        if (metadata.StateMachineContext.Value != null)
+        {
+            Fill(metadata.StateMachineContext.Value, behaviorContext, info, metadata);
+        }
+
+        if (metadata.StateContext.Value != null)
+        {
+            Fill(metadata.StateContext.Value, behaviorContext, info, metadata);
+            metadata.StateContext.Value.State = metadata.ScopeName != null
+                ? new StateContext() { Name = metadata.ScopeName }
+                : null!;
+        }
+
+        if (metadata.BehaviorContext.Value != null)
+        {
+            Fill(metadata.BehaviorContext.Value, behaviorContext, info, metadata);
+        }
+
+        var result = await next(context);
+
+        await behaviorContext.CompletePendingSendsAsync();
+
+        return result;
+    }
+
+    private void Fill(BehaviorEndpointContext endpointContext, BehaviorContext behaviorContext, StateMachineInfo info, EndpointMetadata metadata)
+    {
+        endpointContext.Locator = behaviorLocator;
+        endpointContext.Behavior = behaviorContext;
+        endpointContext.Status = info.BehaviorStatus;
+        endpointContext.ExpectedEventNames = info.ExpectedEvents ?? [];
+        endpointContext.HateoasLinks = metadata.HateoasLinks;
+        endpointContext.ElementsTree = info.CurrentStates ?? new Tree<string>();
     }
 }

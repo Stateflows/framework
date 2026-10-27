@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stateflows.Entities.Engine;
 
@@ -12,11 +13,11 @@ internal static class DependencyStabilizer
             .Distinct()
             .ToHashSet(StringComparer.Ordinal);
 
-    internal static IReadOnlyCollection<string> Stabilize(
+    internal static async Task<IReadOnlyCollection<string>> StabilizeAsync(
         IEnumerable<string> initialChangedFieldNames,
         IReadOnlyCollection<string> trackedNodeNames,
         Func<string, IReadOnlyCollection<string>> getDependencies,
-        Func<string, bool> refreshNode,
+        Func<string, Task<bool>> refreshNode,
         string graphName)
     {
         var allChangedFields = NormalizeFieldNames(initialChangedFieldNames);
@@ -45,7 +46,7 @@ internal static class DependencyStabilizer
 
             foreach (var nodeName in trackedNodeNames)
             {
-                if (getDependencies(nodeName).Any(frontier.Contains) && refreshNode(nodeName))
+                if (getDependencies(nodeName).Any(frontier.Contains) && await refreshNode(nodeName))
                 {
                     changedNodes.Add(nodeName);
                 }
@@ -63,4 +64,3 @@ internal static class DependencyStabilizer
         return allChangedFields.ToArray();
     }
 }
-

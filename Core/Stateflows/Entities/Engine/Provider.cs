@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Collections.Generic;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
@@ -8,8 +7,13 @@ using Stateflows.Entities.Registration;
 
 namespace Stateflows.Entities.Engine
 {
-    internal class Provider(EntitiesRegister register, IBehaviorFactory behaviorFactory) : IBehaviorProvider
+    internal class Provider(EntitiesRegister register, IBehaviorFactory behaviorFactory) : IBehaviorProvider, IVersionedBehaviorProvider
     {
+        public IReadOnlyDictionary<BehaviorClass, int[]> BehaviorVersions
+            => register.Entities.Values
+                .GroupBy(entity => new BehaviorClass(BehaviorType.Entity, entity.Name))
+                .ToDictionary(g => g.Key, g => g.Select(entity => entity.Version).Distinct().OrderBy(v => v).ToArray());
+
         public bool IsLocal => true;
 
         public event ActionAsync<IBehaviorProvider> BehaviorClassesChanged;

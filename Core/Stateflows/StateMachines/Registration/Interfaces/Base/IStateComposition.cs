@@ -1,17 +1,15 @@
 ﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
+    /// <summary>Converts the current regular state into a composite state with one nested region.</summary>
+    /// <typeparam name="TReturn">The builder stage returned after conversion.</typeparam>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
     public interface IStateComposition<out TReturn>
     {
-        /// <summary>
-        /// Makes current state composite.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Composite-State">Composite state</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of substates.
-        /// </summary>
-        /// <param name="compositeStateBuildAction">Composite state build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Converts the current state into a composite state with a nested region.</summary>
+        /// <param name="compositeStateBuildAction">Callback configuring the composite state's lifecycle, nested states, and
+        /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The builder stage for continuing configuration after composition.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
         TReturn MakeComposite(CompositeStateBuildAction compositeStateBuildAction);
     }
 }

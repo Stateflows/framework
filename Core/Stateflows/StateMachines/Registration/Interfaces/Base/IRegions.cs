@@ -1,17 +1,14 @@
 ﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
+    /// <summary>Adds independent regions to the current orthogonal state.</summary>
+    /// <typeparam name="TReturn">The enclosing orthogonal-state builder returned after region definition.</typeparam>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-regions" />
     public interface IRegions<out TReturn>
     {
-        /// <summary>
-        /// Adds a <a href="https://github.com/Stateflows/framework/wiki/Regions">region</a> to the current orthogonal state.
-        /// </summary>
-        /// <param name="buildAction">Region build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Adds an independently active region to the current orthogonal state.</summary>
+        /// <param name="buildAction">Callback configuring the region's initial state, vertices, and transitions.</param>
+        /// <returns>The enclosing orthogonal-state builder, not the region-scoped callback builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-regions" />
         TReturn AddRegion(RegionBuildAction buildAction);
     }
 }
-

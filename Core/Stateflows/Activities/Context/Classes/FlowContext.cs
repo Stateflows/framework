@@ -72,7 +72,9 @@ namespace Stateflows.Activities.Context.Classes
 
         public int TargetTokenCount { get; set; }
 
-        public bool Activated => Stream.IsActivated;
+        internal bool? ActivationResult { get; set; }
+
+        public bool Activated => ActivationResult ?? Stream.IsActivated;
 
         public object LockHandle => Activity.LockHandle;
         public IReadOnlyTree<INodeContext> ActiveNodes => Activity.ActiveNodes;

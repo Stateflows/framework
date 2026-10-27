@@ -39,6 +39,9 @@ namespace Stateflows.Activities.Context.Classes
 
         public IEnumerable<TToken> GetTokensOfType<TToken>()
             => InputTokens.ToTokensOfType<TToken>().ToArray();
+        
+        public bool HasTokensOfType<TToken>()
+            => InputTokens.OfType<TokenHolder<TToken>>().Any();
 
         public IEnumerable<object> GetAllTokens()
             => InputTokens.ToBoxedTokens().ToArray();

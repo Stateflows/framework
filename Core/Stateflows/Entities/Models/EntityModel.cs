@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 using Stateflows.Common.Context.Classes;
+using Stateflows.Common;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Engine;
 using Stateflows.Entities.Enums;
@@ -43,23 +46,28 @@ namespace Stateflows.Entities.Models
         
         public abstract bool IsComputed { get; }
 
-        public abstract void Compute(Dictionary<string, object> values);
+        public abstract Task ComputeAsync(Dictionary<string, object> values, EntityInspection inspection);
 
         public abstract Type ValueType { get; }
+
+        public abstract Task<EventValidation> ValidateAsync(object? value, Dictionary<string, object> values, IServiceProvider services);
         
         public FieldAccess Access { get; set; } = access;
     }
 
-    internal class FieldModel<TTemplate, TField>(EntityModel entityModel, string name, FieldAccess access) : FieldModel(entityModel, name, access)
+    internal class FieldModel<TTemplate, TField>(EntityModel entityModel, string name, FieldAccess access, MemberInfo member) : FieldModel(entityModel, name, access)
         where TTemplate : class
     {
         public FieldComputation<TTemplate, TField>? Computation { get; set; }
 
         public override Type ValueType => typeof(TField);
 
+        public override Task<EventValidation> ValidateAsync(object? value, Dictionary<string, object> values, IServiceProvider services)
+            => FieldValidation.ValidateAsync((TField)value!, member, EntityProxy<TTemplate>.Create(values, EntityModel).Item2, services);
+
         public override bool IsComputed => Computation != null;
 
-        public override void Compute(Dictionary<string, object> values)
+        public override async Task ComputeAsync(Dictionary<string, object> values, EntityInspection inspection)
         {
             if (Computation == null)
             {
@@ -67,7 +75,11 @@ namespace Stateflows.Entities.Models
             }
 
             var (proxy, entity) = EntityProxy<TTemplate>.Create(values, EntityModel);
-            var result = Computation(entity);
+            var observedEntity = inspection.HasOperationContexts
+                ? EntityProxy<TTemplate>.Create(values, EntityModel).Item2
+                : entity;
+            var result = await inspection.ComputedFieldAsync<TTemplate, TField>(
+                observedEntity, Name, () => Task.FromResult(Computation(entity)));
             values[Name.GetFieldKey()] = result;
             EntityContextValues.SetFieldDependencies(values, Name, proxy.ReadFields.Where(fieldName => fieldName != Name));
         }
@@ -79,7 +91,7 @@ namespace Stateflows.Entities.Models
 
         public Delegate MutationAction { get; set; }
         
-        public Action<Dictionary<string, object>, BehaviorContext, object> Invoke { get; set; }
+        public Func<Dictionary<string, object>, BehaviorContext, EntityInspection, object, Task> InvokeAsync { get; set; }
     }
 
     internal class InitializerModel
@@ -97,7 +109,7 @@ namespace Stateflows.Entities.Models
 
         public Delegate ProjectionAction { get; set; }
 
-        public Func<Dictionary<string, object>, BehaviorContext, object> Invoke { get; set; }
+        public Func<Dictionary<string, object>, EntityInspection, Task<object>> InvokeAsync { get; set; }
 
         public PublishScope PublishScope { get; set; } = PublishScope.None;
     }

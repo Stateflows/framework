@@ -18,6 +18,9 @@ namespace Stateflows.StateMachines.Models
 
     internal class Edge
     {
+        internal string? SourcePath { get; set; }
+        internal IReadOnlyList<Type>? DeclaredTriggerTypes { get; set; }
+
         public string OriginStateMachineName { get; set; } = null;
         
         public string Name { get; set; }
@@ -29,6 +32,7 @@ namespace Stateflows.StateMachines.Models
         public Graph Graph { get; set; }
 
         public Type TriggerType { get; set; }
+        public string StructuralEventName { get; set; }
 
         private bool polymorphicTriggers = false;
         private bool polymorphicTriggersSet = false;
@@ -73,6 +77,8 @@ namespace Stateflows.StateMachines.Models
         public string TargetName { get; set; }
         public Vertex Target { get; set; }
 
+        public Dictionary<string, object> Metadata { get; } = [];
+
         public IEnumerable<Edge> GetActualEdges()
             => Target?.Type == VertexType.Junction
                 ? Target.Edges.Values.Select(MergeWith).ToArray()
@@ -80,7 +86,7 @@ namespace Stateflows.StateMachines.Models
 
         private Edge MergeWith(Edge edge)
         {
-            var actualTriggerTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(TriggerType).ToHashSet();
+            var actualTriggerTypes = ActualTriggerTypes.ToHashSet();
 
             var triggerDescriptor = edge.IsElse
                 ? $"{Trigger}|else"
@@ -95,10 +101,13 @@ namespace Stateflows.StateMachines.Models
                 Graph = Graph,
                 Trigger = Trigger,
                 TriggerType = TriggerType,
+                StructuralEventName = StructuralEventName,
+                DeclaredTriggerTypes = DeclaredTriggerTypes,
+                SourcePath = SourcePath,
                 ActualTriggerTypes = actualTriggerTypes,
                 TimeTriggerTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet(),
                 RecurringTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet(),
-                ActualTriggers = actualTriggerTypes.Select(Event.GetName).ToHashSet(),
+                ActualTriggers = ActualTriggers.ToHashSet(),
                 Type = Type,
                 IsElse = edge.IsElse,
                 SourceName = SourceName,

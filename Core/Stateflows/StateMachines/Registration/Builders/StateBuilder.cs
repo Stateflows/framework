@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
+using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
@@ -43,7 +45,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         IStateBuilderInfo,
         IBehaviorBuilder,
         IGraphBuilder,
-        IVertexBuilder
+        IVertexBuilder,
+        IMetadataBuilder
     {
         public Vertex Vertex { get; }
 
@@ -145,11 +148,14 @@ namespace Stateflows.StateMachines.Registration.Builders
             if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
 
-            var builder = new DeferralBuilder<TEvent>(Vertex);
+            var builder = new EventDeferralBuilder<TEvent>(Vertex);
             
             buildAction?.Invoke(builder);
 
-            Vertex.Deferrals.Add(typeof(TEvent).GetEventName(), builder.Logic);
+            var eventName = typeof(TEvent).GetEventName();
+            if (!Vertex.Deferrals.TryAdd(eventName, builder.Logic))
+                throw new DeferralDefinitionException(eventName, $"Event '{eventName}' is already deferred by '{Vertex.Name}'.", Vertex.Graph.Class);
+            Vertex.DeferralTypes.Add(eventName, typeof(TEvent));
 
             return this;
         }
@@ -157,7 +163,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Transitions
         [DebuggerHidden]
-        private IStateBuilder AddTransitionInternal<TEvent>(string targetStateName, bool isElse, TransitionBuildAction<TEvent> transitionBuildAction = null)
+        internal IStateBuilder AddTransitionInternal<TEvent>(string targetStateName, bool isElse, TransitionBuildAction<TEvent> transitionBuildAction = null, string structuralEventName = null)
         {
             var targetEdgeType = targetStateName == Constants.DefaultTransitionTarget
                 ? EdgeType.InternalTransition
@@ -165,7 +171,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             var triggerType = typeof(TEvent);
 
-            var trigger = Event.GetName(triggerType);
+            var trigger = structuralEventName ?? Event.GetName(triggerType);
+            if (structuralEventName == null) Graph.StateflowsBuilder.Events.RegisterClr(triggerType);
 
             var triggerDescriptor = isElse
                 ? $"{trigger}|else"
@@ -175,6 +182,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 Trigger = trigger,
                 TriggerType = typeof(TEvent),
+                StructuralEventName = structuralEventName,
                 IsElse = isElse,
                 Graph = Vertex.Graph,
                 SourceName = Vertex.Name,
@@ -204,7 +212,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
 
-            edge.VisitingTask = visitor => visitor.TransitionAddedAsync<TEvent>(
+            edge.VisitingTask = structuralEventName != null
+                ? visitor => visitor.TransitionAddedAsync(Graph.StateflowsBuilder.Events.GetEvent(structuralEventName),
+                    Graph.Name, Graph.Version, edge.SourceName, targetStateName, isElse)
+                : visitor => visitor.TransitionAddedAsync<TEvent>(
                 Vertex.Graph.Name,
                 Vertex.Graph.Version,
                 edge.SourceName,
@@ -220,7 +231,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IStateBuilder AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            => AddTransitionInternal(targetStateName, false, transitionBuildAction);
+        {
+            targetStateName.ThrowIfNullOrEmpty(nameof(targetStateName));
+            return AddTransitionInternal(targetStateName, false, transitionBuildAction);
+        }
         
         [DebuggerHidden]
         IJoinBuilder IPseudostateTransitions<IJoinBuilder>.AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
@@ -352,7 +366,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IStateBuilder AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
-            => AddTransitionInternal<TEvent>(targetStateName, true, builder => transitionBuildAction?.Invoke(builder as IElseTransitionBuilder<TEvent>));
+        {
+            targetStateName.ThrowIfNullOrEmpty(nameof(targetStateName));
+            return AddTransitionInternal<TEvent>(targetStateName, true, builder => transitionBuildAction?.Invoke(builder as IElseTransitionBuilder<TEvent>));
+        }
 
         [DebuggerHidden]
         IOverridenStateBuilder IStateTransitions<IOverridenStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
@@ -368,23 +385,33 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IStateBuilder AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>));
+            => AddTransitionInternal<TEvent>(Constants.DefaultTransitionTarget, false, builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>));
 
         [DebuggerHidden]
         public IStateBuilder AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddElseTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>));
+            => AddTransitionInternal<TEvent>(Constants.DefaultTransitionTarget, true, builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>));
         #endregion
 
         #region Submachine
+        private void AddStructuralHostedEventsVisitor()
+            => Graph.VisitingTasks.Add(async visitor =>
+            {
+                foreach (var name in Vertex.BehaviorStructuralEvents)
+                    await visitor.DoBehaviorAddedAsync(Graph.StateflowsBuilder.Events.GetEvent(name),
+                        Graph.Name, Graph.Version, Vertex.Name, Vertex.BehaviorName, Vertex.BehaviorType);
+            });
+
         [DebuggerHidden]
         private StateBuilder AddSubmachine<TStateMachine>(StateMachineUtilsBuildAction buildAction = null)
             where TStateMachine : class, IStateMachine
         {
+            EnsureNoHostedBehavior();
             var submachineName = $"{Vertex.Graph.Name}.{Vertex.Name}.submachine";
             Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine<TStateMachine>(submachineName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
+            AddStructuralHostedEventsVisitor();
             // Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
@@ -393,11 +420,13 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         private StateBuilder AddSubmachine(StateMachineBuildAction stateMachineBuildAction)
         {
+            EnsureNoHostedBehavior();
             var submachineName = $"{Vertex.Graph.Name}.{Vertex.Name}.submachine";
             Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine(submachineName, stateMachineBuildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
+            AddStructuralHostedEventsVisitor();
             // Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
@@ -407,29 +436,33 @@ namespace Stateflows.StateMachines.Registration.Builders
         #region DoActivity
         [DebuggerHidden]
         private string GetDoActivityName()
-            => $"{Vertex.Graph.Name}.{Vertex.Name}.doActivity";
+            => $"{Vertex.Graph.Name}.{Vertex.Name}.do";
         
-        private StateBuilder AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
+        internal StateBuilder AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
+            EnsureNoHostedBehavior();
             var doActivityName = GetDoActivityName();
             Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(doActivityName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
+            AddStructuralHostedEventsVisitor();
             // Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
         }
 
         [DebuggerHidden]
-        private StateBuilder AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
+        internal StateBuilder AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
         {
+            EnsureNoHostedBehavior();
             var doActivityName = GetDoActivityName();
             Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(doActivityName, activityBuildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
+            AddStructuralHostedEventsVisitor();
             // Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
@@ -439,30 +472,54 @@ namespace Stateflows.StateMachines.Registration.Builders
         #region DoAction
         [DebuggerHidden]
         private string GetDoActionName()
-            => $"{Vertex.Graph.Name}.{Vertex.Name}.doAction";
+            => $"{Vertex.Graph.Name}.{Vertex.Name}.do";
         
-        private StateBuilder AddDoAction<TAction>(ActionBuildAction<TAction> buildAction = null)
+        internal StateBuilder AddDoAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
+            EnsureNoHostedBehavior();
             var doActionName = GetDoActionName();
-            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(doActionName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
+            var register = Vertex.Graph.StateflowsBuilder
+                .AddActions(b => b
+                    .AddAction<TAction>(doActionName, buildAction: buildAction),
+                    Vertex.Graph.OwnerClass ?? Vertex.Graph.Class,
+                    Vertex.Graph.Class
+                )
+                .ActionsRegister;
             
-            Vertex.BehaviorType = BehaviorType.Action;
-            Vertex.BehaviorName = doActionName;
-            // // Vertex.BehaviorInitializationBuilder = initializationBuilder;
+            var currentKey = $"{doActionName}.current";
+            if (register.Actions.TryGetValue(currentKey, out var action))
+            {
+                Vertex.BehaviorType = action.BehaviorClassType;
+                Vertex.BehaviorName = doActionName;
+                AddStructuralHostedEventsVisitor();
+            }
+            
+            Graph.VisitingTasks.Add(visitor => visitor.DoBehaviorAddedAsync(Graph.Name, Graph.Version, Vertex.Name, doActionName, action.BehaviorClassType, action.ConsumedEventTypes));
             
             return this;
         }
 
         [DebuggerHidden]
-        private StateBuilder AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
+        internal StateBuilder AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
+            EnsureNoHostedBehavior();
             var doActionName = GetDoActionName();
-            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(doActionName, actionDelegate), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
+            var register = Vertex.Graph.StateflowsBuilder
+                .AddActions(b => b
+                    .AddAction(doActionName, actionDelegate, buildAction),
+                    Vertex.Graph.OwnerClass ?? Vertex.Graph.Class,
+                    Vertex.Graph.Class
+                )
+                .ActionsRegister;
             
-            Vertex.BehaviorType = BehaviorType.Action;
-            Vertex.BehaviorName = doActionName;
-            // Vertex.BehaviorInitializationBuilder = initializationBuilder;
+            var currentKey = $"{doActionName}.current";
+            if (register.Actions.TryGetValue(currentKey, out var action))
+            {
+                Vertex.BehaviorType = action.BehaviorClassType;
+                Vertex.BehaviorName = doActionName;
+                AddStructuralHostedEventsVisitor();
+            }
             
             return this;
         }
@@ -942,6 +999,10 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IHistoryBuilder AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             => AddDefaultTransition(targetStateName, transitionBuildAction) as IHistoryBuilder;
 
+        [DebuggerHidden]
+        void IPseudostateElseTransitions<IHistoryBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
+
         public IOverridenStateBuilder UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction = null)
         {
             if (typeof(TEvent) == typeof(Completion))
@@ -961,7 +1022,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Deferral of event '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
             }
             
-            var builder = new DeferralBuilder<TEvent>(Vertex, deferralLogic);
+            var builder = new EventDeferralBuilder<TEvent>(Vertex, deferralLogic);
             
             buildAction?.Invoke(builder);
 
@@ -976,5 +1037,13 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IBehaviorOverridenRegionalizedStateBuilder IStateUtilsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction)
             => UseDeferredEvent(buildAction) as IBehaviorOverridenRegionalizedStateBuilder;
+
+        private void EnsureNoHostedBehavior()
+        {
+            if (Vertex.BehaviorName != null || Vertex.BehaviorType != null)
+                throw new StateDefinitionException(Vertex.Name, $"State '{Vertex.Name}' already has a hosted behavior.", Graph.Class);
+        }
+
+        public Dictionary<string, object> Metadata => Vertex.Metadata;
     }
 }

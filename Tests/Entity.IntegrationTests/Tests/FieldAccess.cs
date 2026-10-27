@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using StateMachine.IntegrationTests.Utils;
 using Stateflows.Entities.Attributes;
+using Stateflows.Entities.Enums;
 
 namespace Entity.IntegrationTests.Tests
 {
@@ -61,9 +62,54 @@ namespace Entity.IntegrationTests.Tests
         int DoubleReadOnly => ReadOnly * 2;
     }
 
-    [TestClass]
-    public class FieldStateTests : StateflowsTestClass
+    public interface IInheritedFieldAccessEntityTemplateBase
     {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        string BaseReadWrite { get; set; }
+
+        [Field(FieldAccess.Get)]
+        int BaseReadOnly { get; set; }
+
+        [Field]
+        string BaseNoAccess { get; set; }
+    }
+
+    public interface IInheritedFieldAccessEntityTemplate : IInheritedFieldAccessEntityTemplateBase
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        string DerivedReadWrite { get; set; }
+
+        [Field(FieldAccess.Get)]
+        string Combined => $"{BaseReadWrite}:{DerivedReadWrite}";
+    }
+
+    // ── TrySetAsync projection template ──────────────────────────────────────
+
+    public record TrySetProjectionSnapshot
+    {
+        public int BaseValue { get; set; }
+        public int DoubleValue { get; set; }
+    }
+
+    /// <summary>
+    /// Template used to verify that <c>TrySetAsync</c> triggers the full reactive
+    /// pipeline: stored-field write → computed-field cascade → projection refresh
+    /// → projection publish to watchers.
+    /// </summary>
+    public interface ITrySetProjectionTemplate
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        int BaseValue { get; set; }
+
+        [Field(FieldAccess.Get)]
+        int DoubleValue => BaseValue * 2;
+
+        [Projection(PublishScope = PublishScope.Self)]
+        TrySetProjectionSnapshot Snapshot => new() { BaseValue = BaseValue, DoubleValue = DoubleValue };
+    }
+
+    [TestClass]
+    public class FieldStateTests : StateflowsTestClass    {
         [TestInitialize]
         public override void Initialize() => base.Initialize();
 
@@ -89,6 +135,18 @@ namespace Entity.IntegrationTests.Tests
                             ctx.Entity.BaseValue = 3;
                             ctx.Entity.Label = "hi";
                         })
+                    )
+                    .AddEntity<IInheritedFieldAccessEntityTemplate>("inheritedFieldAccessEntity", entity => entity
+                        .AddDefaultInitializer(ctx =>
+                        {
+                            ctx.Entity.BaseReadWrite = "base";
+                            ctx.Entity.BaseReadOnly = 10;
+                            ctx.Entity.BaseNoAccess = "hidden";
+                            ctx.Entity.DerivedReadWrite = "derived";
+                        })
+                    )
+                    .AddEntity<ITrySetProjectionTemplate>("trySetProjectionEntity", entity => entity
+                        .AddDefaultInitializer(ctx => { ctx.Entity.BaseValue = 1; })
                     )
                 );
         }
@@ -455,6 +513,134 @@ namespace Entity.IntegrationTests.Tests
             }
 
             Assert.IsFalse(setSuccess);
+        }
+
+        // ── Inherited field templates ─────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task InheritedFieldTemplate_TryGet_ReadsBaseAndDerivedFields()
+        {
+            var baseSuccess = false;
+            var derivedSuccess = false;
+            var combinedSuccess = false;
+            string? baseValue = null;
+            string? derivedValue = null;
+            string? combinedValue = null;
+
+            if (TryLocateEntity("inheritedFieldAccessEntity", "get-inherited", out var entity))
+            {
+                (baseSuccess, baseValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplateBase.BaseReadWrite));
+                (derivedSuccess, derivedValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplate.DerivedReadWrite));
+                (combinedSuccess, combinedValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplate.Combined));
+            }
+
+            Assert.IsTrue(baseSuccess);
+            Assert.IsTrue(derivedSuccess);
+            Assert.IsTrue(combinedSuccess);
+            Assert.AreEqual("base", baseValue);
+            Assert.AreEqual("derived", derivedValue);
+            Assert.AreEqual("base:derived", combinedValue);
+        }
+
+        [TestMethod]
+        public async Task InheritedFieldTemplate_TrySet_UpdatesBaseAndDerivedFields()
+        {
+            var setBaseSuccess = false;
+            var setDerivedSuccess = false;
+            var getBaseSuccess = false;
+            var getDerivedSuccess = false;
+            var getCombinedSuccess = false;
+            string? baseValue = null;
+            string? derivedValue = null;
+            string? combinedValue = null;
+
+            if (TryLocateEntity("inheritedFieldAccessEntity", "set-inherited", out var entity))
+            {
+                setBaseSuccess = await entity.TrySetAsync(nameof(IInheritedFieldAccessEntityTemplateBase.BaseReadWrite), "left");
+                setDerivedSuccess = await entity.TrySetAsync(nameof(IInheritedFieldAccessEntityTemplate.DerivedReadWrite), "right");
+                (getBaseSuccess, baseValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplateBase.BaseReadWrite));
+                (getDerivedSuccess, derivedValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplate.DerivedReadWrite));
+                (getCombinedSuccess, combinedValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplate.Combined));
+            }
+
+            Assert.IsTrue(setBaseSuccess);
+            Assert.IsTrue(setDerivedSuccess);
+            Assert.IsTrue(getBaseSuccess);
+            Assert.IsTrue(getDerivedSuccess);
+            Assert.IsTrue(getCombinedSuccess);
+            Assert.AreEqual("left", baseValue);
+            Assert.AreEqual("right", derivedValue);
+            Assert.AreEqual("left:right", combinedValue);
+        }
+
+        [TestMethod]
+        public async Task InheritedFieldTemplate_AccessRestrictions_FromBaseAreRespected()
+        {
+            var getNoAccessSuccess = false;
+            var setReadOnlySuccess = false;
+
+            if (TryLocateEntity("inheritedFieldAccessEntity", "access-inherited", out var entity))
+            {
+                (getNoAccessSuccess, _) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplateBase.BaseNoAccess));
+                setReadOnlySuccess = await entity.TrySetAsync(nameof(IInheritedFieldAccessEntityTemplateBase.BaseReadOnly), 99);
+            }
+
+            Assert.IsFalse(getNoAccessSuccess);
+            Assert.IsFalse(setReadOnlySuccess);
+        }
+
+        // ── TrySetAsync – projection update and publish ───────────────────────────
+
+        [TestMethod]
+        public async Task TrySetAsync_UpdatesProjection_AfterWrite()
+        {
+            var setSuccess = false;
+            var projectionSuccess = false;
+            TrySetProjectionSnapshot? snapshot = null;
+
+            if (TryLocateEntity("trySetProjectionEntity", "projection-update", out var entity))
+            {
+                setSuccess = await entity.TrySetAsync(nameof(ITrySetProjectionTemplate.BaseValue), 5);
+                (projectionSuccess, snapshot) = await entity.TryGetProjectionAsync<TrySetProjectionSnapshot>();
+            }
+
+            Assert.IsTrue(setSuccess);
+            Assert.IsTrue(projectionSuccess);
+            Assert.IsNotNull(snapshot);
+            Assert.AreEqual(5, snapshot.BaseValue);
+            Assert.AreEqual(10, snapshot.DoubleValue); // 5 * 2 — computed field must also be updated
+        }
+
+        [TestMethod]
+        public async Task TrySetAsync_PublishesProjectionToWatcher_AfterWrite()
+        {
+            TrySetProjectionSnapshot? publishedSnapshot = null;
+            var publishCount = 0;
+
+            if (TryLocateEntity("trySetProjectionEntity", "projection-publish", out var entity))
+            {
+                // Prime the projection cache so that RefreshDependentProjections has a
+                // baseline to compare against (it only publishes when the cached value changes).
+                await entity.TryGetProjectionAsync<TrySetProjectionSnapshot>();
+
+                await using var watcher = await entity.WatchAsync<TrySetProjectionSnapshot>(s =>
+                {
+                    lock (Locator)
+                    {
+                        publishedSnapshot = s;
+                        publishCount++;
+                    }
+                });
+
+                await entity.TrySetAsync(nameof(ITrySetProjectionTemplate.BaseValue), 7);
+                await Task.Delay(100);
+            }
+
+            Assert.AreEqual(1, publishCount,
+                "Exactly one publish expected – TrySetAsync must trigger RefreshDependentProjections.");
+            Assert.IsNotNull(publishedSnapshot);
+            Assert.AreEqual(7, publishedSnapshot.BaseValue);
+            Assert.AreEqual(14, publishedSnapshot.DoubleValue); // 7 * 2
         }
     }
 }

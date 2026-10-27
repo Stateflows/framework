@@ -8,7 +8,9 @@ namespace Stateflows.Entities.Engine
 {
     internal static class DefaultInterfaceImplementationInvoker
     {
-        private static readonly ConcurrentDictionary<MethodInfo, Func<object, object?[], object?>> Invokers = [];
+        private readonly record struct InvokerEntry(int ParameterCount, Func<object, object?[], object?> Invoker);
+
+        private static readonly ConcurrentDictionary<MethodInfo, InvokerEntry> Invokers = [];
 
         public static bool HasDefaultImplementation(MethodInfo? method)
             =>
@@ -36,26 +38,33 @@ namespace Stateflows.Entities.Engine
 
             arguments ??= [];
 
-            var parameters = method.GetParameters();
-            if (parameters.Length != arguments.Length)
+            var entry = Invokers.GetOrAdd(method, BuildEntry);
+
+            if (entry.ParameterCount != arguments.Length)
             {
                 throw new TargetParameterCountException(
-                    $"Method '{method.DeclaringType?.FullName}.{method.Name}' expects {parameters.Length} arguments, but received {arguments.Length}."
+                    $"Method '{method.DeclaringType?.FullName}.{method.Name}' expects {entry.ParameterCount} arguments, but received {arguments.Length}."
                 );
             }
 
-            return Invokers.GetOrAdd(method, BuildInvoker)(target, arguments);
+            return entry.Invoker(target, arguments);
         }
 
-        private static Func<object, object?[], object?> BuildInvoker(MethodInfo method)
+        private static InvokerEntry BuildEntry(MethodInfo method)
         {
-            if (method.GetParameters().Any(parameter => parameter.ParameterType.IsByRef))
+            var parameters = method.GetParameters();
+            if (parameters.Any(parameter => parameter.ParameterType.IsByRef))
             {
                 throw new InvalidOperationException(
                     $"Method '{method.DeclaringType?.FullName}.{method.Name}' cannot be invoked because by-ref parameters are not supported."
                 );
             }
 
+            return new InvokerEntry(parameters.Length, BuildInvoker(method));
+        }
+
+        private static Func<object, object?[], object?> BuildInvoker(MethodInfo method)
+        {
             var dynamicMethod = new DynamicMethod(
                 $"Invoke_{method.DeclaringType?.Name}_{method.Name}",
                 typeof(object),

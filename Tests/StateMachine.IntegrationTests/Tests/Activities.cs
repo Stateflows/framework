@@ -2,6 +2,7 @@ using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
 using System.Diagnostics;
 using Stateflows.Common;
+using Stateflows.Entities;
 using Stateflows.Entities.Attributes;
 using StateMachine.IntegrationTests.Classes.Events;
 
@@ -44,7 +45,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitializer<BoolInit>(async c =>
                         {
                             Debug.WriteLine($"InitializationEvent.Value: {c.InitializationEvent.Value}");
-                            await c.Behavior.TryMutateAsync(c.InitializationEvent.Value);
+                            await c.Behavior.TryMutateAsync(Entity<ExtendedState<bool>>.Name, c.InitializationEvent.Value);
                             return true;
                         })
                         .AddInitialState("stateA", b => b
@@ -56,7 +57,7 @@ namespace StateMachine.IntegrationTests.Tests
                                             if (c.TryGetParentBehaviorContext(out var parentBehaviorContext))
                                             {
                                                 GuardRun = true;
-                                                var (success, value) = await parentBehaviorContext.TryGetProjectionAsync<bool>();
+                                                var (success, value) = await parentBehaviorContext.TryGetProjectionAsync<bool>(Entity<ExtendedState<bool>>.Name);
                                                 if (success)
                                                 {
                                                     Debug.WriteLine($"value: {value}");

@@ -1,0 +1,54 @@
+﻿using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Diagnostics;
+using Stateflows.Common.Interfaces;
+using Stateflows.Entities;
+
+namespace Stateflows.Common.Entities.Classes
+{
+    internal class EntityWrapper(IBehavior consumer) : IEntityBehavior, IInjectionScope
+    {
+        BehaviorId IBehavior.Id => Behavior.Id;
+
+        public IServiceProvider ServiceProvider => (Behavior as IInjectionScope)?.ServiceProvider;
+
+        private IBehavior Behavior { get; } = consumer;
+
+        [DebuggerHidden]
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
+            => Behavior.SendAsync(@event, headers);
+
+        [DebuggerHidden]
+        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader> headers = null)
+            => Behavior.RequestAsync(request, headers);
+
+        [Obsolete("Use WatchStatusAsync instead.")]
+        public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(
+            DateTime? lastNotificationsCheck = null)
+            => Behavior.GetNotificationsAsync<TNotification>(lastNotificationsCheck);
+        
+        [Obsolete("Use WatchStatusAsync instead.")]
+        public Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames,
+            DateTime? lastNotificationsCheck = null)
+            => Behavior.GetNotificationsAsync(notificationNames, lastNotificationsCheck);
+
+        public Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificationsSince = null)
+            => Behavior.WatchAsync(asyncHandler, replayNotificationsSince);
+
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificationsSince = null)
+            => Behavior.WatchAsync(notificationNames, asyncHandler, replayNotificationsSince);
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+            => Behavior.Dispose();
+
+        ~EntityWrapper()
+            => Dispose(false);
+    }
+}

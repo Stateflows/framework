@@ -7,11 +7,14 @@ using Stateflows.Activities.Attributes;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Registration.Builders
 {
     internal class ActivitiesBuilder(ActivitiesRegister register, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null) : IActivitiesBuilder
     {
+        internal StateflowsBuilder StateflowsBuilder => register.StateflowsBuilder;
+
         [DebuggerHidden]
         public IActivitiesBuilder AddFromAssembly(Assembly assembly)
         {

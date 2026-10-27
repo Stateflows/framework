@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +22,7 @@ internal class StateMachineVisitor(
     public Interceptor Interceptor => interceptor;
     private readonly Dictionary<string, bool> Initializers = new();
     private readonly Dictionary<string, List<Type>> Triggers = new();
+    private readonly HashSet<(string BehaviorName, string EventName)> StructuralTriggers = new();
     private static readonly MethodInfo RegisterRequestMethod = typeof(StateMachineVisitor).GetMethod(
         nameof(RegisterRequestEndpoint),
         BindingFlags.Instance | BindingFlags.NonPublic
@@ -38,15 +39,12 @@ internal class StateMachineVisitor(
         RegisterEventEndpoint<T>(CurrentStateMachineName);
     }
 
-    public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
+    public static Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; } = new();
+
+    Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> IBehaviorClassVisitor.HateoasLinks => HateoasLinks;
 
     public override Task InitializerAddedAsync<TInitializationEvent>(string stateMachineName, int stateMachineVersion)
     {
-        // if (OwnerClass != null)
-        // {
-        //     return Task.CompletedTask;
-        // }
-
         Initializers[stateMachineName] = true;
 
         CurrentStateMachineName = stateMachineName;
@@ -61,11 +59,6 @@ internal class StateMachineVisitor(
     public override Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
         string targetVertexName = null, bool isElse = false)
     {
-        // if (OwnerClass != null)
-        // {
-        //     return Task.CompletedTask;
-        // }
-
         CurrentStateMachineName = stateMachineName;
         SupportedStatuses = [BehaviorStatus.Initialized];
         typeMapper.VisitMappedTypes<TEvent>(this);
@@ -75,9 +68,25 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
+    public override Task TransitionAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
+        string sourceVertexName, string targetVertexName = null, bool isElse = false)
+    {
+        if (!StructuralTriggers.Add((stateMachineName, definition.Name)))
+        {
+            return Task.CompletedTask;
+        }
+
+        routeBuilder.RegisterStructuralEventEndpoint(interceptor, BehaviorType.StateMachine, stateMachineName, definition,
+            HateoasLinks, HasDefaultInstance, [BehaviorStatus.Initialized]);
+
+        return Task.CompletedTask;
+    }
+
+    public override Task DoBehaviorAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
+        string stateName, string behaviorName, string behaviorType)
+        => TransitionAddedAsync(definition, stateMachineName, stateMachineVersion, stateName);
     public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false)
     {
-        // OwnerClass = ownerClass;
         HasDefaultInstance = hasDefaultInstance;
 
         return Task.CompletedTask;
@@ -85,11 +94,6 @@ internal class StateMachineVisitor(
 
     public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion)
     {
-        // if (OwnerClass != null)
-        // {
-        //     return Task.CompletedTask;
-        // }
-
         RegisterStandardEndpoints(stateMachineName);
         RegisterRemainingEndpoints(stateMachineName);
 
@@ -107,6 +111,7 @@ internal class StateMachineVisitor(
         if (
             eventType.GetCustomAttributes<NoApiMappingAttribute>().Any() ||
             eventType.IsAssignableTo(typeof(SystemEvent)) ||
+            eventType.IsAssignableTo(typeof(StructuralEvent)) ||
             eventType.IsAssignableTo(typeof(Exception))
         )
         {
@@ -225,7 +230,7 @@ internal class StateMachineVisitor(
                                     : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             result.Status = EventStatus.Consumed;
-                            return result.ToResult([], result.Response, HateoasLinks);
+                            return result.ToResult(method ?? "[no method]", route ?? "[no path]", [], result.Response, HateoasLinks);
                         }
                     }
 
@@ -293,7 +298,7 @@ internal class StateMachineVisitor(
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
 
@@ -330,16 +335,9 @@ internal class StateMachineVisitor(
                 {
                     if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
                     {
-                        // var compoundResult = await behavior.SendCompoundAsync(b => b
-                        //     .Add(new Finalize())
-                        //     .Add(new StateMachineInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })
-                        // );
-                        //
-                        // var result = compoundResult.Response.Results.First();
-                        // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         var sendResult = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -375,16 +373,9 @@ internal class StateMachineVisitor(
                 {
                     if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
                     {
-                        // var compoundResult = await behavior.SendCompoundAsync(b => b
-                        //     .Add(new Reset())
-                        //     .Add(new StateMachineInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })
-                        // );
-                        //
-                        // var result = compoundResult.Response.Results.First();
-                        // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         var sendResult = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -449,7 +440,7 @@ internal class StateMachineVisitor(
                                 await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             result.Status = EventStatus.Consumed;
-                            return result.ToResult([], result.Response, HateoasLinks);
+                            return result.ToResult(method ?? "[no method]", route ?? "[no path]", [], result.Response, HateoasLinks);
                         }
                     }
 
@@ -516,7 +507,7 @@ internal class StateMachineVisitor(
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
 
@@ -541,11 +532,6 @@ internal class StateMachineVisitor(
     }
     public override Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
     {
-        // if (OwnerClass != null)
-        // {
-        //     return Task.CompletedTask;
-        // }
-
         var stateMachineType = typeof(TStateMachine);
         if (typeof(IStateMachineEndpoints).IsAssignableFrom(stateMachineType))
         {
@@ -557,27 +543,8 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    // private static void RegisterEndpoints<TEndpointsOwner>(EndpointsBuilder endpointsBuilder)
-    // {
-    //     var smType = typeof(TEndpointsOwner);
-    //     var staticRegister = smType.GetMethod(
-    //         nameof(IStateMachineEndpoints.RegisterEndpoints),
-    //         BindingFlags.Public | BindingFlags.Static,
-    //         binder: null,
-    //         types: [ typeof(EndpointsBuilder) ],
-    //         modifiers: null
-    //     );
-    //
-    //     staticRegister.Invoke(null, [ endpointsBuilder ]);
-    // }
-
     public override Task VertexTypeAddedAsync<TVertex>(string stateMachineName, int stateMachineVersion, string vertexName)
     {
-        // if (OwnerClass != null)
-        // {
-        //     return Task.CompletedTask;
-        // }
-
         var vertexType = typeof(TVertex);
         if (typeof(IStateEndpoints).IsAssignableFrom(vertexType))
         {
@@ -596,14 +563,24 @@ internal class StateMachineVisitor(
 
     public override Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses)
     {
-        // if (OwnerClass != null)
-        // {
-        //     return Task.CompletedTask;
-        // }
-
         CurrentStateMachineName = stateMachineName;
         SupportedStatuses = supportedStatuses;
         typeMapper.VisitMappedTypes<TEvent>(this);
+        CurrentStateMachineName = string.Empty;
+        SupportedStatuses = [];
+
+        return Task.CompletedTask;
+    }
+
+    public override Task DoBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName,
+        string behaviorType, IEnumerable<Type> eventTypes)
+    {
+        CurrentStateMachineName = stateMachineName;
+        SupportedStatuses = [ BehaviorStatus.Initialized ];
+        foreach (var eventType in eventTypes)
+        {
+            typeMapper.VisitMappedTypes(eventType, this);
+        }
         CurrentStateMachineName = string.Empty;
         SupportedStatuses = [];
 

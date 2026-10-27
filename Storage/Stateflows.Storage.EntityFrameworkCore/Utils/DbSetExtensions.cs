@@ -34,7 +34,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
         public static async Task<IEnumerable<Context_v1>> FindByTriggerTimeAsync(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
         {
             var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             return await dbSet
                 .Where(c =>
                     behaviorClassStrings.Contains(c.BehaviorClass) &&
@@ -48,7 +48,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
         public static IEnumerable<Context_v1> FindByTriggerTime(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
         {
             var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
             return dbSet
                 .Where(c =>
                     behaviorClassStrings.Contains(c.BehaviorClass) &&

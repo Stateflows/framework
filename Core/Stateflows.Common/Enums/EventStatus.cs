@@ -1,5 +1,6 @@
 ﻿namespace Stateflows.Common
 {
+    /// <summary>Describes the outcome of processing an event for a behavior.</summary>
     public enum EventStatus
     {
         /// <summary>
@@ -45,6 +46,14 @@
         /// <summary>
         /// Event processing was cancelled
         /// </summary>
-        Cancelled
+        Cancelled,
+        /// <summary>
+        /// Event was already processed by this behavior within its deduplication window
+        /// </summary>
+        Duplicated,
+        /// <summary>
+        /// Event was not executed because the behavior's resource is overloaded or its host is shutting down; it can be retried
+        /// </summary>
+        Overloaded
     }
 }

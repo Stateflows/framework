@@ -5,6 +5,7 @@ using Stateflows.Common;
 
 namespace Stateflows.Extensions.MinimalAPIs.Interfaces;
 
+/// <summary>Provides the Activity's active node tree and behavior operations in a custom HTTP endpoint.</summary>
 public interface IActivityEndpointContext : IBehaviorEndpointContext
 {
     /// <summary>
@@ -12,6 +13,10 @@ public interface IActivityEndpointContext : IBehaviorEndpointContext
     /// </summary>
     IReadOnlyTree<IActivityNodeContext> ActiveNodes { get; }
     
+    /// <summary>Binds an Activity endpoint context from the current route metadata.</summary>
+    /// <param name="context">Current HTTP request.</param>
+    /// <param name="parameter">Handler parameter being bound.</param>
+    /// <returns>An endpoint context, or null if the route does not target an Activity.</returns>
     public new static ValueTask<IActivityEndpointContext?> BindAsync(HttpContext context, ParameterInfo parameter)
     {
         var metadata = context.GetEndpoint()?.Metadata.GetMetadata<EndpointMetadata>();

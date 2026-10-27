@@ -37,6 +37,12 @@ namespace Stateflows.Entities.Registration.Builders
         private static readonly MethodInfo RegisterMutationMethod = typeof(EntitiesBuilder)
             .GetMethod(nameof(RegisterMutation), BindingFlags.Static | BindingFlags.NonPublic)!;
 
+        private static readonly MethodInfo RegisterDefaultInitializerMethod = typeof(EntitiesBuilder)
+            .GetMethod(nameof(RegisterDefaultInitializer), BindingFlags.Static | BindingFlags.NonPublic)!;
+
+        private static readonly MethodInfo RegisterInitializerMethod = typeof(EntitiesBuilder)
+            .GetMethod(nameof(RegisterInitializer), BindingFlags.Static | BindingFlags.NonPublic)!;
+
         private static readonly MethodInfo AutoAnalyzeTemplateMethod = typeof(EntitiesBuilder)
             .GetMethod(nameof(AutoAnalyzeTemplate), BindingFlags.Static | BindingFlags.NonPublic)!;
 
@@ -59,6 +65,10 @@ namespace Stateflows.Entities.Registration.Builders
             public List<PropertyInfo> Projections { get; } = [];
 
             public List<MethodInfo> Mutations { get; } = [];
+
+            public List<MethodInfo> DefaultInitializers { get; } = [];
+
+            public List<MethodInfo> Initializers { get; } = [];
         }
 
         private static EntityBuildAction<TTemplate> AutoAnalyzeTemplate<TTemplate>(EntityBuildAction<TTemplate> buildAction)
@@ -103,6 +113,20 @@ namespace Stateflows.Entities.Registration.Builders
             foreach (var method in analysis.Mutations.OrderBy(method => method.Name))
             {
                 RegisterMutationMethod
+                    .MakeGenericMethod(typeof(TTemplate), method.GetParameters()[0].ParameterType)
+                    .Invoke(null, [builder, method]);
+            }
+
+            foreach (var method in analysis.DefaultInitializers.OrderBy(method => method.Name))
+            {
+                RegisterDefaultInitializerMethod
+                    .MakeGenericMethod(typeof(TTemplate))
+                    .Invoke(null, [builder, method]);
+            }
+
+            foreach (var method in analysis.Initializers.OrderBy(method => method.Name))
+            {
+                RegisterInitializerMethod
                     .MakeGenericMethod(typeof(TTemplate), method.GetParameters()[0].ParameterType)
                     .Invoke(null, [builder, method]);
             }
@@ -219,34 +243,104 @@ namespace Stateflows.Entities.Registration.Builders
 
             foreach (var method in allInterfaceTypes.SelectMany(t => t.GetMethods()).Where(method => !method.IsSpecialName).Distinct())
             {
-                if (method.GetCustomAttribute<MutationAttribute>() == null)
+                var hasMutationAttribute = method.GetCustomAttribute<MutationAttribute>() != null;
+                var hasDefaultInitializerAttribute = method.GetCustomAttribute<DefaultInitializerAttribute>() != null;
+                var hasInitializerAttribute = method.GetCustomAttribute<InitializerAttribute>() != null;
+                if (!hasMutationAttribute && !hasDefaultInitializerAttribute && !hasInitializerAttribute)
                 {
                     continue;
                 }
 
-                if (method.ReturnType != typeof(void))
+                if (hasMutationAttribute)
                 {
-                    throw new InvalidOperationException(
-                        $"Mutation method '{templateType.FullName}.{method.Name}' must return void."
-                    );
+                    if (method.ReturnType != typeof(void))
+                    {
+                        throw new InvalidOperationException(
+                            $"Mutation method '{templateType.FullName}.{method.Name}' must return void."
+                        );
+                    }
+
+                    var parameters = method.GetParameters();
+                    if (parameters.Length != 1 || parameters[0].ParameterType.IsByRef)
+                    {
+                        throw new InvalidOperationException(
+                            $"Mutation method '{templateType.FullName}.{method.Name}' must declare exactly one non-byref parameter."
+                        );
+                    }
+
+                    if (!DefaultInterfaceImplementationInvoker.HasDefaultImplementation(method))
+                    {
+                        throw new InvalidOperationException(
+                            $"Mutation method '{templateType.FullName}.{method.Name}' must provide a default implementation."
+                        );
+                    }
+
+                    analysis.Mutations.Add(method);
                 }
 
-                var parameters = method.GetParameters();
-                if (parameters.Length != 1 || parameters[0].ParameterType.IsByRef)
+                if (hasDefaultInitializerAttribute)
                 {
-                    throw new InvalidOperationException(
-                        $"Mutation method '{templateType.FullName}.{method.Name}' must declare exactly one non-byref parameter."
-                    );
+                    if (method.ReturnType != typeof(void))
+                    {
+                        throw new InvalidOperationException(
+                            $"Default initializer method '{templateType.FullName}.{method.Name}' must return void."
+                        );
+                    }
+
+                    var parameters = method.GetParameters();
+                    if (parameters.Length != 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"Default initializer method '{templateType.FullName}.{method.Name}' must declare no parameters."
+                        );
+                    }
+
+                    if (!DefaultInterfaceImplementationInvoker.HasDefaultImplementation(method))
+                    {
+                        throw new InvalidOperationException(
+                            $"Default initializer method '{templateType.FullName}.{method.Name}' must provide a default implementation."
+                        );
+                    }
+
+                    analysis.DefaultInitializers.Add(method);
                 }
 
-                if (!DefaultInterfaceImplementationInvoker.HasDefaultImplementation(method))
+                if (hasInitializerAttribute)
                 {
-                    throw new InvalidOperationException(
-                        $"Mutation method '{templateType.FullName}.{method.Name}' must provide a default implementation."
-                    );
-                }
+                    if (method.ReturnType != typeof(void))
+                    {
+                        throw new InvalidOperationException(
+                            $"Initializer method '{templateType.FullName}.{method.Name}' must return void."
+                        );
+                    }
 
-                analysis.Mutations.Add(method);
+                    var parameters = method.GetParameters();
+                    if (parameters.Length != 1 || parameters[0].ParameterType.IsByRef)
+                    {
+                        throw new InvalidOperationException(
+                            $"Initializer method '{templateType.FullName}.{method.Name}' must declare exactly one non-byref parameter (the initialization event type)."
+                        );
+                    }
+
+                    if (!DefaultInterfaceImplementationInvoker.HasDefaultImplementation(method))
+                    {
+                        throw new InvalidOperationException(
+                            $"Initializer method '{templateType.FullName}.{method.Name}' must provide a default implementation."
+                        );
+                    }
+
+                    analysis.Initializers.Add(method);
+                }
+            }
+
+            var duplicateInitializerType = analysis.Initializers
+                .GroupBy(method => method.GetParameters()[0].ParameterType)
+                .FirstOrDefault(group => group.Count() > 1);
+            if (duplicateInitializerType != null)
+            {
+                throw new InvalidOperationException(
+                    $"Initializer event type '{duplicateInitializerType.Key.FullName}' is declared multiple times on template '{templateType.FullName}'."
+                );
             }
 
             var duplicateProjectionType = analysis.Projections
@@ -321,6 +415,18 @@ namespace Stateflows.Entities.Registration.Builders
                 context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [context.MutationEvent])
             );
 
+        private static void RegisterDefaultInitializer<TTemplate>(IEntityBuilder<TTemplate> builder, MethodInfo method)
+            where TTemplate : class
+            => builder.AddDefaultInitializer(
+                context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [])
+            );
+
+        private static void RegisterInitializer<TTemplate, TInitializationEvent>(IEntityBuilder<TTemplate> builder, MethodInfo method)
+            where TTemplate : class
+            => builder.AddInitializer<TInitializationEvent>(
+                context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [context.InitializationEvent])
+            );
+
         private static Expression<Func<TTemplate, TField>> CreateFieldSelector<TTemplate, TField>(PropertyInfo property)
             where TTemplate : class
         {
@@ -386,12 +492,7 @@ namespace Stateflows.Entities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IEntitiesBuilder AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate> buildAction = null)
-            where TTemplate : class
-            => AddEntity(entityName, 1, buildAction);
-
-        [DebuggerHidden]
-        public IEntitiesBuilder AddEntity<TTemplate>(string entityName, int version, EntityBuildAction<TTemplate> buildAction = null)
+        public IEntitiesBuilder AddEntity<TTemplate>(string entityName, int version, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
         {
             var templateType = GetEntityTemplateType(typeof(TTemplate));
@@ -438,7 +539,7 @@ namespace Stateflows.Entities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IEntitiesBuilder AddEntity<TTemplate, TEntity>(string entityName = null, int version = 1, EntityBuildAction<TTemplate> buildAction = null)
+        public IEntitiesBuilder AddEntity<TTemplate, TEntity>(string entityName, int version, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
             where TEntity : class, IEntity<TTemplate>
         {
@@ -472,11 +573,54 @@ namespace Stateflows.Entities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IEntitiesBuilder AddEntity<TTemplate, TEntity>(int version, EntityBuildAction<TTemplate> buildAction = null)
-            where TTemplate : class
-            where TEntity : class, IEntity<TTemplate>
-            => AddEntity<TTemplate, TEntity>(null, version, buildAction);
+        public IEntitiesBuilder AddObserver(EntityObserverFactoryAsync observerFactoryAsync)
+        {
+            register.AddObserver(observerFactoryAsync);
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddObserver<TObserver>()
+            where TObserver : class, IEntityObserver
+        {
+            register.AddObserver<TObserver>();
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddExceptionHandler(EntityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        {
+            register.AddExceptionHandler(exceptionHandlerFactoryAsync);
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddExceptionHandler<THandler>()
+            where THandler : class, IEntityExceptionHandler
+        {
+            register.AddExceptionHandler<THandler>();
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddInterceptor(EntityInterceptorFactoryAsync interceptorFactoryAsync)
+        {
+            register.AddInterceptor(interceptorFactoryAsync);
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IEntityInterceptor
+        {
+            register.AddInterceptor<TInterceptor>();
+
+            return this;
+        }
     }
 }
-
-

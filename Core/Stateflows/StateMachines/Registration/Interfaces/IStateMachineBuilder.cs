@@ -1,67 +1,57 @@
-﻿using Stateflows.StateMachines.Registration.Interfaces.Base;
+﻿using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.StateMachines
 {
+    /// <summary>Continues a machine definition after its initial vertex is selected, allowing further elements and one
+    /// final state.</summary>
+    /// <remarks>The name describes the fluent definition stage, not a running machine's status.</remarks>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
     public interface IInitializedStateMachineBuilder :
         IStateMachineElements<IInitializedStateMachineBuilder>,
         IStateMachineFinal<IFinalizedStateMachineBuilder>,
         IStateMachineUtils<IInitializedStateMachineBuilder>,
         IStateMachineEvents<IInitializedStateMachineBuilder>,
-        IStateMachineEntity<IInitializedStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IInitializedStateMachineBuilder>;
 
+    /// <summary>Continues configuration of lifecycle, middleware, and entities after a final state closes structural
+    /// additions.</summary>
+    /// <remarks>This is a registration-time builder stage, not a finalized runtime instance.</remarks>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
     public interface IFinalizedStateMachineBuilder :
         IStateMachineUtils<IFinalizedStateMachineBuilder>,
         IStateMachineEvents<IFinalizedStateMachineBuilder>,
-        IStateMachineEntity<IFinalizedStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IFinalizedStateMachineBuilder>;
 
+    /// <summary>Starts a fluent machine definition by selecting an initial vertex or reusing a typed definition.
+    /// </summary>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
     public interface IStateMachineBuilder :
         IStateMachineOverride<IOverridenStateMachineBuilder>,
         IStateMachineInitial<IInitializedStateMachineBuilder>,
         IStateMachineUtils<IStateMachineBuilder>,
         IStateMachineEvents<IStateMachineBuilder>,
-        IStateMachineEntity<IStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IStateMachineBuilder>;
     
+    /// <summary>Extends a reused machine definition with additional elements or overrides of inherited elements.
+    /// </summary>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
     public interface IOverridenStateMachineBuilder :
         IStateMachineElements<IOverridenStateMachineBuilder>,
         IStateMachineFinal<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineOverrides<IOverridenStateMachineBuilder>,
         IStateMachineUtils<IOverridenStateMachineBuilder>,
         IStateMachineEvents<IOverridenStateMachineBuilder>,
-        IStateMachineEntity<IOverridenStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IOverridenStateMachineBuilder>;
     
+    /// <summary>Configures inherited elements, lifecycle, and utilities after adding a final state to a reused
+    /// definition.</summary>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
     public interface IFinalizedOverridenStateMachineBuilder :
-        IStateMachineElements<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineEvents<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>,
-        IStateMachineEntity<IFinalizedOverridenStateMachineWithEntityBuilder>;
-    
-    public interface IInitializedStateMachineWithEntityBuilder :
-        IStateMachineElements<IInitializedStateMachineWithEntityBuilder>,
-        IStateMachineFinal<IFinalizedStateMachineWithEntityBuilder>,
-        IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IInitializedStateMachineWithEntityBuilder>;
-
-    public interface IFinalizedStateMachineWithEntityBuilder :
-        IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IFinalizedStateMachineWithEntityBuilder>;
-
-    public interface IStateMachineWithEntityBuilder :
-        IStateMachineOverride<IOverridenStateMachineWithEntityBuilder>,
-        IStateMachineInitial<IInitializedStateMachineBuilder>,
-        IStateMachineUtils<IStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IStateMachineWithEntityBuilder>;
-    
-    public interface IOverridenStateMachineWithEntityBuilder :
-        IStateMachineElements<IOverridenStateMachineWithEntityBuilder>,
-        IStateMachineFinal<IFinalizedOverridenStateMachineWithEntityBuilder>,
-        IStateMachineOverrides<IOverridenStateMachineWithEntityBuilder>,
-        IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IOverridenStateMachineWithEntityBuilder>;
-    
-    public interface IFinalizedOverridenStateMachineWithEntityBuilder :
-        IStateMachineElements<IFinalizedOverridenStateMachineWithEntityBuilder>,
-        IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IFinalizedOverridenStateMachineWithEntityBuilder>,
-        IStateMachineOverrides<IFinalizedOverridenStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IFinalizedOverridenStateMachineBuilder>;
 }

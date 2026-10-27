@@ -1,19 +1,21 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Common.Context;
-using Stateflows.Common.Exceptions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Actions.Context.Classes;
 using Stateflows.Actions.Models;
 using Stateflows.Actions.Registration;
 using Stateflows.Activities;
 using Stateflows.Common.Utilities;
+using Stateflows.Common.Engine;
+using Stateflows.Common.Extensions;
+using Stateflows.Common.Classes;
 using Stateflows.StateMachines.Models;
 
 namespace Stateflows.Actions.Engine
@@ -38,7 +40,12 @@ namespace Stateflows.Actions.Engine
         internal readonly ActionModel ActionModel;
         internal readonly ActionsRegister Register;
 
-        private Inspector inspector;
+        private Inspector? inspector = null;
+        
+        private readonly PendingTasks pendingTasks = PendingTasksScope.RequireCurrent();
+
+        public void AddPendingTask(Task task)
+            => pendingTasks.Add(task);
 
         public async Task<Inspector> GetInspectorAsync()
         {
@@ -53,18 +60,18 @@ namespace Stateflows.Actions.Engine
         
         public async Task HydrateAsync(EventHolder eventHolder)
         {
-            var inspector = await GetInspectorAsync();
+            // var inspector = await GetInspectorAsync();
             
-            using var serviceScope = ServiceProvider.CreateScope();
+            await using var serviceScope = new StateflowsServiceScope(ServiceProvider.CreateAsyncScope());
             using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, serviceScope.ServiceProvider);
             // inspector.AfterHydrate(context);
         }
 
         public async Task DehydrateAsync(EventHolder eventHolder)
         {
-            var inspector = await GetInspectorAsync();
+            // var inspector = await GetInspectorAsync();
 
-            using var scope = ServiceProvider.CreateScope();
+            await using var scope = new StateflowsServiceScope(ServiceProvider.CreateAsyncScope());
             using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, scope.ServiceProvider);
             // inspector.BeforeDehydrate(context);
         }
@@ -72,144 +79,138 @@ namespace Stateflows.Actions.Engine
         public async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             var result = EventStatus.NotConsumed;
-            
+
             var inspector = await GetInspectorAsync();
-            
-            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': received event '{Event.GetName(eventHolder.PayloadType)}', processing");
 
-            var eventContext = new EventContext<TEvent>(StateflowsContext, this, eventHolder, ServiceProvider);
-            this.inspector.BeforeProcessEvent(eventContext);
-            
-            try
+            Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': received event '{Event.GetName(eventHolder.PayloadType)}', processing");
+
+            using var eventContext = new EventContext<TEvent>(StateflowsContext, this, eventHolder, ServiceProvider);
+
+            if (eventHolder.Payload is TokensInputEvent tokensInput)
             {
-                if (eventHolder is EventHolder<TokensInput> tokensInputHolder)
+                using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, tokensInput.Tokens);
+                try
                 {
-                    using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, tokensInputHolder.Payload.Tokens);
-                    try
-                    {
-                        InputTokens.TokensHolder.Value = context.InputTokens.ToList();
-                    
-                        await InvokeActionAsync(context);
+                    InputTokens.TokensHolder.Value = context.InputTokens.ToList();
 
-                        InputTokens.TokensHolder.Value = null;
-                    
-                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
-                    
-                        var tokensOutput = new TokensOutput()
-                        {
-                            Tokens = context.OutputTokens.ToList()
-                        };
-                        
-                        tokensInputHolder.Respond(tokensOutput.ToEventHolder(context.Behavior.Id));
-                    }
-                    finally
-                    {
-                        result = EventStatus.Consumed;
-                    }
-                }
-                else
-                if (eventHolder is EventHolder<BehaviorInfoRequest> behaviorInfoRequest)
-                {
-                    behaviorInfoRequest.Payload.Respond(new BehaviorInfo()
-                    {
-                        Id = StateflowsContext.Id,
-                        BehaviorStatus = StateflowsContext.Status,
-                        ExpectedEvents = StateflowsContext.Status switch
-                        {
-                            BehaviorStatus.NotInitialized => [Event<Initialize>.Name],
-                            _ => []
-                        }
-                    });
-                }
-                else
-                if (eventHolder is EventHolder<Subscribe> subscribeHolder)
-                {
-                    var subscribe = subscribeHolder.Payload;
-                    if (StateflowsContext.AddSubscribers(subscribe.BehaviorId, subscribe.NotificationNames))
-                    {
-                        result = EventStatus.Consumed;
-                    }
-                }
-                else
-                if (eventHolder is EventHolder<Unsubscribe> unsubscribeHolder)
-                {
-                    var unsubscribe = unsubscribeHolder.Payload;
-                    if (StateflowsContext.RemoveSubscribers(unsubscribe.BehaviorId, unsubscribe.NotificationNames))
-                    {
-                        result = EventStatus.Consumed;
-                    }
-                }
-                else if (eventHolder is EventHolder<Initialize>)
-                {
-                    using var context = new ActionDelegateContext(
-                        StateflowsContext,
-                        this,
-                        eventHolder,
-                        ServiceProvider,
-                        [eventHolder.Payload.ToTokenHolder()]
-                    );
-                    
-                    try
-                    {
-                        InputTokens.TokensHolder.Value = context.InputTokens.ToList();
-                    
-                        await InvokeActionAsync(context);
+                    await InvokeActionAsync(context);
 
-                        InputTokens.TokensHolder.Value = null;
-                    
-                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
-                    }
-                    finally
+                    InputTokens.TokensHolder.Value = null;
+
+                    Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+
+                    var tokensOutput = new TokensOutput()
                     {
-                        result = EventStatus.Consumed;
+                        Tokens = context.OutputTokens.ToList()
+                    };
+
+                    if (eventHolder.Payload is IRequest<TokensOutput> request)
+                    {
+                        ResponseHolder.Respond(request, tokensOutput.ToEventHolder(context.Behavior.Id));
                     }
                 }
-                else if (eventHolder is EventHolder<Reset> resetHolder)
+                finally
                 {
-                    ResetBehavior(resetHolder.Payload.Mode);
-                    
                     result = EventStatus.Consumed;
                 }
-                else if (eventHolder is EventHolder<Finalize>)
+            }
+            else
+            if (eventHolder is EventHolder<BehaviorInfoRequest> behaviorInfoRequest)
+            {
+                behaviorInfoRequest.Payload.Respond(new BehaviorInfo()
                 {
-                    inspector.BeforeActionFinalize(eventContext);
+                    Id = StateflowsContext.Id,
+                    BehaviorStatus = StateflowsContext.Status,
+                    ExpectedEvents = StateflowsContext.Status switch
+                    {
+                        BehaviorStatus.NotInitialized => [Event<Initialize>.Name],
+                        _ => []
+                    }
+                });
+            }
+            else
+            if (eventHolder is EventHolder<Subscribe> subscribeHolder)
+            {
+                var subscribe = subscribeHolder.Payload;
+                if (StateflowsContext.AddSubscribers(subscribe.BehaviorId, subscribe.NotificationNames))
+                {
+                    result = EventStatus.Consumed;
+                }
+            }
+            else
+            if (eventHolder is EventHolder<Unsubscribe> unsubscribeHolder)
+            {
+                var unsubscribe = unsubscribeHolder.Payload;
+                if (StateflowsContext.RemoveSubscribers(unsubscribe.BehaviorId, unsubscribe.NotificationNames))
+                {
+                    result = EventStatus.Consumed;
+                }
+            }
+            else if (eventHolder is EventHolder<Initialize>)
+            {
+                using var context = new ActionDelegateContext(
+                    StateflowsContext,
+                    this,
+                    eventHolder,
+                    ServiceProvider,
+                    [eventHolder.Payload.ToTokenHolder()]
+                );
+
+                try
+                {
+                    InputTokens.TokensHolder.Value = context.InputTokens.ToList();
+
+                    await InvokeActionAsync(context);
+
+                    InputTokens.TokensHolder.Value = null;
+
+                    Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+                }
+                finally
+                {
+                    result = EventStatus.Consumed;
+                }
+            }
+            else if (eventHolder is EventHolder<Reset> resetHolder)
+            {
+                ResetBehavior(resetHolder.Payload.Mode);
+
+                result = EventStatus.Consumed;
+            }
+            else if (eventHolder is EventHolder<Finalize>)
+            {
+                await inspector.OnActionFinalizeAsync(eventContext, () =>
+                {
                     FinalizeBehavior(eventContext);
-                    inspector.AfterActionFinalize(eventContext);
-                    
+                    return Task.CompletedTask;
+                });
+
+                result = EventStatus.Consumed;
+            }
+            else
+            {
+                using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, [eventHolder.Payload.ToTokenHolder()]);
+                try
+                {
+                    InputTokens.TokensHolder.Value = context.InputTokens.ToList();
+
+                    await InvokeActionAsync(context);
+
+                    InputTokens.TokensHolder.Value = null;
+
+                    Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+
+                    HandleGuardRequest(eventHolder, context);
+                }
+                finally
+                {
                     result = EventStatus.Consumed;
                 }
-                else
-                {
-                    using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, [eventHolder.Payload.ToTokenHolder()]);
-                    try
-                    {
-                        InputTokens.TokensHolder.Value = context.InputTokens.ToList();
-
-                        await InvokeActionAsync(context);
-
-                        InputTokens.TokensHolder.Value = null;
-                    
-                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
-
-                        HandleGuardRequest(eventHolder, context);
-                    }
-                    finally
-                    {
-                        result = EventStatus.Consumed;
-                    }
-                }
             }
-            finally
-            {
-                if (result == EventStatus.Undelivered)
-                {
-                    result = EventStatus.Failed;
-                }
-                
-                inspector.AfterProcessEvent(eventContext, result);
-            }
-            
-            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': processed event '{Event.GetName(eventHolder.PayloadType)}' with result '{result}'");
+
+            await pendingTasks.DrainAsync();
+
+            Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': processed event '{Event.GetName(eventHolder.PayloadType)}' with result '{result}'");
 
             return result;
         }
@@ -291,16 +292,13 @@ namespace Stateflows.Actions.Engine
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                if (!inspector.OnActionException(context, e))
-                {
-                    throw;
-                }
-                else
-                {
-                    throw new BehaviorExecutionException(e);
-                }
+                StateflowsContext.ExecutionExceptions.Enqueue(e);
+                Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                await inspector.OnActionExceptionAsync(context, e);
+                throw;
             }
+
+            await Hub.PublishRangeAsync(context.OutputTokens.ToOutputNotifications(context.Behavior.Id));
         }
 
 

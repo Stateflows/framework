@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Version>$(STATEFLOWS_VERSION)</Version>
@@ -14,9 +14,10 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>Stateflows;state-machine;activity;workflow;MinimalAPI;minimal-api;http;rest</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageOutputPath>..\..\NuGet</PackageOutputPath>
-    <LangVersion>12</LangVersion>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,11 +40,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.18" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
+    <ProjectReference Include="..\Stateflows.Extensions.Json\Stateflows.Extensions.Json.csproj" />
+    <ProjectReference Include="..\Stateflows.Extensions.MinimalAPIs.Common\Stateflows.Extensions.MinimalAPIs.Common.csproj" />
   </ItemGroup>
 
 </Project>

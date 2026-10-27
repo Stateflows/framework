@@ -34,7 +34,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
     }
 
-    public class ProjectionGuard([FromProjection] SomeEvent? boolInit) : ITransitionGuard
+    public class ProjectionGuard([FromProjection<ExtendedState<BoolInit>>] SomeEvent? boolInit) : ITransitionGuard
     {
         public Task<bool> GuardAsync()
             => Task.FromResult(boolInit?.InitializationSuccessful ?? false);
@@ -45,6 +45,7 @@ namespace StateMachine.IntegrationTests.Tests
         [Field] public T Value { get; set; }
         [Mutation] public void Set(T value) => Value = value;
         [Projection(PublishScope.Self)] public T ValueProjection => Value;
+        [Projection(PublishScope.Owner)] public string ValueStringProjection => Value?.ToString() ?? string.Empty;
     }
     
     [TestClass]
@@ -74,7 +75,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitializer<BoolInit>(async c =>
                         {
                             Debug.WriteLine($"InitializationEvent.Value: {c.InitializationEvent.Value}");
-                            await c.Behavior.TryMutateAsync(c.InitializationEvent);
+                            await c.Behavior.TryMutateAsync<ExtendedState<BoolInit>, BoolInit>(c.InitializationEvent);
                             return true;
                         })
                         .AddInitialState("stateA", b => b
@@ -84,7 +85,7 @@ namespace StateMachine.IntegrationTests.Tests
                                     if (c.TryGetOwnerBehaviorContext(out var ownerContext))
                                     {
                                         GuardRun = true;
-                                        var (success, value) = await ownerContext.TryGetProjectionAsync<BoolInit>();
+                                        var (success, value) = await ownerContext.TryGetProjectionAsync<ExtendedState<BoolInit>, BoolInit>();
                                         if (success)
                                         {
                                             Debug.WriteLine($"value: {value}");

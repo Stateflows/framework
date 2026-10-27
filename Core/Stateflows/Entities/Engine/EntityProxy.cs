@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -13,15 +14,27 @@ namespace Stateflows.Entities.Engine
         where TTemplate : class
     {
         private Dictionary<string, object> values = null!;
-        private Dictionary<string, (string FieldName, Type ValueType, bool IsComputed)> fieldMap = null!;
+        private Dictionary<string, FieldModel> fieldMap = null!;
         private TTemplate proxy = null!;
 
-        private static readonly Dictionary<string, PropertyInfo> TemplateProperties = typeof(TTemplate)
-            .GetInterfaces()
-            .Prepend(typeof(TTemplate))
-            .SelectMany(i => i.GetProperties())
-            .Where(property => property.GetIndexParameters().Length == 0)
-            .ToDictionary(property => property.Name);
+        // Attribute lookups cached once per closed generic type at class-init time.
+        private static readonly Dictionary<string, (PropertyInfo Property, bool IsField, bool IsProjection)> TemplateProperties =
+            typeof(TTemplate)
+                .GetInterfaces()
+                .Prepend(typeof(TTemplate))
+                .SelectMany(i => i.GetProperties())
+                .Where(property => property.GetIndexParameters().Length == 0)
+                .ToDictionary(
+                    property => property.Name,
+                    property => (
+                        property,
+                        property.GetCustomAttribute<FieldAttribute>() != null,
+                        property.GetCustomAttribute<ProjectionAttribute>() != null
+                    )
+                );
+
+        // MutationAttribute presence cached per MethodInfo across all entity types.
+        private static readonly ConcurrentDictionary<MethodInfo, bool> IsMutationMethod = new();
 
         private readonly List<string> readFields = [];
         public IReadOnlyList<string> ReadFields => readFields;
@@ -51,7 +64,7 @@ namespace Stateflows.Entities.Engine
 
                 if (fieldMap.TryGetValue(propName, out var field))
                 {
-                    var key = field.FieldName.GetFieldKey();
+                    var key = field.Name.GetFieldKey();
                     if (values.TryGetValue(key, out var stored))
                     {
                         return ConvertValue(stored, field.ValueType);
@@ -73,9 +86,9 @@ namespace Stateflows.Entities.Engine
                 if (fieldMap.TryGetValue(propName, out var field))
                 {
                     if (field.IsComputed)
-                        throw new InvalidOperationException($"Cannot set value of computed field '{field.FieldName}'");
+                        throw new InvalidOperationException($"Cannot set value of computed field '{field.Name}'");
 
-                    values[field.FieldName.GetFieldKey()] = arguments[0];
+                    values[field.Name.GetFieldKey()] = arguments[0];
 
                     return null;
                 }
@@ -85,7 +98,7 @@ namespace Stateflows.Entities.Engine
                 );
             }
 
-            if (method.GetCustomAttribute<MutationAttribute>() != null)
+            if (IsMutationMethod.GetOrAdd(method, m => m.GetCustomAttribute<MutationAttribute>() != null))
             {
                 throw new InvalidOperationException(
                     $"Mutation method '{typeof(TTemplate).FullName}.{method.Name}' cannot be invoked through entity proxy."
@@ -104,28 +117,28 @@ namespace Stateflows.Entities.Engine
 
         private static PropertyInfo GetFieldProperty(string propertyName)
         {
-            if (!TemplateProperties.TryGetValue(propertyName, out var property))
+            if (!TemplateProperties.TryGetValue(propertyName, out var entry))
             {
                 throw new InvalidOperationException(
                     $"Property '{typeof(TTemplate).FullName}.{propertyName}' is not defined on entity template."
                 );
             }
 
-            if (property.GetCustomAttribute<FieldAttribute>() == null)
+            if (!entry.IsField)
             {
-                if (property.GetCustomAttribute<ProjectionAttribute>() != null)
+                if (entry.IsProjection)
                 {
                     throw new InvalidOperationException(
-                        $"Projection property '{typeof(TTemplate).FullName}.{property.Name}' cannot be accessed through entity proxy."
+                        $"Projection property '{typeof(TTemplate).FullName}.{entry.Property.Name}' cannot be accessed through entity proxy."
                     );
                 }
 
                 throw new InvalidOperationException(
-                    $"Only properties marked with [Field] can be accessed through entity proxy. Property '{typeof(TTemplate).FullName}.{property.Name}' is not marked with [Field]."
+                    $"Only properties marked with [Field] can be accessed through entity proxy. Property '{typeof(TTemplate).FullName}.{entry.Property.Name}' is not marked with [Field]."
                 );
             }
 
-            return property;
+            return entry.Property;
         }
 
         private static object? ConvertValue(object stored, Type targetType)
@@ -172,11 +185,7 @@ namespace Stateflows.Entities.Engine
             var p = (EntityProxy<TTemplate>)(object)proxy;
             p.proxy = proxy;
             p.values = values;
-            p.fieldMap = model.Fields.Values
-                .ToDictionary(
-                    f => f.Name,
-                    f => (f.Name, f.ValueType, f.IsComputed)
-                );
+            p.fieldMap = model.Fields;
             return (p, proxy);
         }
     }
