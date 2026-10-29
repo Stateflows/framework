@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Hosting\Stateflows.Hosting.Orleans\Stateflows.Runtimes.Orleans.csproj" />
+    <ProjectReference Include="..\..\Runtimes\Stateflows.Runtimes.Orleans\Stateflows.Runtimes.Orleans.csproj" />
   </ItemGroup>
 
 </Project>
