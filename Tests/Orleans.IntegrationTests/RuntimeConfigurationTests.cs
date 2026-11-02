@@ -74,8 +74,47 @@ public sealed class RuntimeConfigurationTests
         StringAssert.Contains(failure.Message, nameof(StateflowsRuntimeOptions.StorageProviderName));
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-1)]
+    public async Task NonpositiveStreamAdmissionCapacityFailsStartup(int capacity)
+    {
+        using var host = CreateHost(storage: true, reminders: true, runtimeFirst: true,
+            configureOptions: options => options.MaxQueuedActivityStreamEvents = capacity);
+        var failure = await Assert.ThrowsExactlyAsync<OrleansConfigurationException>(() => host.StartAsync());
+        StringAssert.Contains(failure.Message, nameof(StateflowsRuntimeOptions.MaxQueuedActivityStreamEvents));
+    }
+
+    [TestMethod]
+    [DataRow(-2)]
+    [DataRow(-1000)]
+    public async Task NegativeCheckpointTimeoutOtherThanInfiniteFailsStartup(int milliseconds)
+    {
+        using var host = CreateHost(storage: true, reminders: true, runtimeFirst: true,
+            configureOptions: options => options.ActivityStreamBarrierTimeout = TimeSpan.FromMilliseconds(milliseconds));
+        var failure = await Assert.ThrowsExactlyAsync<OrleansConfigurationException>(() => host.StartAsync());
+        StringAssert.Contains(failure.Message, nameof(StateflowsRuntimeOptions.ActivityStreamBarrierTimeout));
+    }
+
+    [TestMethod]
+    [DataRow(-1)]
+    [DataRow(0)]
+    [DataRow(1000)]
+    public async Task SupportedCheckpointTimeoutsAndMinimumAdmissionCapacityStart(int milliseconds)
+    {
+        using var host = CreateHost(storage: true, reminders: true, runtimeFirst: true,
+            configureOptions: options =>
+            {
+                options.MaxQueuedActivityStreamEvents = 1;
+                options.ActivityStreamBarrierTimeout = TimeSpan.FromMilliseconds(milliseconds);
+            });
+        await host.StartAsync();
+        await host.StopAsync();
+    }
+
     private static IHost CreateHost(bool storage, bool reminders, bool runtimeFirst, string? providerName = null,
-        RecordingStorage? selected = null, RecordingStorage? other = null)
+        RecordingStorage? selected = null, RecordingStorage? other = null,
+        Action<StateflowsRuntimeOptions>? configureOptions = null)
     {
         var listeners = Enumerable.Range(0, 2).Select(_ => new TcpListener(IPAddress.Loopback, 0)).ToArray();
         int[] ports;
@@ -101,7 +140,11 @@ public sealed class RuntimeConfigurationTests
             {
                 var cluster = Guid.NewGuid().ToString("N");
                 silo.UseLocalhostClustering(ports[0], ports[1], null, cluster, cluster);
-                if (runtimeFirst) silo.AddStateflowsRuntime(options => options.StorageProviderName = providerName);
+                if (runtimeFirst) silo.AddStateflowsRuntime(options =>
+                {
+                    options.StorageProviderName = providerName;
+                    configureOptions?.Invoke(options);
+                });
                 var selectedName = providerName ?? ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME;
                 var otherName = providerName == null ? "unrelated-storage" : ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME;
                 silo.ConfigureServices(services =>
@@ -110,7 +153,11 @@ public sealed class RuntimeConfigurationTests
                     if (storage) services.AddKeyedSingleton<IGrainStorage>(selectedName, selected ?? new RecordingStorage());
                 });
                 if (reminders) silo.UseInMemoryReminderService();
-                if (!runtimeFirst) silo.AddStateflowsRuntime(options => options.StorageProviderName = providerName);
+                if (!runtimeFirst) silo.AddStateflowsRuntime(options =>
+                {
+                    options.StorageProviderName = providerName;
+                    configureOptions?.Invoke(options);
+                });
             })
             .Build();
     }

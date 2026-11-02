@@ -104,6 +104,11 @@ namespace Stateflows.Activities.Registration.Builders
         IReactiveStructuredActivityBuilder IInputBase<IReactiveStructuredActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IReactiveStructuredActivityBuilder;
 
+        IReactiveStructuredActivityBuilder IInputBase<IReactiveStructuredActivityBuilder>.AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
+            => (IReactiveStructuredActivityBuilder)AddInputPin(buildAction);
+        IReactiveStructuredActivityBuilder IOutputBase<IReactiveStructuredActivityBuilder>.AddOutputPin<TToken>()
+            => (IReactiveStructuredActivityBuilder)AddOutputPin<TToken>();
+
         IReactiveStructuredActivityBuilder IObjectFlowBase<IReactiveStructuredActivityBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as IReactiveStructuredActivityBuilder;
 
@@ -198,6 +203,11 @@ namespace Stateflows.Activities.Registration.Builders
         IStructuredActivityBuilder IInputBase<IStructuredActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IStructuredActivityBuilder;
 
+        IStructuredActivityBuilder IInputBase<IStructuredActivityBuilder>.AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
+            => (IStructuredActivityBuilder)AddInputPin(buildAction);
+        IStructuredActivityBuilder IOutputBase<IStructuredActivityBuilder>.AddOutputPin<TToken>()
+            => (IStructuredActivityBuilder)AddOutputPin<TToken>();
+
         IStructuredActivityBuilder IObjectFlowBase<IStructuredActivityBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as IStructuredActivityBuilder;
 
@@ -251,6 +261,11 @@ namespace Stateflows.Activities.Registration.Builders
 
         IOverridenReactiveStructuredActivityBuilder IInputBase<IOverridenReactiveStructuredActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IOverridenReactiveStructuredActivityBuilder;
+
+        IOverridenReactiveStructuredActivityBuilder IInputBase<IOverridenReactiveStructuredActivityBuilder>.AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
+            => (IOverridenReactiveStructuredActivityBuilder)AddInputPin(buildAction);
+        IOverridenReactiveStructuredActivityBuilder IOutputBase<IOverridenReactiveStructuredActivityBuilder>.AddOutputPin<TToken>()
+            => (IOverridenReactiveStructuredActivityBuilder)AddOutputPin<TToken>();
 
         IOverridenReactiveStructuredActivityBuilder IOutputBase<IOverridenReactiveStructuredActivityBuilder>.AddOutput()
             => AddOutput() as IOverridenReactiveStructuredActivityBuilder;
@@ -342,6 +357,11 @@ namespace Stateflows.Activities.Registration.Builders
 
         IOverridenStructuredActivityBuilder IInputBase<IOverridenStructuredActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IOverridenStructuredActivityBuilder;
+
+        IOverridenStructuredActivityBuilder IInputBase<IOverridenStructuredActivityBuilder>.AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
+            => (IOverridenStructuredActivityBuilder)AddInputPin(buildAction);
+        IOverridenStructuredActivityBuilder IOutputBase<IOverridenStructuredActivityBuilder>.AddOutputPin<TToken>()
+            => (IOverridenStructuredActivityBuilder)AddOutputPin<TToken>();
 
         IOverridenStructuredActivityBuilder IOutputBase<IOverridenStructuredActivityBuilder>.AddOutput()
             => AddOutput() as IOverridenStructuredActivityBuilder;

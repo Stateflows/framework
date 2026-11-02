@@ -277,6 +277,7 @@ public static class DependencyInjection
             );
 
             activitiesRegister.VisitActivitiesAsync(visitor).GetAwaiter().GetResult();
+            visitor.RegisterPinEndpoints();
 
             foreach (var action in ActivityEndpointBuilders)
             {

@@ -41,12 +41,7 @@ public class GrainSubscriber(
             {
                 var notificationHeaders = headers?.ToDictionary() ?? new Dictionary<string, EventHeader>();
 
-                var context = new BehaviorActionContext(senderContext, serviceProvider)
-                {
-                    Headers = senderContext.ExecutionTriggerHolder!.Headers,
-                    ExecutionTrigger = senderContext.ExecutionTriggerHolder!.BoxedPayload,
-                    ExecutionTriggerId = senderContext.ExecutionTriggerHolder!.Id
-                };
+                using var context = new BehaviorActionContext(senderContext, serviceProvider);
 
                 await stateflowsInterceptor.NotificationPublishedAsync(context, n, notificationHeaders);
 
@@ -66,7 +61,7 @@ public class GrainSubscriber(
         foreach (var group in orleansEventHolders.GroupBy(notification => notification.Immediately))
         {
             var batch = group.Select(notification => notification.Notification).ToArray();
-            if (!group.Key && OutboxPublicationScope.TryEnqueue(
+            if (!group.Key && !PublicationScope.IsImmediate && OutboxPublicationScope.TryEnqueue(
                     StateflowsGrainKeys.ForBehavior(tenantProvider.GetCurrentTenantId(), publisherBehaviorId), batch))
                 continue;
 
@@ -82,7 +77,7 @@ public class GrainSubscriber(
                     throw;
                 }
             }
-            if (!PublicationScope.TryDispatch(PublishAsync, group.Key))
+            if (!PublicationScope.TryDispatch(PublishAsync, group.Key || PublicationScope.IsImmediate))
                 await PublishAsync();
         }
     }

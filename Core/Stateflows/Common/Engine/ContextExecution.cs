@@ -22,7 +22,8 @@ namespace Stateflows.Common.Engine
             IStateflowsStorage storage,
             BehaviorId id,
             List<Exception> exceptions,
-            Func<ContextExecution, Task<EventStatus>> executeAsync)
+            Func<ContextExecution, Task<EventStatus>> executeAsync,
+            bool nonTransactional = false)
         {
             var exceptionCount = exceptions.Count;
             ContextExecution? execution = null;
@@ -44,10 +45,17 @@ namespace Stateflows.Common.Engine
                 if (publications != null)
                     await publications.WaitForImmediateAsync();
 
-                if (result == EventStatus.Failed ||
+                var failed = result == EventStatus.Failed ||
                     exceptions.Count != exceptionCount ||
-                    !execution.Context.ExecutionExceptions.IsEmpty)
+                    !execution.Context.ExecutionExceptions.IsEmpty;
+
+                if (failed)
                 {
+                    if (nonTransactional)
+                    {
+                        execution.Context.LastExecutedAt = DateTime.Now;
+                        await storage.DehydrateAsync(execution.Context);
+                    }
                     return EventStatus.Failed;
                 }
 
@@ -65,6 +73,18 @@ namespace Stateflows.Common.Engine
             catch (Exception exception)
             {
                 exceptions.Add(exception);
+                if (nonTransactional && execution != null)
+                {
+                    try
+                    {
+                        execution.Context.LastExecutedAt = DateTime.Now;
+                        await storage.DehydrateAsync(execution.Context);
+                    }
+                    catch (Exception persistenceException)
+                    {
+                        exceptions.Add(persistenceException);
+                    }
+                }
                 return EventStatus.Failed;
             }
             finally

@@ -54,6 +54,10 @@
         /// <summary>
         /// Event was not executed because the behavior's resource is overloaded or its host is shutting down; it can be retried
         /// </summary>
-        Overloaded
+        Overloaded,
+        /// <summary>
+        /// Input was admitted to a live stream; this does not indicate that its work has completed.
+        /// </summary>
+        Accepted
     }
 }

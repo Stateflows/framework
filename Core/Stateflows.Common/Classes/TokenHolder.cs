@@ -12,6 +12,22 @@ public abstract class TokenHolder
     /// <summary>Gets or sets the unique identifier of this token envelope.</summary>
     public Guid Id { get; set; } = Guid.NewGuid();
 
+    /// <summary>Gets or sets whether this routed token occurrence belongs to streamed work.</summary>
+    /// <remarks>
+    /// Routing code should copy a holder when changing this value because one token may be forked
+    /// to multiple flows with different execution provenance.
+    /// </remarks>
+    public bool IsStreamed { get; set; }
+
+    /// <summary>Creates a distinct envelope with the same payload and the requested execution provenance.</summary>
+    /// <param name="isStreamed">Whether the copied occurrence belongs to streamed work.</param>
+    /// <returns>A separate object envelope retaining the logical token identifier.</returns>
+    public TokenHolder CopyForExecution(bool isStreamed)
+        => CopyForExecutionCore(isStreamed);
+
+    /// <summary>Creates a typed copy while preserving the envelope identifier.</summary>
+    protected abstract TokenHolder CopyForExecutionCore(bool isStreamed);
+
     /// <summary>Stores the token name after it has been resolved.</summary>
     protected string name;
     /// <summary>Gets the token name used for structural delivery and identification.</summary>
@@ -70,6 +86,14 @@ public class TokenHolder<TToken> : TokenHolder
     /// <inheritdoc />
     protected override Type GetActualPayloadType()
         => BoxedPayload?.GetType() ?? typeof(TToken);
+
+    protected override TokenHolder CopyForExecutionCore(bool isStreamed)
+        => new TokenHolder<TToken>
+        {
+            Id = Id,
+            Payload = Payload,
+            IsStreamed = isStreamed
+        };
 
     /// <inheritdoc />
     public override bool Equals(object obj)

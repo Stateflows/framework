@@ -1,6 +1,8 @@
 using Activity.IntegrationTests.Classes.Events;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
+using Stateflows.Common.Interfaces;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
@@ -158,6 +160,7 @@ namespace Activity.IntegrationTests.Tests
     public class ActivityWithTimeEvent : IActivity
     {
         public static bool TimeEventExecuted = false;
+        public static TaskCompletionSource<bool> TimeEventExecution { get; set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         
         public static void Build(IActivityBuilder builder) => builder
             .AddInitial(b => b
@@ -166,7 +169,11 @@ namespace Activity.IntegrationTests.Tests
             )
             .AddTimeEventAction<TimeoutEvent>(
                 "timeEvent",
-                async c => TimeEventExecuted = true,
+                async c =>
+                {
+                    TimeEventExecuted = true;
+                    TimeEventExecution.TrySetResult(true);
+                },
                 b => b.AddControlFlow("final")
             )
             .AddAction("final", async c => { })
@@ -182,6 +189,7 @@ namespace Activity.IntegrationTests.Tests
     public class ActivityWithSendEvent : IActivity
     {
         public static bool InitialExecuted = false;
+        public static bool EventReceived = false;
         
         public static void Build(IActivityBuilder builder) => builder
             .AddInitial(b => b
@@ -194,7 +202,7 @@ namespace Activity.IntegrationTests.Tests
                     InitialExecuted = true;
                     return new SomeEvent();
                 },
-                async c => new BehaviorId("", "", ""),
+                async c => new ActivityId("overrideSendEventTarget", "x"),
                 b => b.AddControlFlow(FinalNode.Name)
             )
             .AddFinal()
@@ -424,6 +432,14 @@ namespace Activity.IntegrationTests.Tests
                             )
                         )
                     )
+                    .AddActivity("overrideSendEventTarget", b => b
+                        .AddInitial(b => b
+                            .AddControlFlow("receive")
+                        )
+                        .AddAcceptEventAction<SomeEvent>("receive", async c =>
+                            ActivityWithSendEvent.EventReceived = true
+                        )
+                    )
 
                     // UseActivity + UseStructuredActivity tests
                     .AddActivity("overrideStructuredActivity", b => b
@@ -640,27 +656,40 @@ namespace Activity.IntegrationTests.Tests
         public async Task UseTimeEventActionOverride()
         {
             ActivityWithTimeEvent.TimeEventExecuted = false;
+            ActivityWithTimeEvent.TimeEventExecution = new(TaskCreationOptions.RunContinuationsAsynchronously);
             
             if (ActivityLocator.TryLocateActivity(new ActivityId("overrideTimeEvent", "x"), out var a))
             {
-                await a.SendAsync(new Initialize());
-                await Task.Delay(100); // Wait for timeout
+                Assert.AreEqual(EventStatus.Initialized, (await a.SendAsync(new Initialize())).Status);
+                ServiceProvider.GetRequiredService<ITenantAccessor>().CurrentTenantId =
+                    ServiceProvider.GetRequiredService<IStateflowsTenantProvider>().GetCurrentTenantId();
+                var context = await ServiceProvider.GetRequiredService<IStateflowsStorage>().HydrateAsync(a.Id);
+                var timeout = context.PendingTimeEvents.Values.OfType<TimeoutEvent>().Single();
+                Assert.AreEqual(EventStatus.Consumed, (await a.SendAsync(timeout)).Status);
+                Assert.IsTrue(await ActivityWithTimeEvent.TimeEventExecution.Task.WaitAsync(TimeSpan.FromSeconds(5)));
             }
 
             Assert.IsNotNull(a);
+            Assert.IsTrue(ActivityWithTimeEvent.TimeEventExecuted);
         }
 
         [TestMethod]
         public async Task UseSendEventActionOverride()
         {
             ActivityWithSendEvent.InitialExecuted = false;
+            ActivityWithSendEvent.EventReceived = false;
             
+            Assert.IsTrue(ActivityLocator.TryLocateActivity(new ActivityId("overrideSendEventTarget", "x"), out var target));
+            Assert.AreEqual(EventStatus.Initialized, (await target.SendAsync(new Initialize())).Status);
+
             if (ActivityLocator.TryLocateActivity(new ActivityId("overrideSendEvent", "x"), out var a))
             {
-                await a.SendAsync(new Initialize());
+                Assert.AreEqual(EventStatus.Initialized, (await a.SendAsync(new Initialize())).Status);
             }
 
+            Assert.IsNotNull(a);
             Assert.IsTrue(ActivityWithSendEvent.InitialExecuted);
+            Assert.IsTrue(ActivityWithSendEvent.EventReceived);
         }
 
         [TestMethod]

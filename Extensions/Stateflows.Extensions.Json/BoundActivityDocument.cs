@@ -110,6 +110,12 @@ internal sealed partial class BoundActivityDocument(
     private static bool HasContract(Type type, Type contract)
         => contract.IsAssignableFrom(type);
 
+    private static string TypedPinName(string kind, Type tokenType)
+    {
+        var pinType = (kind == "inputPin" ? typeof(InputPin<>) : typeof(OutputPin<>)).MakeGenericType(tokenType);
+        return (string)pinType.GetProperty("Name")!.GetValue(null)!;
+    }
+
     private Type? BindEventNode(JToken node, string path, string kind)
     {
         Type? eventType;
@@ -160,8 +166,9 @@ internal sealed partial class BoundActivityDocument(
         }
         else
         {
-            var current = BindType(flow.Value<string>("tokenType")!, path + "/tokenType");
-            if (current == null) return;
+            var flowToken = BindType(flow.Value<string>("tokenType")!, path + "/tokenType");
+            if (flowToken == null) return;
+            var current = flowToken;
             var isElse = kind == "elseObject";
             foreach (var (stage, stagePath) in Items(flow, path, "pipeline"))
             {
@@ -183,6 +190,10 @@ internal sealed partial class BoundActivityDocument(
                     current = output;
                 }
             }
+            if (sourceKind == "inputPin" &&
+                resolvedTypes.TryGetValue(path[..path.LastIndexOf("/flows/", StringComparison.Ordinal)] + "/tokenType", out var pinToken) &&
+                pinToken != flowToken)
+                Error(path + "/tokenType", "Input-pin object flows must use the declared pin token type.");
         }
         if (flow.Value<int?>("weight") < 0)
             Error(path + "/weight", "Flow weights must be nonnegative.");
@@ -199,14 +210,18 @@ internal sealed partial class BoundActivityDocument(
         {
             var kind = node.Value<string>("kind")!;
             var name = node.Value<string>("name");
+            var pinToken = kind is "inputPin" or "outputPin"
+                ? BindType(node.Value<string>("tokenType")!, nodePath + "/tokenType")
+                : null;
             if (!reactive && kind is "acceptEvent" or "timeEvent" or "publishEvent")
                 Error(nodePath + "/kind", $"Node kind '{kind}' requires a reactive structured builder.", "ACT-036");
             if (node["options"] != null &&
                 kind is not ("action" or "structured" or "parallel" or "iterative"))
                 Error(nodePath + "/options", $"Node kind '{kind}' does not expose configurable node options.");
-            if (kind is "initial" or "input" or "output" or "final")
+            if (kind is "initial" or "input" or "output" or "final" or "inputPin" or "outputPin")
             {
-                specialCounts[kind] = specialCounts.GetValueOrDefault(kind) + 1;
+                if (kind is "initial" or "input" or "output" or "final")
+                    specialCounts[kind] = specialCounts.GetValueOrDefault(kind) + 1;
                 if (name is { Length: > 0 })
                     aliases[name] = kind switch
                     {
@@ -214,6 +229,8 @@ internal sealed partial class BoundActivityDocument(
                         "input" => "InputNode",
                         "output" => OutputNode.Name,
                         "final" => FinalNode.Name,
+                        "inputPin" when pinToken != null => TypedPinName(kind, pinToken),
+                        "outputPin" when pinToken != null => TypedPinName(kind, pinToken),
                         _ => name
                     };
             }
@@ -228,7 +245,8 @@ internal sealed partial class BoundActivityDocument(
             {
                 "initial" => new[] { "control" },
                 "input" => new[] { "object" },
-                "output" or "final" => Array.Empty<string>(),
+                "inputPin" => new[] { "object" },
+                "output" or "outputPin" or "final" => Array.Empty<string>(),
                 "dataStore" => new[] { "object" },
                 "sendEvent" or "publishEvent" => new[] { "control" },
                 "decision" when node.Value<string>("mode") == "control" => new[] { "control", "elseControl" },
@@ -248,6 +266,9 @@ internal sealed partial class BoundActivityDocument(
 
             switch (kind)
             {
+                case "inputPin":
+                case "outputPin":
+                    break;
                 case "action":
                     BindClr(node["implementation"]!, nodePath + "/implementation", typeof(IActionNode));
                     break;
@@ -430,8 +451,20 @@ internal sealed partial class BoundActivityDocument(
             case "input":
                 CallGenericInterface(parent, typeof(IInputBase<>), "AddInput", [], [CreateCallback(typeof(InputBuildAction), callback)]);
                 break;
+            case "inputPin":
+            {
+                var token = resolvedTypes[path + "/tokenType"];
+                var builderType = typeof(IInputPinBuilder<>).MakeGenericType(token);
+                CallGenericInterface(parent, typeof(IInputBase<>), "AddInputPin", [token],
+                    [CreateCallback(typeof(Action<>).MakeGenericType(builderType), callback)], methodParameterCount: 1);
+                break;
+            }
             case "output":
                 CallGenericInterface(parent, typeof(IOutputBase<>), "AddOutput", [], []);
+                break;
+            case "outputPin":
+                CallGenericInterface(parent, typeof(IOutputBase<>), "AddOutputPin",
+                    [resolvedTypes[path + "/tokenType"]], []);
                 break;
             case "final":
                 CallGenericInterface(parent, typeof(IFinalBase<>), "AddFinal", [], []);
@@ -607,6 +640,7 @@ internal sealed partial class BoundActivityDocument(
             {
                 "implicitJoin" => NodeOptions.ImplicitJoin,
                 "implicitFork" => NodeOptions.ImplicitFork,
+                "reentrant" => NodeOptions.Reentrant,
                 _ => NodeOptions.None
             };
         CallGenericInterface(nodeBuilder, typeof(INodeOptions<>), "SetOptions", [], [flags], methodParameterCount: 1);
@@ -666,11 +700,11 @@ internal sealed partial class BoundActivityDocument(
             var callbackType = (isElse ? typeof(ElseObjectFlowBuildAction<>) : typeof(ObjectFlowBuildAction<>))
                 .MakeGenericType(token);
             var callback = CreateCallback(callbackType, flowBuilder => ConfigureObjectFlow(flowBuilder, flow, path, token, weight, isElse));
-            if (sourceKind == "decision")
+            if (sourceKind is "decision" or "inputPin")
             {
-                var flowInterface = isElse
-                    ? typeof(IElseDecisionFlowBase<,>)
-                    : typeof(IDecisionFlowBase<,>);
+                var flowInterface = sourceKind == "inputPin"
+                    ? typeof(IDecisionFlowBase<,>)
+                    : isElse ? typeof(IElseDecisionFlowBase<,>) : typeof(IDecisionFlowBase<,>);
                 CallGenericInterface(nodeBuilder, flowInterface, isElse ? "AddElseFlow" : "AddFlow", [],
                     [target, callback], methodParameterCount: 2);
             }

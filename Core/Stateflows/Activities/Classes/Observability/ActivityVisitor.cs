@@ -7,6 +7,12 @@ namespace Stateflows.Activities
     /// <remarks>Override only the registration callbacks needed by an integration.</remarks>
     public abstract class ActivityVisitor : IActivityVisitor
     {
+        public virtual Task InputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+            => Task.CompletedTask;
+
+        public virtual Task OutputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+            => Task.CompletedTask;
+
         /// <inheritdoc/>
         public virtual Task AcceptEventNodeAddedAsync(EventDefinition definition, string activityName, int activityVersion,
             string nodeName, string parentNodeName = null) => Task.CompletedTask;

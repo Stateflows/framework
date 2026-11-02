@@ -7,6 +7,14 @@ namespace Stateflows.Activities
     /// <remarks>Use visitors to integrate registration metadata with external tooling without participating in runtime execution.</remarks>
     public interface IActivityVisitor
     {
+        /// <summary>Signals a typed input pin in the root or a structured Activity scope.</summary>
+        Task InputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+            => Task.CompletedTask;
+
+        /// <summary>Signals a typed output pin in the root or a structured Activity scope.</summary>
+        Task OutputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+            => Task.CompletedTask;
+
         /// <summary>Signals that a structurally accepted event node has been registered.</summary>
         /// <param name="definition">The event definition.</param>
         /// <param name="activityName">The activity name.</param>

@@ -27,9 +27,12 @@ namespace Stateflows.Common.Context.Classes
             return ownerBehaviorContext != null;
         }
 
-        // todo
-        public virtual object ExecutionTrigger { get; init; }
-        public Guid ExecutionTriggerId { get; init; }
-        public virtual IDictionary<string, EventHeader> Headers { get; init; }
+        public virtual ExecutionMode ExecutionMode { get; init; } = context.ExecutionMode;
+        public virtual object? ExecutionTrigger { get; init; }
+            = context.ExecutionMode == ExecutionMode.Streamed ? null : context.ExecutionTriggerHolder?.BoxedPayload;
+        public virtual Guid? ExecutionTriggerId { get; init; }
+            = context.ExecutionMode == ExecutionMode.Streamed ? null : context.ExecutionTriggerHolder?.Id;
+        public virtual IDictionary<string, EventHeader>? Headers { get; init; }
+            = context.ExecutionMode == ExecutionMode.Streamed ? null : context.ExecutionTriggerHolder?.Headers;
     }
 }

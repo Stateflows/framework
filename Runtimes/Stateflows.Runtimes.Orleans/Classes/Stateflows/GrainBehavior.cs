@@ -60,9 +60,20 @@ public class GrainBehavior :
     private sealed record Registration(string[] Names, Func<EventHolder, Task> Handler, DateTime ReplaySince)
     {
         public bool Active { get; set; } = true;
+        public Task Tail { get; set; } = Task.CompletedTask;
     }
     private readonly Dictionary<string, List<Registration>> handlers = new();
     private readonly Dictionary<IWatcher, Registration> handlersByWatcher = new();
+    private async Task WaitForDeliveryAsync(Registration registration)
+    {
+        var observer = observerReference;
+        if (observer != null)
+            await SubscriptionsGrain.WaitForWatchDeliveryAsync(observer);
+        Task pending;
+        lock (handlers)
+            pending = registration.Tail;
+        await pending;
+    }
 
     public void Dispose()
     {
@@ -184,20 +195,19 @@ public class GrainBehavior :
 
     public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
     {
-        // TODO: handle immediate delivery
-        // if (@event is Finalize { Mode: FinalizationMode.Immediate })
-        // {
-        //     await SignalsGrain.EnableSignalAsync(Signals.Cancel);
-        // }
-        
         var eventHolder = @event.ToTypedEventHolder(headers);
-        var result = await BehaviorGrain.ProcessEventAsync(eventHolder, CancellationToken.None);
+        OrleansEventHolder envelope = eventHolder;
+        envelope.IsRequest = false;
+        var result = envelope.Headers.ContainsKey(nameof(Stateflows.Common.Stream))
+            ? await BehaviorGrain.StreamEventAsync(envelope, CancellationToken.None)
+            : await BehaviorGrain.ProcessEventAsync(envelope, CancellationToken.None);
         return new SendResult(result.Status, result.Validation);
     }
 
     public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IDictionary<string, EventHeader>? headers = null)
     {
         var h = (OrleansEventHolder)request.ToEventHolder(headers);
+        h.IsRequest = true;
         try
         {
             var result = await BehaviorGrain.ProcessEventAsync(h, CancellationToken.None);
@@ -239,8 +249,8 @@ public class GrainBehavior :
             throw new ArgumentException("At least one nonempty notification name is required.", nameof(notificationNames));
 
         await watchGate.WaitAsync();
-        var watcher = new Watcher(this);
         var registration = new Registration(notificationNames.Distinct().ToArray(), asyncHandler, replayNotificationsSince ?? DateTime.Now);
+        var watcher = new Watcher(this, () => WaitForDeliveryAsync(registration));
         try
         {
             lock (handlers)
@@ -318,7 +328,12 @@ public class GrainBehavior :
                 {
                     foreach (var registration in notificationHandlers)
                     {
-                        _ = Task.Run(() => InvokeHandlerAsync(registration, eventHolder));
+                        var previous = registration.Tail;
+                        registration.Tail = Task.Run(async () =>
+                        {
+                            await previous;
+                            await InvokeHandlerAsync(registration, eventHolder);
+                        });
                     }
                 }
             }

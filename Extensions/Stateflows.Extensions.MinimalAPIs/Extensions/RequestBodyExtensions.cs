@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -549,33 +550,34 @@ internal static class RequestBodyExtensions
     {
         httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
 
-        var n = payload.RequestedNotifications?.ToList() ?? [];
-        n.Add("String");
+        var notificationNames = payload.RequestedNotifications?.Where(name => !string.IsNullOrEmpty(name)).Distinct().ToArray() ?? [];
         
-        await using var watcher = await behavior.WatchAsync(
-            n.ToArray(),
-            async eventHolder => await httpContext.WriteEventAsync(eventHolder)
-        );
+        await using var watcher = notificationNames.Length > 0
+            ? await behavior.WatchAsync(notificationNames, eventHolder => httpContext.WriteEventAsync(eventHolder))
+            : null;
 
-        var processingTask = processingAction();
-
-        while (!httpContext.RequestAborted.IsCancellationRequested)
+        await httpContext.Response.StartAsync(httpContext.RequestAborted);
+        await httpContext.Response.Body.FlushAsync(httpContext.RequestAborted);
+        await processingAction();
+        if (watcher != null)
+            await watcher.WaitForDeliveryAsync().WaitAsync(httpContext.RequestAborted);
+        try
         {
-            await Task.Delay(1000);
+            await Task.Delay(Timeout.InfiniteTimeSpan, httpContext.RequestAborted);
         }
-
-        await processingTask;
+        catch (OperationCanceledException) when (httpContext.RequestAborted.IsCancellationRequested)
+        { }
     }
 
     internal static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, string method, string path, TEvent @event, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
-        var notifications = new List<EventHolder>();
+        var notifications = new ConcurrentQueue<EventHolder>();
         var notificationNames = payload.RequestedNotifications?.Where(n => !string.IsNullOrEmpty(n)).ToArray() ?? [];
-        IAsyncDisposable? watcher = notificationNames.Any()
+        await using var watcher = notificationNames.Any()
             ? await behavior.WatchAsync(
                 notificationNames,
-                notifications.Add
+                notifications.Enqueue
             )
             : null;
 
@@ -606,11 +608,10 @@ internal static class RequestBodyExtensions
             );
             var behaviorInfo = await behavior.GetBehaviorInfo();
             
-            // var notifications = payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
-            //     ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
-            //     : [];
+            if (watcher != null)
+                await watcher.WaitForDeliveryAsync().WaitAsync(context.RequestAborted);
 
-            return result.ToResult(method ?? "[no method]", path ?? "[no path]", notifications, behaviorInfo, customHateoasLinks);
+            return result.ToResult(method ?? "[no method]", path ?? "[no path]", notifications.ToArray(), behaviorInfo, customHateoasLinks);
         }
     }
 
@@ -618,12 +619,12 @@ internal static class RequestBodyExtensions
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
         where TRequest : IRequest<TResponse>
     {
-        var notifications = new List<EventHolder>();
+        var notifications = new ConcurrentQueue<EventHolder>();
         var notificationNames = payload.RequestedNotifications?.Where(n => !string.IsNullOrEmpty(n)).ToArray() ?? [];
-        IAsyncDisposable? watcher = notificationNames.Any()
+        await using var watcher = notificationNames.Any()
             ? await behavior.WatchAsync(
                 notificationNames,
-                notifications.Add
+                notifications.Enqueue
             )
             : null;
 
@@ -655,11 +656,10 @@ internal static class RequestBodyExtensions
             );
             var behaviorInfo = await behavior.GetBehaviorInfo();
 
-            // var notifications = payload.RequestedNotifications is { Length: > 0 } && requestResult.Status == EventStatus.Consumed
-            //     ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
-            //     : [];
+            if (watcher != null)
+                await watcher.WaitForDeliveryAsync().WaitAsync(context.RequestAborted);
 
-            return requestResult.ToResult(method ?? "[no method]", path ?? "[no path]", notifications, behaviorInfo, customHateoasLinks);
+            return requestResult.ToResult(method ?? "[no method]", path ?? "[no path]", notifications.ToArray(), behaviorInfo, customHateoasLinks);
         }
     }
 }

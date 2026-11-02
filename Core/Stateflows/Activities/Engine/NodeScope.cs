@@ -16,6 +16,11 @@ namespace Stateflows.Activities.Engine
     internal class NodeScope : IAsyncDisposable
     {
         public readonly NodeScope BaseNodeScope = null;
+        private readonly object sync = new();
+        private readonly List<NodeScope> childScopes = [];
+        private readonly List<IDisposable> contexts = [];
+        private Task disposalTask;
+        private int disposed;
 
         private IServiceProvider baseServiceProvider = null;
         private IServiceProvider BaseServiceProvider
@@ -23,16 +28,34 @@ namespace Stateflows.Activities.Engine
 
         private AsyncServiceScope? scope = null;
         private AsyncServiceScope Scope
-            => scope ??= BaseServiceProvider.CreateAsyncScope();
+        {
+            get
+            {
+                lock (sync)
+                {
+                    ObjectDisposedException.ThrowIf(disposed != 0, this);
+                    return scope ??= BaseServiceProvider.CreateAsyncScope();
+                }
+            }
+        }
 
         public IServiceProvider ServiceProvider
             => Scope.ServiceProvider;
 
         private CancellationTokenSource cancellationTokenSource = null;
         internal CancellationTokenSource CancellationTokenSource
-            => cancellationTokenSource ??= BaseNodeScope != null
-                ? CancellationTokenSource.CreateLinkedTokenSource(BaseNodeScope.CancellationToken)
-                : new CancellationTokenSource();
+        {
+            get
+            {
+                lock (sync)
+                {
+                    ObjectDisposedException.ThrowIf(disposed != 0, this);
+                    return cancellationTokenSource ??= BaseNodeScope != null
+                        ? CancellationTokenSource.CreateLinkedTokenSource(BaseNodeScope.CancellationToken)
+                        : new CancellationTokenSource();
+                }
+            }
+        }
 
         public CancellationToken CancellationToken
             => CancellationTokenSource.Token;
@@ -41,10 +64,22 @@ namespace Stateflows.Activities.Engine
         
         public void AddPendingTask(Task task)
         {
-            pendingTasks.Add(task);
+            (PendingTasksScope.Current ?? pendingTasks).Add(task);
         }
 
         public Guid ThreadId { get; set; }
+
+        private IReadOnlyList<TokenHolder>? selectionTokens;
+
+        /// <summary>
+        /// Tokens selected for the iterative or parallel partition executing in this scope; inherited by every firing of
+        /// the partition, including firings continued after a checkpoint or a mixed handoff.
+        /// </summary>
+        internal IReadOnlyList<TokenHolder>? SelectionTokens
+        {
+            get => selectionTokens ?? BaseNodeScope?.SelectionTokens;
+            set => selectionTokens = value;
+        }
 
         public bool IsTerminated { get; private set; }
 
@@ -83,10 +118,36 @@ namespace Stateflows.Activities.Engine
             ThreadId = threadId;
         }
 
-        public NodeScope? ChildScope { get; private set; }
+        internal NodeScope[] ChildScopes
+        {
+            get
+            {
+                lock (sync)
+                {
+                    return childScopes.ToArray();
+                }
+            }
+        }
 
         public NodeScope CreateChildScope(Node? node = null, Edge? edge = null, Guid? threadId = null)
-            => ChildScope = new NodeScope(this, node ?? Node, edge, threadId ?? ThreadId);
+        {
+            lock (sync)
+            {
+                ObjectDisposedException.ThrowIf(disposed != 0, this);
+                var child = new NodeScope(this, node ?? Node, edge, threadId ?? ThreadId);
+                childScopes.Add(child);
+                return child;
+            }
+        }
+
+        internal void TrackContext(IDisposable context)
+        {
+            lock (sync)
+            {
+                ObjectDisposedException.ThrowIf(disposed != 0, this);
+                contexts.Add(context);
+            }
+        }
 
         [DebuggerHidden]
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IActivityInitializationContext context)
@@ -396,11 +457,22 @@ namespace Stateflows.Activities.Engine
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             => GetFlowInternalAsync<TTransformationFlow>(context, "object transformation flow");
         
-        public async ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
+        {
+            lock (sync)
+            {
+                return new ValueTask(disposalTask ??= DisposeCoreAsync());
+            }
+        }
+
+        private async Task DisposeCoreAsync()
         {
             try
             {
-                await pendingTasks.DrainAsync();
+                if (BaseNodeScope == null)
+                {
+                    await pendingTasks.DrainAsync();
+                }
             }
             finally
             {
@@ -411,14 +483,57 @@ namespace Stateflows.Activities.Engine
 
         protected virtual async ValueTask DisposeAsync(bool disposing)
         {
-            if (scope is not null)
+            lock (sync)
             {
-                await scope.Value.DisposeAsync();
+                disposed = 1;
             }
 
-            if (ChildScope is not null)
+            var failures = new List<Exception>();
+            foreach (var child in ChildScopes)
             {
-                await ChildScope.DisposeAsync();
+                try
+                {
+                    await child.DisposeAsync();
+                }
+                catch (Exception exception)
+                {
+                    failures.Add(exception);
+                }
+            }
+
+            foreach (var context in contexts)
+            {
+                try
+                {
+                    context.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    failures.Add(exception);
+                }
+            }
+            contexts.Clear();
+            childScopes.Clear();
+
+            try
+            {
+                if (scope is not null)
+                {
+                    await scope.Value.DisposeAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                failures.Add(exception);
+            }
+            finally
+            {
+                cancellationTokenSource?.Dispose();
+            }
+
+            if (failures.Count > 0)
+            {
+                throw new AggregateException("Failed to dispose Activity invocation scopes.", failures);
             }
         }
     }

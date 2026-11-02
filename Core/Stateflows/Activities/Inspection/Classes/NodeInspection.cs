@@ -26,6 +26,8 @@ namespace Stateflows.Activities.Inspection.Classes
 
         public NodeType Type => Node.Type;
 
+        public System.Type PinTokenType => Node.PinTokenType;
+
         public bool Active => Executor.NodesTree.Contains(Node);
 
         public NodeStatus Status => Executor.Context.ActiveNodes.Keys.Contains(Node.Identifier)

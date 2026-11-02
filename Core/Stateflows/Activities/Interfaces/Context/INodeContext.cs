@@ -37,6 +37,12 @@ namespace Stateflows.Activities
     /// <summary>Node context for the node currently executing or evaluating a flow.</summary>
     public interface ICurrentNodeContext : INodeContext
     {
+        /// <summary>Typed input boundaries declared inside this node's Activity scope.</summary>
+        IEnumerable<IPinContext> InputPins { get; }
+
+        /// <summary>Typed output boundaries declared inside this node's Activity scope.</summary>
+        IEnumerable<IPinContext> OutputPins { get; }
+
         /// <summary>Attempts to retrieve the incoming flow currently being processed.</summary>
         /// <param name="flowContext">Receives the current incoming flow when one is active.</param>
         /// <returns><see langword="true"/> if a current flow is available; otherwise, <see langword="false"/>.</returns>

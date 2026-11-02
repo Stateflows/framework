@@ -15,7 +15,7 @@ namespace Stateflows.Actions.Context.Classes
         { }
 
         public override object ExecutionTrigger => RootContext.EventHolder.BoxedPayload;
-        public Guid ExecutionTriggerId => RootContext.EventHolder.Id;
+        public override Guid? ExecutionTriggerId => RootContext.EventHolder.Id;
         public override Dictionary<string, EventHeader> Headers => RootContext.EventHolder.Headers;
         public IBehaviorContext Behavior => this;
         public bool TryGetParentBehaviorContext(out IParentBehaviorContext parentBehaviorContext)

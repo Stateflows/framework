@@ -31,5 +31,11 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-implicit-fork-and-join" />
         TReturn NoImplicitFork()
             => UpdateOptions(options => options & ~NodeOptions.ImplicitFork);
+
+        /// <summary>Allows overlapping action invocations without sharing invocation inputs or scoped services.
+        /// Non-action node kinds do not support this option.</summary>
+        /// <returns>The current builder.</returns>
+        TReturn Reentrant()
+            => UpdateOptions(options => options | NodeOptions.Reentrant);
     }
 }

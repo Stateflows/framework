@@ -34,7 +34,8 @@ namespace Stateflows.Activities.Context.Classes
             //     Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsLock>(),
             //     Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
             // );
-            Values = new ContextValuesCollection(context.Context.GlobalValues);
+            Values = new ContextValuesCollection(context.Context.GlobalValues,
+                () => !nodeScope.CancellationTokenSource.IsCancellationRequested);
         }
 
         public IContextValues Values { get; }

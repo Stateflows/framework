@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
 
@@ -17,14 +18,22 @@ namespace Stateflows.Common.Classes
         private readonly INotificationsHub notificationsHub;
         private readonly IStateflowsTenantProvider tenantProvider;
         private readonly ITenantAccessor tenantAccessor;
-        private readonly Dictionary<string, List<Func<EventHolder, Task>>> handlers = new();
-        private readonly Dictionary<IWatcher, Func<EventHolder, Task>> handlersByWatcher = new();
+        private sealed class Registration(Func<EventHolder, Task> handler)
+        {
+            public Func<EventHolder, Task> Handler { get; } = handler;
+            public Task Tail { get; set; } = Task.CompletedTask;
+            public bool Active { get; set; } = true;
+        }
+        private readonly Dictionary<string, List<Registration>> handlers = new();
+        private readonly Dictionary<IWatcher, Registration> handlersByWatcher = new();
+        private readonly ILogger<BaseBehavior> logger;
 
         public BaseBehavior(IServiceProvider serviceProvider, BehaviorId id, INotificationsHub notificationsHub)
         {
             this.serviceProvider = serviceProvider;
             this.notificationsHub = notificationsHub;
             this.notificationsHub.RegisterHandler(this);
+            logger = serviceProvider.GetRequiredService<ILogger<BaseBehavior>>();
 
             tenantAccessor = serviceProvider.GetRequiredService<ITenantAccessor>();
             tenantProvider = serviceProvider.GetRequiredService<IStateflowsTenantProvider>();
@@ -42,13 +51,41 @@ namespace Stateflows.Common.Classes
                     {
                         foreach (var handler in notificationHandlers)
                         {
-                            handler.Invoke(eventHolder);
+                            EnqueueNotification(handler, eventHolder);
                         }
                     }
                 }
             }
 
             return Task.CompletedTask;
+        }
+
+        private void EnqueueNotification(Registration registration, EventHolder notification)
+            => registration.Tail = InvokeHandlerAsync(registration.Tail, registration, notification);
+
+        private async Task InvokeHandlerAsync(Task previous, Registration registration, EventHolder notification)
+        {
+            await previous;
+            try
+            {
+                lock (handlers)
+                {
+                    if (!registration.Active)
+                        return;
+                }
+                await registration.Handler(notification);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Notification handler failed for {BehaviorId}, notification {NotificationName}.",
+                    Id, notification.Name);
+            }
+        }
+
+        private Task WaitForDeliveryAsync(Registration registration)
+        {
+            lock (handlers)
+                return registration.Tail;
         }
 
         protected abstract Task<ExecutionToken> ProcessEventAsync(BehaviorId id, EventHolder eventHolder);
@@ -96,7 +133,8 @@ namespace Stateflows.Common.Classes
         
         public async Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificationsSince = null)
         {
-            var watcher = new Watcher(this);
+            var registration = new Registration(eventHolder => asyncHandler(((EventHolder<TNotification>)eventHolder).Payload));
+            var watcher = new Watcher(this, () => WaitForDeliveryAsync(registration));
             lock (handlers)
             {
                 var notificationName = typeof(TNotification).GetEventName();
@@ -106,9 +144,8 @@ namespace Stateflows.Common.Classes
                     handlers.Add(notificationName, notificationHandlers);
                 }
 
-                Func<EventHolder, Task> notificationHandler = eventHolder => asyncHandler(((EventHolder<TNotification>)eventHolder).Payload);
-                notificationHandlers.Add(notificationHandler);
-                handlersByWatcher[watcher] = notificationHandler;
+                notificationHandlers.Add(registration);
+                handlersByWatcher[watcher] = registration;
             }
 
             tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
@@ -120,7 +157,9 @@ namespace Stateflows.Common.Classes
             
             foreach (var pendingNotification in pendingNotifications)
             {
-                asyncHandler(pendingNotification);
+                lock (handlers)
+                    EnqueueNotification(registration,
+                        new EventHolder<TNotification> { Payload = pendingNotification, SenderId = Id });
             }
 
             return watcher;
@@ -128,7 +167,8 @@ namespace Stateflows.Common.Classes
 
         public async Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificationsSince = null)
         {
-            var watcher = new Watcher(this);
+            var registration = new Registration(asyncHandler);
+            var watcher = new Watcher(this, () => WaitForDeliveryAsync(registration));
             lock (handlers)
             {
                 foreach (var notificationName in notificationNames)
@@ -139,10 +179,10 @@ namespace Stateflows.Common.Classes
                         handlers.Add(notificationName, notificationHandlers);
                     }
 
-                    notificationHandlers.Add(asyncHandler);
+                    notificationHandlers.Add(registration);
                 }
                 
-                handlersByWatcher[watcher] = asyncHandler;
+                handlersByWatcher[watcher] = registration;
             }
 
             tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
@@ -155,7 +195,8 @@ namespace Stateflows.Common.Classes
             
             foreach (var pendingNotification in pendingNotifications)
             {
-                asyncHandler(pendingNotification);
+                lock (handlers)
+                    EnqueueNotification(registration, pendingNotification);
             }
 
             return watcher;
@@ -167,12 +208,13 @@ namespace Stateflows.Common.Classes
             {
                 if (handlersByWatcher.TryGetValue(watcher, out var handler))
                 {
+                    handler.Active = false;
                     foreach (var handlersList in handlers.Values)
                     {
                         handlersList.Remove(handler);
                     }
 
-                    foreach (var emptyItem in handlers.Where(h => !h.Value.Any()))
+                    foreach (var emptyItem in handlers.Where(h => !h.Value.Any()).ToArray())
                     {
                         handlers.Remove(emptyItem.Key);
                     }

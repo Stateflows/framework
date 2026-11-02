@@ -20,12 +20,14 @@ using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Classes;
+using Stateflows.Activities.Inspection.Interfaces;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Models;
 using Edge = Stateflows.Activities.Models.Edge;
 using Graph = Stateflows.Activities.Models.Graph;
+using Stream = Stateflows.Activities.Streams.Stream;
 
 namespace Stateflows.Activities.Engine
 {    
@@ -34,11 +36,82 @@ namespace Stateflows.Activities.Engine
         private static readonly object lockHandle = new object();
         private static readonly object nodesLockHandle = new object();
         private readonly Dictionary<Node, object> nodeLockHandles = new Dictionary<Node, object>();
+        private readonly Dictionary<(Node Node, Guid ThreadId), SemaphoreSlim> nodeExecutionGates = [];
+        private readonly AsyncLocal<NodeScope> invocationScope = new();
+        private readonly AsyncLocal<ActivityContinuationFrame> currentFrame = new();
+        private readonly AsyncLocal<ResumePlan> resumePlan = new();
+        private readonly AsyncLocal<HandoffCoordinator> handoffCoordinator = new();
+
+        /// <summary>
+        /// Coordinates the mixed handoff of a regular transaction whose firing inside a structural continuation
+        /// (structured, iterative or parallel scope) routes into streamed (mixed) work. The transactional part of the
+        /// call unwinds like a checkpoint pause, recording the suspended frames, and the continuation is resumed by
+        /// the runtime host as streamed work only after the transaction has unwound.
+        /// </summary>
+        private sealed class HandoffCoordinator
+        {
+            public bool Requested { get; private set; }
+            public TaskCompletionSource Unwound { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            public bool TryRequest(Func<Func<Task>, bool> host, Func<Task> continuation)
+            {
+                lock (this)
+                {
+                    if (Requested)
+                        return true;
+                    if (host == null || !host(continuation))
+                        return false;
+                    Requested = true;
+                    return true;
+                }
+            }
+        }
+        private readonly int maxConcurrentNodeInvocations;
         private readonly IStateflowsEventFilter eventFilter;
         private readonly IStateflowsValueStorage valueStorage;
         private readonly ILogger<Executor> logger;
         
         public bool StateHasChanged { get; set; }
+
+        /// <summary>
+        /// Set when the executor belongs to a long-lived runtime-owned Activity session. Session executors keep all
+        /// network mutation on the caller's (runtime) scheduler instead of offloading parallel partitions to the thread pool.
+        /// </summary>
+        internal bool SessionOwned { get; set; }
+
+        /// <summary>Runtime host for streamed work handed off by a regular transaction (mixed acceptance); returns false when unavailable.</summary>
+        internal Func<Func<Task>, bool> StreamedWorkHost { get; set; }
+
+        private sealed class ResumePlan(IEnumerable<ReadyActivityFiring> firings, IEnumerable<ActivityContinuationFrame> frames)
+        {
+            private readonly List<ReadyActivityFiring> firings = firings.ToList();
+            private readonly List<ActivityContinuationFrame> frames = frames.ToList();
+
+            private static bool Matches(Guid? ownerFrameId, Guid threadId, Guid? frameId, Guid ownerThreadId)
+                => ownerFrameId == frameId && (frameId == null || ownerThreadId == threadId);
+
+            public (ReadyActivityFiring[] Firings, ActivityContinuationFrame[] Frames) Take(Guid? frameId, Guid threadId)
+            {
+                lock (this)
+                {
+                    var ready = firings.Where(f => Matches(f.FrameId, threadId, frameId, f.ThreadId)).ToArray();
+                    var children = frames.Where(f => Matches(f.ParentFrameId, threadId, frameId, f.OuterThreadId)).ToArray();
+                    firings.RemoveAll(ready.Contains);
+                    frames.RemoveAll(children.Contains);
+                    return (ready, children);
+                }
+            }
+
+            public void RestoreLeftovers(RootContext context)
+            {
+                lock (this)
+                {
+                    context.RestoreCheckpointContinuation(firings, frames);
+                    firings.Clear();
+                    frames.Clear();
+                }
+            }
+        }
         
         private object GetLock(Node node)
         {
@@ -57,12 +130,13 @@ namespace Stateflows.Activities.Engine
 
         public readonly Graph Graph;
         public readonly ActivitiesRegister Register;
-        public readonly NodeScope NodeScope;
+        private readonly NodeScope rootNodeScope;
+        public NodeScope NodeScope => invocationScope.Value ?? rootNodeScope;
         private readonly PendingTasks pendingTasks = PendingTasksScope.RequireCurrent();
         
         public void AddPendingTask(Task task)
         {
-            pendingTasks.Add(task);
+            (PendingTasksScope.Current ?? pendingTasks).Add(task);
         }
         
         private static readonly NodeType[] CancellableTypes =
@@ -73,6 +147,7 @@ namespace Stateflows.Activities.Engine
             NodeType.Join,
             NodeType.Merge,
             NodeType.SendEventAction,
+            NodeType.PublishEventAction,
             NodeType.AcceptEventAction,
             NodeType.TimeEventAction,
             NodeType.StructuredActivity,
@@ -102,15 +177,17 @@ namespace Stateflows.Activities.Engine
             NodeType.TimeEventAction,
         ];
 
-        public Executor(ActivitiesRegister register, Graph graph, IServiceProvider serviceProvider)
+        public Executor(ActivitiesRegister register, Graph graph, IServiceProvider serviceProvider, int maxConcurrentNodeInvocations = 16)
         {
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxConcurrentNodeInvocations, 1);
+            this.maxConcurrentNodeInvocations = maxConcurrentNodeInvocations;
             Register = register;
-            NodeScope = new NodeScope(serviceProvider, graph, null, Guid.NewGuid());
+            rootNodeScope = new NodeScope(serviceProvider, graph, null, Guid.NewGuid());
             Graph = graph;
 
             logger = serviceProvider.GetRequiredService<ILogger<Executor>>();
             Inspector = new Inspector(this, logger);
-            ActivitiesContextHolder.Inspection.Value = new ActivityInspection(this, Inspector);
+            inspection = new ActivityInspection(this, Inspector);
 
             eventFilter = serviceProvider.GetRequiredService<IStateflowsEventFilter>();
             valueStorage = serviceProvider.GetRequiredService<IStateflowsValueStorage>();
@@ -119,6 +196,21 @@ namespace Stateflows.Activities.Engine
         public RootContext Context { get; private set; }
 
         public readonly Inspector Inspector;
+
+        private readonly IActivityInspection inspection;
+
+        internal IDisposable BindInspection() => new InspectionScope(inspection);
+
+        private sealed class InspectionScope : IDisposable
+        {
+            private readonly IActivityInspection previous = ActivitiesContextHolder.Inspection.Value;
+
+            public InspectionScope(IActivityInspection inspection)
+                => ActivitiesContextHolder.Inspection.Value = inspection;
+
+            public void Dispose()
+                => ActivitiesContextHolder.Inspection.Value = previous;
+        }
         
         private EventWaitHandle FinalizationEvent { get; } = new(false, EventResetMode.AutoReset);
 
@@ -199,17 +291,51 @@ namespace Stateflows.Activities.Engine
         {
             Context = context;
             Context.Executor = this;
+            rootNodeScope.ThreadId = context.RootThreadId;
 
             RebuildNodesTree();
 
             await Inspector.BuildAsync();
         }
 
+        internal Task RequestCheckpointPauseAsync()
+        {
+            if (Context != null)
+                Context.PauseAfterFiring = true;
+            return Task.CompletedTask;
+        }
+
+        internal async Task ResumeReadyFiringsAsync(bool clearPause = true)
+        {
+            if (Context == null)
+                return;
+
+            var (ready, frames) = Context.TakeCheckpointContinuation();
+            if (ready.Length == 0 && frames.Length == 0)
+                return;
+
+            if (clearPause)
+                Context.PauseAfterFiring = false;
+            using var eventExecution = Context.BeginEventExecution();
+            var plan = new ResumePlan(ready, frames);
+            resumePlan.Value = plan;
+            currentFrame.Value = null;
+            try
+            {
+                await ExecuteGraphAsync(resume: true);
+            }
+            finally
+            {
+                plan.RestoreLeftovers(Context);
+                resumePlan.Value = null;
+            }
+        }
+
         public async Task<RootContext> DehydrateAsync()
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' already dehydrated?");
 
-            await NodeScope.DisposeAsync();
+            await rootNodeScope.DisposeAsync();
 
             var result = Context;
             result.Executor = null;
@@ -237,7 +363,10 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public async Task<EventStatus> InitializeAsync<TEvent>(EventHolder<TEvent> eventHolder, IEnumerable<TokenHolder> input = null)
+        public async Task<EventStatus> InitializeAsync<TEvent>(
+            EventHolder<TEvent> eventHolder,
+            IEnumerable<TokenHolder> input = null,
+            Func<Task> initialized = null)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' hydrated?");
 
@@ -249,6 +378,11 @@ namespace Stateflows.Activities.Engine
                 if (result is InitializationStatus.InitializedImplicitly or InitializationStatus.InitializedExplicitly)
                 {
                     Context.Initialized = true;
+                    Context.Context.Status = BehaviorStatus.Initialized;
+                    if (initialized != null)
+                    {
+                        await initialized();
+                    }
 
                     input = input?.Concat(context.InputTokens).ToArray() ?? context.InputTokens.ToArray();
 
@@ -316,6 +450,8 @@ namespace Stateflows.Activities.Engine
             if (Initialized)
             {
                 Context.Context.Values.Clear();
+                lock (Context.Context.GlobalValues)
+                    Context.Context.GlobalValues.Clear();
                 Context.Context.Status = BehaviorStatus.Unknown;
                 Context.Context.LastExecutedAt = DateTime.MinValue;
                 Context.Context.TriggerTime = null;
@@ -368,10 +504,15 @@ namespace Stateflows.Activities.Engine
         {
             Debug.Assert(Context != null, $"Context is not available. Is activity '{Graph.Name}' hydrated?");
 
+            if (eventHolder.Payload is TokensInputEvent inputBatch && !Graph.AcceptsInput(inputBatch.Tokens))
+                return EventStatus.Rejected;
+
             Node activeNode = null;
 
             if (eventHolder.Payload is TokensInputEvent)
             {
+                foreach (var inputNode in Graph.InputNodes)
+                    Context.NodesToExecute.Add(inputNode);
                 activeNode = Graph.InputNode;
             }
 
@@ -411,9 +552,30 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        private async Task<(EventStatus, IEnumerable<TokenHolder>)> ExecuteGraphAsync(IEnumerable<TokenHolder> input = null)
+        private async Task<(EventStatus, IEnumerable<TokenHolder>)> ExecuteGraphAsync(IEnumerable<TokenHolder> input = null, bool resume = false)
         {
-            (var output, var finalized) = await DoExecuteStructuredNodeAsync(Graph, NodeScope, input);
+            HandoffCoordinator coordinator = null;
+            if (!resume && StreamedWorkHost != null && Context.IsCurrentCallStreamed == false)
+            {
+                coordinator = new HandoffCoordinator();
+                handoffCoordinator.Value = coordinator;
+            }
+
+            (IEnumerable<TokenHolder> Output, bool Finalized) structure;
+            try
+            {
+                structure = await DoExecuteStructuredNodeAsync(Graph, NodeScope, input, resume);
+            }
+            finally
+            {
+                if (coordinator != null)
+                {
+                    handoffCoordinator.Value = null;
+                    coordinator.Unwound.TrySetResult();
+                }
+            }
+
+            var (output, finalized) = structure;
 
             if (finalized)
             {
@@ -502,8 +664,8 @@ namespace Stateflows.Activities.Engine
         {
             if (output.Any())
             {
-                var notificationsHub = NodeScope.ServiceProvider.GetRequiredService<INotificationsHub>();
-                await notificationsHub.PublishRangeAsync(output.ToOutputNotifications(Context.Id));
+                var subscriber = NodeScope.ServiceProvider.GetRequiredService<IStateflowsSubscriber>();
+                await output.PublishOutputNotificationsAsync(subscriber, Context.Context);
             }
         }
 
@@ -513,7 +675,7 @@ namespace Stateflows.Activities.Engine
 
             Context.Finalized = true;
 
-            if (Graph.OutputNode != null && outputTokens != null)
+            if (Graph.OutputNodes.Any() && outputTokens != null)
             {
                 OutputTokens = outputTokens;
             }
@@ -537,7 +699,7 @@ namespace Stateflows.Activities.Engine
             FinalizationEvent.Set();
         }
 
-        public async Task<(IEnumerable<TokenHolder> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
+        public async Task<(IEnumerable<TokenHolder> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, bool resume = false)
         {
             if (node.Anchored)
             {
@@ -554,12 +716,12 @@ namespace Stateflows.Activities.Engine
             var finalized = await DoExecuteStructureAsync(
                 node,
                 nodeScope,
-                input
+                input,
+                resume: resume
             );
 
-            var output = node.OutputNode != null
-                ? Context.GetOutputTokens(node.OutputNode.Identifier, nodeScope.ThreadId)
-                : new List<TokenHolder>();
+            var output = node.OutputNodes
+                .SelectMany(pin => Context.TakeOutputTokens(pin.Identifier, nodeScope.ThreadId)).ToList();
 
             if (node.ExceptionHandlers.Any())
             {
@@ -579,50 +741,209 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<IEnumerable<TokenHolder>> DoExecuteParallelNodeAsync<TToken>(Node node, Edge edge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
+        private ActivityContinuationFrame CreateFrame(ActionContext context, ActivityContinuationKind kind)
+            => new()
+            {
+                ParentFrameId = currentFrame.Value?.Id,
+                NodeIdentifier = context.Node.Identifier,
+                UpstreamEdgeIdentifier = context.Edge?.Identifier,
+                OuterThreadId = context.NodeScope.ThreadId,
+                IsRootThread = currentFrame.Value == null,
+                Kind = kind,
+                IsStreamed = context.IsStreamed,
+                InputTokens = context.InputTokens.ToList()
+            };
+
+        private ActivityContinuationFrame CreatePartitionedFrame<TToken>(ActionContext context, ActivityContinuationKind kind, bool sharedThread)
         {
-            var typedInput = input.OfTokenType<TToken>().ToArray();
+            var frame = CreateFrame(context, kind);
+            var typedInput = context.InputTokens.OfTokenType<TToken>().ToArray();
+            frame.RestOfInput = context.InputTokens.Except(typedInput).ToList();
+            var threadId = Guid.NewGuid();
+            frame.Partitions = typedInput.Partition(context.Node.ChunkSize)
+                .Select(partition => new ActivityContinuationPartition
+                {
+                    ThreadId = sharedThread ? threadId : Guid.NewGuid(),
+                    Selection = partition.ToList()
+                })
+                .ToList();
+            return frame;
+        }
 
-            var restOfInput = input.Except(typedInput).ToArray();
+        private static NodeScope CreatePartitionScope(ActionContext context, ActivityContinuationPartition partition)
+        {
+            var scope = context.NodeScope.CreateChildScope(context.Node, context.Edge, partition.ThreadId);
+            scope.SelectionTokens = partition.Selection;
+            return scope;
+        }
+        private List<TokenHolder> CollectPartitionOutput(Node node, Guid threadId)
+        {
+            lock (Context.Streams)
+            {
+                var output = node.OutputNodes
+                    .SelectMany(pin => Context.TakeOutputTokens(pin.Identifier, threadId)).ToList();
 
-            var inputPartitions = typedInput.Partition(node.ChunkSize).ToArray();
+                Context.Streams.Remove(threadId);
+                Context.OutputTokens.Remove(threadId);
+                return output;
+            }
+        }
 
-            var outputTokens = new List<TokenHolder>();
+        /// <summary>
+        /// Executes a structured activity node invocation, or continues one suspended by a checkpoint barrier.
+        /// </summary>
+        internal async Task ExecuteStructuredActivityAsync(ActionContext context)
+        {
+            var node = context.Node;
+            var resuming = context.ResumeFrame != null;
+            var frame = context.ResumeFrame ?? CreateFrame(context, ActivityContinuationKind.Structured);
 
-            await Task.WhenAll(inputPartitions
-                .Select(inputPartition =>
-                    Task.Run(async () =>
+            if (!resuming && !Context.NodesToExecute.Contains(node))
+            {
+                await DoInitializeNodeAsync(node, context);
+            }
+
+            currentFrame.Value = frame;
+            (IEnumerable<TokenHolder> Output, bool Finalized) result;
+            try
+            {
+                result = await DoExecuteStructuredNodeAsync(node, context.NodeScope, resuming ? null : context.InputTokens, resuming);
+            }
+            catch (ActivityCheckpointPauseException)
+            {
+                Context.AddContinuationFrame(frame);
+                throw;
+            }
+
+            context.OutputTokens.AddRange(result.Output);
+
+            if (result.Finalized)
+            {
+                await DoFinalizeNodeAsync(node, context);
+            }
+        }
+
+        /// <summary>
+        /// Executes an iterative activity node invocation partition by partition, or continues one suspended by a
+        /// checkpoint barrier with its remaining partitions and already accumulated output.
+        /// </summary>
+        internal async Task ExecuteIterativeActivityAsync<TToken>(ActionContext context)
+        {
+            var node = context.Node;
+            var frame = context.ResumeFrame;
+            if (frame == null)
+            {
+                frame = CreatePartitionedFrame<TToken>(context, ActivityContinuationKind.Iterative, sharedThread: true);
+                await DoInitializeNodeAsync(node, context);
+            }
+
+            currentFrame.Value = frame;
+            try
+            {
+                foreach (var partition in frame.Partitions)
+                {
+                    if (frame.Completed)
                     {
-                        var threadId = Guid.NewGuid();
+                        break;
+                    }
 
-                        await DoExecuteStructureAsync(
-                            node,
-                            nodeScope.CreateChildScope(node, edge, threadId),
-                            restOfInput.Concat(inputPartition).ToArray(),
-                            inputPartition
-                        );
+                    if (partition.Completed)
+                    {
+                        continue;
+                    }
 
-                        lock (Context.Streams)
-                        {
-                            if (
-                                node.OutputNode != null &&
-                                Context.OutputTokens.TryGetValue(threadId, out var nodesOutputTokens) &&
-                                nodesOutputTokens.TryGetValue(node.OutputNode.Identifier, out var tokens)
-                            )
-                            {
-                                outputTokens.AddRange(Context.GetOutputTokens(node.OutputNode.Identifier, threadId));
-                            }
+                    var resuming = partition.Started;
+                    partition.Started = true;
 
-                            Context.Streams.Remove(threadId);
-                            Context.OutputTokens.Remove(threadId);
-                        }
-                    })
-                ).ToArray()
-            );
+                    var result = await DoExecuteStructureAsync(
+                        node,
+                        CreatePartitionScope(context, partition),
+                        resuming ? null : frame.RestOfInput.Concat(partition.Selection).ToArray(),
+                        resuming ? null : partition.Selection,
+                        resuming
+                    );
 
-            return node.OutputNode != null
-                ? outputTokens
-                : new List<TokenHolder>();
+                    frame.AccumulatedOutput.AddRange(CollectPartitionOutput(node, partition.ThreadId));
+                    partition.Completed = true;
+
+                    if (result && node.FinalNode != null)
+                    {
+                        frame.Completed = true;
+                    }
+                }
+            }
+            catch (ActivityCheckpointPauseException)
+            {
+                Context.AddContinuationFrame(frame);
+                throw;
+            }
+
+            if (node.OutputNodes.Any())
+            {
+                context.OutputTokens.AddRange(frame.AccumulatedOutput);
+            }
+
+            await DoFinalizeNodeAsync(node, context);
+        }
+
+        /// <summary>
+        /// Executes a parallel activity node invocation, or continues one suspended by a checkpoint barrier. Completed
+        /// partitions keep their accumulated output and are not executed again.
+        /// </summary>
+        internal async Task ExecuteParallelActivityAsync<TToken>(ActionContext context)
+        {
+            var node = context.Node;
+            var frame = context.ResumeFrame;
+            if (frame == null)
+            {
+                frame = CreatePartitionedFrame<TToken>(context, ActivityContinuationKind.Parallel, sharedThread: false);
+                await DoInitializeNodeAsync(node, context);
+            }
+
+            currentFrame.Value = frame;
+
+            async Task RunPartitionAsync(ActivityContinuationPartition partition)
+            {
+                var resuming = partition.Started;
+                partition.Started = true;
+
+                await DoExecuteStructureAsync(
+                    node,
+                    CreatePartitionScope(context, partition),
+                    resuming ? null : frame.RestOfInput.Concat(partition.Selection).ToArray(),
+                    resuming ? null : partition.Selection,
+                    resuming
+                );
+
+                var output = CollectPartitionOutput(node, partition.ThreadId);
+                lock (frame)
+                {
+                    frame.AccumulatedOutput.AddRange(output);
+                    partition.Completed = true;
+                }
+            }
+
+            try
+            {
+                await Task.WhenAll(frame.Partitions
+                    .Where(partition => !partition.Completed)
+                    .Select(partition => SessionOwned
+                        ? RunPartitionAsync(partition)
+                        : Task.Run(() => RunPartitionAsync(partition)))
+                    .ToArray());
+            }
+            catch (ActivityCheckpointPauseException)
+            {
+                Context.AddContinuationFrame(frame);
+                throw;
+            }
+
+            if (node.OutputNodes.Any())
+            {
+                context.OutputTokens.AddRange(frame.AccumulatedOutput);
+            }
+
+            await DoFinalizeNodeAsync(node, context);
         }
 
         public async Task DoInitializeNodeAsync(Node node, ActionContext context)
@@ -635,76 +956,60 @@ namespace Stateflows.Activities.Engine
             await Inspector.OnNodeFinalizeAsync(context, () => node.Finalize.IterateOverAsync(context));
         }
 
-        public async Task<IEnumerable<TokenHolder>> DoExecuteIterativeNodeAsync<TToken>(ActionContext context)
+        private async Task<bool> DoExecuteStructureAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null, bool resume = false)
         {
-            var typedInput = context.InputTokens.OfTokenType<TToken>().ToArray();
+            if (input != null && !node.AcceptsInput(input.Where(token => token.PayloadType != typeof(ControlToken))))
+                throw new InvalidOperationException($"Activity scope '{node.Name}' received tokens unsupported by its input pins.");
 
-            var restOfInput = context.InputTokens.Except(typedInput).ToArray();
-
-            var inputPartitions = typedInput.Partition(context.Node.ChunkSize).ToArray();
-
-            var threadId = Guid.NewGuid();
-
-            var outputTokens = new List<TokenHolder>();
-
-            foreach (var inputPartition in inputPartitions)
+            if (resume && resumePlan.Value is { } plan)
             {
-                var result = await DoExecuteStructureAsync(
-                    context.Node,
-                    context.NodeScope.CreateChildScope(context.Node, context.Edge, threadId),
-                    restOfInput.Concat(inputPartition),
-                    inputPartition
-                );
-
-                if (
-                    context.Node.OutputNode != null &&
-                    Context.OutputTokens.TryGetValue(threadId, out var nodesOutputTokens) &&
-                    nodesOutputTokens.TryGetValue(context.Node.OutputNode.Identifier, out var iterationOutputTokens)
-                )
+                var (firings, frames) = plan.Take(currentFrame.Value?.Id, nodeScope.ThreadId);
+                if (Context.PauseAfterFiring)
                 {
-                    outputTokens.AddRange(Context.GetOutputTokens(context.Node.OutputNode.Identifier, threadId));
+                    // A new barrier arrived before the recovered work started; keep it ready for the next recovery.
+                    Context.RestoreCheckpointContinuation(firings, frames);
+                    throw new ActivityCheckpointPauseException();
                 }
 
-                lock (Context.Streams)
-                {
-                    Context.Streams.Remove(threadId);
-                    Context.OutputTokens.Remove(threadId);
-                }
+                var tasks = firings
+                    .GroupBy(firing => firing.NodeIdentifier)
+                    .Select(group =>
+                    {
+                        var target = GetCheckpointNode(group.Key);
+                        var edge = group
+                            .Select(firing => target.IncomingEdges.FirstOrDefault(e => e.Identifier == firing.UpstreamEdgeIdentifier))
+                            .FirstOrDefault(e => e != null);
+                        return DoHandleNodeAsync(target, edge, nodeScope);
+                    })
+                    .Concat(frames.Select(frame =>
+                    {
+                        var target = GetCheckpointNode(frame.NodeIdentifier);
+                        var edge = target.IncomingEdges.FirstOrDefault(e => e.Identifier == frame.UpstreamEdgeIdentifier);
+                        return DoHandleNodeAsync(target, edge, nodeScope, resumeFrame: frame);
+                    }))
+                    .ToArray();
 
-                if (result && context.Node.FinalNode != null)
-                {
-                    break;
-                }
+                await Task.WhenAll(tasks);
+
+                var resumedResult = Context.IsNodeCompleted(node, nodeScope);
+                RebuildNodesTree();
+                return resumedResult;
             }
 
-            return context.Node.OutputNode != null
-                ? outputTokens
-                : new List<TokenHolder>();
-        }
-
-        private async Task<bool> DoExecuteStructureAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null)
-        {
-            var startingNode = Context.NodesToExecute.Any()
-                ? node.Nodes.Values.FirstOrDefault(n => Context.NodesToExecute.Contains(n))
-                : null;
-
-            var nodes = new List<Node>();
-            if (startingNode != null)
-            {
-                nodes.Add(startingNode);
-            }
-            else
+            var nodes = node.Nodes.Values.Where(n => Context.NodesToExecute.Contains(n)).ToList();
+            if (nodes.Count == 0)
             {
                 nodes.AddRange(node.InitialNodes);
-
-                if (node.InputNode != null)
-                {
-                    nodes.Add(node.InputNode);
-                }
+                nodes.AddRange(node.InputNodes);
             }
 
             await Task.WhenAll(
-                nodes.Select(n => DoHandleNodeAsync(n, nodeScope.Edge, nodeScope, n == node.InputNode ? input : null, selectionTokens)).ToArray()
+                nodes.Where(n => n.Type != NodeType.Input || n.PinTokenType == null ||
+                    input?.Any(token => n.PinTokenType.IsAssignableFrom(token.ActualPayloadType)) == true)
+                .Select(n => DoHandleNodeAsync(n, nodeScope.Edge, nodeScope,
+                    n.Type == NodeType.Input
+                        ? n.PinTokenType == null ? input : input?.Where(token => n.PinTokenType.IsAssignableFrom(token.ActualPayloadType)).ToArray()
+                        : null, selectionTokens)).ToArray()
             );
 
             var result = Context.IsNodeCompleted(node, nodeScope);
@@ -713,6 +1018,11 @@ namespace Stateflows.Activities.Engine
 
             return result;
         }
+
+        private Node GetCheckpointNode(string identifier)
+            => Graph.AllNodes.TryGetValue(identifier, out var node)
+                ? node
+                : throw new InvalidOperationException($"Checkpoint references unknown Activity node '{identifier}'.");
 
         public async Task<InitializationStatus> DoInitializeActivityAsync<TInitializationEvent>(ActivityInitializationContext<TInitializationEvent> context)
         {
@@ -773,7 +1083,7 @@ namespace Stateflows.Activities.Engine
 
         public async Task<ExceptionHandlingResult> HandleExceptionAsync(Node node, Exception exception, ActionContext context)
         {
-            Context.Context.ExecutionExceptions.Enqueue(exception);
+            Context.RecordException(exception);
             Node handler = null;
             Node handlerOwner = null;
             var currentNode = node;
@@ -814,7 +1124,10 @@ namespace Stateflows.Activities.Engine
                         exception.ToExceptionHolder(exception.GetType()),
                         new NodeReferenceToken() { Node = node }.ToTokenHolder(),
                     }
-                );
+                )
+                {
+                    IsStreamed = context is ActionContext actionContext && actionContext.IsStreamed
+                };
 
                 await handler.Action.IterateOverAsync(exceptionContext);
 
@@ -839,7 +1152,43 @@ namespace Stateflows.Activities.Engine
             return ExceptionHandlingResult.NotHandled;
         }
 
-        public async Task DoHandleNodeAsync(Node node, Edge upstreamEdge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null)
+        private sealed class NodeExecutionLease(SemaphoreSlim gate) : IDisposable
+        {
+            private SemaphoreSlim gate = gate;
+
+            public void Dispose()
+                => Interlocked.Exchange(ref gate, null)?.Release();
+        }
+
+        public async Task DoHandleNodeAsync(Node node, Edge upstreamEdge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null, ActivityContinuationFrame resumeFrame = null)
+        {
+            SemaphoreSlim gate;
+            lock (nodeExecutionGates)
+            {
+                var key = (node, nodeScope.ThreadId);
+                if (!nodeExecutionGates.TryGetValue(key, out gate))
+                {
+                    gate = new SemaphoreSlim(node.Options.HasFlag(NodeOptions.Reentrant) ? maxConcurrentNodeInvocations : 1);
+                    nodeExecutionGates.Add(key, gate);
+                }
+            }
+
+            var cancellationToken = CancellableTypes.Contains(node.Type)
+                ? nodeScope.CancellationToken
+                : CancellationToken.None;
+            try
+            {
+                await gate.WaitAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            using var lease = new NodeExecutionLease(gate);
+            await DoHandleNodeCoreAsync(node, upstreamEdge, nodeScope, lease, input, selectionTokens, resumeFrame);
+        }
+
+        private async Task DoHandleNodeCoreAsync(Node node, Edge upstreamEdge, NodeScope nodeScope, NodeExecutionLease lease, IEnumerable<TokenHolder> input, IEnumerable<TokenHolder> selectionTokens, ActivityContinuationFrame resumeFrame)
         {
             if (await TryForceFinalizeAsync(nodeScope))
             {
@@ -856,10 +1205,11 @@ namespace Stateflows.Activities.Engine
             bool activated;
 
             IEnumerable<TokenHolder> inputTokens;
+            IEnumerable<Stream> streams;
 
             lock (GetLock(node))
             {
-                var streams = Context.GetNodeStreams(node, nodeScope.ThreadId, node.Type != NodeType.Output);
+                streams = Context.GetNodeStreams(node, nodeScope.ThreadId, node.Type != NodeType.Output).ToArray();
 
                 activated =
                     ( // initial node case
@@ -879,11 +1229,17 @@ namespace Stateflows.Activities.Engine
                     ) ||
                     (
                         Context.NodesToExecute.Contains(node)
+                    ) ||
+                    ( // structural invocation recovered from a checkpoint
+                        resumeFrame != null
                     );
 
-                inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
+                inputTokens = resumeFrame != null ? resumeFrame.InputTokens.ToArray() : input ?? streams
+                    .SelectMany(stream => stream.Tokens)
+                    .DistinctBy(token => (token.Id, token.IsStreamed))
+                    .ToArray();
 
-                if (streams.Any())
+                if (streams.Any() && resumeFrame == null)
                 {
                     if (activated)
                     {
@@ -904,10 +1260,25 @@ namespace Stateflows.Activities.Engine
             }
 
             nodeScope = nodeScope.CreateChildScope(node, upstreamEdge);
+            invocationScope.Value = nodeScope;
 
-            var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens);
+            var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens)
+            {
+                ResumeFrame = resumeFrame,
+                // An accept-event/time-event firing is a source owned by its triggering event: its enabling
+                // tokens do not color it, the provenance of the event does.
+                IsStreamed = (resumeFrame?.IsStreamed ?? false) ||
+                    Context.IsStreamingExecution ||
+                    // A data store immediately converts transactional arrivals and retained outputs to streamed work
+                    // during a streaming busy period.
+                    (node.Type == NodeType.DataStore && Context.IsStreamingBusyPeriod) ||
+                    (!InteractiveNodeTypes.Contains(node.Type) &&
+                        (inputTokens.Any(token => token.IsStreamed) ||
+                        streams.Any(stream => stream.IsStreamed)))
+            };
+            using var invocationProvenance = Context.BeginInvocationProvenance(actionContext.IsStreamed);
 
-            var actuallyActivated = !Context.ActiveNodes.Keys.Contains(node.Identifier);
+            var actuallyActivated = resumeFrame == null && !Context.ActiveNodes.Keys.Contains(node.Identifier);
             if (actuallyActivated)
             {
                 await Inspector.OnNodeActivateAsync(actionContext, activated, ActivateAsync);
@@ -961,6 +1332,10 @@ namespace Stateflows.Activities.Engine
                     {
                         await node.Action.IterateOverAsync(actionContext);
                     }
+                    catch (ActivityCheckpointPauseException)
+                    {
+                        throw;
+                    }
                     catch (Exception e)
                     {
                         await Inspector.OnNodeExecutionExceptionAsync(actionContext, e);
@@ -1008,7 +1383,9 @@ namespace Stateflows.Activities.Engine
                             !actionContext.OutputTokens.Any()
                         )
                         {
-                            actionContext.OutputTokens.Add(new ControlToken().ToTokenHolder());
+                            var controlToken = new ControlToken().ToTokenHolder();
+                            controlToken.IsStreamed = actionContext.IsStreamed;
+                            actionContext.OutputTokens.Add(controlToken);
                         }
 
                         TokenHolder[] outputTokens;
@@ -1039,11 +1416,115 @@ namespace Stateflows.Activities.Engine
                             .GroupBy(edge => edge.Target)
                             .ToArray();
 
-                        await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n.Key, n.First(), nodeScope)).ToArray());
+                        // Successors can loop back to this node; only the firing and its routing own the gate.
+                        lease.Dispose();
+                        if (Context.PauseAfterFiring && nodes.Length > 0)
+                        {
+                            Context.AddReadyFirings(nodes.SelectMany(group => group.Select(edge =>
+                                new ReadyActivityFiring
+                                {
+                                    NodeIdentifier = group.Key.Identifier,
+                                    UpstreamEdgeIdentifier = edge.Identifier,
+                                    FrameId = currentFrame.Value?.Id,
+                                    ThreadId = nodeScope.ThreadId,
+                                    IsRootThread = currentFrame.Value == null
+                                })));
+                            throw new ActivityCheckpointPauseException();
+                        }
+
+                        if (currentFrame.Value != null && nodes.Length > 0 &&
+                            handoffCoordinator.Value is { } coordinator &&
+                            Context.IsCurrentCallStreamed == false)
+                        {
+                            var mixedGroups = nodes.Where(group => IsMixedTarget(group.Key, nodeScope)).ToArray();
+                            if (mixedGroups.Length > 0 &&
+                                coordinator.TryRequest(StreamedWorkHost, () => ContinueHandedOffFramesAsync(coordinator)))
+                            {
+                                // The transaction keeps ownership of its pure successors and hands off the structural
+                                // continuation: mixed successors become ready firings of the suspended frames.
+                                Context.AddReadyFirings(mixedGroups.SelectMany(group => group.Select(edge =>
+                                    new ReadyActivityFiring
+                                    {
+                                        NodeIdentifier = group.Key.Identifier,
+                                        UpstreamEdgeIdentifier = edge.Identifier,
+                                        FrameId = currentFrame.Value?.Id,
+                                        ThreadId = nodeScope.ThreadId,
+                                        IsRootThread = false
+                                    })));
+                                await Task.WhenAll(nodes
+                                    .Where(n => !mixedGroups.Contains(n))
+                                    .Select(n => DoHandleNodeAsync(n.Key, n.First(), nodeScope))
+                                    .ToArray());
+                                throw new ActivityCheckpointPauseException();
+                            }
+                        }
+
+                        var handedOff = TryHandOffMixedSuccessors(nodes, nodeScope, actionContext);
+                        await Task.WhenAll(nodes
+                            .Where(n => !handedOff.Contains(n.Key))
+                            .Select(n => DoHandleNodeAsync(n.Key, n.First(), nodeScope))
+                            .ToArray());
                     }
                 }
 
             }
+        }
+
+        /// <summary>
+        /// Mixed acceptance handoff: when a transactional root-level firing routes into a successor whose input
+        /// already holds streamed tokens, that successor fires as streamed work. The regular transaction's
+        /// responsibility ends at the handoff, so the firing is given to the runtime host instead of awaited.
+        /// </summary>
+        private HashSet<Node> TryHandOffMixedSuccessors(IGrouping<Node, Edge>[] nodes, NodeScope nodeScope, ActionContext actionContext)
+        {
+            var handedOff = new HashSet<Node>();
+            var host = StreamedWorkHost;
+            // Only a regular transaction hands off; streamed calls already own their streamed successors.
+            if (host == null || currentFrame.Value != null || Context.IsCurrentCallStreamed != false)
+                return handedOff;
+
+            foreach (var group in nodes)
+            {
+                var target = group.Key;
+                if (target.Type is NodeType.Output or NodeType.Final)
+                    continue;
+
+                var edge = group.First();
+                if (IsMixedTarget(target, nodeScope) && host(() => DoHandleNodeAsync(target, edge, nodeScope)))
+                    handedOff.Add(target);
+            }
+
+            return handedOff;
+        }
+
+        private bool IsMixedTarget(Node target, NodeScope nodeScope)
+        {
+            if (target.Type is NodeType.Output or NodeType.Final)
+                return false;
+
+            // A data store converts transactional arrivals to streamed work during a streaming busy period.
+            if (target.Type == NodeType.DataStore && Context.IsStreamingBusyPeriod)
+                return true;
+
+            lock (GetLock(target))
+            {
+                return Context.GetNodeStreams(target, nodeScope.ThreadId, true)
+                    .Any(stream => stream.IsStreamed || stream.Tokens.Any(token => token.IsStreamed));
+            }
+        }
+
+        /// <summary>
+        /// Streamed continuation of structural frames handed off by a regular transaction; starts only after the
+        /// transaction has unwound (and recorded its frames). Under an active checkpoint barrier the frames stay
+        /// recorded and are resumed by the checkpoint recovery instead.
+        /// </summary>
+        private async Task ContinueHandedOffFramesAsync(HandoffCoordinator coordinator)
+        {
+            await coordinator.Unwound.Task;
+            if (Context == null || Context.PauseAfterFiring)
+                return;
+
+            await ResumeReadyFiringsAsync(clearPause: false);
         }
 
         private async Task<bool> TryForceFinalizeAsync(NodeScope nodeScope)
@@ -1191,7 +1672,11 @@ namespace Stateflows.Activities.Engine
         }
 
         internal void DoHandleOutput(ActionContext context)
-            => context.Context.GetOutputTokens(context.Node.Identifier, context.NodeScope.ThreadId).AddRange(context.OutputTokens);
+        {
+            var output = context.Context.GetOutputTokens(context.Node.Identifier, context.NodeScope.ThreadId);
+            lock (output)
+                output.AddRange(context.OutputTokens);
+        }
         
 
         public void RegisterNodeActivation(Node node)
@@ -1259,7 +1744,10 @@ namespace Stateflows.Activities.Engine
             
             var edgeTokenName = edge.TokenType.GetTokenName();
 
-            IEnumerable<TokenHolder> originalTokens = context.OutputTokens.Where(t => edge.TokenType.IsAssignableFrom(t.ActualPayloadType)).ToArray();
+            IEnumerable<TokenHolder> originalTokens = context.OutputTokens
+            .Where(t => edge.TokenType.IsAssignableFrom(t.ActualPayloadType))
+            .Select(token => token.CopyForExecution(context.IsStreamed || token.IsStreamed))
+            .ToArray();
 
             flowContext.TokenCount = stream.Tokens.Count;
             flowContext.SourceTokenCount = originalTokens.Count();
@@ -1281,6 +1769,10 @@ namespace Stateflows.Activities.Engine
                         {
                             var pipelineContext = new TokenPipelineContext(context, edge, processedToken);
                             processedToken = await action.Invoke(pipelineContext, Inspector);
+                            if (processedToken != null)
+                            {
+                                processedToken.IsStreamed |= token.IsStreamed || context.IsStreamed;
+                            }
                         }
                     }
 
@@ -1307,7 +1799,9 @@ namespace Stateflows.Activities.Engine
                 {
                     if (edgeTokenName != typeof(ControlToken).GetTokenName())
                     {
-                        processedTokens.Add(new ControlToken().ToTokenHolder());
+                        var controlToken = new ControlToken().ToTokenHolder();
+                        controlToken.IsStreamed = context.IsStreamed || processedTokens.Any(token => token.IsStreamed);
+                        processedTokens.Add(controlToken);
                     }
 
                     if (!edge.Source.Options.HasFlag(NodeOptions.ImplicitFork) && consumedTokens.Any())
@@ -1343,7 +1837,7 @@ namespace Stateflows.Activities.Engine
 
         protected virtual async ValueTask DisposeAsync(bool disposing)
         {
-            await NodeScope.DisposeAsync();
+            await rootNodeScope.DisposeAsync();
         }
 
         public async Task<object> GetActivityAsync(Type activityType)

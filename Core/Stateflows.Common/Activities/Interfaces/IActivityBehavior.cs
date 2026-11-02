@@ -33,5 +33,29 @@ namespace Stateflows.Activities
         /// <returns>The request result containing matching output tokens when the activity responds.</returns>
         public Task<RequestResult<TokensOutput<T>>> GetOutputAsync<T>()
             => RequestAsync(new TokensOutputRequest<T>());
+
+        /// <summary>Persists the Activity's values and marking at a firing-boundary barrier.</summary>
+        /// <param name="headers">Optional delivery headers.</param>
+        /// <returns>The checkpoint send result; Consumed means the checkpoint committed.</returns>
+        /// <remarks>Supported by Orleans only; does not implicitly initialize the Activity.</remarks>
+        public Task<SendResult> CheckpointAsync(IDictionary<string, EventHeader> headers = null)
+            => SendAsync(new ActivityCheckpoint(), headers);
+
+        /// <summary>Submits tokens for nonblocking activity-stream admission.</summary>
+        /// <param name="tokensAction">Adds one or more token payloads to the input.</param>
+        /// <param name="headers">Optional headers attached to the stream admission.</param>
+        /// <returns>The admission status; acceptance does not mean the activity work has completed.</returns>
+        /// <remarks>Only runtimes that provide live Activity streaming support accept this operation.</remarks>
+        public Task<SendResult> StreamInputAsync(Action<ITokensInput> tokensAction, IDictionary<string, EventHeader> headers = null)
+        {
+            ArgumentNullException.ThrowIfNull(tokensAction);
+            var streamHeaders = headers == null
+                ? new Dictionary<string, EventHeader>()
+                : new Dictionary<string, EventHeader>(headers);
+            streamHeaders[nameof(Stateflows.Common.Stream)] = new Stateflows.Common.Stream();
+            var input = new TokensInput();
+            tokensAction(input);
+            return SendAsync(input, streamHeaders);
+        }
     }
 }

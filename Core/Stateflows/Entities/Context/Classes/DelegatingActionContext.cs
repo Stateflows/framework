@@ -20,11 +20,12 @@ namespace Stateflows.Entities.Context.Classes
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
             => ActionContext.TryLocateBehavior(id, out behavior);
 
-        public virtual object ExecutionTrigger => ActionContext.ExecutionTrigger;
+        public ExecutionMode ExecutionMode => ActionContext.ExecutionMode;
+        public virtual object? ExecutionTrigger => ActionContext.ExecutionTrigger;
 
-        public virtual Guid ExecutionTriggerId => ActionContext.ExecutionTriggerId;
+        public virtual Guid? ExecutionTriggerId => ActionContext.ExecutionTriggerId;
 
-        public virtual IDictionary<string, EventHeader> Headers => ActionContext.Headers;
+        public virtual IDictionary<string, EventHeader>? Headers => ActionContext.Headers;
 
         public CancellationToken CancellationToken => ActionContext.CancellationToken;
     }

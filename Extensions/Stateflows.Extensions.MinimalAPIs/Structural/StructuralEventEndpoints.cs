@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -192,10 +193,10 @@ internal static class StructuralEventEndpoints
                 { nameof(HttpContextHeader), new HttpContextHeader() { Context = context } }
             };
 
-        var notifications = new List<EventHolder>();
+        var notifications = new ConcurrentQueue<EventHolder>();
         var notificationNames = requestBody.RequestedNotifications?.Where(n => !string.IsNullOrEmpty(n)).ToArray() ?? [];
         var watcher = notificationNames.Length > 0
-            ? await behavior.WatchAsync(notificationNames, notifications.Add)
+            ? await behavior.WatchAsync(notificationNames, notifications.Enqueue)
             : null;
 
         try
@@ -204,7 +205,9 @@ internal static class StructuralEventEndpoints
             {
                 var result = await behavior.SendAsync(@event, headers);
                 var behaviorInfo = await behavior.GetBehaviorInfo();
-                return result.ToResult(method, route, notifications, behaviorInfo, customHateoasLinks);
+                if (watcher != null)
+                    await watcher.WaitForDeliveryAsync().WaitAsync(context.RequestAborted);
+                return result.ToResult(method, route, notifications.ToArray(), behaviorInfo, customHateoasLinks);
             }
 
             // Response contract is taken from the created request (metadata used by core dispatch), not inferred from the CLR type
@@ -216,7 +219,7 @@ internal static class StructuralEventEndpoints
             var responseType = structuralRequest.ResponseType ?? typeof(StructuralEvent);
             return await (Task<IResult>)RequestMethod
                 .MakeGenericMethod(responseType)
-                .Invoke(null, [behavior, @event, headers, method, route, notifications, customHateoasLinks])!;
+                .Invoke(null, [behavior, @event, headers, method, route, notifications, watcher, context.RequestAborted, customHateoasLinks])!;
         }
         finally
         {
@@ -233,12 +236,16 @@ internal static class StructuralEventEndpoints
         Dictionary<string, EventHeader> headers,
         string method,
         string route,
-        List<EventHolder> notifications,
+        ConcurrentQueue<EventHolder> notifications,
+        IWatcher? watcher,
+        CancellationToken cancellationToken,
         Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks
     )
     {
         var result = await StructuralEventExtensions.RequestAsync<TResponse>(behavior, request, headers);
         var behaviorInfo = await behavior.GetBehaviorInfo();
-        return result.ToResult(method, route, notifications, behaviorInfo, customHateoasLinks);
+        if (watcher != null)
+            await watcher.WaitForDeliveryAsync().WaitAsync(cancellationToken);
+        return result.ToResult(method, route, notifications.ToArray(), behaviorInfo, customHateoasLinks);
     }
 }

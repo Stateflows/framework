@@ -35,6 +35,11 @@ internal interface ISubscriptionsGrain : IGrainWithStringKey, IRemindable
     [Alias("RemoveWatchAsync")]
     Task RemoveWatchAsync(IBehaviorGrainObserver observer, string[]? notificationNames = null);
 
+    /// <summary>Waits for the observer dispatches queued before this call, without blocking publications or subscriptions.</summary>
+    [AlwaysInterleave]
+    [Alias("WaitForWatchDeliveryAsync")]
+    Task WaitForWatchDeliveryAsync(IBehaviorGrainObserver observer);
+
     [Alias("GetPendingDeliveriesAsync")]
     Task<NotificationDelivery[]> GetPendingDeliveriesAsync(string subscriberGrainKey, int maxCount);
     /// <summary>

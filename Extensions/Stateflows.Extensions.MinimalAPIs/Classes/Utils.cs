@@ -155,6 +155,7 @@ internal static class Utils
             EventStatus.Rejected => Results.Content(jsonResult, "application/json", statusCode: 409),
             EventStatus.Invalid => Results.Content(jsonResult, "application/json", statusCode: 400),
             EventStatus.Deferred => Results.Content(jsonResult, "application/json", statusCode: 202), // 202 accepted
+            EventStatus.Accepted => Results.Content(jsonResult, "application/json", statusCode: 202),
             EventStatus.Consumed => Results.Content(jsonResult, "application/json", statusCode: 200),
             EventStatus.Duplicated => Results.Content(jsonResult, "application/json", statusCode: 200),
             EventStatus.NotConsumed => Results.Content(jsonResult, "application/json", statusCode: 409),

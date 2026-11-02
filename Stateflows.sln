@@ -78,6 +78,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Examples.OrderFu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderFulfillment.IntegrationTests", "Tests\OrderFulfillment.IntegrationTests\OrderFulfillment.IntegrationTests.csproj", "{A0382AF3-8BE8-4709-8DFF-2BE67EABA8C6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Examples.StreamingTelemetry", "Examples\Stateflows.Examples.StreamingTelemetry\Stateflows.Examples.StreamingTelemetry.csproj", "{2AF809DC-BCAF-4387-8037-AA289E842A4A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -224,6 +226,10 @@ Global
 		{A0382AF3-8BE8-4709-8DFF-2BE67EABA8C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0382AF3-8BE8-4709-8DFF-2BE67EABA8C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0382AF3-8BE8-4709-8DFF-2BE67EABA8C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AF809DC-BCAF-4387-8037-AA289E842A4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AF809DC-BCAF-4387-8037-AA289E842A4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AF809DC-BCAF-4387-8037-AA289E842A4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AF809DC-BCAF-4387-8037-AA289E842A4A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -264,6 +270,7 @@ Global
 		{B17523A0-9BA4-44CF-AE1B-FF1D2B12FE45} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
 		{A6CCAF14-B8E9-4205-A630-92A46A7AE428} = {D02BCCCA-7A8D-4AB8-AF36-020DCF92E17C}
 		{A0382AF3-8BE8-4709-8DFF-2BE67EABA8C6} = {76D44611-8D90-4E93-BA44-AAB939A742AE}
+		{2AF809DC-BCAF-4387-8037-AA289E842A4A} = {D02BCCCA-7A8D-4AB8-AF36-020DCF92E17C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}

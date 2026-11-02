@@ -89,6 +89,7 @@ namespace Stateflows.Activities
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IActivityEventHandler, BehaviorStatusHandler>()
                         .AddSingleton<IActivityEventHandler, ActivityInfoRequestHandler>()
+                        .AddSingleton<IActivityEventHandler, ActivityCheckpointHandler>()
                         .AddSingleton<IActivityEventHandler, InitializeHandler>()
                         .AddSingleton<IActivityEventHandler, FinalizationHandler>()
                         .AddSingleton<IActivityEventHandler, ResetHandler>()

@@ -138,6 +138,11 @@ namespace Stateflows.Activities.Registration.Builders
         IActivityBuilder IInputBase<IActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IActivityBuilder;
 
+        IActivityBuilder IInputBase<IActivityBuilder>.AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
+            => (IActivityBuilder)AddInputPin(buildAction);
+        IActivityBuilder IOutputBase<IActivityBuilder>.AddOutputPin<TToken>()
+            => (IActivityBuilder)AddOutputPin<TToken>();
+
         IActivityBuilder IOutputBase<IActivityBuilder>.AddOutput()
             => AddOutput() as IActivityBuilder;
 
@@ -350,6 +355,11 @@ namespace Stateflows.Activities.Registration.Builders
 
         IOverridenActivityBuilder IInputBase<IOverridenActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IInputBase<IOverridenActivityBuilder>.AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
+            => (IOverridenActivityBuilder)AddInputPin(buildAction);
+        IOverridenActivityBuilder IOutputBase<IOverridenActivityBuilder>.AddOutputPin<TToken>()
+            => (IOverridenActivityBuilder)AddOutputPin<TToken>();
 
         IOverridenActivityBuilder IOutputBase<IOverridenActivityBuilder>.AddOutput()
             => AddOutput() as IOverridenActivityBuilder;

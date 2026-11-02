@@ -511,7 +511,8 @@ services.AddStateflows(stateflows => stateflows.AddActivities(activities =>
 
 An activity document declares root nodes in `nodes`; structured, parallel, and iterative nodes own
 recursive `nodes` arrays. Special initial/input/output/final nodes use the builder's generated names.
-An optional `name` on a special node is a document-local target alias only; it does not change the
+Typed `inputPin` and `outputPin` nodes also use generated names based on their `tokenType`; an
+optional `name` on any special node is a document-local target alias only and does not change the
 name reported by the builder or visitors. Every flow is authored under its source node and resolves
 its target in that same scope.
 
@@ -555,14 +556,46 @@ its target in that same scope.
 }
 ```
 
-Supported node kinds are `initial`, `input`, `output`, `final`, `action`, `decision`, `fork`,
-`join`, `merge`, `dataStore`, `acceptEvent`, `timeEvent`, `sendEvent`, `publishEvent`, `structured`,
-`parallel`, and `iterative`. Flow kinds are `control`, `object`, `elseControl`, and `elseObject`.
+Supported node kinds are `initial`, `input`, `output`, `inputPin`, `outputPin`, `final`, `action`,
+`decision`, `fork`, `join`, `merge`, `dataStore`, `acceptEvent`, `timeEvent`, `sendEvent`,
+`publishEvent`, `structured`, `parallel`, and `iterative`. Flow kinds are `control`, `object`,
+`elseControl`, and `elseObject`.
 Object-flow `pipeline` stages run in array order. A guard must implement `IFlowGuard<T>` for the
 token type at that point; a transformation must implement `IFlowTransformation<TInput,TOutput>`.
 The output token alias declares the transformation's result type and becomes the type seen by later
 stages and the destination. Control flows accept control guards only; else flows cannot contain
 guards. Weights default to one and must be nonnegative.
+
+Use `inputPin` and `outputPin` to declare typed object boundaries in an Activity scope, including
+structured, parallel, and iterative scopes. Each requires a host-registered `tokenType` alias.
+An input pin routes only object flows of its declared token type; its flow may use the same guard
+and transformation pipeline as other object flows. Output pins are object-flow targets and accept
+tokens compatible with their declared type. Multiple pins with different token types can be
+declared in a scope.
+Legacy `input` and `output` nodes remain supported with their existing permissive behavior.
+
+```json
+{
+  "kind": "structured",
+  "name": "normalize",
+  "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "validated" }],
+  "nodes": [
+    {
+      "kind": "inputPin",
+      "name": "incomingOrder",
+      "tokenType": "tokens.order",
+      "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "validate" }]
+    },
+    {
+      "kind": "action",
+      "name": "validate",
+      "implementation": { "clrType": "nodes.validate" },
+      "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "outgoingOrder" }]
+    },
+    { "kind": "outputPin", "name": "outgoingOrder", "tokenType": "tokens.order" }
+  ]
+}
+```
 
 CLR `definitions` are additive. Root definitions implement `IActivity` and expose static
 `Build(IActivityBuilder)`; nested structured definitions implement `IStructuredActivityNodeDefinition`

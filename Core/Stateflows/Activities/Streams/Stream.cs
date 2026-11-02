@@ -13,6 +13,9 @@ namespace Stateflows.Activities.Streams
         /// <summary>Gets or sets whether a control token has activated this stream.</summary>
         public bool IsActivated { get; set; } = false;
 
+        /// <summary>Gets or sets whether any activation of this stream belongs to streamed work.</summary>
+        public bool IsStreamed { get; set; }
+
         /// <summary>Gets or sets whether object tokens are retained on this stream for later executions.</summary>
         public bool IsPersistent { get; set; } = false;
 
@@ -38,6 +41,7 @@ namespace Stateflows.Activities.Streams
             if (token is TokenHolder<ControlToken>)
             {
                 IsActivated = true;
+                IsStreamed |= token.IsStreamed;
             }
             else
             {

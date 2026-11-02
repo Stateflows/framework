@@ -4,6 +4,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common;
+using Stream = Stateflows.Activities.Streams.Stream;
 
 namespace Stateflows.Activities.Context.Classes
 {

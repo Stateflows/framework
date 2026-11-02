@@ -10,19 +10,26 @@ namespace Stateflows.Activities.Context.Classes
 {
     internal class BaseContext : Stateflows.Common.Context.Classes.BaseContext, IStateflowsContextProvider, IBehaviorLocator
     {
+        private readonly EventHolder? executionTriggerHolder;
+
         public BaseContext(RootContext context, NodeScope nodeScope)
-            : base(context.Context, nodeScope.ServiceProvider)
+            : base(context.Context, nodeScope.ServiceProvider, nodeScope.CancellationTokenSource)
         {
             Context = context;
             NodeScope = nodeScope;
+            executionTriggerHolder = context.ExecutionTriggerHolder;
+            ExecutionMode = context.IsStreamingExecution ? ExecutionMode.Streamed : ExecutionMode.Transactional;
+            nodeScope.TrackContext(this);
         }
 
         public BaseContext(BaseContext context)
-            : base(context.Context.Context, context.ServiceProvider)
+            : base(context.Context.Context, context.ServiceProvider, context.NodeScope.CancellationTokenSource)
         {
             Context = context.Context;
             NodeScope = context.NodeScope;
-            CancellationTokenSource = NodeScope.CancellationTokenSource;
+            executionTriggerHolder = context.executionTriggerHolder;
+            ExecutionMode = context.ExecutionMode;
+            NodeScope.TrackContext(this);
         }
 
         public IServiceProvider ServiceProvider
@@ -32,9 +39,10 @@ namespace Stateflows.Activities.Context.Classes
 
         public NodeScope NodeScope { get; }
 
-        public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
-        public Guid ExecutionTriggerId => Context.ExecutionTriggerHolder.Id;
-        public IDictionary<string, EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
+        public virtual ExecutionMode ExecutionMode { get; }
+        public object? ExecutionTrigger => ExecutionMode == ExecutionMode.Streamed ? null : executionTriggerHolder?.BoxedPayload;
+        public Guid? ExecutionTriggerId => ExecutionMode == ExecutionMode.Streamed ? null : executionTriggerHolder?.Id;
+        public IDictionary<string, EventHeader>? Headers => ExecutionMode == ExecutionMode.Streamed ? null : executionTriggerHolder?.Headers;
 
         private ActivityContext? activity;
         public ActivityContext Activity

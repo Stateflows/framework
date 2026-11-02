@@ -13,6 +13,12 @@ internal sealed class RuntimeConfigurationValidator(
 {
     public void ValidateConfiguration()
     {
+        if (options.Value.MaxQueuedActivityStreamEvents < 1)
+            throw new OrleansConfigurationException("StateflowsRuntimeOptions.MaxQueuedActivityStreamEvents must be greater than zero.");
+        if (options.Value.ActivityStreamBarrierTimeout < TimeSpan.Zero &&
+            options.Value.ActivityStreamBarrierTimeout != Timeout.InfiniteTimeSpan)
+            throw new OrleansConfigurationException("StateflowsRuntimeOptions.ActivityStreamBarrierTimeout must be nonnegative or Timeout.InfiniteTimeSpan.");
+
         var missing = new List<string>();
         var configuredName = options.Value.StorageProviderName;
         if (configuredName != null && string.IsNullOrWhiteSpace(configuredName))

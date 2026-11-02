@@ -10,6 +10,10 @@
         /// node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-input-node" />
+        [System.Obsolete("Use AddInputPin<TToken> to declare supported input token types.")]
         TReturn AddInput(InputBuildAction buildAction);
+
+        /// <summary>Adds a typed input pin with object flows of its declared token type.</summary>
+        TReturn AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction);
     }
 }

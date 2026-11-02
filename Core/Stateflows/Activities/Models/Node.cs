@@ -20,6 +20,19 @@ namespace Stateflows.Activities.Models
         public string OwnName { get; set; }
         public string Name { get; set; }
         public NodeType Type { get; set; }
+        public Type? PinTokenType { get; set; }
+        public IEnumerable<Node> InputPins => Nodes.Values.Where(node => node.Type == NodeType.Input && node.PinTokenType != null);
+        public IEnumerable<Node> OutputPins => Nodes.Values.Where(node => node.Type == NodeType.Output && node.PinTokenType != null);
+        public IEnumerable<Node> InputNodes => Nodes.Values.Where(node => node.Type == NodeType.Input);
+        public IEnumerable<Node> OutputNodes => Nodes.Values.Where(node => node.Type == NodeType.Output);
+
+        public bool AcceptsInput(IEnumerable<TokenHolder> tokens)
+        {
+            if (InputNodes.Any(node => node.PinTokenType == null))
+                return true;
+            var types = InputPins.Select(pin => pin.PinTokenType!).ToArray();
+            return types.Length == 0 || tokens.All(token => types.Any(type => type.IsAssignableFrom(token.ActualPayloadType)));
+        }
         public NodeOptions Options { get; set; } = NodeOptions.ActionDefault;
 
         public Type ExceptionType { get; set; }
@@ -231,7 +244,7 @@ namespace Stateflows.Activities.Models
 
         public async Task<bool> HandleExceptionAsync(Exception exception, BaseContext context)
         {
-            context.Context.Context.ExecutionExceptions.Enqueue(exception);
+            context.Context.RecordException(exception);
             Node handler = null;
             var currentNode = this;
             while (currentNode != null)

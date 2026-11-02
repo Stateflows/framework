@@ -46,6 +46,14 @@ namespace Stateflows.Activities
         protected override Type GetActualPayloadType()
             => Exception.GetType();
 
+        protected override TokenHolder CopyForExecutionCore(bool isStreamed)
+            => new ExceptionHolder<TException>
+            {
+                Id = Id,
+                Exception = Exception,
+                IsStreamed = isStreamed
+            };
+
         /// <inheritdoc />
         public override bool Equals(object obj)
             => obj is ExceptionHolder token && token.Id == Id;

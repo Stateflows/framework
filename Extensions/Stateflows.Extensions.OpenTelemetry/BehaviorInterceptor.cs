@@ -39,7 +39,7 @@ public class MetricsInterceptor(StateflowsMeter meter) : BehaviorInterceptor
 
             var noTracing =
                 context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
-                context.Headers.Values.Any(h => h is NoTracing);
+                context.Headers?.Values.Any(h => h is NoTracing) == true;
 
             if (noTracing)
             {

@@ -134,6 +134,12 @@ namespace Stateflows.Activities.Registration
                     var inspector = c.Behavior.GetExecutor().Inspector;
                     await inspector.OnNodeExecuteAsync(context, () => actionAsync(c));
                 }
+                catch (Stateflows.Activities.Streams.ActivityCheckpointPauseException)
+                {
+                    // A suspended structural invocation is not a failure; its continuation is recorded by the engine.
+                    faulty = true;
+                    throw;
+                }
                 catch (Exception e)
                 {
                     if (e is StateflowsException ||
@@ -326,30 +332,46 @@ namespace Stateflows.Activities.Registration
                 b => b.SetOptions(NodeOptions.None)
             );
 
+        internal BaseActivityBuilder AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
+        {
+            ArgumentNullException.ThrowIfNull(buildAction);
+            AddNode(NodeType.Input, InputPin<TToken>.Name, c =>
+            {
+                c.PassTokensOfTypeOn<TToken>();
+                return Task.CompletedTask;
+            }, builder =>
+            {
+                builder.Node.PinTokenType = typeof(TToken);
+                buildAction(new InputPinBuilder<TToken>(builder.Node, this));
+            });
+            var pin = Node.Nodes.Values.Single(n => n.Type == NodeType.Input && n.PinTokenType == typeof(TToken));
+            Graph.VisitingTasks.Add(visitor => visitor.InputPinAddedAsync<TToken>(
+                Graph.Name, Graph.Version, pin.Name, Node is Graph ? null : Node.Name));
+            return this;
+        }
+
+        internal BaseActivityBuilder AddOutputPin<TToken>()
+        {
+            AddNode(NodeType.Output, OutputPin<TToken>.Name, c =>
+            {
+                c.PassTokensOfTypeOn<TToken>();
+                return Task.CompletedTask;
+            }, builder =>
+            {
+                builder.Node.PinTokenType = typeof(TToken);
+                builder.SetOptions(NodeOptions.None);
+            });
+            var pin = Node.Nodes.Values.Single(n => n.Type == NodeType.Output && n.PinTokenType == typeof(TToken));
+            Graph.VisitingTasks.Add(visitor => visitor.OutputPinAddedAsync<TToken>(
+                Graph.Name, Graph.Version, pin.Name, Node is Graph ? null : Node.Name));
+            return this;
+        }
+
         internal BaseActivityBuilder AddStructuredActivity(string structuredActivityNodeName, ReactiveStructuredActivityBuildAction buildAction = null)
             => AddNode(
                 NodeType.StructuredActivity,
                 structuredActivityNodeName,
-                async c =>
-                {
-                    var executor = c.Behavior.GetContext().Executor;
-                    var node = c.GetNode();
-                    var contextObj = c as ActionContext;
-
-                    if (!contextObj.Context.NodesToExecute.Contains(node))
-                    {
-                        await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    }
-
-                    (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Behavior.GetNodeScope(), contextObj.InputTokens);
-
-                    contextObj.OutputTokens.AddRange(output);
-
-                    if (finalized)
-                    {
-                        await executor.DoFinalizeNodeAsync(node, c as ActionContext);
-                    }
-                },
+                c => c.Behavior.GetContext().Executor.ExecuteStructuredActivityAsync((ActionContext)c),
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this))
             );
 
@@ -357,25 +379,7 @@ namespace Stateflows.Activities.Registration
             => AddNode(
                 NodeType.ParallelActivity,
                 parallelActivityNodeName,
-                async c =>
-                {
-                    var executor = c.Behavior.GetContext().Executor;
-                    var node = c.GetNode();
-
-                    await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    var edge = c.Node.TryGetCurrentFlow(out var currentFlow)
-                        ? ((FlowContext)currentFlow).Edge
-                        : null;
-
-                    var outputTokenHolders = await executor.DoExecuteParallelNodeAsync<TToken>(
-                        node,
-                        edge,
-                        c.Behavior.GetNodeScope(),
-                        ((ActionContext)c).InputTokens
-                    );
-                    ((ActionContext)c).OutputTokens.AddRange(outputTokenHolders);
-                    await executor.DoFinalizeNodeAsync(node, c as ActionContext);
-                },
+                c => c.Behavior.GetContext().Executor.ExecuteParallelActivityAsync<TToken>((ActionContext)c),
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this)),
                 typeof(TToken),
                 chunkSize
@@ -385,16 +389,7 @@ namespace Stateflows.Activities.Registration
             => AddNode(
                 NodeType.IterativeActivity,
                 parallelActivityNodeName,
-                async c =>
-                {
-                    var executor = c.Behavior.GetContext().Executor;
-                    var node = c.GetNode();
-
-                    await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    var outputTokenHolders = await executor.DoExecuteIterativeNodeAsync<TToken>(c as ActionContext);
-                    ((ActionContext)c).OutputTokens.AddRange(outputTokenHolders);
-                    await executor.DoFinalizeNodeAsync(node, c as ActionContext);
-                },
+                c => c.Behavior.GetContext().Executor.ExecuteIterativeActivityAsync<TToken>((ActionContext)c),
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this)),
                 typeof(TToken),
                 chunkSize

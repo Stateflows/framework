@@ -787,6 +787,9 @@ internal class StateflowsSubscriptions(
     private void EnqueueObserverNotification(IBehaviorGrainObserver observer, WatchEntry entry, OrleansEventHolder[] notifications)
         => entry.Tail = NotifyObserverAsync(entry.Tail, observer, entry, notifications);
 
+    public Task WaitForWatchDeliveryAsync(IBehaviorGrainObserver observer)
+        => watches.TryGetValue(observer, out var entry) ? entry.Tail : Task.CompletedTask;
+
     private async Task NotifyObserverAsync(Task previous, IBehaviorGrainObserver observer, WatchEntry entry, OrleansEventHolder[] notifications)
     {
         // Chained per observer to preserve publication order without awaiting observers in grain calls

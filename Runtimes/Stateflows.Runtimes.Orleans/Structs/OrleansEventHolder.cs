@@ -31,6 +31,9 @@ public struct OrleansEventHolder
     [Id(7)]
     [Newtonsoft.Json.JsonProperty(TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None)]
     public OrleansBehaviorId? SenderId { get; set; }
+
+    [Id(8)]
+    public bool IsRequest { get; set; }
     
     public static implicit operator EventHolder(OrleansEventHolder orleansEventHolder)
     {

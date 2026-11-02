@@ -48,13 +48,13 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 var noTracing =
                     context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
-                    context.Headers.Values.Any(h => h is NoTracing);
+                    context.Headers?.Values.Any(h => h is NoTracing) == true;
 
                 Skip = noTracing;
 
                 if (!noTracing)
                 {
-                    var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
+                    var header = context.Headers?.Values.FirstOrDefault(h => h is ActivityHeader);
                     if (header is ActivityHeader activityHeader)
                     {
                         EventProcessingActivity = StateMachineTracer.Source.StartActivity(
@@ -112,7 +112,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 logger.LogTrace(
                     message: "Activity '{ActivityId}' processed event '{Event}' with result '{EventStatus}'",
                     $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                    Event.GetName(context.ExecutionTrigger).ToShortName(),
+                    context.ExecutionTrigger is { } trigger ? Event.GetName(trigger).ToShortName() : context.ExecutionMode.ToString(),
                     eventStatus
                 );
             }
@@ -124,7 +124,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     args: new object[]
                     {
                         $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                        Event.GetName(context.ExecutionTrigger).ToShortName()
+                        context.ExecutionTrigger is { } trigger ? Event.GetName(trigger).ToShortName() : context.ExecutionMode.ToString()
                     }
                 );
 
@@ -155,7 +155,7 @@ namespace Stateflows.Extensions.OpenTelemetry
 
                 if (EventProcessingActivity == null)
                 {
-                    var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
+                    var header = context.Headers?.Values.FirstOrDefault(h => h is ActivityHeader);
                     if (header is ActivityHeader activityHeader)
                     {
                         InitializerActivity = StateMachineTracer.Source.StartActivity(
