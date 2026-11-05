@@ -1,0 +1,215 @@
+@page "/"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@inject LoadCoordinator Coordinator
+@inject ILogger<Dashboard> Logger
+
+<PageTitle>Stateflows Streaming Load Lab</PageTitle>
+<main>
+    <header>
+        <div><p class="eyebrow">STATEFLOWS / ORLEANS / BLAZOR</p><h1>Streaming Load Lab</h1>
+            <p>A live, bounded data-flow experiment. One shared run; every connected browser controls the same Activity.</p></div>
+        <span class="state" role="status">@snapshot.State</span>
+    </header>
+    <section class="pipeline" aria-label="Activity pipeline">
+        <span>Typed input pin</span><b>&rarr;</b><span>Reentrant processing<br />CPU + allocation + async I/O</span>
+        <b>&rarr;</b><span>Normal / priority sinks</span>
+        <span class="control">ConfigureWorkflow event &rarr; AcceptEventAction &rarr; shared Activity values</span>
+    </section>
+    @if (error != null || snapshot.Error != null)
+    {
+        <p class="error" role="alert">@(error ?? snapshot.Error)</p>
+    }
+    @if (message != null) { <p class="notice" role="status">@message</p> }
+
+    <section class="panel">
+        <h2>Workload presets</h2>
+        <p>Framework throughput is the default: no synthetic CPU, delay, or allocation.
+            Synthetic CPU + I/O deliberately limits processing capacity. Presets edit local fields;
+            start a new run or apply both producer and workflow settings to use them.</p>
+        <div class="buttons">
+            <button disabled="@(!interactive || busy)" @onclick="() => UseScenario(LoadScenario.Throughput)">Framework throughput preset</button>
+            <button disabled="@(!interactive || busy)" @onclick="() => UseScenario(LoadScenario.Synthetic)">Synthetic CPU + I/O preset</button>
+        </div>
+    </section>
+
+    <div class="controls">
+        <section class="panel">
+            <h2>Load generator</h2>
+            <p>These controls change the producer, not the Activity. Rate is a peak target, not a throughput promise.</p>
+            <div class="fields">
+                <label>Scenario<select @bind="profile">
+                    @foreach (var value in Enum.GetValues<LoadProfile>()) { <option value="@value">@value</option> }
+                </select></label>
+                <label>Peak tokens / second<input type="number" min="1" max="@Coordinator.Limits.MaxTokensPerSecond" @bind="rate" /></label>
+                <label>Batch size<input type="number" min="1" max="256" @bind="batchSize" /></label>
+                <label>Outstanding token bound<input type="number" min="1" max="@Coordinator.Limits.MaxOutstanding" @bind="outstandingLimit" /></label>
+                <label>Cycle duration (seconds)<input type="number" min="2" max="300" @bind="period" /></label>
+            </div>
+            <small>Steady: 100%. Ramp: 10-100% repeating. Burst: 100% for 20% of each cycle, then 10%.
+                Wave: smooth 10-100%. No catch-up flood when throttled.</small>
+            <div class="buttons">
+                <button disabled="@(!interactive || busy || !CanStart)" @onclick="Start">Start new run</button>
+                <button disabled="@(busy || !Live)" @onclick="ApplyLoad">Apply load</button>
+                <button disabled="@(busy || snapshot.State != "Running")" @onclick="Pause">Pause generator</button>
+                <button disabled="@(busy || snapshot.State != "Paused")" @onclick="Resume">Resume generator</button>
+                <button disabled="@(busy || !Live || snapshot.State == "Draining")" @onclick="Drain">Drain &amp; finish</button>
+            </div>
+        </section>
+        <section class="panel">
+            <h2>Transactional workflow steering</h2>
+            <p>Apply sends an ordinary <code>ConfigureWorkflow</code> event (no Stream header).
+                A typed <code>AcceptEventAction</code> updates the live network.</p>
+            <div class="fields">
+                <label>Concurrent workers<input type="number" min="1" max="@Coordinator.Limits.MaxWorkers" @bind="workerCount" /></label>
+                <label>CPU work / token (ms)<input type="number" min="0" max="20" @bind="cpuMs" /></label>
+                <label>Async delay / token (ms)<input type="number" min="0" max="2000" @bind="delayMs" /></label>
+                <label>Allocation / token (KiB)<input type="number" min="0" max="256" @bind="allocationKiB" /></label>
+                <label>Priority branch (%)<input type="number" min="0" max="100" @bind="priorityPercent" /></label>
+            </div>
+            <small>Zero-work batches route synchronously with one worker lease per batch. With synthetic work,
+                worker decreases let current workers finish. Delay/CPU apply when a worker starts;
+                branching reads settings again after I/O, so in-flight work can be redirected.</small>
+            <div class="buttons">
+                <button disabled="@(busy || !Live)" @onclick="ApplyWorkflow">Send workflow event</button>
+                <button class="danger" disabled="@(busy || snapshot.RunId == null || snapshot.State == "Stopped")"
+                        @onclick="EmergencyStop">Emergency stop</button>
+            </div>
+            @if (snapshot.LastControl is { } control)
+            {
+                <p class="ack">Acknowledged revision @control.Revision &middot; @control.Mode<br />
+                    <small>@control.Settings.Workers workers &middot; CPU @control.Settings.CpuMilliseconds ms &middot;
+                        I/O @control.Settings.DelayMilliseconds ms &middot; @control.Settings.AllocationKiB KiB &middot;
+                        priority @control.Settings.PriorityPercent%<br />Execution trigger: @control.TriggerId</small></p>
+            }
+        </section>
+    </div>
+
+    <section class="cards" aria-label="Live metrics" aria-live="off">
+        <article><span>Completed tokens / s</span><strong>@snapshot.CompletedPerSecond.ToString("N0")</strong><small>Actual sink completions</small></article>
+        <article><span>Admitted tokens / s</span><strong>@snapshot.AdmittedPerSecond.ToString("N0")</strong><small>Current target: @snapshot.TargetRate.ToString("N0") / s</small></article>
+        <article><span>Outstanding tokens</span><strong>@snapshot.Outstanding.ToString("N0")</strong><small>Bound @snapshot.Load.OutstandingLimit.ToString("N0") &middot; peak @snapshot.PeakOutstanding.ToString("N0")</small></article>
+        <article><span>Active workers</span><strong>@snapshot.ActiveWorkers / @snapshot.Workflow.Workers</strong><small>Shared across all batch invocations</small></article>
+        <article><span>Host process CPU</span><strong>@snapshot.CpuPercent.ToString("N1")%</strong><small>100% = all @Environment.ProcessorCount logical CPUs</small></article>
+        <article><span>Process working set</span><strong>@snapshot.WorkingSetMiB.ToString("N1") MiB</strong><small>Managed heap @snapshot.ManagedHeapMiB.ToString("N1") MiB</small></article>
+        <article><span>Allocation rate</span><strong>@snapshot.AllocatedMiBPerSecond.ToString("N1") MiB/s</strong><small>Process-wide, including the framework and UI</small></article>
+        <article><span>End-to-end latency</span><strong>@snapshot.MeanLatencyMilliseconds.ToString("N1") ms</strong><small>Recent p95 @snapshot.P95LatencyMilliseconds.ToString("N1") ms</small></article>
+    </section>
+    <div class="charts">
+        <TrendChart Title="Token throughput" Legend="Cyan: admitted / Orange: completed" Unit="tokens/s"
+                    History="snapshot.History" Primary="p => p.AdmittedPerSecond" Secondary="p => p.CompletedPerSecond" />
+        <TrendChart Title="Host process CPU" Legend="Normalized across logical CPUs" Unit="%" FixedScale="100"
+                    History="snapshot.History" Primary="p => p.CpuPercent" />
+        <TrendChart Title="Host process memory" Legend="Resident working set" Unit="MiB"
+                    History="snapshot.History" Primary="p => p.WorkingSetMiB" />
+        <TrendChart Title="Backpressure" Legend="Outstanding admitted/reserved tokens" Unit="tokens"
+                    History="snapshot.History" Primary="p => p.Outstanding" />
+    </div>
+    <section class="panel totals">
+        <h2>Run accounting</h2>
+        <dl>
+            <div><dt>Admitted</dt><dd>@snapshot.Admitted.ToString("N0")</dd></div>
+            <div><dt>Completed</dt><dd>@snapshot.Completed.ToString("N0")</dd></div>
+            <div><dt>Normal branch</dt><dd>@snapshot.Normal.ToString("N0")</dd></div>
+            <div><dt>Priority branch</dt><dd>@snapshot.Priority.ToString("N0")</dd></div>
+            <div><dt>Rejected admission</dt><dd>@snapshot.Rejected.ToString("N0")</dd></div>
+            <div><dt>Overloaded batch attempts</dt><dd>@snapshot.OverloadedAdmissions.ToString("N0")</dd></div>
+            <div><dt>Abandoned on stop</dt><dd>@snapshot.Abandoned.ToString("N0")</dd></div>
+            <div><dt>Throttled</dt><dd>@snapshot.ThrottledSeconds.ToString("N1") s</dd></div>
+            <div><dt>Elapsed</dt><dd>@snapshot.ElapsedSeconds.ToString("N0") s</dd></div>
+        </dl>
+        <p>GC collections since process start: Gen 0 @snapshot.Gen0Collections / Gen 1 @snapshot.Gen1Collections / Gen 2 @snapshot.Gen2Collections.</p>
+        <small>Run: @(snapshot.RunId?.ToString("N") ?? "not started"). Current shared load: @snapshot.Load.Profile,
+            @snapshot.Load.TokensPerSecond.ToString("N0") peak tokens/s, batch @snapshot.Load.BatchSize.
+            Metrics sample every second; charts retain 120 samples; p95 uses the last 4,096 completions.</small>
+    </section>
+    <footer>Development-only, loopback demo. No authentication or durable restart recovery.
+        Memory/CPU include Blazor, Orleans, the generator, and all Activity work. No per-token browser messages or retained output history.</footer>
+</main>
+<div id="blazor-error-ui">The dashboard connection encountered an error. <a href="">Reload</a></div>
+
+@code {
+    private DashboardSnapshot snapshot = null!;
+    private readonly CancellationTokenSource cancellation = new();
+    private Task? refresh;
+    private bool busy;
+    private bool interactive;
+    private string? error, message;
+    private LoadProfile profile;
+    private int rate = 1000, batchSize = 64, outstandingLimit = 4096, period = 20;
+    private int workerCount = 4, cpuMs = 1, delayMs = 10, allocationKiB = 4, priorityPercent = 20;
+    private bool Live => snapshot.State is "Running" or "Paused" or "Draining";
+    private bool CanStart => snapshot.State is "Idle" or "Completed" or "Stopped" && snapshot.ActiveWorkers == 0;
+    private LoadSettings Load => new(profile, rate, batchSize, outstandingLimit, period);
+    private WorkflowSettings Workflow => new(workerCount, cpuMs, delayMs, allocationKiB, priorityPercent);
+
+    protected override void OnInitialized()
+    {
+        snapshot = Coordinator.Snapshot;
+        SetDraft(snapshot.Load, snapshot.Workflow);
+    }
+
+    private void SetDraft(LoadSettings load, WorkflowSettings workflow)
+    {
+        profile = load.Profile; rate = load.TokensPerSecond; batchSize = load.BatchSize;
+        outstandingLimit = load.OutstandingLimit; period = load.PeriodSeconds;
+        workerCount = workflow.Workers; cpuMs = workflow.CpuMilliseconds; delayMs = workflow.DelayMilliseconds;
+        allocationKiB = workflow.AllocationKiB; priorityPercent = workflow.PriorityPercent;
+    }
+
+    private void UseScenario(LoadScenario scenario)
+    {
+        SetDraft(scenario.Load, scenario.Workflow);
+        error = null;
+        message = $"{scenario.Name} preset selected. Settings are drafts until started or applied.";
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            interactive = true;
+            refresh = RefreshAsync();
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task RefreshAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellation.Token))
+                await InvokeAsync(() => { snapshot = Coordinator.Snapshot; StateHasChanged(); });
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+    }
+
+    private async Task Run(Func<Task> action, string success)
+    {
+        busy = true; error = null; message = null;
+        try { await action(); message = success; }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Load dashboard command failed.");
+            error = exception.Message;
+        }
+        finally { snapshot = Coordinator.Snapshot; busy = false; }
+    }
+
+    private Task Start() => Run(() => Coordinator.StartRunAsync(Load, Workflow), "Shared run started.");
+    private Task ApplyLoad() => Run(() => Coordinator.ApplyLoadAsync(Load), "Producer settings applied.");
+    private Task ApplyWorkflow() => Run(() => Coordinator.ApplyWorkflowAsync(Workflow), "Workflow event consumed transactionally.");
+    private Task Pause() => Run(Coordinator.PauseAsync, "Generation paused; admitted work is still processing.");
+    private Task Resume() => Run(Coordinator.ResumeAsync, "Generation resumed without catch-up traffic.");
+    private Task Drain() => Run(Coordinator.DrainAsync, "Generation stopped; waiting for all admitted tokens to finish.");
+    private Task EmergencyStop() => Run(Coordinator.EmergencyStopAsync, "Immediate finalization requested; remaining tokens abandoned.");
+
+    public async ValueTask DisposeAsync()
+    {
+        await cancellation.CancelAsync();
+        if (refresh != null) await refresh;
+        cancellation.Dispose();
+    }
+}
