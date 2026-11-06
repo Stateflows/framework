@@ -44,7 +44,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// from execution services and supported contexts.</param>
         /// <returns>The current fluent deferral builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
-        TReturn AddGuard(Delegate guardDelegate)
+        private TReturn AddGuard(Delegate guardDelegate)
             => AddGuard(c => guardDelegate.InvokeDelegatePredicateAsync(
                 StateflowsActivator.ResolveParameterValueFactories(
                     c.Behavior.ServiceProvider,

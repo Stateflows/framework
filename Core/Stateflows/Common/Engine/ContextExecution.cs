@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Common.Engine
 {
@@ -29,6 +30,7 @@ namespace Stateflows.Common.Engine
             ContextExecution? execution = null;
             using var pendingTasks = new PendingTasksScope();
             using var publications = PublicationScope.IsRuntimeOwned ? null : new PublicationScope();
+            using var staging = StagingBag.IsActive ? null : new StagingBag(() => nonTransactional);
             try
             {
                 var stored = await storage.HydrateAsync(id);
@@ -59,12 +61,16 @@ namespace Stateflows.Common.Engine
                     return EventStatus.Failed;
                 }
 
+                if (staging != null)
+                    await staging.ExecuteBeforeCommitAsync();
+
                 if (execution.Persist && result != EventStatus.Undelivered)
                 {
                     execution.Context.LastExecutedAt = DateTime.Now;
                     await storage.DehydrateAsync(execution.Context);
                 }
 
+                staging?.DispatchAfterCommit();
                 if (publications != null)
                     await publications.FlushAsync();
 

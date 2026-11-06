@@ -69,11 +69,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                Vertex.Initialize.Actions.Add(async c =>
+                Vertex.Initialize.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Entry);
                         await actionAsync(context);
-                    }
+                    })
                 );
             }
 
@@ -87,11 +87,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                Vertex.Finalize.Actions.Add(async c =>
+                Vertex.Finalize.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Entry);
                         await actionAsync(context);
-                    }
+                    })
                 );
             }
 
@@ -105,11 +105,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                Vertex.Entry.Actions.Add(async c =>
+                Vertex.Entry.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Entry);
                         await actionAsync(context);
-                    }
+                    })
                 );
             }
 
@@ -123,11 +123,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                Vertex.Exit.Actions.Add(async c =>
+                Vertex.Exit.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Exit);
                         await actionAsync(context);
-                    }
+                    })
                 );
             }
 

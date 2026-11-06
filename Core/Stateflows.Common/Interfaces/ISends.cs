@@ -13,4 +13,11 @@ public interface ISends<TReturn>
     /// <param name="event">The event payload to send.</param>
     /// <param name="headers">Optional delivery headers.</param>
     void Send<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null);
+
+    /// <summary>Queues an event for sending only after the current transaction commits successfully.</summary>
+    /// <remarks>In-memory only. Target processing is not awaited. Not supported during streamed execution.</remarks>
+    /// <typeparam name="TEvent">The event payload type.</typeparam>
+    /// <param name="event">The event to send.</param>
+    /// <param name="headers">Optional delivery headers.</param>
+    void StageSending<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null);
 }

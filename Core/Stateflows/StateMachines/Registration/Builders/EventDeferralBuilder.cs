@@ -34,11 +34,11 @@ internal class EventDeferralBuilder<TEvent> :
     {
         foreach (var guardAsync in guardsAsync)
         {
-            Logic.Actions.Add(c =>
+            Logic.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
             {
                 var context = new DeferralContext<TEvent>(c, Vertex);
-                return guardAsync(context);
-            });
+                return await guardAsync(context);
+            }));
         }
 
         return this;

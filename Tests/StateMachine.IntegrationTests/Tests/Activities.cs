@@ -173,7 +173,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new SomeEvent());
 
-                await Task.Delay(300);
+                await Task.Delay(500);
 
                 var currentState = (await sm.GetStatusAsync()).Response;
 

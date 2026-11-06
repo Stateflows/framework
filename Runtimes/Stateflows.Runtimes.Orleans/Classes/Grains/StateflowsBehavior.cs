@@ -995,6 +995,7 @@ internal class StateflowsBehavior(
                     dispatchGuard: () => generation == Interlocked.Read(ref streamGeneration),
                     dispatchImmediatelyWhen: () => true);
                 using var outbox = new OutboxPublicationScope();
+                using var staging = new Stateflows.Common.Classes.StagingBag(() => true);
                 using var storageScope = GrainStorageBridge.EnterScope(
                     hydrateAsync: () => Task.FromResult(streamLiveContext ?? committedContext ?? new StateflowsContext(BehaviorId)),
                     dehydrateAsync: context =>
@@ -1080,6 +1081,10 @@ internal class StateflowsBehavior(
             
             var exceptions = new List<Exception>();
             StateflowsContext? pendingContext = null;
+            using var staging = new Stateflows.Common.Classes.StagingBag(() =>
+                Processors.TryGetValue(BehaviorType.Activity, out var currentProcessor) &&
+                currentProcessor is IActivityStreamSessionProcessor currentSession &&
+                currentSession.IsCurrentActivityInvocationStreamed(BehaviorId));
             using var publications = new Stateflows.Common.Engine.PublicationScope(
                 runtimeOwned: true,
                 dispatchGuard: () => streamExecutionGeneration.Value is not long generation ||
@@ -1139,6 +1144,9 @@ internal class StateflowsBehavior(
                 }
             }
 
+            if (result != EventStatus.Failed && exceptions.Count == 0)
+                await staging.ExecuteBeforeCommitAsync();
+
             if (streamExecutionGeneration.Value is long activeGeneration)
             {
                 if (activeGeneration == Interlocked.Read(ref streamGeneration) && pendingContext != null)
@@ -1159,6 +1167,7 @@ internal class StateflowsBehavior(
                                 var staged = outbox.GetPublications();
                                 if (staged.Length > 0)
                                     await CommitAsync(CloneCommittedContext(), staged);
+                                staging.DispatchAfterCommit();
                                 if (contextState.State.Outbox.Count > 0)
                                     await DrainOutboxAsync();
                                 await publications.FlushAsync();
@@ -1227,6 +1236,8 @@ internal class StateflowsBehavior(
                         }
                     }
 
+                    if (result != EventStatus.Failed && exceptions.Count == 0)
+                        staging.DispatchAfterCommit();
                     if (contextState.State.Outbox.Count > 0)
                         await DrainOutboxAsync();
                     await publications.FlushAsync();
@@ -1250,6 +1261,7 @@ internal class StateflowsBehavior(
                     // Executions that change nothing (e.g. status requests) are not persisted.
                     await CommitAsync(pendingContext ?? CloneCommittedContext(), staged);
                 }
+                staging.DispatchAfterCommit();
                 if (contextState.State.Outbox.Count > 0)
                     await DrainOutboxAsync();
                 await publications.FlushAsync();

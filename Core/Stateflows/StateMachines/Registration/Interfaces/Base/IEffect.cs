@@ -36,7 +36,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// services and supported contexts.</param>
         /// <returns>The current fluent transition builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
-        TReturn AddEffect(Delegate effectDelegate)
+        private TReturn AddEffect(Delegate effectDelegate)
             => AddEffect(c => effectDelegate.InvokeDelegateActionAsync(
                 StateflowsActivator.ResolveParameterValueFactories(
                     c.Behavior.ServiceProvider,

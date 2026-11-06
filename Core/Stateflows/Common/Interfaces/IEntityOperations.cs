@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Entities;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Common.Interfaces;
 
@@ -8,6 +9,26 @@ namespace Stateflows.Common.Interfaces;
 /// <typeparam name="TReturn">The context type used by related fluent API contracts.</typeparam>
 public interface IEntityOperations<TReturn>
 {
+    /// <summary>Stages a mutation that must be consumed after run-to-completion and before source commit.</summary>
+    /// <remarks>In-memory only; earlier target changes cannot be rolled back. Not supported during streamed execution.</remarks>
+    void StageMutation<TMutationEvent>(string entityName, TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers = null)
+        => StagedOperations.StageMutation<TReturn, TMutationEvent>(this, entityName, mutationEvent, headers);
+
+    /// <summary>Stages a mutation on an entity identified by its template type.</summary>
+    void StageMutation<TTemplate, TMutationEvent>(TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers = null)
+        where TTemplate : class
+        => StageMutation(Entity<TTemplate>.Name, mutationEvent, headers);
+
+    /// <summary>Stages a field update that must be consumed after run-to-completion and before source commit.</summary>
+    /// <remarks>In-memory only; earlier target changes cannot be rolled back. Not supported during streamed execution.</remarks>
+    void StageFieldSetting<TFieldType>(string entityName, string fieldName, TFieldType fieldValue, IDictionary<string, EventHeader>? headers = null)
+        => StageMutation(entityName, new FieldState<TFieldType> { Name = fieldName, Value = fieldValue }, headers);
+
+    /// <summary>Stages a field update on an entity identified by its template type.</summary>
+    void StageFieldSetting<TTemplate, TFieldType>(string fieldName, TFieldType fieldValue, IDictionary<string, EventHeader>? headers = null)
+        where TTemplate : class
+        => StageFieldSetting(Entity<TTemplate>.Name, fieldName, fieldValue, headers);
+
     /// <summary>Sends a mutation event to a related entity by its registered name.</summary>
     /// <typeparam name="TMutationEvent">The mutation event type.</typeparam>
     /// <param name="entityName">The registered entity name.</param>
