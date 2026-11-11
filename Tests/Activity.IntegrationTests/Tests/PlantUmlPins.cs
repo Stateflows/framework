@@ -27,19 +27,19 @@ public sealed class PlantUmlPins : StateflowsTestClass
                 .AddStructuredActivity("left", scope => scope
                     .AddInputPin<int>(pin => pin.AddFlow("inner"))
                     .AddStructuredActivity("inner", inner => inner
-                        .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>())
-                        .AddOutputPin<int>()
-                        .AddFlow<int, OutputPin<int>>())
-                    .AddOutputPin<int>()
-                    .AddFlow<int, OutputPin<int>>())
+                        .AddInputPin<int>(pin => pin.AddFlow("inner-out"))
+                        .AddOutputPin<int>("inner-out")
+                        .AddFlow<int>("left-out"))
+                    .AddOutputPin<int>("left-out")
+                    .AddFlow<int>("root-out"))
                 .AddStructuredActivity("right", scope => scope
-                    .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>())
-                    .AddOutputPin<int>()
-                    .AddFlow<int, OutputPin<int>>())
+                    .AddInputPin<int>(pin => pin.AddFlow("right-out"))
+                    .AddOutputPin<int>("right-out")
+                    .AddFlow<int>("root-out"))
+                .AddOutputPin<int>("root-out"))
+            .AddActivity("diagram-typed-boundary", activity => activity
+                .AddInputPin<int>(input => input.AddFlow<OutputPin<int>>())
                 .AddOutputPin<int>())
-            .AddActivity("diagram-legacy", activity => activity
-                .AddInput(input => input.AddFlow<int, OutputNode>())
-                .AddOutput())
             .AddActivity("diagram-pin-alias", activity => activity
                 .AddInputPin<int>(pin => pin.AddFlow("pin0"))
                 .AddAction("pin0", context =>
@@ -54,12 +54,24 @@ public sealed class PlantUmlPins : StateflowsTestClass
             .AddActivity("diagram-expansion-pins", activity => activity
                 .AddInputPin<int>(pin => pin.AddFlow("parallel").AddFlow("iterative"))
                 .AddParallelActivity<int>("parallel", scope => scope
-                    .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>())
-                    .AddOutputPin<int>().AddFlow<int, OutputPin<int>>())
+                    .AddInputPin<int>(pin => pin.AddFlow("parallel-out"))
+                    .AddOutputPin<int>("parallel-out").AddFlow<int, OutputPin<int>>())
                 .AddIterativeActivity<int>("iterative", scope => scope
-                    .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>())
-                    .AddOutputPin<int>().AddFlow<int, OutputPin<int>>())
-                .AddOutputPin<int>()));
+                    .AddInputPin<int>(pin => pin.AddFlow("iterative-out"))
+                    .AddOutputPin<int>("iterative-out").AddFlow<int, OutputPin<int>>())
+                .AddOutputPin<int>())
+            .AddActivity("diagram-interleave", activity => activity
+                .AddInputPin<int>(pin => pin.AddFlow("work"))
+                .AddParallelActivity<int>("work", scope => scope.Interleave()
+                    .AddInputPin<int>(pin => pin.AddFlow("work-output"))
+                    .AddOutputPin<int>("work-output"), chunkSize: 2, maxConcurrency: 3)));
+
+    [TestMethod]
+    public async Task InterleavingAndPartitionLimitAreVisibleAsFrameworkAnnotations()
+    {
+        var diagram = await DiagramAsync("diagram-interleave");
+        StringAssert.Contains(diagram, "ParallelActivity work <<interleave>> [maxConcurrency=3]");
+    }
 
     private async Task<string> DiagramAsync(string name, bool execute = false)
     {
@@ -125,12 +137,12 @@ public sealed class PlantUmlPins : StateflowsTestClass
     }
 
     [TestMethod]
-    public async Task DeprecatedUntypedBoundariesKeepTheirExistingRepresentation()
+    public async Task TypedBoundaryPinsAreRepresentedAsTypedPins()
     {
-        var diagram = await DiagramAsync("diagram-legacy");
-        StringAssert.Contains(diagram, "\"InputNode\" -->[Int32] \"OutputNode\"");
-        Assert.IsFalse(diagram.Contains("Input pin"));
-        Assert.IsFalse(diagram.Contains("Output pin"));
+        var diagram = await DiagramAsync("diagram-typed-boundary");
+        StringAssert.Contains(diagram, "\"Input pin\\nInt32\" as pin0");
+        StringAssert.Contains(diagram, "\"Output pin\\nInt32\" as pin1");
+        StringAssert.Contains(diagram, "pin0 -->[Int32] pin1");
     }
 
     [TestMethod]

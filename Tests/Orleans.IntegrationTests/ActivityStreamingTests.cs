@@ -38,7 +38,7 @@ public sealed class ActivityStreamingTests
                         Interlocked.Increment(ref initializations);
                         return Task.FromResult(true);
                     })
-                    .AddInput(input => input.AddFlow<int>("consume"))
+                    .AddInputPin<int>(input => input.AddFlow("consume"))
                     .AddAction("consume", _ =>
                     {
                         Interlocked.Increment(ref executions);
@@ -114,7 +114,7 @@ public sealed class ActivityStreamingTests
                 services.AddSingleton(probe);
                 services.AddStateflows(sf => sf.AddActivities(activities =>
                     activities.AddActivity("streaming-checkpoint-timeout", activity => activity
-                        .AddInput(input => input.AddFlow<int>("first"))
+                        .AddInputPin<int>(input => input.AddFlow("first"))
                         .AddAction("first", async context =>
                         {
                             probe.CheckpointFirstStarted.TrySetResult();
@@ -192,7 +192,7 @@ public sealed class ActivityStreamingTests
                         .AddActivity(
                             "streaming-test",
                             activity => activity
-                                .AddInput(input => input.AddFlow<int>("work"))
+                                .AddInputPin<int>(input => input.AddFlow("work"))
                                 .AddAction("work", async context =>
                                 {
                                     var value = context.GetTokensOfType<int>().Single();
@@ -219,13 +219,13 @@ public sealed class ActivityStreamingTests
                             "streaming-typed-init",
                             activity => activity
                                 .AddInitializer<Initialize>(_ => Task.FromResult(true))
-                                .AddInput(input => input.AddFlow<int>("work"))
+                                .AddInputPin<int>(input => input.AddFlow("work"))
                                 .AddAction("work", _ => Task.CompletedTask))
                         .AddActivity(
                             "streaming-steering",
                             activity => activity
                                 .AddInitial(initial => initial.AddControlFlow("steer"))
-                                .AddInput(input => input.AddFlow<int>("work"))
+                                .AddInputPin<int>(input => input.AddFlow("work"))
                                 .AddAction("work", async context =>
                                 {
                                     probe.SteeringStarted.TrySetResult();
@@ -257,7 +257,7 @@ public sealed class ActivityStreamingTests
 
                                     return true;
                                 })
-                                .AddInput(input => input.AddFlow<int>("work"))
+                                .AddInputPin<int>(input => input.AddFlow("work"))
                                 .AddAction("work", _ => Task.CompletedTask))
                         .AddActivity(
                             "streaming-live-timer",
@@ -268,7 +268,7 @@ public sealed class ActivityStreamingTests
                                         probe.LiveTimerFired.TrySetResult();
                                         return Task.CompletedTask;
                                     })
-                                .AddInput(input => input.AddFlow<int>("work"))
+                                .AddInputPin<int>(input => input.AddFlow("work"))
                                 .AddAction("work", async _ =>
                                 {
                                     probe.LiveTimerWorkStarted.TrySetResult();
@@ -277,7 +277,7 @@ public sealed class ActivityStreamingTests
                         .AddActivity(
                             "streaming-publications",
                             activity => activity
-                                .AddInput(input => input.AddFlow<int>("work"))
+                                .AddInputPin<int>(input => input.AddFlow("work"))
                                 .AddAction("work", async context =>
                                 {
                                     var value = context.GetTokensOfType<int>().Single();
@@ -307,8 +307,8 @@ public sealed class ActivityStreamingTests
                         .AddActivity(
                             "streaming-checkpoint",
                             activity => activity
-                                .AddOutput()
-                                .AddInput(input => input.AddFlow<int>("first"))
+                                .AddOutputPin<int>()
+                                .AddInputPin<int>(input => input.AddFlow("first"))
                                 .AddAction("first", async context =>
                                 {
                                     Interlocked.Increment(ref probe.CheckpointFirstExecutions);
@@ -322,12 +322,13 @@ public sealed class ActivityStreamingTests
                                     probe.CheckpointSecondStarted.TrySetResult();
                                     await probe.CheckpointSecondGate.Task;
                                     context.PassAllTokensOn();
-                                }, node => node.AddFlow<int, OutputNode>()))
+                                }, node => node.AddFlow<int, OutputPin<int>>()))
                         .AddActivity(
                             "streaming-checkpoint-structured",
                             activity => activity
-                                .AddInput(input => input.AddFlow<int>("scope"))
+                                .AddInputPin<int>(input => input.AddFlow("scope"))
                                 .AddStructuredActivity("scope", scope => scope
+                                    .AddInputPin<int>(input => input.AddFlow("first"))
                                     .AddInitial(initial => initial.AddControlFlow("first"))
                                     .AddAction("first", async context =>
                                     {
@@ -344,8 +345,9 @@ public sealed class ActivityStreamingTests
                         .AddActivity(
                             "streaming-checkpoint-iterative",
                             activity => activity
-                                .AddInput(input => input.AddFlow<int>("loop"))
+                                .AddInputPin<int>(input => input.AddFlow("loop"))
                                 .AddIterativeActivity<int>("loop", loop => loop
+                                    .AddInputPin<int>(input => input.AddFlow("first"))
                                     .AddInitial(initial => initial.AddControlFlow("first"))
                                     .AddAction("first", async _ =>
                                     {
@@ -362,8 +364,9 @@ public sealed class ActivityStreamingTests
                         .AddActivity(
                             "streaming-checkpoint-parallel",
                             activity => activity
-                                .AddInput(input => input.AddFlow<int>("parallel"))
+                                .AddInputPin<int>(input => input.AddFlow("parallel"))
                                 .AddParallelActivity<int>("parallel", parallel => parallel
+                                    .AddInputPin<int>(input => input.AddFlow("first"))
                                     .AddInitial(initial => initial.AddControlFlow("first"))
                                     .AddAction("first", async _ =>
                                     {
@@ -381,7 +384,7 @@ public sealed class ActivityStreamingTests
                             "streaming-checkpoint-steering",
                             activity => activity
                                 .AddInitial(initial => initial.AddControlFlow("steer"))
-                                .AddInput(input => input.AddFlow<int>("first"))
+                                .AddInputPin<int>(input => input.AddFlow("first"))
                                 .AddAction("first", async context =>
                                 {
                                     probe.CheckpointSteeringFirstStarted.TrySetResult();

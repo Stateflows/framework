@@ -41,7 +41,7 @@ namespace Stateflows.Activities
         /// <param name="buildAction">Callback that declares activity registrations.</param>
         /// <returns>The Stateflows builder for further configuration.</returns>
         /// <remarks>Call during application configuration before the Stateflows builder is built.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activities">Activities documentation</seealso>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities">Activities documentation</seealso>
         [DebuggerHidden]
         public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder,
             ActivitiesBuildAction buildAction = null)
@@ -95,8 +95,6 @@ namespace Stateflows.Activities
                         .AddSingleton<IActivityEventHandler, ResetHandler>()
                         .AddSingleton<IActivityEventHandler, SubscriptionHandler>()
                         .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
-                        .AddSingleton<IActivityEventHandler, TokensOutputHandler>()
-                        .AddSingleton<IActivityEventHandler, TypedTokensOutputHandler>()
                         .AddTransient(_ =>
                             ActivitiesContextHolder.ActivityContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IActivityContext).FullName}' is available in this context.")

@@ -78,11 +78,14 @@ namespace Activity.IntegrationTests.Tests
                                 c.Output("hello");
                             },
                             flow => flow
-                                .AddFlow<Animal, OutputNode>()
-                                .AddFlow<string, OutputNode>()
+                                .AddFlow<Animal, OutputPin<IAnimal>>()
+                                .AddFlow<Dog, OutputPin<Dog>>()
+                                .AddFlow<string, OutputPin<string>>()
                                 .AddControlFlow<FinalNode>()
                         )
-                        .AddOutput()
+                        .AddOutputPin<IAnimal>(pin => pin.SetTimeToLive(300))
+                        .AddOutputPin<Dog>(pin => pin.SetTimeToLive(300))
+                        .AddOutputPin<string>(pin => pin.SetTimeToLive(300))
                         .AddFinal()
                     )
                 )
@@ -103,18 +106,18 @@ namespace Activity.IntegrationTests.Tests
         }
 
         [TestMethod]
-        public async Task GetOutputAsyncUsesRuntimePayloadType()
+        public async Task GetOutputAsyncQueriesDeclaredNotificationTypes()
         {
-            RequestResult<TokensOutput>? outputResult = null;
-            RequestResult<TokensOutput<Dog>>? dogOutputResult = null;
-            RequestResult<TokensOutput<IAnimal>>? iAnimalOutputResult = null;
+            IEnumerable<EventHolder>? outputResult = null;
+            IEnumerable<Dog>? dogOutputResult = null;
+            IEnumerable<IAnimal>? iAnimalOutputResult = null;
 
             if (ActivityLocator.TryLocateActivity(new ActivityId("runtime-output-variance", "x"), out var activity))
             {
                 await activity.SendAsync(new Initialize());
-                outputResult = await activity.GetOutputAsync();
-                dogOutputResult = await activity.GetOutputAsync<Dog>();
-                iAnimalOutputResult = await activity.GetOutputAsync<IAnimal>();
+                outputResult = await activity.GetOutputAsync([Event<Dog>.Name], DateTime.MinValue);
+                dogOutputResult = await activity.GetOutputAsync<Dog>(DateTime.MinValue);
+                iAnimalOutputResult = await activity.GetOutputAsync<IAnimal>(DateTime.MinValue);
             }
 
             Assert.IsNotNull(outputResult);
@@ -123,44 +126,40 @@ namespace Activity.IntegrationTests.Tests
 
             CollectionAssert.AreEqual(
                 new[] { "Rex" },
-                outputResult.Response.GetOfType<Dog>().Select(dog => dog.Name).ToArray()
-            );
-            CollectionAssert.AreEqual(
-                new[] { "Mittens", "Rex" },
-                outputResult.Response.GetOfType<IAnimal>().Select(animal => animal.Name).OrderBy(name => name).ToArray()
+                outputResult.Cast<EventHolder<Dog>>().Select(holder => holder.Payload.Name).ToArray()
             );
             CollectionAssert.AreEqual(
                 new[] { "Rex" },
-                dogOutputResult.Response.GetAll().Select(dog => dog.Name).ToArray()
+                dogOutputResult.Select(dog => dog.Name).ToArray()
             );
             CollectionAssert.AreEqual(
                 new[] { "Mittens", "Rex" },
-                iAnimalOutputResult.Response.GetAll().Select(animal => animal.Name).OrderBy(name => name).ToArray()
+                iAnimalOutputResult.Select(animal => animal.Name).OrderBy(name => name).ToArray()
             );
         }
 
         [TestMethod]
-        public async Task WatchOutputAsyncUsesRuntimePayloadType()
+        public async Task WatchOutputAsyncReceivesIndividualNotificationPayloads()
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("runtime-output-variance", "x"), out var activity))
             {
-                await activity.WatchOutputAsync<Dog>(dogs =>
+                await using var dogs = await activity.WatchOutputAsync<Dog>(dog =>
                 {
-                    watchedDogNames = dogs.Select(dog => dog.Name).ToList();
+                    watchedDogNames.Add(dog.Name);
                 });
 
-                await activity.WatchOutputAsync<IAnimal>(animals =>
+                await using var animals = await activity.WatchOutputAsync<IAnimal>(animal =>
                 {
-                    watchedIAnimalNames = animals.Select(animal => animal.Name).OrderBy(name => name).ToList();
+                    watchedIAnimalNames.Add(animal.Name);
                 });
 
                 await activity.SendAsync(new Initialize());
+                await dogs.WaitForDeliveryAsync();
+                await animals.WaitForDeliveryAsync();
             }
 
             CollectionAssert.AreEqual(new[] { "Rex" }, watchedDogNames);
-            CollectionAssert.AreEqual(new[] { "Mittens", "Rex" }, watchedIAnimalNames);
+            CollectionAssert.AreEquivalent(new[] { "Mittens", "Rex" }, watchedIAnimalNames);
         }
     }
 }
-
-

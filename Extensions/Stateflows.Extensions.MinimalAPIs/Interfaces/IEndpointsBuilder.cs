@@ -7,7 +7,7 @@ namespace Stateflows.Extensions.MinimalAPIs;
 /// Patterns are appended to the behavior's instance route. When the class has a default instance,
 /// a route without the instance segment is also mapped. The returned group configures both routes.
 /// State-scoped and structured-node-scoped endpoints are filtered by the active configuration.
-/// See <see href="https://github.com/Stateflows/framework/wiki/extension-minimal-apis"/>.
+/// See <see href="https://github.com/Stateflows/framework/wiki/6.4.-Minimal-APIs"/>.
 /// </remarks>
 public interface IEndpointsBuilder
 {

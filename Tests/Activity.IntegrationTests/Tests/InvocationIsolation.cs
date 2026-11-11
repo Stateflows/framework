@@ -247,7 +247,7 @@ public sealed class InvocationIsolation
             .AddLogging()
             .AddStateflows(sf => sf.AddLegacyRuntime().AddActivities(activities => activities
                 .AddActivity("invocations", activity => activity
-                    .AddInput(input => input.AddFlow<int>("work"))
+                    .AddInputPin<int>(input => input.AddFlow("work"))
                     .AddAction("work", async context =>
                     {
                         var action = (ActionContext)context;
@@ -333,7 +333,7 @@ public sealed class InvocationIsolation
               "formatVersion": "1.0",
               "name": "json-reentrant",
               "nodes": [
-                { "kind": "input", "flows": [
+                { "kind": "inputPin", "tokenType": "int", "flows": [
                   { "kind": "object", "tokenType": "int", "target": "work" }
                 ] },
                 {
@@ -370,7 +370,7 @@ public sealed class InvocationIsolation
         await using var provider = new ServiceCollection().AddLogging()
             .AddStateflows(sf => sf.AddLegacyRuntime().AddActivities(activities => activities
                 .AddActivity("cycle", activity => activity
-                    .AddInput(input => input.AddFlow<int>("work"))
+                    .AddInputPin<int>(input => input.AddFlow("work"))
                     .AddAction("work", context =>
                     {
                         var value = context.GetTokensOfType<int>().Single();
@@ -418,7 +418,7 @@ public sealed class InvocationIsolation
                         return Task.CompletedTask;
                     }, node => node.AddFlow<int>("parallel"))
                     .AddParallelActivity<int>("parallel", body => body
-                        .AddInput(input => input.AddFlow<int>("work"))
+                        .AddInputPin<int>(input => input.AddFlow("work"))
                         .AddAction("work", context =>
                         {
                             var action = (ActionContext)context;

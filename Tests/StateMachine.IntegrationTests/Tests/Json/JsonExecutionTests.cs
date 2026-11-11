@@ -119,12 +119,12 @@ public class JsonExecutionTests : StateflowsTestClass
                 .AddInitial(initial => initial.AddControlFlow("note"))
                 .AddAction("note", async context => trace.Entries.Enqueue("behavior-exit")))
             .AddActivity("effectActivity", activity => activity
-                .AddInput(input => input.AddFlow<Ping>("note"))
+                .AddInputPin<Ping>(input => input.AddFlow("note"))
                 .AddAction("note", async context => trace.Entries.Enqueue("behavior-effect")))
             .AddActivity("trueGuardActivity", activity => activity
                 .AddAcceptEventAction<Ping>(async context => context.Output(true),
-                    accept => accept.AddFlow<bool, OutputNode>())
-                .AddOutput()));
+                    accept => accept.AddFlow<bool, OutputPin<bool>>())
+                .AddOutputPin<bool>()));
         var options = Options().AddType<TraceHandler>("trace").AddType<Predicate>("predicate")
             .AddType<Effect>("effect").AddType<UnionPredicate>("unionPredicate").AddType<Initializer>("initializer")
             .AddType<DualConfiguration>("dual");

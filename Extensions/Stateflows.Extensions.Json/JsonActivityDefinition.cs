@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Json.Schema;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -50,7 +49,7 @@ public sealed class JsonActivityDefinition
             using var parsed = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 64 });
             CheckDuplicates(parsed.RootElement, "", report);
             ThrowIfErrors(report, "<document>");
-            var result = Schema.Value.Evaluate(JsonNode.Parse(json),
+            var result = Schema.Value.Evaluate(parsed.RootElement,
                 new EvaluationOptions { OutputFormat = OutputFormat.List });
             if (!result.IsValid) AddSchemaErrors(result, report);
             ThrowIfErrors(report, "<document>");
@@ -97,7 +96,7 @@ public sealed class JsonActivityDefinition
             foreach (var error in result.Errors)
                 report.Add("JSON-002", result.InstanceLocation.ToString() is { Length: > 0 } location ? location : "/",
                     $"{error.Key}: {error.Value}");
-        if (result.HasDetails)
+        if (result.Details != null)
             foreach (var detail in result.Details.Where(d => !d.IsValid))
                 AddSchemaErrors(detail, report);
     }

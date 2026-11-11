@@ -11,13 +11,18 @@ using Microsoft.Extensions.Options;
 using Orleans.Configuration;
 using System.Collections.Generic;
 using System.Threading;
+using Orleans.Transactions;
+using Orleans.Transactions.Abstractions;
 
 namespace Stateflows;
 
 [BehaviorPlacementFilter]
 internal class StateflowsBehavior( 
-    [StateflowsPersistentState(StateflowsStateNames.BehaviorContext)]
-    IPersistentState<BehaviorContextState> contextState,
+    [StateflowsTransactionalState(StateflowsStateNames.BehaviorContext)]
+    ITransactionalState<BehaviorContextState> transactionalState,
+    ITransactionClient transactions,
+    Orleans.Serialization.Serializer<OrleansTransactionAbortedException> transactionExceptionSerializer,
+    TransactionWorkTracker transactionWork,
     IStateflowsInterceptor interceptor,
     IStateflowsSubscriber subscriber,
     IEnumerable<IStateflowsValidator> validators,
@@ -30,6 +35,16 @@ internal class StateflowsBehavior(
     ILogger<StateflowsBehavior> logger
 ) : Grain, IBehaviorGrain, IStateflowsExecutor
 {
+    private readonly BehaviorStateStore contextState = new(transactionalState, transactions);
+    private int joinedExecutions;
+    private bool stateInitialized;
+    private bool outboxWakeupRegistered;
+    private int executingEvents;
+    private int independentTransactions;
+    private long reconciliationVersion;
+    private long reconciledVersion;
+    private BehaviorTransactionScope? activeTransactionScope;
+    private readonly Queue<(Func<Task> Work, TaskCompletionSource Completion)> handedOffWork = new();
     private IGrainTimer? Timer;
     private string? TenantId;
     private BehaviorId BehaviorId;
@@ -45,6 +60,7 @@ internal class StateflowsBehavior(
     private readonly object streamSync = new();
     private readonly SemaphoreSlim streamAdmissionGate = new(1, 1);
     private readonly SemaphoreSlim streamCheckpointGate = new(1, 1);
+    private readonly SemaphoreSlim outboxDrainGate = new(1, 1);
     private readonly Queue<AdmittedStreamEvent> streamQueue = new();
     private readonly Queue<AdmittedStreamEvent> streamNextEpochQueue = new();
     private readonly HashSet<Task> streamExecutions = [];
@@ -52,12 +68,14 @@ internal class StateflowsBehavior(
     private int streamInFlight;
     private TaskCompletionSource? streamPumpCompletion;
     private TaskCompletionSource? streamQueueChanged;
+    // A borrowed session reference (or a drained checkpoint awaiting session recreation), never a per-firing copy.
     private StateflowsContext? streamLiveContext;
     private StateflowsContext? streamFinalizeContext;
     private bool streamFinalizationRequested;
     private long streamGeneration;
     private readonly AsyncLocal<long?> streamExecutionGeneration = new();
     private volatile bool stoppingStreamAdmission;
+    private bool deactivating;
     private bool checkpointRequested;
     private bool checkpointResumeRequired;
     private bool streamCommitInProgress;
@@ -77,29 +95,34 @@ internal class StateflowsBehavior(
             var tenantBehaviorId = StateflowsGrainKeys.ParseBehavior(this.GetPrimaryKeyString());
             TenantId = tenantBehaviorId.TenantId;
             BehaviorId = tenantBehaviorId.BehaviorId;
+            contextState.IndependentTransactionScope = () => transactionWork.TryEnter(allowDuringShutdown: true)
+                ?? throw new Orleans.Runtime.SiloUnavailableException("The silo is stopping; transactional background work cannot start.");
+            contextState.IndependentTransactionStarted = () =>
+            {
+                if (deactivating)
+                    throw new Orleans.Runtime.SiloUnavailableException("The behavior is deactivating; transactional background work cannot start.");
+                if (Interlocked.Increment(ref independentTransactions) == 1)
+                    DelayDeactivation(TimeSpan.FromMinutes(1));
+            };
+            contextState.IndependentTransactionCompleted = () =>
+            {
+                if (Interlocked.Decrement(ref independentTransactions) == 0 && !deactivating)
+                    DelayDeactivation(TimeSpan.Zero);
+            };
             if (!catalog.Classes.Contains(BehaviorId.BehaviorClass))
             {
                 throw new InvalidOperationException($"This silo does not host Stateflows behavior '{BehaviorId.BehaviorClass}'.");
             }
 
-            committedContext = contextState.RecordExists && !string.IsNullOrEmpty(contextState.State?.Payload)
-                ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextState.State.Payload)
-                : null;
-            contextState.State.Outbox ??= [];
-
-            indexed = committedContext != null && contextState.State?.Tombstone != true;
-
-            if (committedContext != null && !catalog.Supports(BehaviorId.BehaviorClass, committedContext.Version))
-            {
-                throw new InvalidOperationException(
-                    $"This silo does not host version {committedContext.Version} of Stateflows behavior '{BehaviorId.BehaviorClass}' required by instance '{BehaviorId.Instance}'.");
-            }
-            
             Timer = this.RegisterGrainTimer(
-                static (state, ct) => state.PollActivityTimeEventsAsync(ct),
+                static (state, ct) => state.PollRuntimeAsync(ct),
                 this,
-                dueTime: TimeSpan.FromMilliseconds(250),
-                period: TimeSpan.FromMilliseconds(250));
+                new GrainTimerCreationOptions
+                {
+                    DueTime = TimeSpan.FromMilliseconds(250),
+                    Period = TimeSpan.FromMilliseconds(250),
+                    Interleave = true
+                });
         }
         catch (Exception e)
         {
@@ -108,43 +131,11 @@ internal class StateflowsBehavior(
         }
         
         await base.OnActivateAsync(cancellationToken);
-        if (contextState.State.Outbox.Count > 0)
-            await DrainOutboxAsync();
         if (BehaviorId.Type == BehaviorType.Activity &&
             Processors.TryGetValue(BehaviorType.Activity, out var hostingProcessor) &&
             hostingProcessor is IActivityStreamSessionProcessor hostingSessionProcessor)
         {
             hostingSessionProcessor.SetActivitySessionWorkHost(BehaviorId, HostHandedOffActivityWork);
-        }
-        if (BehaviorId.Type == BehaviorType.Activity && committedContext != null &&
-            Processors.TryGetValue(BehaviorType.Activity, out var recoveredProcessor) &&
-            recoveredProcessor is IActivityStreamSessionProcessor recoveredSessionProcessor)
-        {
-            await tenantExecutor.ExecuteByTenantAsync(TenantId, async () =>
-            {
-                StateflowsContext? resumedContext = null;
-                using var storageScope = GrainStorageBridge.EnterScope(
-                    () => Task.FromResult(streamLiveContext ?? committedContext ?? new StateflowsContext(BehaviorId)),
-                    context =>
-                    {
-                        resumedContext = context;
-                        return Task.CompletedTask;
-                    });
-                try
-                {
-                    if (await recoveredSessionProcessor.ResumeCheckpointedActivityAsync(BehaviorId))
-                    {
-                        // Recovery runs as its own unit; later ordinary events use the regular per-event path.
-                        await recoveredSessionProcessor.EndActivitySessionAsync(BehaviorId, persist: true);
-                        if (resumedContext != null)
-                            await CommitAsync(resumedContext);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    logger.LogError(exception, "Failed to resume checkpointed Activity work for {BehaviorId}.", BehaviorId);
-                }
-            });
         }
     }
 
@@ -170,7 +161,193 @@ internal class StateflowsBehavior(
         }
     }
 
-    public async Task<OrleansRequestResult> ProcessEventAsync(
+    public Task<OrleansRequestResult> ProcessEventAsync(
+        OrleansEventHolder eventHolder, CancellationToken cancellationToken)
+        => RunEventTransactionAsync(eventHolder, cancellationToken, join: false);
+
+    public Task<OrleansRequestResult> ProcessJoinedEventAsync(
+        OrleansEventHolder eventHolder, CancellationToken cancellationToken)
+        => RunEventTransactionAsync(eventHolder, cancellationToken, join: true);
+
+    private async Task<OrleansRequestResult> RunEventTransactionAsync(
+        OrleansEventHolder eventHolder, CancellationToken cancellationToken, bool join)
+    {
+        using var lifetime = transactionWork.TryEnter();
+        if (lifetime == null)
+            return new RequestResult(null, EventStatus.Overloaded, new EventValidation(true));
+        if (join && TransactionContext.GetTransactionInfo() == null)
+            throw new InvalidOperationException("JoinTransaction requires an active sender transaction.");
+        if (join && HasActiveStream())
+            throw new InvalidOperationException("Joining a transaction is not supported by an Activity with an active stream.");
+
+        // A live network cannot roll back its concurrent firings; only its durable snapshots use transactions.
+        if (!join && HasActiveStream())
+        {
+            Interlocked.Increment(ref executingEvents);
+            try
+            {
+                return await ProcessEventCoreAsync(eventHolder, cancellationToken);
+            }
+            catch (OrleansTransactionAbortedException exception)
+            {
+                logger.LogWarning(exception, "The durable operation for live Activity {BehaviorId} aborted.", BehaviorId);
+                return new RequestResult(null, EventStatus.Aborted, new EventValidation(true));
+            }
+            catch (OrleansTransactionException exception)
+            {
+                ReportUnknownTransaction(exception);
+                throw;
+            }
+            finally
+            {
+                Interlocked.Decrement(ref executingEvents);
+            }
+        }
+
+        var previousContext = committedContext;
+        var previousState = contextState.State;
+        var previousTransactionScope = activeTransactionScope;
+        OrleansRequestResult result = new RequestResult(null, EventStatus.Aborted, new EventValidation(true));
+        var rootFailed = false;
+        var childAborted = false;
+        Exception? childInfrastructureFailure = null;
+        Exception? executionFailure = null;
+        BehaviorContextState? transactionEntryState = null;
+        int? unsupportedVersion = null;
+        Interlocked.Increment(ref executingEvents);
+        if (join)
+            Interlocked.Increment(ref joinedExecutions);
+        try
+        {
+            await transactions.RunTransaction(join ? TransactionOption.Join : TransactionOption.Create, async () =>
+            {
+                using var scope = new BehaviorTransactionScope(HasActiveStream);
+                scope.Enter();
+                activeTransactionScope = scope;
+                try
+                {
+                    await contextState.ReadStateAsync();
+                    transactionEntryState = contextState.State;
+                    committedContext = contextState.RecordExists
+                        ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextState.State.Payload)
+                        : null;
+                    if (committedContext != null && !catalog.Supports(BehaviorId.BehaviorClass, committedContext.Version))
+                    {
+                        unsupportedVersion = committedContext.Version;
+                        return true;
+                    }
+                    await RecoverActivityAsync();
+                    result = await ProcessEventCoreAsync(eventHolder, cancellationToken);
+                }
+                catch (Exception exception)
+                {
+                    executionFailure = exception;
+                    throw;
+                }
+                rootFailed = result.Status == EventStatus.Failed;
+                var transaction = TransactionContext.GetRequiredTransactionInfo();
+                transaction.ReconcilePending();
+                childAborted = !transaction.TryToCommit || transaction.OriginalException != null;
+                childInfrastructureFailure = scope.InfrastructureFailure ?? (transaction.OriginalException == null
+                    ? null
+                    : StateflowsInfrastructureException.GetFailure(transaction.MustAbort(transactionExceptionSerializer)));
+                childAborted |= childInfrastructureFailure != null;
+                return !rootFailed && !childAborted;
+            });
+        }
+        catch (OrleansTransactionAbortedException exception)
+        {
+            var infrastructureFailure = StateflowsInfrastructureException.GetFailure(executionFailure);
+            if (executionFailure != null &&
+                (executionFailure is not OrleansTransactionException || infrastructureFailure != null))
+            {
+                if (!join)
+                {
+                    contextState.State = transactionEntryState ?? previousState;
+                    committedContext = contextState.RecordExists
+                        ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextState.State.Payload)
+                        : null;
+                    Interlocked.Increment(ref reconciliationVersion);
+                }
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(infrastructureFailure ?? executionFailure).Throw();
+            }
+            logger.LogWarning(exception, "Transaction for {BehaviorId} aborted.", BehaviorId);
+            result = new RequestResult(null, rootFailed ? EventStatus.Failed : EventStatus.Aborted, new EventValidation(true));
+        }
+        catch (OrleansTransactionException exception)
+        {
+            ReportUnknownTransaction(exception);
+            throw;
+        }
+        finally
+        {
+            activeTransactionScope = previousTransactionScope;
+            Interlocked.Decrement(ref executingEvents);
+            if (join)
+            {
+                Interlocked.Decrement(ref joinedExecutions);
+                Interlocked.Increment(ref reconciliationVersion);
+                committedContext = previousContext;
+                contextState.State = previousState;
+            }
+        }
+
+        if (unsupportedVersion is int version)
+        {
+            logger.LogWarning("Activation {ActivationId} rejects {BehaviorId}: this silo does not host version {Version}.",
+                GrainContext.ActivationId, BehaviorId, version);
+            if (!join)
+            {
+                Timer?.Dispose();
+                MigrateOnIdle();
+            }
+            throw new InvalidOperationException($"This silo does not host version {version} of '{BehaviorId}'.");
+        }
+
+        if (!join)
+        {
+            if (rootFailed)
+                result = new RequestResult(null, EventStatus.Failed, new EventValidation(true));
+            else if (childAborted)
+                result = new RequestResult(null, EventStatus.Aborted, new EventValidation(true));
+            if (result.Status is EventStatus.Failed or EventStatus.Aborted)
+            {
+                contextState.State = transactionEntryState ?? previousState;
+                committedContext = contextState.RecordExists
+                    ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextState.State.Payload)
+                    : null;
+            }
+            await ReconcileAsync();
+            if (!rootFailed && childInfrastructureFailure != null)
+            {
+                if (childInfrastructureFailure is OrleansTransactionException transactionException)
+                    ReportUnknownTransaction(transactionException);
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(childInfrastructureFailure).Throw();
+            }
+            await DrainOutboxAsync();
+        }
+        return result;
+    }
+
+    private void ReportUnknownTransaction(OrleansTransactionException exception)
+    {
+        commitOutcomeUnknown = true;
+        StateflowsOrleansDiagnostics.PersistenceFailed("Stateflows.BehaviorContext", BehaviorId.BehaviorClass);
+        logger.LogError(exception, "The transaction outcome for {BehaviorId} could not be confirmed; the activation will be discarded.", BehaviorId);
+        DeactivateOnIdle();
+    }
+
+    private void ValidateCommittedVersion()
+    {
+        if (committedContext != null && !catalog.Supports(BehaviorId.BehaviorClass, committedContext.Version))
+        {
+            Timer?.Dispose();
+            MigrateOnIdle();
+            throw new InvalidOperationException($"This silo does not host version {committedContext.Version} of '{BehaviorId}'.");
+        }
+    }
+
+    private async Task<OrleansRequestResult> ProcessEventCoreAsync(
         OrleansEventHolder orleansEventHolder, CancellationToken cancellationToken)
     {
         var previousIncomingEvent = incomingEvent.Value;
@@ -319,6 +496,8 @@ internal class StateflowsBehavior(
 
             var validation = await eventHolder.ValidateAsync(Validators);
 
+            // Tenant executors may log and swallow callbacks; transaction failures must reach the coordinator.
+            Exception? infrastructureFailure = null;
             await tenantExecutor.ExecuteByTenantAsync(TenantId, async () =>
             {
                 try
@@ -334,22 +513,25 @@ internal class StateflowsBehavior(
                         await CommitAsync(context);
                     }
                 }
+                catch (Exception exception) when (commitOutcomeUnknown ||
+                    exception is OrleansTransactionException or StateflowsInfrastructureException)
+                {
+                    infrastructureFailure = exception;
+                    throw;
+                }
                 catch (Exception exception)
                 {
                     logger.LogError(exception, "Failed to execute Stateflows behavior {BehaviorId}.", BehaviorId);
                     status = EventStatus.Failed;
                 }
             });
+            if (infrastructureFailure != null)
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(infrastructureFailure).Throw();
 
             return new RequestResult(eventHolder.GetResponseHolder(), status, eventHolder.Validation);
         }
         finally
         {
-            if (checkpointRequestedByCall && status != EventStatus.Failed && committedContext != null)
-            {
-                lock (streamSync)
-                    streamLiveContext = StateflowsJsonConverter.Clone(committedContext);
-            }
             incomingEvent.Value = previousIncomingEvent;
             ResponseHolder.ClearResponses();
             if (queuedFinalize)
@@ -404,9 +586,26 @@ internal class StateflowsBehavior(
     public async Task<OrleansRequestResult> StreamEventAsync(
         OrleansEventHolder orleansEventHolder, CancellationToken cancellationToken)
     {
+        using var lifetime = transactionWork.TryEnter();
+        if (lifetime == null)
+            return new RequestResult(null, EventStatus.Overloaded, new EventValidation(true));
+        if (((EventHolder)orleansEventHolder).Headers.Values.Any(header => header is JoinTransaction))
+            throw new InvalidOperationException("Stream admission cannot join a transaction.");
         await streamAdmissionGate.WaitAsync(cancellationToken);
         try
         {
+            if (!stateInitialized)
+            {
+                await contextState.RunIndependentAsync(async () =>
+                {
+                    await contextState.ReadStateAsync();
+                    committedContext = contextState.RecordExists
+                        ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextState.State.Payload)
+                        : null;
+                });
+                ValidateCommittedVersion();
+                await RecoverActivityAsync();
+            }
             return await AdmitStreamEventAsync(orleansEventHolder, cancellationToken);
         }
         finally
@@ -418,6 +617,10 @@ internal class StateflowsBehavior(
     private async Task<OrleansRequestResult> AdmitStreamEventAsync(
         OrleansEventHolder orleansEventHolder, CancellationToken cancellationToken)
     {
+        if (System.Threading.Volatile.Read(ref joinedExecutions) > 0 ||
+            activeTransactionScope?.HasJoinedCalls == true ||
+            Interlocked.Read(ref reconciliationVersion) != Interlocked.Read(ref reconciledVersion))
+            return new RequestResult(null, EventStatus.Rejected, new EventValidation(true));
         EventHolder original = orleansEventHolder;
         if (BehaviorId.Type != BehaviorType.Activity ||
             original.BoxedPayload is not TokensInputEvent ||
@@ -528,6 +731,7 @@ internal class StateflowsBehavior(
                 lease = null!;
                 if (streamPumpCompletion == null)
                 {
+                    streamLiveContext = sessionProcessor.GetActivitySessionContext(BehaviorId) ?? streamLiveContext;
                     streamPumpCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                     streamGeneration++;
                     _ = DrainStreamQueueAsync(streamPumpCompletion, streamGeneration);
@@ -547,6 +751,12 @@ internal class StateflowsBehavior(
         lock (streamSync)
             return streamPumpCompletion != null;
     }
+
+    private StateflowsContext? GetLiveActivityContext()
+        => Processors.TryGetValue(BehaviorType.Activity, out var processor) &&
+            processor is IActivityStreamSessionProcessor sessionProcessor
+                ? sessionProcessor.GetActivitySessionContext(BehaviorId) ?? streamLiveContext
+                : streamLiveContext;
 
     private async Task<StateflowsContext?> EndActivitySessionAsync(StateflowsContext checkpoint, bool persist = true)
     {
@@ -573,23 +783,16 @@ internal class StateflowsBehavior(
             runtimeOptions.Value.SuspendActivityCheckpointResumeForTesting)
             return;
 
-        StateflowsContext? resumedContext = null;
         using var storageScope = GrainStorageBridge.EnterScope(
             () => Task.FromResult(streamLiveContext ?? committedContext ?? new StateflowsContext(BehaviorId)),
             context =>
             {
-                resumedContext = context;
                 lock (streamSync)
-                    streamLiveContext = StateflowsJsonConverter.Clone(context);
+                    streamLiveContext = context;
                 return Task.CompletedTask;
             });
         await tenantExecutor.ExecuteByTenantAsync(TenantId,
             () => sessionProcessor.ResumeCheckpointedActivityAsync(BehaviorId));
-        if (resumedContext != null)
-        {
-            lock (streamSync)
-                streamLiveContext = StateflowsJsonConverter.Clone(resumedContext);
-        }
     }
 
     private static EventHolder CopyEnvelope(EventHolder source, TokensInputEvent payload)
@@ -601,6 +804,87 @@ internal class StateflowsBehavior(
         result.SentAt = source.SentAt;
         result.TimeToLive = source.TimeToLive;
         return result;
+    }
+
+    private async Task RecoverActivityAsync()
+    {
+        if (stateInitialized)
+            return;
+        indexed = committedContext != null && !contextState.State.Tombstone;
+        if (BehaviorId.Type != BehaviorType.Activity || committedContext == null ||
+            !Processors.TryGetValue(BehaviorType.Activity, out var processor) ||
+            processor is not IActivityStreamSessionProcessor sessionProcessor)
+        {
+            stateInitialized = true;
+            return;
+        }
+
+        StateflowsContext? recovered = null;
+        using var scope = GrainStorageBridge.EnterScope(
+            () => Task.FromResult(committedContext),
+            context =>
+            {
+                recovered = context;
+                return Task.CompletedTask;
+            });
+        await tenantExecutor.ExecuteByTenantAsync(TenantId, async () =>
+        {
+            if (await sessionProcessor.ResumeCheckpointedActivityAsync(BehaviorId))
+            {
+                await sessionProcessor.EndActivitySessionAsync(BehaviorId, persist: true);
+                if (recovered != null)
+                    await CommitAsync(recovered);
+            }
+        });
+        stateInitialized = true;
+    }
+
+    private async Task PollRuntimeAsync(CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            (Func<Task> Work, TaskCompletionSource Completion) pending;
+            lock (streamSync)
+            {
+                if (!handedOffWork.TryDequeue(out pending))
+                    break;
+            }
+            _ = CompleteHandedOffWorkAsync(pending.Work, pending.Completion);
+        }
+        if (transactionWork.IsStopping)
+            return;
+        await PollActivityTimeEventsAsync(cancellationToken);
+        if (HasActiveStream() || System.Threading.Volatile.Read(ref executingEvents) != 0)
+            return;
+        var version = Interlocked.Read(ref reconciliationVersion);
+        if (stateInitialized && version == Interlocked.Read(ref reconciledVersion))
+            return;
+        var snapshot = await contextState.ReadSnapshotAsync();
+        if (HasActiveStream() || System.Threading.Volatile.Read(ref executingEvents) != 0 ||
+            version != Interlocked.Read(ref reconciliationVersion))
+            return;
+        contextState.State = snapshot;
+        committedContext = contextState.RecordExists
+            ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextState.State.Payload)
+            : null;
+        ValidateCommittedVersion();
+        await RecoverActivityAsync();
+        await ReconcileAsync();
+        await DrainOutboxAsync();
+        Interlocked.Exchange(ref reconciledVersion, version);
+    }
+
+    private static async Task CompleteHandedOffWorkAsync(Func<Task> work, TaskCompletionSource completion)
+    {
+        try
+        {
+            await work();
+            completion.TrySetResult();
+        }
+        catch (Exception exception)
+        {
+            completion.TrySetException(exception);
+        }
     }
 
     private async Task PollActivityTimeEventsAsync(CancellationToken cancellationToken)
@@ -692,7 +976,7 @@ internal class StateflowsBehavior(
         lock (streamSync)
         {
             streamFinalizationRequested = true;
-            streamFinalizeContext = streamLiveContext;
+            streamFinalizeContext = GetLiveActivityContext();
             streamLiveContext = null;
             while (streamQueue.TryDequeue(out var pending))
                 ReleaseAdmittedStreamEvent(pending);
@@ -756,6 +1040,8 @@ internal class StateflowsBehavior(
         await Task.Yield();
         try
         {
+            using var lifetime = transactionWork.TryEnter(allowDuringShutdown: true)
+                ?? throw new Orleans.Runtime.SiloUnavailableException("The silo is stopping; a new stream pump cannot start.");
             while (true)
             {
                 AdmittedStreamEvent? work = null;
@@ -962,7 +1248,18 @@ internal class StateflowsBehavior(
         }
 
         EventHolder? trigger = incomingEvent.Value is OrleansEventHolder incoming ? incoming : null;
-        var execution = RunHandedOffActivityWorkAsync(work, generation, trigger);
+        Task execution;
+        if (TransactionContext.GetTransactionInfo() != null)
+        {
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (streamSync)
+                handedOffWork.Enqueue((() => RunHandedOffActivityWorkAsync(work, generation, trigger), completion));
+            execution = completion.Task;
+        }
+        else
+        {
+            execution = RunHandedOffActivityWorkAsync(work, generation, trigger);
+        }
         lock (streamSync)
         {
             streamExecutions.Add(execution);
@@ -1000,10 +1297,10 @@ internal class StateflowsBehavior(
                     hydrateAsync: () => Task.FromResult(streamLiveContext ?? committedContext ?? new StateflowsContext(BehaviorId)),
                     dehydrateAsync: context =>
                     {
-                        if (generation == Interlocked.Read(ref streamGeneration))
+                        lock (streamSync)
                         {
-                            lock (streamSync)
-                                streamLiveContext = StateflowsJsonConverter.Clone(context);
+                            if (generation == Interlocked.Read(ref streamGeneration))
+                                streamLiveContext = context;
                         }
                         return Task.CompletedTask;
                     });
@@ -1084,7 +1381,18 @@ internal class StateflowsBehavior(
             using var staging = new Stateflows.Common.Classes.StagingBag(() =>
                 Processors.TryGetValue(BehaviorType.Activity, out var currentProcessor) &&
                 currentProcessor is IActivityStreamSessionProcessor currentSession &&
-                currentSession.IsCurrentActivityInvocationStreamed(BehaviorId));
+                currentSession.IsCurrentActivityInvocationStreamed(BehaviorId),
+                stageDurably: (destination, envelope) =>
+                {
+                    if (envelope.Headers.Values.Any(header => header is JoinTransaction))
+                        throw new InvalidOperationException("A staged send cannot join a transaction which has already committed.");
+                    envelope.SenderId = BehaviorId;
+                    envelope.SentAt = DateTime.UtcNow;
+                    envelope.TimeToLive = envelope.PayloadType.GetCustomAttributes(typeof(TimeToLiveAttribute), true)
+                        .OfType<TimeToLiveAttribute>().FirstOrDefault()?.SecondsToLive
+                        ?? envelope.Headers.Values.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0;
+                    OutboxPublicationScope.EnqueueSend(StateflowsGrainKeys.ForBehavior(TenantId, destination), envelope);
+                });
             using var publications = new Stateflows.Common.Engine.PublicationScope(
                 runtimeOwned: true,
                 dispatchGuard: () => streamExecutionGeneration.Value is not long generation ||
@@ -1103,11 +1411,13 @@ internal class StateflowsBehavior(
                 dehydrateAsync: context =>
                 {
                     pendingContext = context;
-                    if (streamExecutionGeneration.Value is long generation &&
-                        generation == Interlocked.Read(ref streamGeneration))
+                    if (streamExecutionGeneration.Value is long generation)
                     {
                         lock (streamSync)
-                            streamLiveContext = StateflowsJsonConverter.Clone(context);
+                        {
+                            if (generation == Interlocked.Read(ref streamGeneration))
+                                streamLiveContext = context;
+                        }
                     }
                     return Task.CompletedTask;
                 }
@@ -1119,6 +1429,8 @@ internal class StateflowsBehavior(
                 foreach (var exception in exceptions)
                 {
                     logger.LogError(exception, "Stateflows behavior {BehaviorId} reported an execution error.", BehaviorId);
+                    if (exception is OrleansTransactionException or StateflowsInfrastructureException)
+                        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw();
                 }
                 if (streamExecutionGeneration.Value.HasValue &&
                     (result == EventStatus.Failed || exceptions.Count > 0))
@@ -1144,14 +1456,10 @@ internal class StateflowsBehavior(
                 }
             }
 
-            if (result != EventStatus.Failed && exceptions.Count == 0)
-                await staging.ExecuteBeforeCommitAsync();
-
             if (streamExecutionGeneration.Value is long activeGeneration)
             {
-                if (activeGeneration == Interlocked.Read(ref streamGeneration) && pendingContext != null)
-                    streamLiveContext = StateflowsJsonConverter.Clone(pendingContext);
-                else if (streamFinalizationRequested && streamFinalizeContext == null && pendingContext != null)
+                if (activeGeneration != Interlocked.Read(ref streamGeneration) &&
+                    streamFinalizationRequested && streamFinalizeContext == null && pendingContext != null)
                     streamFinalizeContext = pendingContext;
                 if (activeGeneration == Interlocked.Read(ref streamGeneration))
                 {
@@ -1195,7 +1503,7 @@ internal class StateflowsBehavior(
                         if (pendingContext != null)
                         {
                             lock (streamSync)
-                                streamLiveContext = StateflowsJsonConverter.Clone(pendingContext);
+                                streamLiveContext = pendingContext;
                         }
 
                         if (eventHolder.Headers.Values.OfType<ActivitySessionExecution>().Any(header => header.Checkpoint) &&
@@ -1204,9 +1512,12 @@ internal class StateflowsBehavior(
                             pendingContext ??= CloneCommittedContext();
                             if (incomingEvent.Value.HasValue && NotificationDeliveryStatuses.IsAcknowledged(result))
                                 RecordEventReceipt(pendingContext);
-                            await CommitAsync(pendingContext, staged);
-                            lock (streamSync)
-                                streamLiveContext = StateflowsJsonConverter.Clone(pendingContext);
+                            // The barrier has drained streamed firings, but this session can resume after the commit.
+                            // Keep its mutable context separate from the committed baseline.
+                            var checkpointContext = StateflowsJsonConverter.Clone(pendingContext);
+                            checkpointContext.Stored = pendingContext.Stored;
+                            checkpointContext.Deleted = pendingContext.Deleted;
+                            await CommitAsync(checkpointContext, staged);
                         }
                         else if (incomingEvent.Value.HasValue && NotificationDeliveryStatuses.IsAcknowledged(result))
                         {
@@ -1306,9 +1617,23 @@ internal class StateflowsBehavior(
 
     private async Task PublishActivityStreamFailureAsync(EventHolder eventHolder, IEnumerable<Exception> exceptions)
     {
-        var context = StateflowsJsonConverter.Clone(
-            streamLiveContext ?? committedContext ?? new StateflowsContext(BehaviorId));
-        context.Id = BehaviorId;
+        var source = GetLiveActivityContext() ?? committedContext ?? new StateflowsContext(BehaviorId);
+        // Diagnostic interceptors get detached metadata and values, not a copy of concurrently changing marking.
+        var context = new StateflowsContext(BehaviorId)
+        {
+            Version = source.Version,
+            Status = source.Status,
+            LastExecutedAt = source.LastExecutedAt,
+            ContextOwnerId = source.ContextOwnerId,
+            ContextParentId = source.ContextParentId,
+            Stored = source.Stored,
+            Deleted = source.Deleted
+        };
+        lock (source.GlobalValues)
+        {
+            foreach (var value in source.GlobalValues)
+                context.GlobalValues.Add(value.Key, value.Value);
+        }
         using var publications = new Stateflows.Common.Engine.PublicationScope(
             runtimeOwned: true,
             dispatchGuard: () => streamExecutionGeneration.Value is not long generation ||
@@ -1487,6 +1812,20 @@ internal class StateflowsBehavior(
 
     private async Task CommitAsync(StateflowsContext context, OutboxPublication[]? publications = null)
     {
+        if (TransactionContext.GetTransactionInfo() == null)
+        {
+            await contextState.RunIndependentAsync(async () =>
+            {
+                await contextState.ReadStateAsync();
+                committedContext = contextState.RecordExists
+                    ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextState.State.Payload)
+                    : null;
+                await CommitAsync(context, publications);
+            });
+            await ReconcileAsync();
+            return;
+        }
+
         var previousTrigger = GetScheduledTrigger(committedContext);
         var trigger = GetScheduledTrigger(context);
         var live = !IsStatelessAction() && IsLive(context);
@@ -1511,11 +1850,13 @@ internal class StateflowsBehavior(
                 try
                 {
                     await this.RegisterOrUpdateReminder(OutboxReminderName, ReminderPeriod, ReminderPeriod);
+                    outboxWakeupRegistered = true;
                 }
-                catch
+                catch (Exception exception)
                 {
                     StateflowsOrleansDiagnostics.ReminderFailed("outbox-register", BehaviorId.BehaviorClass);
-                    throw;
+                    logger.LogError(exception, "Failed to register the outbox reminder for {BehaviorId}.", BehaviorId);
+                    throw new StateflowsInfrastructureException("Failed to register the behavior outbox reminder.", exception);
                 }
             }
             await CommitContextAsync(context, publications);
@@ -1525,6 +1866,9 @@ internal class StateflowsBehavior(
             await RestoreReminderAsync(previousTrigger, trigger);
             throw;
         }
+
+        if (TransactionContext.GetTransactionInfo() != null)
+            return;
 
         if (trigger == null && (!registrationKnown ? previousTrigger != null : registeredTrigger != null))
         {
@@ -1541,48 +1885,91 @@ internal class StateflowsBehavior(
 
     private async Task DrainOutboxAsync()
     {
+        if (TransactionContext.GetTransactionInfo() != null)
+            return;
         if (commitOutcomeUnknown)
             return;
-
+        await outboxDrainGate.WaitAsync();
         try
         {
-            while (contextState.State.Outbox.Count > 0)
+            while (true)
             {
-                var publication = contextState.State.Outbox[0];
+                var snapshot = await contextState.ReadSnapshotAsync();
+                var publication = snapshot.Outbox.FirstOrDefault();
+                if (publication == null)
+                    break;
+                if (publication.DestinationKey != null)
+                {
+                    _ = KickOutboxWorkerAsync();
+                    return;
+                }
                 await GrainFactory.GetGrain<ISubscriptionsGrain>(publication.PublisherKey)
                     .PublishOutboxAsync(this.GetPrimaryKeyString(), publication.Sequence, publication.Notifications);
-
-                var previous = contextState.State;
-                contextState.State = new BehaviorContextState
-                {
-                    Payload = previous.Payload,
-                    Tombstone = previous.Tombstone,
-                    LastPublicationSequence = previous.LastPublicationSequence,
-                    Outbox = previous.Outbox.Skip(1).ToList()
-                };
-                try
-                {
-                    await contextState.WriteStateAsync();
-                }
-                catch
-                {
-                    contextState.State = previous;
-                    commitOutcomeUnknown = true;
-                    StateflowsOrleansDiagnostics.PersistenceFailed("Stateflows.BehaviorContext", BehaviorId.BehaviorClass);
-                    DeactivateOnIdle();
-                    throw;
-                }
+                await contextState.RemovePublicationAsync(publication.Sequence);
             }
-
+            if (!outboxWakeupRegistered)
+                return;
             var reminder = await this.GetReminder(OutboxReminderName);
             if (reminder != null)
                 await this.UnregisterReminder(reminder);
+            outboxWakeupRegistered = false;
         }
         catch (Exception exception)
         {
+            if (exception is OrleansTransactionException transactionException &&
+                exception is not OrleansTransactionAbortedException)
+                ReportUnknownTransaction(transactionException);
             StateflowsOrleansDiagnostics.PublicationFailed("outbox");
             logger.LogError(exception, "Failed to drain notification outbox of {BehaviorId}; committed publications will be retried.", BehaviorId);
         }
+        finally
+        {
+            outboxDrainGate.Release();
+        }
+    }
+
+    private async Task ReconcileAsync()
+    {
+        var trigger = GetScheduledTrigger(committedContext);
+        if (trigger.HasValue && (!registrationKnown || registeredTrigger != trigger))
+            await RegisterReminderAsync(trigger.Value);
+        else if (!trigger.HasValue && registeredTrigger.HasValue && registrationKnown)
+            await TryUnregisterReminderAsync();
+        var live = committedContext != null && !IsStatelessAction() && IsLive(committedContext);
+        if (live && !indexed)
+            await AddToIndexAsync();
+        else if (!live && indexed)
+            await TryRemoveFromIndexAsync();
+    }
+
+    private async Task KickOutboxWorkerAsync()
+    {
+        await Task.Yield();
+        try
+        {
+            await GrainFactory.GetGrain<IBehaviorOutboxGrain>(this.GetPrimaryKeyString()).DrainAsync();
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Staged sends for {BehaviorId} remain pending after delivery failure.", BehaviorId);
+        }
+    }
+
+    public async Task<OutboxPublication?> GetNextOutboxPublicationAsync()
+    {
+        var snapshot = await contextState.ReadSnapshotAsync();
+        var publication = snapshot.Outbox.FirstOrDefault();
+        if (publication == null && outboxWakeupRegistered)
+            await DrainOutboxAsync();
+        return publication;
+    }
+
+    public async Task ConfirmOutboxPublicationAsync(long sequence)
+    {
+        await contextState.RemovePublicationAsync(sequence);
+        var snapshot = await contextState.ReadSnapshotAsync();
+        if (snapshot.Outbox.Count == 0)
+            await DrainOutboxAsync();
     }
 
     private IInstancesGrain InstancesIndex
@@ -1599,7 +1986,7 @@ internal class StateflowsBehavior(
         {
             StateflowsOrleansDiagnostics.IndexFailed("add", BehaviorId.BehaviorClass);
             logger.LogError(exception, "Failed to add Stateflows behavior {BehaviorId} to the instance index; the event fails and can be retried.", BehaviorId);
-            throw;
+            throw new StateflowsInfrastructureException("Failed to add the behavior to the instance index.", exception);
         }
     }
 
@@ -1619,6 +2006,8 @@ internal class StateflowsBehavior(
 
     public override async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
     {
+        deactivating = true;
+        Timer?.Dispose();
         stoppingStreamAdmission = true;
         if (Processors.TryGetValue(BehaviorType.Activity, out var hostingProcessor) &&
             hostingProcessor is IActivityStreamSessionProcessor hostingSessionProcessor)
@@ -1630,6 +2019,8 @@ internal class StateflowsBehavior(
         Task? streamDrain;
         lock (streamSync)
         {
+            while (handedOffWork.TryDequeue(out var pendingWork))
+                pendingWork.Completion.TrySetCanceled();
             while (streamQueue.TryDequeue(out var pending))
                 ReleaseAdmittedStreamEvent(pending);
             while (streamNextEpochQueue.TryDequeue(out var pending))
@@ -1711,10 +2102,11 @@ internal class StateflowsBehavior(
                 dueTime > TimeSpan.Zero ? dueTime : TimeSpan.Zero,
                 ReminderPeriod);
         }
-        catch
+        catch (Exception exception)
         {
             StateflowsOrleansDiagnostics.ReminderFailed("register", BehaviorId.BehaviorClass);
-            throw;
+            logger.LogError(exception, "Failed to register the time trigger reminder for {BehaviorId}.", BehaviorId);
+            throw new StateflowsInfrastructureException("Failed to register the behavior time trigger reminder.", exception);
         }
         registeredTrigger = trigger;
         registrationKnown = true;
@@ -1763,9 +2155,18 @@ internal class StateflowsBehavior(
 
     public async Task ReceiveReminder(string reminderName, TickStatus status)
     {
+        if (transactionWork.IsStopping)
+        {
+            logger.LogDebug("Reminder {ReminderName} for {BehaviorId} will be retried after silo shutdown.", reminderName, BehaviorId);
+            return;
+        }
         if (reminderName == OutboxReminderName)
         {
-            await DrainOutboxAsync();
+            outboxWakeupRegistered = true;
+            if (Interlocked.Read(ref reconciliationVersion) != Interlocked.Read(ref reconciledVersion))
+                _ = KickOutboxWorkerAsync();
+            else
+                await DrainOutboxAsync();
             return;
         }
 
@@ -1773,6 +2174,11 @@ internal class StateflowsBehavior(
         {
             return;
         }
+
+        await contextState.ReadStateAsync();
+        committedContext = contextState.RecordExists
+            ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextState.State.Payload)
+            : null;
 
         if (HasActiveStream())
         {

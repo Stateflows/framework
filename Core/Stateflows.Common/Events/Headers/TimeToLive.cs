@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 namespace Stateflows.Common
 {
     /// <summary>Sets the maximum lifetime of an event delivery in seconds.</summary>
+    /// <remarks>For publications, zero disables history and subscription retries unless retained; ordinary event delivery expiry is unchanged.</remarks>
     public sealed class TimeToLive : EventHeader
     {
         /// <summary>Creates a time-to-live header whose seconds value can be assigned later.</summary>

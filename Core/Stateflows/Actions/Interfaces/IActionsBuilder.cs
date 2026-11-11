@@ -8,8 +8,8 @@ using Stateflows.Actions.Registration.Interfaces.Base;
 namespace Stateflows.Actions
 {
     /// <summary>Registers actions and global action observability services.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/actions">Actions documentation</seealso>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/observability">Observability documentation</seealso>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.6.-Actions">Actions documentation</seealso>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">Observability documentation</seealso>
     public interface IActionsBuilder : IActionObservability<IActionsBuilder>
     {
         /// <summary>Discovers action implementations and registrations in an assembly.</summary>

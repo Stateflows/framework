@@ -6,7 +6,7 @@ using Stateflows.Common;
 namespace Stateflows.StateMachines
 {
     /// <summary>A client handle for a state machine, including current-state queries and status notification watches.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/behaviors">behavior handles</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.-Behaviors">behavior handles</see>.</remarks>
     public interface IStateMachineBehavior : IBehavior
     {
         /// <summary>Requests lifecycle information and the current-state tree for this state machine.</summary>

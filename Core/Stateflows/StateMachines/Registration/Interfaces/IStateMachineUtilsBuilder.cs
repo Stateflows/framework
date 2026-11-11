@@ -4,5 +4,5 @@ namespace Stateflows.StateMachines;
 
 /// <summary>Configures machine-local middleware and utilities without exposing structural definition operations.
 /// </summary>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
 public interface IStateMachineUtilsBuilder : IStateMachineUtils<IStateMachineUtilsBuilder>;

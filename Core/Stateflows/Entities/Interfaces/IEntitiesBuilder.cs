@@ -6,7 +6,7 @@ using Stateflows.Entities.Registration.Interfaces;
 namespace Stateflows.Entities
 {
     /// <summary>Registers entity definitions and hooks in the Stateflows host.</summary>
-    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/entities">entity documentation</see>.</remarks>
+    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/5.7.-Entities">entity documentation</see>.</remarks>
     public interface IEntitiesBuilder
     {
         /// <summary>Discovers and registers entity definitions from an assembly.</summary>

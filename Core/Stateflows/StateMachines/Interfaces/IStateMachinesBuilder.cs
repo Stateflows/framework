@@ -7,8 +7,8 @@ namespace Stateflows.StateMachines
 {
     /// <summary>Registers state-machine classes and global state-machine middleware.</summary>
     /// <remarks>All registration methods return this builder. Global middleware wraps machine-local middleware.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/behaviors">registration</see>
-    /// and <see href="https://github.com/Stateflows/framework/wiki/observability">observability</see>.</remarks>
+    /// See <see href="https://github.com/Stateflows/framework/wiki/5.-Behaviors">registration</see>
+    /// and <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.</remarks>
     public interface IStateMachinesBuilder
     {
         /// <summary>Discovers and registers concrete typed state-machine definitions in an assembly.</summary>

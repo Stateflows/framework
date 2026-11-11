@@ -8,7 +8,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     /// <summary>Adds activity control and data nodes such as joins, forks, decisions, and data stores.</summary>
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
     public interface IActivitySpecials<out TReturn>
         where TReturn : class
     {
@@ -18,7 +18,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the join's outgoing flows. Its builder is scoped to the node or
         /// flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddJoin(string joinNodeName, JoinBuildAction buildAction)
             => ((BaseActivityBuilder)this)
@@ -37,7 +37,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the join's outgoing flows. Its builder is scoped to the node or
         /// flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddJoin(JoinBuildAction buildAction)
             => AddJoin(JoinNode.Name, buildAction);
@@ -49,7 +49,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the fork's outgoing flows. Its builder is scoped to the node or
         /// flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddFork(string forkNodeName, ForkBuildAction buildAction)
             => ((BaseActivityBuilder)this)
@@ -68,7 +68,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the fork's outgoing flows. Its builder is scoped to the node or
         /// flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddFork(ForkBuildAction buildAction)
             => AddFork(ForkNode.Name, buildAction);
@@ -80,7 +80,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the merge node's outgoing flows. Its builder is scoped to the
         /// node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddMerge(string mergeNodeName, MergeBuildAction buildAction)
             => ((BaseActivityBuilder)this)
@@ -99,7 +99,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the merge node's outgoing flows. Its builder is scoped to the
         /// node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddMerge(MergeBuildAction buildAction)
             => AddMerge(MergeNode.Name, buildAction);
@@ -111,7 +111,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the decision's outgoing guarded and fallback flows. Its builder
         /// is scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddControlDecision(string decisionNodeName, DecisionBuildAction buildAction)
             => ((BaseActivityBuilder)this)
@@ -131,7 +131,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the decision's outgoing guarded and fallback flows. Its builder
         /// is scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddControlDecision(DecisionBuildAction buildAction)
             => AddControlDecision(ControlDecisionNode.Name, buildAction);
@@ -145,7 +145,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="decisionBuildAction">Callback configuring the decision's outgoing guarded and fallback flows. Its
         /// builder is scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddDecision<TToken>(string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             => ((BaseActivityBuilder)this)
@@ -167,7 +167,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the decision's outgoing guarded and fallback flows. Its builder
         /// is scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddDecision<TToken>(DecisionBuildAction<TToken> buildAction)
             => AddDecision(DecisionNode<TToken>.Name, buildAction);
@@ -179,7 +179,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the data store's incoming and outgoing flows. Its builder is
         /// scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddDataStore(string dataStoreNodeName, DataStoreBuildAction buildAction)
             => ((BaseActivityBuilder)this)
@@ -198,7 +198,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the data store's incoming and outgoing flows. Its builder is
         /// scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddDataStore(DataStoreBuildAction buildAction)
             => AddDataStore(DataStoreNode.Name, buildAction);

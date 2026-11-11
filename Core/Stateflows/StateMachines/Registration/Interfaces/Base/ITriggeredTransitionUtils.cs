@@ -2,7 +2,7 @@
 {
     /// <summary>Identifies the utility capability of an event-triggered transition builder.</summary>
     /// <typeparam name="TReturn">The fluent transition builder type.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
     public interface ITriggeredTransitionUtils<out TReturn>
     {
         // /// <summary>

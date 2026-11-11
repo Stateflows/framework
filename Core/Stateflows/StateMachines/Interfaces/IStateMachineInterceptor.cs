@@ -6,7 +6,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 namespace Stateflows.StateMachines
 {
     /// <summary>Provides middleware around state-machine event processing, with explicit short-circuit and status replacement support.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/observability">observability</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.</remarks>
     public interface IStateMachineInterceptor
     {
         /// <summary>

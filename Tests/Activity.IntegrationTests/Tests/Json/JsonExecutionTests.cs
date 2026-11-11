@@ -8,6 +8,7 @@ using Stateflows.Activities.Json;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Json;
+using Stateflows.Entities.Enums;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests.Json;
@@ -109,7 +110,7 @@ public class JsonExecutionTests : StateflowsTestClass
                     ["kind"] = kind, ["name"] = "scope",
                     ["flows"] = new JArray(Flow("control", "done")),
                     ["nodes"] = new JArray(
-                        new JObject { ["kind"] = "input", ["flows"] = new JArray(Flow("object", "consume", "int")) },
+                        new JObject { ["kind"] = "inputPin", ["tokenType"] = "int", ["flows"] = new JArray(Flow("object", "consume", "int")) },
                         Node("consume", "consume"))
                 };
                 if (kind != "structured")
@@ -182,9 +183,9 @@ public class JsonExecutionTests : StateflowsTestClass
                     ["kind"] = "structured", ["name"] = "scope",
                     ["flows"] = new JArray(Flow("object", "consume", "int")),
                     ["nodes"] = new JArray(
-                        new JObject { ["kind"] = "input", ["flows"] = new JArray(Flow("object", "forward", "int")) },
+                        new JObject { ["kind"] = "inputPin", ["tokenType"] = "int", ["flows"] = new JArray(Flow("object", "forward", "int")) },
                         Node("forward", "forward", null, Flow("object", "result", "int")),
-                        new JObject { ["kind"] = "output", ["name"] = "result" })
+                        new JObject { ["kind"] = "outputPin", ["name"] = "result", ["tokenType"] = "int" })
                 },
                 Node("consume", "consume", null, Flow("control", "done")), Done()));
 
@@ -548,10 +549,10 @@ public class JsonExecutionTests : StateflowsTestClass
     public sealed class Publish(Trace trace) : IPublishEventActionNode<Message>, IConfigurable<int>
     {
         public int Configuration { private get; set; }
-        public Task<Message> GenerateEventAsync()
+        public Task<IEnumerable<Message>> GenerateEventsAsync()
         {
             trace.Entries.Enqueue("publish:" + Configuration);
-            return Task.FromResult(new Message { Value = Configuration });
+            return Task.FromResult<IEnumerable<Message>>([new Message { Value = Configuration }]);
         }
     }
 

@@ -103,7 +103,8 @@ public sealed partial class BehaviorNotificationTests
             var grain = host.Services.GetRequiredService<IGrainFactory>().GetGrain<IBehaviorGrain>(GetBehaviorGrainKey(id));
             storage.FailNextContextWrite(committedBeforeFailure);
             var input = CreateNotification(new PublishRetainedNotification { Value = 8 }, id);
-            Assert.AreEqual(EventStatus.Failed, (await grain.ProcessEventAsync(input, default)).Status);
+            await TransactionalStorageTestHelpers.AssertTransactionCommitFailureAsync(
+                () => grain.ProcessEventAsync(input, default), "Injected notifications storage");
             Assert.IsTrue(calls.Attempts.IsEmpty, "An unconfirmed local commit must never be dispatched.");
 
             await host.Services.GetRequiredService<IGrainFactory>().GetGrain<IManagementGrain>(0)

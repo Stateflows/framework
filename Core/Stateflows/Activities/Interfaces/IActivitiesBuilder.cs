@@ -7,8 +7,8 @@ using Stateflows.Activities.Registration.Interfaces;
 namespace Stateflows.Activities
 {
     /// <summary>Registers activities and global activity observability services.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activities">Activities documentation</seealso>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/observability">Observability documentation</seealso>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities">Activities documentation</seealso>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">Observability documentation</seealso>
     public interface IActivitiesBuilder
     {
         /// <summary>Discovers activity implementations and their registrations in an assembly.</summary>

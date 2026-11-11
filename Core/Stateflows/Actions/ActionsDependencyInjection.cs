@@ -40,7 +40,7 @@ namespace Stateflows.Actions
         /// <param name="buildAction">Callback that declares action registrations.</param>
         /// <returns>The Stateflows builder for further configuration.</returns>
         /// <remarks>Call during application configuration before the Stateflows builder is built.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/actions">Actions documentation</seealso>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.6.-Actions">Actions documentation</seealso>
         [DebuggerHidden]
         public static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction = null)
             => AddActions(stateflowsBuilder, buildAction, null, null).StateflowsBuilder;

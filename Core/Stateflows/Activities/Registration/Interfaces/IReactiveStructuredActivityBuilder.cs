@@ -3,14 +3,19 @@
 namespace Stateflows.Activities;
 
 /// <summary>Configures external object flows for a reactive structured activity.</summary>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
 public interface IReactiveStructuredActivityExternalsBuilder :
     IObjectFlowBase<IReactiveStructuredActivityBuilder>,
     IControlFlowBase<IReactiveStructuredActivityBuilder>,
-    INodeOptions<IReactiveStructuredActivityBuilder>;
+    INodeOptions<IReactiveStructuredActivityBuilder>
+{
+    /// <summary>Admits new arrivals into the active invocation. Mutually exclusive with Reentrant.</summary>
+    IReactiveStructuredActivityBuilder Interleave()
+        => UpdateOptions(options => options | NodeOptions.Interleave);
+}
 
 /// <summary>Configures a reactive structured activity's graph and external flows.</summary>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
 public interface IReactiveStructuredActivityBuilder :
     IReactiveStructuredActivityExternalsBuilder,
     // IObjectFlowBase<IReactiveStructuredActivityBuilder>,
@@ -29,16 +34,21 @@ public interface IReactiveStructuredActivityBuilder :
     IAcceptEventBase<IReactiveStructuredActivityBuilder>;
 
 /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-/// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
 public interface IOverridenReactiveStructuredActivityExternalsBuilder :
     IObjectFlowBase<IOverridenReactiveStructuredActivityBuilder>,
     IControlFlowBase<IOverridenReactiveStructuredActivityBuilder>,
-    INodeOptions<IOverridenReactiveStructuredActivityBuilder>;
+    INodeOptions<IOverridenReactiveStructuredActivityBuilder>
+{
+    /// <summary>Admits new arrivals into the active invocation. Mutually exclusive with Reentrant.</summary>
+    IOverridenReactiveStructuredActivityBuilder Interleave()
+        => UpdateOptions(options => options | NodeOptions.Interleave);
+}
 
 /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-/// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
 public interface IOverridenReactiveStructuredActivityBuilder :
     IOverridenReactiveStructuredActivityExternalsBuilder,
     // IObjectFlowBase<IOverridenReactiveStructuredActivityBuilder>,

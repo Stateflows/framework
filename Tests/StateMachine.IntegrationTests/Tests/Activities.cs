@@ -69,13 +69,13 @@ namespace StateMachine.IntegrationTests.Tests
                                                 }
                                             }
                                         },
-                                        b => b.AddFlow<bool, OutputNode>()
+                                        b => b.AddFlow<bool, OutputPin<bool>>()
                                     )
-                                    .AddOutput()
+                                    .AddOutputPin<bool>()
                                 )
                                 .AddEffectActivity(b => b
-                                    .AddInput(b => b
-                                        .AddFlow<SomeEvent>("main")
+                                    .AddInputPin<SomeEvent>(b => b
+                                        .AddFlow("main")
                                     )
                                     .AddAction("main", async c =>
                                     {
@@ -128,37 +128,6 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddState("second")
                     )
                 )   
-                // .AddActivities(b => b
-                //     .AddActivity("guard", b => b
-                //         .AddAcceptEventAction<SomeEvent>(
-                //             async c =>
-                //             {
-                //                 GuardRun = true;
-                //                 var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
-                //                 if (success)
-                //                 {
-                //                     Debug.WriteLine($"value: {value}");
-                //                     c.Output(value);
-                //                 }
-                //                 else
-                //                 {
-                //                     Debug.WriteLine($"value: not available");
-                //                 }
-                //             },
-                //             b => b.AddFlow<bool, OutputNode>()
-                //         )
-                //         .AddOutput()
-                //     )
-                //     .AddActivity("effect", b => b
-                //         .AddInput(b => b
-                //             .AddFlow<SomeEvent>("main")
-                //         )
-                //         .AddAction("main", async c =>
-                //         {
-                //             EffectRun = true;
-                //         })
-                //     )
-                // )
                 ;
         }
 

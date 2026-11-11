@@ -249,6 +249,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddInternalTransition<SomeEvent>(b => b
                                 .AddEffectActivity(b => b
+                                    .AddInputPin<SomeEvent>(_ => { })
                                     .AddInitial(b => b
                                         .AddControlFlow("effect")
                                     )
@@ -280,9 +281,9 @@ namespace StateMachine.IntegrationTests.Tests
                                         {
                                             c.Output(c.Event.TheresSomethingHappeningHere != string.Empty);
                                         },
-                                        b => b.AddFlow<bool, OutputNode>()
+                                        b => b.AddFlow<bool, OutputPin<bool>>()
                                     )
-                                    .AddOutput()
+                                    .AddOutputPin<bool>()
                                 )
                             )
                         )
@@ -294,9 +295,9 @@ namespace StateMachine.IntegrationTests.Tests
                                         {
                                             c.Output(true);
                                         },
-                                        b => b.AddFlow<bool, OutputNode>()
+                                        b => b.AddFlow<bool, OutputPin<bool>>()
                                     )
-                                    .AddOutput()
+                                    .AddOutputPin<bool>()
                                 )
                             )
                         )
@@ -308,6 +309,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddAcceptEventAction<SomeEvent, TypedAcceptEventAction>()
                     )
                     .AddActivity("integrated", b => b
+                        .AddInputPin<SomeEvent>(_ => { })
                         .AddInitial(b => b
                             .AddControlFlow("effect")
                         )
@@ -327,7 +329,7 @@ namespace StateMachine.IntegrationTests.Tests
                                 c.Output(c.Event.TheresSomethingHappeningHere != string.Empty);
                             },
                             b => b
-                                .AddFlow<bool, OutputNode>(b => b
+                                .AddFlow<bool, OutputPin<bool>>(b => b
                                     .SetWeight(0)
                                 )
                         )
@@ -337,11 +339,11 @@ namespace StateMachine.IntegrationTests.Tests
                                 c.Output(true);
                             },
                             b => b
-                                .AddFlow<bool, OutputNode>(b => b
+                                .AddFlow<bool, OutputPin<bool>>(b => b
                                     .SetWeight(0)
                                 )
                         )
-                        .AddOutput()
+                        .AddOutputPin<bool>()
                     )
                 )
                 ;

@@ -31,21 +31,21 @@ namespace Activity.IntegrationTests.Tests
             .AddAction("action3", async c => Action3Executed = true)
             .AddStructuredActivity<StructuredActivityForTest>(b => b
                 .AddInitial(b => b
-                    .AddControlFlow("action1")
+                    .AddControlFlow("structured-action1")
                 )
-                .AddAction("action1", async c => { })
+                .AddAction("structured-action1", async c => { })
             )
             .AddParallelActivity<int, ParallelActivityForTest>(b => b
                 .AddInitial(b => b
-                    .AddControlFlow("action1")
+                    .AddControlFlow("parallel-action1")
                 )
-                .AddAction("action1", async c => { })
+                .AddAction("parallel-action1", async c => { })
             )
             .AddIterativeActivity<int, IterativeActivityForTest>(b => b
                 .AddInitial(b => b
-                    .AddControlFlow("action1")
+                    .AddControlFlow("iterative-action1")
                 )
-                .AddAction("action1", async c => { })
+                .AddAction("iterative-action1", async c => { })
             )
         ;
     }
@@ -215,9 +215,9 @@ namespace Activity.IntegrationTests.Tests
         
         public static void Build(IStructuredActivityBuilder builder) => builder
             .AddInitial(b => b
-                .AddControlFlow("action1")
+                .AddControlFlow("structured-action1")
             )
-            .AddAction("action1", async c => ExecutionCompleted = true)
+            .AddAction("structured-action1", async c => ExecutionCompleted = true)
         ;
     }
 
@@ -226,8 +226,8 @@ namespace Activity.IntegrationTests.Tests
         public static int ExecutionCount = 0;
         
         public static void Build(IStructuredActivityBuilder builder) => builder
-            .AddInitial(b => b.AddControlFlow("action1"))
-            .AddAction("action1", async c => ExecutionCount++)
+            .AddInitial(b => b.AddControlFlow("parallel-action1"))
+            .AddAction("parallel-action1", async c => ExecutionCount++)
         ;
     }
 
@@ -236,8 +236,8 @@ namespace Activity.IntegrationTests.Tests
         public static int ExecutionCount = 0;
         
         public static void Build(IActivityBuilder builder) => builder
-            .AddInitial(b => b.AddControlFlow("action1"))
-            .AddAction("action1", async c => ExecutionCount++)
+            .AddInitial(b => b.AddControlFlow("iterative-action1"))
+            .AddAction("iterative-action1", async c => ExecutionCount++)
         ;
     }
     
@@ -445,10 +445,10 @@ namespace Activity.IntegrationTests.Tests
                     .AddActivity("overrideStructuredActivity", b => b
                         .UseActivity<BaseActivity>(b => b
                             .UseStructuredActivity<StructuredActivityForTest>(b => b
-                                .UseAction("action1", b => b
-                                    .AddControlFlow("action2")
+                                .UseAction("structured-action1", b => b
+                                    .AddControlFlow("structured-action2")
                                 )
-                                .AddAction("action2", async c => { })
+                                .AddAction("structured-action2", async c => { })
                             )
                         )
                     )
@@ -457,10 +457,10 @@ namespace Activity.IntegrationTests.Tests
                     .AddActivity("overrideParallelActivity", b => b
                         .UseActivity<BaseActivity>(b => b
                             .UseParallelActivity<int, ParallelActivityForTest>(b => b
-                                .UseAction("action1", b => b
-                                    .AddControlFlow("action2")
+                                .UseAction("parallel-action1", b => b
+                                    .AddControlFlow("parallel-action2")
                                 )
-                                .AddAction("action2", async c => { })
+                                .AddAction("parallel-action2", async c => { })
                             )
                         )
                     )
@@ -469,22 +469,14 @@ namespace Activity.IntegrationTests.Tests
                     .AddActivity("overrideIterativeActivity", b => b
                         .UseActivity<BaseActivity>(b => b
                             .UseIterativeActivity<int, IterativeActivityForTest>(b => b
-                                .UseAction("action1", b => b
-                                    .AddControlFlow("action2")
+                                .UseAction("iterative-action1", b => b
+                                    .AddControlFlow("iterative-action2")
                                 )
-                                .AddAction("action2", async c => { })
+                                .AddAction("iterative-action2", async c => { })
                             )
                         )
                     )
 
-                    // // UseActivity + UseInput tests
-                    // .AddActivity("overrideInput", b => b
-                    //     .UseActivity<BaseActivity>(b => b
-                    //         .UseInput(b => b
-                    //             .AddControlFlow("action1")
-                    //         )
-                    //     )
-                    // )
                 )
                 ;
         }
@@ -731,18 +723,5 @@ namespace Activity.IntegrationTests.Tests
             Assert.IsNotNull(a);
         }
 
-        // [TestMethod]
-        // public async Task UseInputOverride()
-        // {
-        //     BaseActivity.Action2Executed = false;
-        //     BaseActivity.Action3Executed = false;
-        //     
-        //     if (ActivityLocator.TryLocateActivity(new ActivityId("overrideInput", "x"), out var a))
-        //     {
-        //         await a.SendAsync(new Initialize());
-        //     }
-        //
-        //     Assert.IsNotNull(a);
-        // }
     }
 }

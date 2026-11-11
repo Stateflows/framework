@@ -18,6 +18,7 @@ public sealed partial class BehaviorNotificationTests
     public sealed class PublishCustomNotification
     {
         public string Text { get; set; } = string.Empty;
+        public int TimeToLive { get; set; }
     }
 
     public sealed class CustomNotification
@@ -62,7 +63,8 @@ public sealed partial class BehaviorNotificationTests
                         machine => machine
                             .AddInitialState("idle", state => state
                                 .AddInternalTransition<PublishCustomNotification>(t => t
-                                    .AddEffect(c => c.Behavior.Publish(new CustomNotification { Text = c.Event.Text })))
+                                    .AddEffect(c => c.Behavior.PublishTimed(
+                                        new CustomNotification { Text = c.Event.Text }, c.Event.TimeToLive)))
                                 .AddInternalTransition<PublishAnotherNotification>(t => t
                                     .AddEffect(c =>
                                         c.Behavior.Publish(new AnotherNotification { Count = c.Event.Count })))

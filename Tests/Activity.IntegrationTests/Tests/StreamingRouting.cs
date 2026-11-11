@@ -22,7 +22,7 @@ public sealed class StreamingRouting
     {
         var probe = new ModeProbe();
         await using var harness = await Harness.CreateAsync(activity => activity
-            .AddInput(input => input.AddFlow<int>("inspect"))
+            .AddInputPin<int>(input => input.AddFlow("inspect"))
             .AddAction<ModeAction>("inspect"), services =>
             {
                 services.AddSingleton(probe);
@@ -111,7 +111,7 @@ public sealed class StreamingRouting
         var handlerExecutions = 0;
         await using var harness = await Harness.CreateAsync(activity =>
         {
-            activity.AddInput(input => input.AddFlow<int>("produce"));
+            activity.AddInputPin<int>(input => input.AddFlow("produce"));
             activity.AddAction("produce", context =>
             {
                 if (route == "exception")
@@ -187,7 +187,7 @@ public sealed class StreamingRouting
         bool? observed = null;
         var received = Array.Empty<int>();
         await using var harness = await Harness.CreateAsync(activity => activity
-            .AddInput(input => input.AddFlow<int>("objects"))
+            .AddInputPin<int>(input => input.AddFlow("objects"))
             .AddAction("objects", context =>
             {
                 context.PassAllTokensOn();
@@ -220,7 +220,7 @@ public sealed class StreamingRouting
         var source = new TokenHolder<int> { Payload = 42, IsStreamed = true };
         var deliveries = new ConcurrentDictionary<string, TokenHolder>();
         await using var harness = await Harness.CreateAsync(activity => activity
-            .AddInput(input => input.AddFlow<int>("fork"))
+            .AddInputPin<int>(input => input.AddFlow("fork"))
             .AddAction("fork", context =>
             {
                 context.PassAllTokensOn();
@@ -258,7 +258,7 @@ public sealed class StreamingRouting
         bool? observed = null;
         var received = Array.Empty<TokenHolder>();
         await using var harness = await Harness.CreateAsync(activity => activity
-            .AddInput(input => input.AddFlow<int>("left").AddFlow<int>("right"))
+            .AddInputPin<int>(input => input.AddFlow("left").AddFlow("right"))
             .AddAction("left", _ => Task.CompletedTask, node => node.AddFlow<int>("consume"))
             .AddAction("right", _ => Task.CompletedTask, node => node.AddFlow<int>("consume"))
             .AddAction("consume", context =>
@@ -292,7 +292,7 @@ public sealed class StreamingRouting
     {
         bool? observed = null;
         await using var harness = await Harness.CreateAsync(activity => activity
-            .AddInput(input => input.AddFlow<int>("store"))
+            .AddInputPin<int>(input => input.AddFlow("store"))
             .AddDataStore("store", store => store.AddFlow<int>("consume"))
             .AddAction("consume", context =>
             {
@@ -338,7 +338,7 @@ public sealed class StreamingRouting
         }
 
         public Task FireInputAsync(IEnumerable<TokenHolder> tokens)
-            => FireAsync(Executor.Graph.InputNode, tokens);
+            => FireAsync(Executor.Graph.InputPins.Single(), tokens);
 
         public Task FireNodeAsync(string name)
             => FireAsync(Executor.Graph.AllNamedNodes[name], null);

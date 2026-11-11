@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines
     /// <summary>Continues a machine definition after its initial vertex is selected, allowing further elements and one
     /// final state.</summary>
     /// <remarks>The name describes the fluent definition stage, not a running machine's status.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
     public interface IInitializedStateMachineBuilder :
         IStateMachineElements<IInitializedStateMachineBuilder>,
         IStateMachineFinal<IFinalizedStateMachineBuilder>,
@@ -18,7 +18,7 @@ namespace Stateflows.StateMachines
     /// <summary>Continues configuration of lifecycle, middleware, and entities after a final state closes structural
     /// additions.</summary>
     /// <remarks>This is a registration-time builder stage, not a finalized runtime instance.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
     public interface IFinalizedStateMachineBuilder :
         IStateMachineUtils<IFinalizedStateMachineBuilder>,
         IStateMachineEvents<IFinalizedStateMachineBuilder>,
@@ -26,7 +26,7 @@ namespace Stateflows.StateMachines
 
     /// <summary>Starts a fluent machine definition by selecting an initial vertex or reusing a typed definition.
     /// </summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
     public interface IStateMachineBuilder :
         IStateMachineOverride<IOverridenStateMachineBuilder>,
         IStateMachineInitial<IInitializedStateMachineBuilder>,
@@ -36,8 +36,8 @@ namespace Stateflows.StateMachines
     
     /// <summary>Extends a reused machine definition with additional elements or overrides of inherited elements.
     /// </summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IOverridenStateMachineBuilder :
         IStateMachineElements<IOverridenStateMachineBuilder>,
         IStateMachineFinal<IFinalizedOverridenStateMachineBuilder>,
@@ -48,7 +48,7 @@ namespace Stateflows.StateMachines
     
     /// <summary>Configures inherited elements, lifecycle, and utilities after adding a final state to a reused
     /// definition.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
     public interface IFinalizedOverridenStateMachineBuilder :
         IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineEvents<IFinalizedOverridenStateMachineBuilder>,

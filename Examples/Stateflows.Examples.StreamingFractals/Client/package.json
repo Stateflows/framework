@@ -1,0 +1,18 @@
+{
+  "name": "stateflows-streaming-fractals",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "test": "node --experimental-strip-types --test src/model.test.ts",
+    "test:e2e": "npm run build && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.2"
+  }
+}

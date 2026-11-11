@@ -30,8 +30,8 @@ namespace Activity.IntegrationTests.Tests
                             b => b.AddFlow<int>("parallel")
                         )
                         .AddParallelActivity<int>("parallel", b => b
-                            .AddInput(b => b
-                                .AddFlow<int>("action1")
+                            .AddInputPin<int>(b => b
+                                .AddFlow("action1")
                             )
                             .AddAction("action1",
                                 async c =>

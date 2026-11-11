@@ -508,7 +508,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (parentActivity == null &&
                     (
                         context.Node.NodeType == NodeType.Initial ||
-                        context.Node.NodeType == NodeType.Input
+                        context.Node.NodeType == NodeType.InputPin
                     ) &&
                     context.Node.TryGetParentNode(out var parentNode)
                    )

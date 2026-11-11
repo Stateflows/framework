@@ -5,7 +5,11 @@ namespace Stateflows;
 /// </summary>
 public sealed class StateflowsRuntimeOptions
 {
-    /// <summary>Maximum number of streamed events waiting for admission to an Activity activation.</summary>
+    /// <summary>
+    /// Maximum queued streamed batches plus in-flight batch executions per Activity activation.
+    /// A batch execution can complete after transferring input into an active interleaving invocation,
+    /// before its partitions finish. This does not bound the downstream interleaved backlog.
+    /// </summary>
     public int MaxQueuedActivityStreamEvents { get; set; } = 128;
 
     /// <summary>Maximum time a Checkpoint request waits for active Activity stream work to reach an invocation boundary.</summary>

@@ -8,7 +8,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
     /// <remarks>These graph handlers are distinct from global observability exception handlers: they can handle an
     /// exception and emit recovery tokens.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-exception-handling" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.1.3.-Exception-Handling" />
     public interface IExceptionHandlerBase<out TReturn>
     {
         /// <summary>Registers a node- or scope-level handler for exceptions raised during Activity graph execution.
@@ -18,7 +18,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="exceptionHandler">Callback handling the exception in the context of the node or enclosing
         /// structured scope.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-exception-handling" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.1.3.-Exception-Handling" />
         TReturn AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             where TException : Exception;
         
@@ -29,7 +29,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <typeparam name="TExceptionHandler">Typed Activity exception handler implementing
         /// <see cref="IActivityExceptionHandler" />.</typeparam>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-exception-handling" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.1.3.-Exception-Handling" />
         [DebuggerHidden]
         public TReturn AddExceptionHandler<TException, TExceptionHandler>()
             where TException : Exception

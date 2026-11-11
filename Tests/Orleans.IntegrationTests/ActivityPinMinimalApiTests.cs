@@ -77,9 +77,9 @@ public sealed class ActivityPinMinimalApiTests
                 .AddActivity("pin-nested", activity => activity
                     .AddInputPin<int>(pin => pin.AddFlow("inner"))
                     .AddStructuredActivity("inner", scope => scope
-                        .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>())
-                        .AddInputPin<string>(pin => pin.AddFlow<OutputPin<string>>())
-                        .AddOutputPin<int>().AddOutputPin<string>())
+                        .AddInputPin<int>(pin => pin.AddFlow("inner-int"))
+                        .AddInputPin<string>(pin => pin.AddFlow("inner-string"))
+                        .AddOutputPin<int>("inner-int").AddOutputPin<string>("inner-string"))
                     .AddOutputPin<int>())
                 .AddActivity("pin-versions", 1, activity => activity
                     .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>()).AddOutputPin<int>())
@@ -101,7 +101,7 @@ public sealed class ActivityPinMinimalApiTests
             .ConfigureActivities(activities => activities.ConfigureActivity("pin-configured", activity => activity
                 .ConfigureStandardInstances(instances => instances
                     .ConfigureEventEndpoint<TokensInput<int>>(endpoint => endpoint.UpdateRoute(_ => "/custom/input/{instance}"))
-                    .ConfigureEventEndpoint<TokensOutput<int>>(endpoint => endpoint.UpdateRoute(_ => "/custom/output/{instance}"))))));
+                    .ConfigureEventEndpoint<int>(endpoint => endpoint.UpdateRoute(_ => "/custom/output/{instance}"))))));
         await app.StartAsync();
         http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{ports[0]}") };
     }
@@ -161,14 +161,14 @@ public sealed class ActivityPinMinimalApiTests
         var input = await http.PostAsync(Route("input/int32"), Batch(1, 2), cancellation.Token);
         Assert.AreEqual(HttpStatusCode.OK, input.StatusCode, await input.Content.ReadAsStringAsync());
         var first = await ReadSseAsync(reader, cancellation.Token);
-        CollectionAssert.AreEqual(new[] { 1, 2 }, first.GetProperty("payload").GetProperty("tokens")
-            .EnumerateArray().Select(token => token.GetProperty("payload").GetInt32()).ToArray());
+        var secondInBatch = await ReadSseAsync(reader, cancellation.Token);
+        CollectionAssert.AreEqual(new[] { 1, 2 }, new[]
+            { first.GetProperty("payload").GetInt32(), secondInBatch.GetProperty("payload").GetInt32() });
 
         Assert.AreEqual(HttpStatusCode.OK, (await http.PostAsync(Route("input/string"), Batch("not an integer"), cancellation.Token)).StatusCode);
         Assert.AreEqual(HttpStatusCode.OK, (await http.PostAsync(Route("input/int32"), Batch(3), cancellation.Token)).StatusCode);
         var second = await ReadSseAsync(reader, cancellation.Token);
-        CollectionAssert.AreEqual(new[] { 3 }, second.GetProperty("payload").GetProperty("tokens")
-            .EnumerateArray().Select(token => token.GetProperty("payload").GetInt32()).ToArray());
+        Assert.AreEqual(3, second.GetProperty("payload").GetInt32());
         cancellation.Cancel();
     }
 
@@ -189,7 +189,7 @@ public sealed class ActivityPinMinimalApiTests
         using var response = await next;
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
         var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        CollectionAssert.AreEqual(new[] { 7 }, json.RootElement.GetProperty("tokens").EnumerateArray().Select(token => token.GetInt32()).ToArray());
+        Assert.AreEqual(7, json.RootElement.GetInt32());
     }
 
     private async Task PublishRetainedOutputAsync(int value)
@@ -197,7 +197,7 @@ public sealed class ActivityPinMinimalApiTests
         var id = new BehaviorId(BehaviorType.Activity, "pin-http", "a");
         var subscriptions = app.Services.GetRequiredService<IGrainFactory>()
             .GetGrain<ISubscriptionsGrain>(StateflowsGrainKeys.ForBehavior("host", id));
-        var notification = new TokensOutput<int> { Tokens = [new TokenHolder<int> { Payload = value }] }.ToEventHolder(id);
+        var notification = value.ToEventHolder(id);
         notification.SentAt = DateTime.Now;
         notification.Retained = true;
         await subscriptions.PublishAsync([notification]);
@@ -219,8 +219,7 @@ public sealed class ActivityPinMinimalApiTests
         Assert.AreEqual("Accepted", JsonDocument.Parse(await stream.Content.ReadAsStringAsync()).RootElement.GetProperty("statusText").GetString());
         Assert.IsFalse(ordinary.IsCompleted);
         var notification = await ReadSseAsync(reader, cancellation.Token);
-        CollectionAssert.AreEqual(new[] { 5 }, notification.GetProperty("payload").GetProperty("tokens")
-            .EnumerateArray().Select(token => token.GetProperty("payload").GetInt32()).ToArray());
+        Assert.AreEqual(5, notification.GetProperty("payload").GetInt32());
         Assert.IsFalse(ordinary.IsCompleted, "Streamed output must not wait for the active ordinary input to complete.");
         release.TrySetResult();
         Assert.AreEqual(HttpStatusCode.OK, (await ordinary.WaitAsync(TimeSpan.FromSeconds(10))).StatusCode);
@@ -238,8 +237,9 @@ public sealed class ActivityPinMinimalApiTests
         using var input = await http.PostAsync(Route("input/int32?sendAsStream=true"), Batch(4, 6), cancellation.Token);
         Assert.AreEqual(HttpStatusCode.Accepted, input.StatusCode);
         var notification = await ReadSseAsync(reader, cancellation.Token);
-        CollectionAssert.AreEqual(new[] { 4, 6 }, notification.GetProperty("payload").GetProperty("tokens")
-            .EnumerateArray().Select(token => token.GetProperty("payload").GetInt32()).ToArray());
+        var second = await ReadSseAsync(reader, cancellation.Token);
+        CollectionAssert.AreEqual(new[] { 4, 6 }, new[]
+            { notification.GetProperty("payload").GetInt32(), second.GetProperty("payload").GetInt32() });
         cancellation.Cancel();
     }
 
@@ -258,7 +258,7 @@ public sealed class ActivityPinMinimalApiTests
         using var reader = new StreamReader(await output.Content.ReadAsStreamAsync(cancellation.Token));
         Assert.AreEqual(HttpStatusCode.OK, (await http.PostAsync(Route("input/int32"), Batch(8), cancellation.Token)).StatusCode);
         var notification = await ReadSseAsync(reader, cancellation.Token);
-        Assert.AreEqual(8, notification.GetProperty("payload").GetProperty("tokens")[0].GetProperty("payload").GetInt32());
+        Assert.AreEqual(8, notification.GetProperty("payload").GetInt32());
         cancellation.Cancel();
     }
 
@@ -278,7 +278,7 @@ public sealed class ActivityPinMinimalApiTests
         using var reader = new StreamReader(await output.Content.ReadAsStreamAsync(cancellation.Token));
         Assert.AreEqual(HttpStatusCode.OK, (await http.PostAsync(root + "/input/securePin", Batch(new SecurePin(2)), cancellation.Token)).StatusCode);
         var notification = await ReadSseAsync(reader, cancellation.Token);
-        Assert.AreEqual(2, notification.GetProperty("payload").GetProperty("tokens")[0].GetProperty("payload").GetProperty("value").GetInt32());
+        Assert.AreEqual(2, notification.GetProperty("payload").GetProperty("value").GetInt32());
         cancellation.Cancel();
     }
 
@@ -326,7 +326,7 @@ public sealed class ActivityPinMinimalApiTests
         using var reader = new StreamReader(await output.Content.ReadAsStreamAsync(cancellation.Token));
         Assert.AreEqual(HttpStatusCode.OK, (await http.PostAsync("/stateflows/activities/pin-default/input/int32", Batch(9), cancellation.Token)).StatusCode);
         var notification = await ReadSseAsync(reader, cancellation.Token);
-        Assert.AreEqual(9, notification.GetProperty("payload").GetProperty("tokens")[0].GetProperty("payload").GetInt32());
+        Assert.AreEqual(9, notification.GetProperty("payload").GetInt32());
         Assert.AreEqual(HttpStatusCode.OK, (await http.PostAsync("/stateflows/custom/input/a", Batch(2), cancellation.Token)).StatusCode);
         cancellation.Cancel();
     }

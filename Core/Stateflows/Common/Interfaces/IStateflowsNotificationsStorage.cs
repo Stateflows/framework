@@ -7,7 +7,10 @@ namespace Stateflows.Common.Interfaces
     /// <summary>Defines persistence for retained notifications associated with behaviors.</summary>
     public interface IStateflowsNotificationsStorage : IDisposable
     {
-        /// <summary>Persists notifications for a behavior.</summary>
+        /// <summary>
+        /// Persists latest retained values and positive-TTL history for a behavior. Nonretained zero-TTL
+        /// notifications are transient; retained values replace older retained values of the same name.
+        /// </summary>
         /// <param name="behaviorId">The behavior associated with the notifications.</param>
         /// <param name="notifications">The notification envelopes to save.</param>
         Task SaveNotificationsAsync(BehaviorId behaviorId, EventHolder[] notifications);

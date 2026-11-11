@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Channels;
@@ -59,7 +59,8 @@ public sealed class ActivityStreamingContractTests
                 })
                 .AddInputPin<int>(pin => pin.AddFlow("number"))
                 .AddInputPin<string>(pin => pin.AddFlow("text"))
-                .AddOutputPin<int>().AddOutputPin<string>()
+                .AddOutputPin<int>(pin => pin.SetTimeToLive(300))
+                .AddOutputPin<string>(pin => pin.SetTimeToLive(300))
                 .AddAction("number", context =>
                 {
                     probe.Record($"{context.Behavior.Id.Instance}:number-mode", IsStreamed(context).ToString());
@@ -91,9 +92,8 @@ public sealed class ActivityStreamingContractTests
         Assert.AreEqual("True", probe.Recorded("a:text-mode"));
         Assert.AreEqual(EventStatus.Rejected, (await behavior.SendAsync(new TokensInput().Add(43).Add(1.5), StreamHeader)).Status);
         Assert.AreEqual(1, probe.Get("a", "number"));
-        var output = await behavior.RequestAsync(new TokensOutputRequest());
-        CollectionAssert.AreEqual(new[] { 42 }, output.Response.GetOfType<int>().ToArray());
-        CollectionAssert.AreEqual(new[] { "hello" }, output.Response.GetOfType<string>().ToArray());
+        CollectionAssert.AreEqual(new[] { 42 }, (await behavior.GetNotificationsAsync<int>(DateTime.MinValue)).ToArray());
+        CollectionAssert.AreEqual(new[] { "hello" }, (await behavior.GetNotificationsAsync<string>(DateTime.MinValue)).ToArray());
     }
 
     [TestMethod]
@@ -103,7 +103,7 @@ public sealed class ActivityStreamingContractTests
         var probe = new ContractProbe();
         await using var cluster = await ContractCluster.StartAsync(probe, activities => activities
             .AddActivity("join-shared", activity => activity
-                .AddInput(input => input.AddFlow<int>("work"))
+                .AddInputPin<int>(input => input.AddFlow("work"))
                 .AddAction("work", async context =>
                 {
                     var instance = context.Behavior.Id.Instance;
@@ -181,7 +181,7 @@ public sealed class ActivityStreamingContractTests
                     probe.Started($"{instance}:timer").TrySetResult();
                     await probe.Gate($"{instance}:timer").Task;
                 })
-                .AddInput(input => input.AddFlow<int>("work"))
+                .AddInputPin<int>(input => input.AddFlow("work"))
                 .AddAction("work", async context =>
                 {
                     var instance = context.Behavior.Id.Instance;
@@ -214,47 +214,52 @@ public sealed class ActivityStreamingContractTests
 
     [TestMethod]
     [Timeout(120_000)]
-    public async Task RegularSendHandsOffMixedAcceptanceInsideStructuralScopes()
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task RegularSendHandsOffMixedAcceptanceInsideStructuralScopes(bool interleave)
     {
         var probe = new ContractProbe();
         await using var cluster = await ContractCluster.StartAsync(probe, activities => activities
             .AddActivity("handoff-structured", activity => activity
-                .AddInput(input => input.AddFlow<int>("scope").AddFlow<string>("keepalive"))
+                .AddInputPin<int>(input => input.AddFlow("scope"))
+                .AddInputPin<string>(input => input.AddFlow("keepalive"))
                 .AddAction("keepalive", context => KeepAliveAsync(probe, context))
-                .AddStructuredActivity("scope", scope => scope
+                .AddStructuredActivity("scope", scope => (interleave ? scope.Interleave() : scope)
                     .AddOnInitialize(context => Count(probe, context, "initialize"))
                     .AddOnFinalize(context => Count(probe, context, "finalize"))
-                    .AddInput(input => input.AddFlow<int>("pure").AddFlow<int>("store"))
+                    .AddInputPin<int>(input => input.AddFlow("pure").AddFlow("store"))
                     .AddAction("pure", context => Count(probe, context, $"pure:{context.GetTokensOfType<int>().Single()}"))
                     .AddDataStore("store", store => store.AddFlow<int>("b"))
-                    .AddAction("b", context => GatedDownstreamAsync(probe, context), node => node.AddFlow<int, OutputNode>())
-                    .AddOutput()
+                    .AddAction("b", context => GatedDownstreamAsync(probe, context), node => node.AddFlow<int, OutputPin<int>>())
+                    .AddOutputPin<int>()
                     .AddFlow<int>("after"))
                 .AddAction("after", context => AfterAsync(probe, context)))
             .AddActivity("handoff-iterative", activity => activity
-                .AddInput(input => input.AddFlow<int>("scope").AddFlow<string>("keepalive"))
+                .AddInputPin<int>(input => input.AddFlow("scope"))
+                .AddInputPin<string>(input => input.AddFlow("keepalive"))
                 .AddAction("keepalive", context => KeepAliveAsync(probe, context))
-                .AddIterativeActivity<int>("scope", scope => scope
+                .AddIterativeActivity<int>("scope", scope => (interleave ? scope.Interleave() : scope)
                     .AddOnInitialize(context => Count(probe, context, "initialize"))
                     .AddOnFinalize(context => Count(probe, context, "finalize"))
-                    .AddInput(input => input.AddFlow<int>("pure").AddFlow<int>("store"))
+                    .AddInputPin<int>(input => input.AddFlow("pure").AddFlow("store"))
                     .AddAction("pure", context => Count(probe, context, $"pure:{context.GetTokensOfType<int>().Single()}"))
                     .AddDataStore("store", store => store.AddFlow<int>("b"))
-                    .AddAction("b", context => GatedDownstreamAsync(probe, context), node => node.AddFlow<int, OutputNode>())
-                    .AddOutput()
+                    .AddAction("b", context => GatedDownstreamAsync(probe, context), node => node.AddFlow<int, OutputPin<int>>())
+                    .AddOutputPin<int>()
                     .AddFlow<int>("after"))
                 .AddAction("after", context => AfterAsync(probe, context)))
             .AddActivity("handoff-parallel", activity => activity
-                .AddInput(input => input.AddFlow<int>("scope").AddFlow<string>("keepalive"))
+                .AddInputPin<int>(input => input.AddFlow("scope"))
+                .AddInputPin<string>(input => input.AddFlow("keepalive"))
                 .AddAction("keepalive", context => KeepAliveAsync(probe, context))
-                .AddParallelActivity<int>("scope", scope => scope
+                .AddParallelActivity<int>("scope", scope => (interleave ? scope.Interleave() : scope)
                     .AddOnInitialize(context => Count(probe, context, "initialize"))
                     .AddOnFinalize(context => Count(probe, context, "finalize"))
-                    .AddInput(input => input.AddFlow<int>("pure").AddFlow<int>("store"))
+                    .AddInputPin<int>(input => input.AddFlow("pure").AddFlow("store"))
                     .AddAction("pure", context => Count(probe, context, $"pure:{context.GetTokensOfType<int>().Single()}"))
                     .AddDataStore("store", store => store.AddFlow<int>("b"))
-                    .AddAction("b", context => GatedDownstreamAsync(probe, context), node => node.AddFlow<int, OutputNode>())
-                    .AddOutput()
+                    .AddAction("b", context => GatedDownstreamAsync(probe, context), node => node.AddFlow<int, OutputPin<int>>())
+                    .AddOutputPin<int>()
                     .AddFlow<int>("after"), 1)
                 .AddAction("after", context => AfterAsync(probe, context))));
 
@@ -307,6 +312,60 @@ public sealed class ActivityStreamingContractTests
             probe.Gate($"{key}:keepalive").TrySetResult();
             await probe.WaitForCountAsync(key, "keepalive-done", 1);
         }
+    }
+
+    [TestMethod]
+    [Timeout(60_000)]
+    public async Task LiveInterleavedArrivalsShareParallelLimitAndFinalizeOnce()
+    {
+        var probe = new ContractProbe();
+        await using var cluster = await ContractCluster.StartAsync(probe, activities => activities
+            .AddActivity("live-interleave", activity => activity
+                .AddInputPin<int>(input => input.AddFlow("work"))
+                .AddParallelActivity<int>("work", work => work.Interleave()
+                    .AddOnInitialize(context => Count(probe, context, "initialize"))
+                    .AddOnFinalize(context => Count(probe, context, "finalize"))
+                    .AddInputPin<int>(input => input.AddFlow("consume"))
+                    .AddAction("consume", async context =>
+                    {
+                        var value = context.GetTokensOfType<int>().Single();
+                        probe.Gate($"started:{value}").TrySetResult();
+                        if (value <= 3)
+                            await probe.Gate($"release:{value}").Task;
+                        context.Output(value);
+                    }, node => node.AddFlow<int, OutputPin<int>>())
+                    .AddOutputPin<int>().AddFlow<int>("after"),
+                    chunkSize: 1, maxConcurrency: 2)
+                .AddAction("after", context =>
+                {
+                    var invocation = probe.Count("live-interleave", "after");
+                    probe.Record($"output:{invocation}", string.Join(",", context.GetTokensOfType<int>().Order()));
+                    probe.Gate($"after:{invocation}").TrySetResult();
+                    return Task.CompletedTask;
+                })));
+        using var behavior = cluster.Factory.CreateBehavior(new ActivityId("live-interleave", "a"));
+        async Task Send(int value)
+            => Assert.AreEqual(EventStatus.Accepted,
+                (await behavior.SendAsync(new TokensInput().Add(value), StreamHeader).WaitAsync(TimeSpan.FromSeconds(10))).Status);
+        await Send(1);
+        await probe.Gate("started:1").Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await Send(2);
+        await probe.Gate("started:2").Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await Send(3);
+        Assert.IsFalse(probe.Gate("started:3").Task.IsCompleted, "The third arrival must wait for an invocation slot.");
+        Assert.AreEqual(1, probe.Get("live-interleave", "initialize"));
+        probe.Gate("release:1").TrySetResult();
+        await probe.Gate("started:3").Task.WaitAsync(TimeSpan.FromSeconds(10));
+        probe.Gate("release:2").TrySetResult();
+        probe.Gate("release:3").TrySetResult();
+        await probe.Gate("after:1").Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.AreEqual(1, probe.Get("live-interleave", "finalize"));
+        Assert.AreEqual("1,2,3", probe.Recorded("output:1"));
+        await Send(4);
+        await probe.Gate("after:2").Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.AreEqual(2, probe.Get("live-interleave", "initialize"));
+        Assert.AreEqual(2, probe.Get("live-interleave", "finalize"));
+        Assert.AreEqual("4", probe.Recorded("output:2"));
     }
 
     private static Task Count(ContractProbe probe, Stateflows.Activities.IActivityNodeContext context, string key)

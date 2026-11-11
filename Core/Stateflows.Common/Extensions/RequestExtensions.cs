@@ -3,7 +3,7 @@
 namespace Stateflows.Common
 {
     /// <summary>Reads and records responses associated with requests in the current execution's response scope.</summary>
-    /// <remarks>Use these helpers while processing a request. See <see href="https://github.com/Stateflows/framework/wiki/messaging-patterns">request-response messaging</see>.</remarks>
+    /// <remarks>Use these helpers while processing a request. See <see href="https://github.com/Stateflows/framework/wiki/4.2.-Messaging-Patterns">request-response messaging</see>.</remarks>
     public static class RequestExtensions
     {
         /// <summary>Records the response for a request being handled.</summary>

@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines
 {
     /// <summary>Registers machine definitions and global middleware, and visits registered definition metadata.</summary>
     /// <remarks>Prefer the fluent registration builder for application configuration.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/behaviors">registration</see>.</remarks>
+    /// See <see href="https://github.com/Stateflows/framework/wiki/5.-Behaviors">registration</see>.</remarks>
     public interface IStateMachinesRegister
     {
         /// <summary>Registers a fluent machine definition at version 1.</summary>

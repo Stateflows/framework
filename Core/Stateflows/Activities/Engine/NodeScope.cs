@@ -8,6 +8,7 @@ using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Engine;
 using Stateflows.Activities.Models;
+using Stateflows.Activities.Streams;
 using Stateflows.Activities.Context;
 using Stateflows.Activities.Context.Interfaces;
 
@@ -68,6 +69,10 @@ namespace Stateflows.Activities.Engine
         }
 
         public Guid ThreadId { get; set; }
+        internal ActivityContinuationFrame ContinuationFrame { get; set; }
+        internal List<Task> CrossingWork { get; } = [];
+        internal bool CrossingClosed { get; set; }
+        internal bool AcceptingCrossings { get; set; }
 
         private IReadOnlyList<TokenHolder>? selectionTokens;
 
@@ -477,6 +482,9 @@ namespace Stateflows.Activities.Engine
             finally
             {
                 await DisposeAsync(true);
+                if (BaseNodeScope != null)
+                    lock (BaseNodeScope.sync)
+                        BaseNodeScope.childScopes.Remove(this);
                 GC.SuppressFinalize(this);
             }
         }

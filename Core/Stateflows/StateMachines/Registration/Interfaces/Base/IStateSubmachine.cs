@@ -2,7 +2,7 @@
 
 /// <summary>Assigns an embedded machine whose lifetime is bound to the current state's activation.</summary>
 /// <typeparam name="TReturn">The state builder returned after embedding the submachine.</typeparam>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
 public interface IStateSubmachine<out TReturn>
 {
     /// <summary>Embeds a State Machine whose lifetime is bound to the current state's activation.</summary>
@@ -13,7 +13,7 @@ public interface IStateSubmachine<out TReturn>
     /// <returns>The state builder with the submachine configured.</returns>
     /// <remarks>The embedded behavior is initialized on state entry and finalized on state exit. Events accepted by it
     /// are offered to it first; rejected events are retransmitted to the embedding State Machine.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
     public TReturn AddSubmachine<TStateMachine>(StateMachineUtilsBuildAction buildAction = null)
         where TStateMachine : class, IStateMachine;
 
@@ -23,6 +23,6 @@ public interface IStateSubmachine<out TReturn>
     /// <returns>The state builder with the submachine configured.</returns>
     /// <remarks>The embedded behavior is initialized on state entry and finalized on state exit. Events accepted by it
     /// are offered to it first; rejected events are retransmitted to the embedding State Machine.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
     public TReturn AddSubmachine(StateMachineBuildAction stateMachineBuildAction);
 }

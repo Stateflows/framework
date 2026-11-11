@@ -18,14 +18,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// <summary>Registers actions awaited when the current state is exited.</summary>
     /// <typeparam name="TReturn">The fluent state builder returned after registration.</typeparam>
     /// <remarks>Internal transitions do not exit the state and therefore do not execute these callbacks.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
     public interface IStateExit<out TReturn>
     {
         /// <summary>Registers handlers for the state's exit operation.</summary>
         /// <param name="actionsAsync">Asynchronous handlers receiving the state action context during exit. Each returned
         /// task is awaited.</param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync);
 
         #region AddOnExitActivity
@@ -35,7 +35,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TActivity">Embedded behavior implementation of <see cref="IActivity" />. Its definition is
         /// registered for this embedding site.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddOnExitActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
@@ -50,7 +50,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="activityBuildAction">Callback configuring the embedded Activity's nodes, flows, and lifecycle.
         /// </param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddOnExitActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
@@ -67,7 +67,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TAction">Embedded behavior implementation of <see cref="IAction" />. Its definition is
         /// registered for this embedding site.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddOnExitAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
@@ -84,7 +84,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
         /// </param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddOnExitAction(ActionDelegateAsync actionDelegateAsync, ActionBuildAction buildAction = null)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
@@ -97,7 +97,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <summary>Registers handlers for the state's exit operation.</summary>
         /// <param name="actions">Synchronous handlers receiving the state action context during exit.</param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         [DebuggerHidden]
         public TReturn AddOnExit(params System.Action<IStateActionContext>[] actions)
             => AddOnExit(actions.Select(action => action.ToAsync()).ToArray());
@@ -107,7 +107,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the activated typed handler before its handler method is
         /// invoked.</param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddOnExit<TStateExit>(ElementBuildAction<TStateExit> buildAction = null)
             where TStateExit : class, IStateExit
             => AddOnExit(async c => 
@@ -121,7 +121,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit1">Typed state-exit handler implementing <see cref="IStateExit" />.</typeparam>
         /// <typeparam name="TStateExit2">Typed state-exit handler implementing <see cref="IStateExit" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddOnExit<TStateExit1, TStateExit2>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
@@ -135,7 +135,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit2">Typed state-exit handler implementing <see cref="IStateExit" />.</typeparam>
         /// <typeparam name="TStateExit3">Typed state-exit handler implementing <see cref="IStateExit" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddOnExit<TStateExit1, TStateExit2, TStateExit3>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
@@ -151,7 +151,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit3">Typed state-exit handler implementing <see cref="IStateExit" />.</typeparam>
         /// <typeparam name="TStateExit4">Typed state-exit handler implementing <see cref="IStateExit" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddOnExit<TStateExit1, TStateExit2, TStateExit3, TStateExit4>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
@@ -169,7 +169,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit4">Typed state-exit handler implementing <see cref="IStateExit" />.</typeparam>
         /// <typeparam name="TStateExit5">Typed state-exit handler implementing <see cref="IStateExit" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddOnExit<TStateExit1, TStateExit2, TStateExit3, TStateExit4, TStateExit5>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit

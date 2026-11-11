@@ -7,14 +7,11 @@ using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Orleans.Storage;
 using Stateflows;
-using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Classes;
-using Stateflows.Entities;
-using Stateflows.Entities.Attributes;
 using Stateflows.StateMachines;
 
 namespace Orleans.IntegrationTests;
@@ -23,10 +20,7 @@ namespace Orleans.IntegrationTests;
 public sealed class StagingTests
 {
     [TestMethod]
-    [DataRow("mutation")]
-    [DataRow("field")]
-    [DataRow("sending")]
-    public async Task StreamedActivityRejectsStaging(string operation)
+    public async Task StreamedActivityRejectsStagedSending()
     {
         var observed = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var host = CreateHost(services => services.AddStateflows(builder => builder
@@ -36,18 +30,7 @@ public sealed class StagingTests
                 {
                     try
                     {
-                        switch (operation)
-                        {
-                            case "mutation":
-                                c.Behavior.StageMutation<ICounter, Add>(new Add { Amount = 1 });
-                                break;
-                            case "field":
-                                c.Behavior.StageFieldSetting<ICounter, int>(nameof(ICounter.Count), 1);
-                                break;
-                            default:
-                                c.Behavior.StageSending(new Followup());
-                                break;
-                        }
+                        c.Behavior.StageSending(new Followup());
                         observed.TrySetException(new AssertFailedException("Streamed staging was allowed."));
                     }
                     catch (InvalidOperationException exception)
@@ -82,11 +65,9 @@ public sealed class StagingTests
     [TestMethod]
     [DataRow("success")]
     [DataRow("handler-failure")]
-    [DataRow("entity-failure")]
-    [DataRow("not-consumed")]
     [DataRow("commit-failure")]
     [DataRow("after-execute-failure")]
-    public async Task StagedEntityOperationsGateCommitAndSelfSendsFollowCommit(string scenario)
+    public async Task StagedSelfSendsFollowSuccessfulCommit(string scenario)
     {
         var probe = new Probe { Scenario = scenario };
         var storage = new TestStorage();
@@ -95,22 +76,10 @@ public sealed class StagingTests
             services.AddSingleton<IStateflowsExecutionInterceptor>(probe);
             services.AddStateflows(builder => builder.AddStateMachines(machines => machines
                 .AddStateMachine("staging", machine => machine
-                    .AddEntity<ICounter>()
                     .AddInitialState("initial", state => state
                         .AddTransition<Run>("done", transition => transition.AddEffect(async c =>
                         {
                             c.Behavior.StageSending(new Followup());
-                            c.Behavior.StageFieldSetting<ICounter, int>(nameof(ICounter.Count), 10);
-                            var mutation = new Add { Amount = 2 };
-                            c.Behavior.StageMutation<ICounter, Add>(mutation);
-                            mutation.Amount = 900;
-                            if (scenario == "entity-failure")
-                                c.Behavior.StageMutation<ICounter, Add>(new Add { Amount = -1 });
-                            if (scenario == "not-consumed")
-                                c.Behavior.StageMutation<ICounter, Unknown>(new Unknown());
-                            c.Behavior.StageMutation<ICounter, Add>(new Add { Amount = 3 });
-                            var before = await c.Behavior.TryGetFieldAsync<ICounter, int>(nameof(ICounter.Count));
-                            Assert.AreEqual(0, before.Field, "Staging must not send during handler execution.");
                             await c.Behavior.Values.SetAsync("committed", true);
                             if (scenario == "handler-failure")
                                 throw new InvalidOperationException("handler failed");
@@ -129,8 +98,13 @@ public sealed class StagingTests
                 .CreateBehavior(new StateMachineId("staging", "one"));
             Assert.AreEqual(EventStatus.Initialized, (await behavior.SendAsync(new Initialize())).Status);
             storage.RejectSourceWrite = scenario == "commit-failure";
-            var result = await behavior.SendAsync(new Run()).WaitAsync(TimeSpan.FromSeconds(15));
-            Assert.AreEqual(scenario == "success" ? EventStatus.Consumed : EventStatus.Failed, result.Status);
+            if (scenario == "commit-failure")
+                await TransactionalStorageTestHelpers.AssertTransactionCommitFailureAsync(
+                    () => behavior.SendAsync(new Run()).WaitAsync(TimeSpan.FromSeconds(15)), "source commit failed");
+            else
+                Assert.AreEqual(scenario == "success" ? EventStatus.Consumed : EventStatus.Failed,
+                    (await behavior.SendAsync(new Run()).WaitAsync(TimeSpan.FromSeconds(15))).Status);
+
             if (scenario == "success")
                 Assert.IsTrue(await probe.Followup.Task.WaitAsync(TimeSpan.FromSeconds(10)),
                     "Self-send must execute after source values have committed.");
@@ -141,61 +115,7 @@ public sealed class StagingTests
                 Assert.AreEqual("initial", status.Response.CurrentStates.Value, "Source transition must not commit.");
             }
 
-            var entityId = new EntityId($"staging.entity.{Entity<ICounter>.Name}", "one");
-            using var entity = host.Services.GetRequiredService<IBehaviorFactory>().CreateBehavior(entityId);
-            var count = await entity.RequestAsync(new FieldStateRequest<int> { Name = nameof(ICounter.Count) });
-            var expected = scenario is "handler-failure" or "after-execute-failure" ? 0
-                : scenario is "entity-failure" or "not-consumed" ? 12 : 15;
-            Assert.AreEqual(expected, count.Response!.Value,
-                "Earlier entity commits survive later failures; later staged operations must not execute.");
             Assert.IsFalse(storage.RejectSourceWrite);
-        }
-        finally
-        {
-            await host.StopAsync();
-        }
-    }
-
-    [TestMethod]
-    [DataRow(BehaviorType.StateMachine)]
-    [DataRow(BehaviorType.Action)]
-    [DataRow(BehaviorType.Activity)]
-    [DataRow(BehaviorType.Entity)]
-    public async Task EveryBehaviorTypeSupportsStagedEntityOperations(string type)
-    {
-        async Task StageAsync(IBehaviorContext context)
-        {
-            context.StageFieldSetting<ICounter, int>(nameof(ICounter.Count), 4);
-            context.StageMutation<ICounter, Add>(new Add { Amount = 3 });
-            await Task.Yield();
-        }
-
-        using var host = CreateHost(services => services.AddStateflows(builder => builder
-            .AddStateMachines(machines => machines.AddStateMachine("source", machine => machine
-                .AddInitialState("initial", state => state.AddOnEntry(c => StageAsync(c.Behavior)))))
-            .AddActions(actions => actions.AddAction("source", c => StageAsync(c.Behavior)))
-            .AddActivities(activities => activities.AddActivity("source", activity => activity
-                .AddInitial(initial => initial.AddControlFlow("stage"))
-                .AddAction("stage", c => StageAsync(c.Behavior))))
-            .AddEntities(entities => entities
-                .AddEntity<ICounter>($"source.entity.{Entity<ICounter>.Name}")
-                .AddEntity<ICounter>("source", entity => entity
-                    .AddObserver((_, _) => new StagingObserver(StageAsync))))));
-        await host.StartAsync();
-        try
-        {
-            using var source = host.Services.GetRequiredService<IBehaviorFactory>()
-                .CreateBehavior(new BehaviorId(type, "source", "one"));
-            var result = type == BehaviorType.Entity
-                ? await source.SendAsync(new Add { Amount = 1 })
-                : type == BehaviorType.Action
-                ? await source.SendAsync(new Run())
-                : await source.SendAsync(new Initialize());
-            Assert.AreNotEqual(EventStatus.Failed, result.Status);
-            using var target = host.Services.GetRequiredService<IBehaviorFactory>()
-                .CreateBehavior(new EntityId($"source.entity.{Entity<ICounter>.Name}", "one"));
-            var count = await target.RequestAsync(new FieldStateRequest<int> { Name = nameof(ICounter.Count) });
-            Assert.AreEqual(7, count.Response!.Value);
         }
         finally
         {
@@ -238,41 +158,6 @@ public sealed class StagingTests
 
     public sealed class Run;
     public sealed class Followup;
-    public sealed class Unknown;
-    public sealed class Add
-    {
-        public int Amount { get; set; }
-    }
-
-    public interface ICounter
-    {
-        [Field(FieldAccess.Get | FieldAccess.Set)]
-        int Count { get; set; }
-
-        [Mutation]
-        void Apply(Add mutation)
-        {
-            if (mutation.Amount < 0)
-                throw new InvalidOperationException("entity failed");
-            Count += mutation.Amount;
-        }
-    }
-
-    private sealed class StagingObserver(Func<IBehaviorContext, Task> stage) : IEntityObserver
-    {
-        public async Task OnMutationAsync<TTemplate, TEvent>(IMutationObservationContext<TTemplate, TEvent> context, Func<Task> next)
-        {
-            await next();
-            await stage(context.Behavior);
-        }
-
-        public Task OnComputedFieldAsync<TTemplate, TField>(IComputedFieldObservationContext<TTemplate> context, Func<Task<TField>> next)
-            => next();
-
-        public Task OnProjectionAsync<TTemplate, TProjection>(IProjectionObservationContext<TTemplate> context, Func<Task<TProjection>> next)
-            => next();
-    }
-
     private sealed class Probe : IStateflowsExecutionInterceptor
     {
         public string Scenario { get; init; } = "";
@@ -287,7 +172,7 @@ public sealed class StagingTests
 
     private sealed class TestStorage : IGrainStorage
     {
-        private readonly ConcurrentDictionary<(string, GrainId), BinaryData> states = new();
+        private readonly ConcurrentDictionary<(string, GrainId), (BinaryData Data, string ETag)> states = new();
         private IGrainStorageSerializer serializer = null!;
         public bool RejectSourceWrite;
 
@@ -299,20 +184,33 @@ public sealed class StagingTests
 
         public Task ReadStateAsync<T>(string stateName, GrainId id, IGrainState<T> state)
         {
-            state.RecordExists = states.TryGetValue((stateName, id), out var data);
-            state.State = data == null ? Activator.CreateInstance<T>() : serializer.Deserialize<T>(data);
+            if (states.TryGetValue((stateName, id), out var stored))
+            {
+                state.State = serializer.Deserialize<T>(stored.Data);
+                state.ETag = stored.ETag;
+                state.RecordExists = true;
+            }
+            else
+            {
+                state.State = Activator.CreateInstance<T>();
+                state.ETag = null;
+                state.RecordExists = false;
+            }
             return Task.CompletedTask;
         }
 
         public Task WriteStateAsync<T>(string stateName, GrainId id, IGrainState<T> state)
         {
-            if (RejectSourceWrite && state.State is BehaviorContextState context &&
-                Stateflows.Common.Utilities.StateflowsJsonConverter.DeserializeObject<StateflowsContext>(context.Payload).Id.Type == BehaviorType.StateMachine)
+            if (RejectSourceWrite && stateName == "Stateflows.BehaviorContext" &&
+                TransactionalStorageTestHelpers.GetBehaviorContextStates(state.State).Any(context =>
+                    Stateflows.Common.Utilities.StateflowsJsonConverter.DeserializeObject<StateflowsContext>(context.Payload)?.Id.Type == BehaviorType.StateMachine))
             {
                 RejectSourceWrite = false;
                 throw new InvalidOperationException("source commit failed");
             }
-            states[(stateName, id)] = serializer.Serialize(state.State);
+            var eTag = Guid.NewGuid().ToString("N");
+            states[(stateName, id)] = (serializer.Serialize(state.State), eTag);
+            state.ETag = eTag;
             state.RecordExists = true;
             return Task.CompletedTask;
         }
@@ -320,6 +218,7 @@ public sealed class StagingTests
         public Task ClearStateAsync<T>(string stateName, GrainId id, IGrainState<T> state)
         {
             states.TryRemove((stateName, id), out _);
+            state.ETag = null;
             state.RecordExists = false;
             return Task.CompletedTask;
         }

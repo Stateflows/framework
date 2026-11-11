@@ -6,14 +6,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     /// <summary>Composes completion-transition predicates into conjunctions and nested guard expressions.</summary>
     /// <typeparam name="TReturn">The fluent transition builder returned after guard registration.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
     public interface IDefaultGuard<out TReturn> : IBaseDefaultGuard<TReturn>
     {
         /// <summary>Adds a composed predicate to the current transition.</summary>
         /// <param name="guardExpression">Callback adding predicates and nested Boolean expressions. Predicates at the root
         /// are combined with AND.</param>
         /// <returns>The current transition builder after adding the composed predicate.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddGuardExpression(Func<IDefaultGuardBuilder, IDefaultGuardBuilder> guardExpression)
         {
             var builder = new GuardBuilder<Completion>(((IVertexBuilder)this).Vertex);
@@ -28,7 +28,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard2">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
         /// true for this predicate to accept.</typeparam>
         /// <returns>The current transition builder after adding the guard conjunction.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -45,7 +45,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard3">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
         /// true for this predicate to accept.</typeparam>
         /// <returns>The current transition builder after adding the guard conjunction.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -66,7 +66,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard4">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
         /// true for this predicate to accept.</typeparam>
         /// <returns>The current transition builder after adding the guard conjunction.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -91,7 +91,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard5">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
         /// true for this predicate to accept.</typeparam>
         /// <returns>The current transition builder after adding the guard conjunction.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard

@@ -1,0 +1,4 @@
+wwwroot/
+Client/dist/
+!Properties/launchSettings.json
+!Client/package-lock.json

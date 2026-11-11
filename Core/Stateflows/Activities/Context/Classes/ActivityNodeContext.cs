@@ -38,7 +38,7 @@ namespace Stateflows.Activities.Context.Classes
             : base(context, nodeScope)
         {
             Node = node;
-            if (node.Type != NodeType.Input && node.Type != NodeType.Initial)
+            if (node.Type != NodeType.InputPin && node.Type != NodeType.Initial)
             {
                 Edge = nodeScope.Edge;
             }

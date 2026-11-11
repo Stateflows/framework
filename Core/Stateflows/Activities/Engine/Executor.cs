@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
@@ -31,7 +32,7 @@ using Stream = Stateflows.Activities.Streams.Stream;
 
 namespace Stateflows.Activities.Engine
 {    
-    internal class Executor : IAsyncDisposable, IStateflowsExecutor
+    internal partial class Executor : IAsyncDisposable, IStateflowsExecutor
     {
         private static readonly object lockHandle = new object();
         private static readonly object nodesLockHandle = new object();
@@ -41,6 +42,118 @@ namespace Stateflows.Activities.Engine
         private readonly AsyncLocal<ActivityContinuationFrame> currentFrame = new();
         private readonly AsyncLocal<ResumePlan> resumePlan = new();
         private readonly AsyncLocal<HandoffCoordinator> handoffCoordinator = new();
+        private readonly AsyncLocal<bool> resumingCrossing = new();
+        private readonly object crossingScopesLock = new();
+        private readonly Dictionary<(Node Node, NodeScope Parent), NodeScope> crossingScopes = [];
+        private readonly Dictionary<Node, Edge[]> ownedCrossingEdges;
+
+        private static NodeScope FindOwningScope(NodeScope scope, Node node)
+        {
+            for (; scope != null; scope = scope.BaseNodeScope)
+                if (scope.Node == node)
+                    return scope;
+            throw new InvalidOperationException($"Execution scope for '{node.Name}' is unavailable.");
+        }
+
+        private static bool HasSingleAnchoredInvocation(Node node)
+        {
+            for (; node.Parent != null; node = node.Parent)
+                if (node.Type != NodeType.StructuredActivity || node.Options.HasFlag(NodeOptions.Reentrant))
+                    return false;
+            return true;
+        }
+
+        private NodeScope ResolveCrossingScope(Edge edge, NodeScope sourceScope, out Node resumeNode)
+        {
+            resumeNode = null;
+            var scope = FindOwningScope(sourceScope, edge.Owner);
+            if (scope.CrossingClosed || scope.CancellationToken.IsCancellationRequested)
+                return null;
+            var path = new Stack<Node>();
+            for (var node = edge.Target.Parent; node != edge.Owner; node = node.Parent)
+                path.Push(node);
+            while (path.TryPop(out var node))
+            {
+                if (!crossingScopes.TryGetValue((node, scope), out var activation))
+                {
+                    // Anchored active structures survive transactional executor hydration. Resume their existing
+                    // execution path, just as an accepted event does; a pending offer never starts a new structure.
+                    if (node.Anchored && HasSingleAnchoredInvocation(node) && Context.NodeThreads.ContainsKey(node.Identifier))
+                    {
+                        resumeNode = node;
+                        return scope;
+                    }
+                    return null;
+                }
+                if (activation.CrossingClosed || activation.CancellationToken.IsCancellationRequested)
+                    return null;
+                if (!activation.AcceptingCrossings)
+                {
+                    resumeNode = node;
+                    return scope;
+                }
+                scope = activation;
+            }
+            return scope.CancellationToken.IsCancellationRequested ? null : scope;
+        }
+
+        private Task HandleCrossingSuccessorAsync(Edge edge, NodeScope sourceScope)
+        {
+            NodeScope scope;
+            Node resumeNode;
+            TaskCompletionSource completion;
+            lock (crossingScopesLock)
+            {
+                scope = ResolveCrossingScope(edge, sourceScope, out resumeNode);
+                if (scope == null)
+                    return Task.CompletedTask;
+                completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                scope.CrossingWork.RemoveAll(task => task.IsCompletedSuccessfully);
+                scope.CrossingWork.Add(completion.Task);
+            }
+
+            // The destination drains this work; an escaped continuation must not hold its source open.
+            _ = ExecuteCrossingSuccessorAsync(edge, scope, resumeNode, completion);
+            return Task.CompletedTask;
+        }
+
+        private async Task ExecuteCrossingSuccessorAsync(Edge edge, NodeScope scope, Node resumeNode, TaskCompletionSource completion)
+        {
+            var previousFrame = currentFrame.Value;
+            var previousScope = invocationScope.Value;
+            currentFrame.Value = scope.ContinuationFrame;
+            invocationScope.Value = scope;
+            try
+            {
+                if (resumeNode == null)
+                    await ExecuteSuccessorsAsync(new[] { edge }.GroupBy(candidate => candidate.Target).ToArray(), scope);
+                else
+                {
+                    var previousResume = resumingCrossing.Value;
+                    resumingCrossing.Value = true;
+                    try
+                    {
+                        for (var node = edge.Target.Parent; node != scope.Node; node = node.Parent)
+                            Context.NodesToExecute.Add(node);
+                        await DoHandleNodeAsync(resumeNode, null, scope);
+                    }
+                    finally
+                    {
+                        resumingCrossing.Value = previousResume;
+                    }
+                }
+                completion.TrySetResult();
+            }
+            catch (Exception exception)
+            {
+                completion.TrySetException(exception);
+            }
+            finally
+            {
+                currentFrame.Value = previousFrame;
+                invocationScope.Value = previousScope;
+            }
+        }
 
         /// <summary>
         /// Coordinates the mixed handoff of a regular transaction whose firing inside a structural continuation
@@ -167,8 +280,8 @@ namespace Stateflows.Activities.Engine
         private static readonly NodeType[] SystemTypes =
         [
             NodeType.Initial,
-            NodeType.Input,
-            NodeType.Output
+            NodeType.InputPin,
+            NodeType.OutputPin
         ];
 
         private static readonly NodeType[] InteractiveNodeTypes =
@@ -184,6 +297,8 @@ namespace Stateflows.Activities.Engine
             Register = register;
             rootNodeScope = new NodeScope(serviceProvider, graph, null, Guid.NewGuid());
             Graph = graph;
+            ownedCrossingEdges = graph.AllEdges.Values.Where(edge => edge.IsCrossScope)
+                .GroupBy(edge => edge.Owner).ToDictionary(group => group.Key, group => group.ToArray());
 
             logger = serviceProvider.GetRequiredService<ILogger<Executor>>();
             Inspector = new Inspector(this, logger);
@@ -289,6 +404,8 @@ namespace Stateflows.Activities.Engine
 
         public async Task HydrateAsync(RootContext context)
         {
+            lock (crossingScopesLock)
+                crossingScopes.Clear();
             Context = context;
             Context.Executor = this;
             rootNodeScope.ThreadId = context.RootThreadId;
@@ -423,6 +540,8 @@ namespace Stateflows.Activities.Engine
 
             if (Initialized)
             {
+                lock (crossingScopesLock)
+                    crossingScopes.Clear();
                 Context.ActiveNodes.Clear();
                 Context.FlowTokensCount.Clear();
                 Context.NodeTimeEvents.Clear();
@@ -449,6 +568,8 @@ namespace Stateflows.Activities.Engine
 
             if (Initialized)
             {
+                lock (crossingScopesLock)
+                    crossingScopes.Clear();
                 Context.Context.Values.Clear();
                 lock (Context.Context.GlobalValues)
                     Context.Context.GlobalValues.Clear();
@@ -511,9 +632,9 @@ namespace Stateflows.Activities.Engine
 
             if (eventHolder.Payload is TokensInputEvent)
             {
-                foreach (var inputNode in Graph.InputNodes)
-                    Context.NodesToExecute.Add(inputNode);
-                activeNode = Graph.InputNode;
+                foreach (var inputPin in Graph.InputPins)
+                    Context.NodesToExecute.Add(inputPin);
+                activeNode = Graph.InputPins.FirstOrDefault();
             }
 
             if (activeNode == null)
@@ -584,10 +705,6 @@ namespace Stateflows.Activities.Engine
 
             output = output.Where(h => h.PayloadType != typeof(ControlToken)).ToList();
             
-            Context.ActivityOutputTokens.AddRange(output);
-
-            await DoHandleActivityOutput(output);
-
             return (EventStatus.Consumed, output);
         }
         
@@ -660,22 +777,13 @@ namespace Stateflows.Activities.Engine
         }
 
 
-        private async Task DoHandleActivityOutput(IEnumerable<TokenHolder> output)
-        {
-            if (output.Any())
-            {
-                var subscriber = NodeScope.ServiceProvider.GetRequiredService<IStateflowsSubscriber>();
-                await output.PublishOutputNotificationsAsync(subscriber, Context.Context);
-            }
-        }
-
         public async Task DoFinalizeAsync(IEnumerable<object> outputTokens = null)
         {
             if (Finalized) return;
 
             Context.Finalized = true;
 
-            if (Graph.OutputNodes.Any() && outputTokens != null)
+            if (Graph.OutputPins.Any() && outputTokens != null)
             {
                 OutputTokens = outputTokens;
             }
@@ -701,7 +809,7 @@ namespace Stateflows.Activities.Engine
 
         public async Task<(IEnumerable<TokenHolder> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, bool resume = false)
         {
-            if (node.Anchored)
+            if (node.Anchored && HasSingleAnchoredInvocation(node))
             {
                 if (Context.NodeThreads.TryGetValue(node.Identifier, out var storedThreadId))
                 {
@@ -720,7 +828,7 @@ namespace Stateflows.Activities.Engine
                 resume: resume
             );
 
-            var output = node.OutputNodes
+            var output = node.OutputPins
                 .SelectMany(pin => Context.TakeOutputTokens(pin.Identifier, nodeScope.ThreadId)).ToList();
 
             if (node.ExceptionHandlers.Any())
@@ -735,7 +843,16 @@ namespace Stateflows.Activities.Engine
 
             if (finalized)
             {
-                Context.NodeThreads.Remove(node.Identifier);
+                lock (crossingScopesLock)
+                {
+                    Context.NodeThreads.Remove(node.Identifier);
+                    if (ownedCrossingEdges.Count > 0 && node.Parent != null)
+                    {
+                        var key = (node, FindOwningScope(nodeScope.BaseNodeScope, node.Parent));
+                        if (crossingScopes.TryGetValue(key, out var active) && active == nodeScope)
+                            crossingScopes.Remove(key);
+                    }
+                }
             }
 
             return result;
@@ -780,7 +897,7 @@ namespace Stateflows.Activities.Engine
         {
             lock (Context.Streams)
             {
-                var output = node.OutputNodes
+                var output = node.OutputPins
                     .SelectMany(pin => Context.TakeOutputTokens(pin.Identifier, threadId)).ToList();
 
                 Context.Streams.Remove(threadId);
@@ -794,6 +911,11 @@ namespace Stateflows.Activities.Engine
         /// </summary>
         internal async Task ExecuteStructuredActivityAsync(ActionContext context)
         {
+            if (context.Node.Options.HasFlag(NodeOptions.Interleave))
+            {
+                await ExecuteInterleavedStructuredAsync(context);
+                return;
+            }
             var node = context.Node;
             var resuming = context.ResumeFrame != null;
             var frame = context.ResumeFrame ?? CreateFrame(context, ActivityContinuationKind.Structured);
@@ -829,6 +951,11 @@ namespace Stateflows.Activities.Engine
         /// </summary>
         internal async Task ExecuteIterativeActivityAsync<TToken>(ActionContext context)
         {
+            if (context.Node.Options.HasFlag(NodeOptions.Interleave))
+            {
+                await ExecuteInterleavedPartitionsAsync<TToken>(context, parallel: false);
+                return;
+            }
             var node = context.Node;
             var frame = context.ResumeFrame;
             if (frame == null)
@@ -878,7 +1005,7 @@ namespace Stateflows.Activities.Engine
                 throw;
             }
 
-            if (node.OutputNodes.Any())
+            if (node.OutputPins.Any())
             {
                 context.OutputTokens.AddRange(frame.AccumulatedOutput);
             }
@@ -892,6 +1019,11 @@ namespace Stateflows.Activities.Engine
         /// </summary>
         internal async Task ExecuteParallelActivityAsync<TToken>(ActionContext context)
         {
+            if (context.Node.Options.HasFlag(NodeOptions.Interleave))
+            {
+                await ExecuteInterleavedPartitionsAsync<TToken>(context, parallel: true);
+                return;
+            }
             var node = context.Node;
             var frame = context.ResumeFrame;
             if (frame == null)
@@ -902,7 +1034,29 @@ namespace Stateflows.Activities.Engine
 
             currentFrame.Value = frame;
 
+            using var partitionSlots = node.MaxConcurrency > 0 ? new SemaphoreSlim(node.MaxConcurrency) : null;
             async Task RunPartitionAsync(ActivityContinuationPartition partition)
+            {
+                if (partitionSlots != null)
+                {
+                    try { await partitionSlots.WaitAsync(context.NodeScope.CancellationToken); }
+                    catch (OperationCanceledException) when (context.NodeScope.CancellationToken.IsCancellationRequested) { return; }
+                }
+                try
+                {
+                    if (context.NodeScope.CancellationToken.IsCancellationRequested)
+                        return;
+                    if (Context.PauseAfterFiring)
+                        throw new ActivityCheckpointPauseException();
+                    if (SessionOwned)
+                        await ExecutePartitionAsync(partition);
+                    else
+                        await Task.Run(() => ExecutePartitionAsync(partition));
+                }
+                finally { partitionSlots?.Release(); }
+            }
+
+            async Task ExecutePartitionAsync(ActivityContinuationPartition partition)
             {
                 var resuming = partition.Started;
                 partition.Started = true;
@@ -927,9 +1081,7 @@ namespace Stateflows.Activities.Engine
             {
                 await Task.WhenAll(frame.Partitions
                     .Where(partition => !partition.Completed)
-                    .Select(partition => SessionOwned
-                        ? RunPartitionAsync(partition)
-                        : Task.Run(() => RunPartitionAsync(partition)))
+                    .Select(RunPartitionAsync)
                     .ToArray());
             }
             catch (ActivityCheckpointPauseException)
@@ -938,7 +1090,7 @@ namespace Stateflows.Activities.Engine
                 throw;
             }
 
-            if (node.OutputNodes.Any())
+            if (node.OutputPins.Any())
             {
                 context.OutputTokens.AddRange(frame.AccumulatedOutput);
             }
@@ -960,6 +1112,21 @@ namespace Stateflows.Activities.Engine
         {
             if (input != null && !node.AcceptsInput(input.Where(token => token.PayloadType != typeof(ControlToken))))
                 throw new InvalidOperationException($"Activity scope '{node.Name}' received tokens unsupported by its input pins.");
+
+            if (ownedCrossingEdges.Count > 0 || node.Options.HasFlag(NodeOptions.Interleave))
+            {
+                var parentScope = node.Parent == null
+                    ? null
+                    : FindOwningScope(nodeScope.BaseNodeScope, node.Parent);
+                nodeScope.ContinuationFrame = currentFrame.Value;
+                lock (crossingScopesLock)
+                {
+                    nodeScope.CrossingClosed = false;
+                    nodeScope.AcceptingCrossings = true;
+                    if (node.Type == NodeType.StructuredActivity && !node.Options.HasFlag(NodeOptions.Reentrant))
+                        crossingScopes[(node, parentScope)] = nodeScope;
+                }
+            }
 
             if (resume && resumePlan.Value is { } plan)
             {
@@ -987,36 +1154,149 @@ namespace Stateflows.Activities.Engine
                         var edge = target.IncomingEdges.FirstOrDefault(e => e.Identifier == frame.UpstreamEdgeIdentifier);
                         return DoHandleNodeAsync(target, edge, nodeScope, resumeFrame: frame);
                     }))
+                    .Concat(HandlePendingCrossings(node, nodeScope,
+                        firings.Select(firing => firing.NodeIdentifier).Concat(frames.Select(frame => frame.NodeIdentifier)).ToHashSet()))
                     .ToArray();
 
-                await Task.WhenAll(tasks);
-
-                var resumedResult = Context.IsNodeCompleted(node, nodeScope);
+                var resumedResult = await CompleteStructureWorkAsync(nodeScope, Task.WhenAll(tasks));
                 RebuildNodesTree();
                 return resumedResult;
             }
 
             var nodes = node.Nodes.Values.Where(n => Context.NodesToExecute.Contains(n)).ToList();
-            if (nodes.Count == 0)
+            if (nodes.Count == 0 && !resume && !(resumingCrossing.Value && Context.NodesToExecute.Contains(node)))
             {
                 nodes.AddRange(node.InitialNodes);
-                nodes.AddRange(node.InputNodes);
+                nodes.AddRange(node.InputPins);
             }
 
-            await Task.WhenAll(
-                nodes.Where(n => n.Type != NodeType.Input || n.PinTokenType == null ||
+            var pendingCrossings = HandlePendingCrossings(node, nodeScope, nodes.Select(child => child.Identifier).ToHashSet());
+
+            var localWork = Task.WhenAll(
+                nodes.Where(n => n.Type != NodeType.InputPin ||
                     input?.Any(token => n.PinTokenType.IsAssignableFrom(token.ActualPayloadType)) == true)
                 .Select(n => DoHandleNodeAsync(n, nodeScope.Edge, nodeScope,
-                    n.Type == NodeType.Input
-                        ? n.PinTokenType == null ? input : input?.Where(token => n.PinTokenType.IsAssignableFrom(token.ActualPayloadType)).ToArray()
+                    n.Type == NodeType.InputPin
+                        ? input?.Where(token => n.PinTokenType.IsAssignableFrom(token.ActualPayloadType)).ToArray()
                         : null, selectionTokens)).ToArray()
             );
+            var result = await CompleteStructureWorkAsync(nodeScope, Task.WhenAll(pendingCrossings.Append(localWork)));
 
-            var result = Context.IsNodeCompleted(node, nodeScope);
-            
             RebuildNodesTree();
 
             return result;
+        }
+
+        private Task[] HandlePendingCrossings(Node node, NodeScope scope, HashSet<string> excluded)
+            => ownedCrossingEdges.Count == 0 ? [] : node.Nodes.Values
+                .Where(child => !excluded.Contains(child.Identifier))
+                .SelectMany(child => child.IncomingEdges)
+                .Where(edge => edge.IsCrossScope &&
+                    Context.GetStream(edge.Identifier, RootContext.GetStreamThreadId(edge, scope)).IsActivated)
+                .GroupBy(edge => edge.Target)
+                .Select(group => HandleCrossingSuccessorAsync(group.First(), scope))
+                .ToArray();
+
+        private async Task<bool> CompleteStructureWorkAsync(NodeScope scope, Task localWork)
+        {
+            if (scope.Node.Options.HasFlag(NodeOptions.Interleave) &&
+                scope.Node.Type == NodeType.StructuredActivity)
+            {
+                await localWork;
+                return Context.IsNodeCompleted(scope.Node, scope);
+            }
+            if (ownedCrossingEdges.Count == 0)
+            {
+                await localWork;
+                return Context.IsNodeCompleted(scope.Node, scope);
+            }
+
+            Exception failure = null;
+            try
+            {
+                await localWork;
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+                lock (crossingScopesLock)
+                {
+                    scope.CrossingClosed = true;
+                    scope.AcceptingCrossings = false;
+                }
+            }
+
+            var completed = false;
+            try
+            {
+                completed = await CompleteCrossingScopeAsync(scope, failure == null);
+            }
+            catch (Exception exception)
+            {
+                if (failure == null || failure is ActivityCheckpointPauseException)
+                    failure = exception;
+            }
+            if (failure != null)
+                ExceptionDispatchInfo.Capture(failure).Throw();
+            return completed;
+        }
+
+        private async Task<bool> CompleteCrossingScopeAsync(NodeScope scope, bool canComplete)
+        {
+            if (ownedCrossingEdges.Count == 0)
+                return Context.IsNodeCompleted(scope.Node, scope);
+            Exception failure = null;
+            while (true)
+            {
+                Task[] work;
+                lock (crossingScopesLock)
+                {
+                    work = scope.CrossingWork.Where(task => !task.IsCompletedSuccessfully).ToArray();
+                    scope.CrossingWork.Clear();
+                    if (work.Length == 0)
+                    {
+                        if (failure != null)
+                            ExceptionDispatchInfo.Capture(failure).Throw();
+                        if (!canComplete)
+                            return false;
+                        if (scope.ContinuationFrame is { } frame &&
+                            Context.HasReadyFiringsInFrame(frame.Id, scope.ThreadId))
+                        {
+                            scope.CrossingClosed = true;
+                            scope.AcceptingCrossings = false;
+                            throw new ActivityCheckpointPauseException();
+                        }
+                        var result = Context.IsNodeCompleted(scope.Node, scope);
+                        scope.CrossingClosed |= result;
+                        scope.AcceptingCrossings = false;
+                        if (result && scope.Node.Type == NodeType.StructuredActivity &&
+                            ownedCrossingEdges.TryGetValue(scope.Node, out var edges))
+                            foreach (var edge in edges)
+                                Context.ClearStream(edge.Identifier, RootContext.GetStreamThreadId(edge, scope));
+                        if (result && !scope.Node.Anchored && scope.Node.Parent != null)
+                        {
+                            var key = (scope.Node, FindOwningScope(scope.BaseNodeScope, scope.Node.Parent));
+                            if (crossingScopes.TryGetValue(key, out var active) && active == scope)
+                                crossingScopes.Remove(key);
+                        }
+                        return result;
+                    }
+                }
+                try
+                {
+                    await Task.WhenAll(work);
+                }
+                catch (Exception exception)
+                {
+                    if (failure == null || failure is ActivityCheckpointPauseException)
+                        failure = exception;
+                    lock (crossingScopesLock)
+                    {
+                        scope.CrossingClosed = true;
+                        scope.AcceptingCrossings = false;
+                    }
+                }
+            }
         }
 
         private Node GetCheckpointNode(string identifier)
@@ -1209,14 +1489,14 @@ namespace Stateflows.Activities.Engine
 
             lock (GetLock(node))
             {
-                streams = Context.GetNodeStreams(node, nodeScope.ThreadId, node.Type != NodeType.Output).ToArray();
+                streams = Context.GetNodeStreams(node, nodeScope, node.Type != NodeType.OutputPin).ToArray();
 
                 activated =
                     ( // initial node case
                         node.Type == NodeType.Initial
                     ) ||
-                    ( // input node case - has to have input
-                        node.Type == NodeType.Input &&
+                    ( // input pin case - has to have input
+                        node.Type == NodeType.InputPin &&
                         (input?.Any() ?? false)
                     ) ||
                     ( // no implicit join node - has any incoming streams
@@ -1247,7 +1527,7 @@ namespace Stateflows.Activities.Engine
                         {
                             if (!(stream.IsPersistent || InteractiveNodeTypes.Contains(node.Type)))
                             {
-                                Context.ClearStream(stream.EdgeIdentifier, nodeScope.ThreadId);
+                                Context.ClearStream(stream.EdgeIdentifier, RootContext.GetStreamThreadId(Graph.AllEdges[stream.EdgeIdentifier], nodeScope));
                                 Context.ActivatedFlows.Add(stream.EdgeIdentifier);
                             }
                         }
@@ -1259,7 +1539,27 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
-            nodeScope = nodeScope.CreateChildScope(node, upstreamEdge);
+            NodeScope activeScope = null;
+            if ((ownedCrossingEdges.Count > 0 || node.Options.HasFlag(NodeOptions.Interleave)) && node.Type == NodeType.StructuredActivity &&
+                !node.Options.HasFlag(NodeOptions.Reentrant))
+            {
+                var parentScope = FindOwningScope(nodeScope, node.Parent);
+                lock (crossingScopesLock)
+                    if (crossingScopes.TryGetValue((node, parentScope), out var active) && !active.CrossingClosed)
+                        activeScope = active;
+            }
+            InterleavingInvocation interleaving = null;
+            if (activated && node.Options.HasFlag(NodeOptions.Interleave))
+            {
+                interleaving = await AdmitInterleavingAsync(node, FindOwningScope(nodeScope, node.Parent),
+                    activeScope, upstreamEdge, inputTokens.ToArray(), lease);
+                if (interleaving == null)
+                    return;
+                nodeScope = interleaving.Scope;
+            }
+            else
+                nodeScope = activeScope ?? nodeScope.CreateChildScope(node, upstreamEdge,
+                    StructuralTypes.Contains(node.Type) && node.Options.HasFlag(NodeOptions.Reentrant) ? Guid.NewGuid() : null);
             invocationScope.Value = nodeScope;
 
             var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens)
@@ -1279,13 +1579,21 @@ namespace Stateflows.Activities.Engine
             using var invocationProvenance = Context.BeginInvocationProvenance(actionContext.IsStreamed);
 
             var actuallyActivated = resumeFrame == null && !Context.ActiveNodes.Keys.Contains(node.Identifier);
-            if (actuallyActivated)
+            try
             {
-                await Inspector.OnNodeActivateAsync(actionContext, activated, ActivateAsync);
+                if (actuallyActivated)
+                    await Inspector.OnNodeActivateAsync(actionContext, activated, ActivateAsync);
+                else
+                    await ActivateAsync();
             }
-            else
+            finally
             {
-                await ActivateAsync();
+                if (interleaving != null)
+                {
+                    FinishInterleaving(node, nodeScope);
+                    if (interleaving.Finalized)
+                        await nodeScope.DisposeAsync();
+                }
             }
 
             async Task ActivateAsync()
@@ -1320,7 +1628,7 @@ namespace Stateflows.Activities.Engine
                             {
                                 if (edge.Source.Type != NodeType.DataStore)
                                 {
-                                    Context.ClearStream(edge.Identifier, nodeScope.ThreadId);
+                                    Context.ClearStream(edge.Identifier, RootContext.GetStreamThreadId(edge, nodeScope));
                                 }
                             }
                         }
@@ -1371,7 +1679,11 @@ namespace Stateflows.Activities.Engine
                         return;
                     }
 
-                    if (node.Type is NodeType.Output or NodeType.ExceptionHandler)
+                    if (nodeScope.CancellationToken.IsCancellationRequested && CancellableTypes.Contains(node.Type) &&
+                        !StructuralTypes.Contains(node.Type))
+                        return;
+
+                    if (node.Type is NodeType.OutputPin or NodeType.ExceptionHandler)
                     {
                         DoHandleOutput(actionContext);
                     }
@@ -1379,7 +1691,7 @@ namespace Stateflows.Activities.Engine
                     {
                         if (
                             StructuralTypes.Contains(node.Type) &&
-                            Context.IsNodeCompleted(node, nodeScope) &&
+                            (interleaving?.Finalized ?? Context.IsNodeCompleted(node, nodeScope)) &&
                             !actionContext.OutputTokens.Any()
                         )
                         {
@@ -1399,7 +1711,7 @@ namespace Stateflows.Activities.Engine
                         var nodes = (
                             await Task.WhenAll(
                                 node.Edges
-                                    .Where(edge => edge.Target.Type == NodeType.Output || outputTokens.Any(t => t is TokenHolder<ControlToken>))
+                                    .Where(edge => edge.Target.Type == NodeType.OutputPin || outputTokens.Any(t => t is TokenHolder<ControlToken>))
                                     .Where(edge => outputTokens.Any(t => edge.TokenType.IsAssignableFrom(t.ActualPayloadType)) || edge.Weight == 0)
                                     .OrderBy(edge => edge.IsElse)
                                     .Select(async edge =>
@@ -1417,57 +1729,62 @@ namespace Stateflows.Activities.Engine
                             .ToArray();
 
                         // Successors can loop back to this node; only the firing and its routing own the gate.
+                        if (interleaving != null)
+                            FinishInterleaving(node, nodeScope);
                         lease.Dispose();
-                        if (Context.PauseAfterFiring && nodes.Length > 0)
-                        {
-                            Context.AddReadyFirings(nodes.SelectMany(group => group.Select(edge =>
-                                new ReadyActivityFiring
-                                {
-                                    NodeIdentifier = group.Key.Identifier,
-                                    UpstreamEdgeIdentifier = edge.Identifier,
-                                    FrameId = currentFrame.Value?.Id,
-                                    ThreadId = nodeScope.ThreadId,
-                                    IsRootThread = currentFrame.Value == null
-                                })));
-                            throw new ActivityCheckpointPauseException();
-                        }
-
-                        if (currentFrame.Value != null && nodes.Length > 0 &&
-                            handoffCoordinator.Value is { } coordinator &&
-                            Context.IsCurrentCallStreamed == false)
-                        {
-                            var mixedGroups = nodes.Where(group => IsMixedTarget(group.Key, nodeScope)).ToArray();
-                            if (mixedGroups.Length > 0 &&
-                                coordinator.TryRequest(StreamedWorkHost, () => ContinueHandedOffFramesAsync(coordinator)))
-                            {
-                                // The transaction keeps ownership of its pure successors and hands off the structural
-                                // continuation: mixed successors become ready firings of the suspended frames.
-                                Context.AddReadyFirings(mixedGroups.SelectMany(group => group.Select(edge =>
-                                    new ReadyActivityFiring
-                                    {
-                                        NodeIdentifier = group.Key.Identifier,
-                                        UpstreamEdgeIdentifier = edge.Identifier,
-                                        FrameId = currentFrame.Value?.Id,
-                                        ThreadId = nodeScope.ThreadId,
-                                        IsRootThread = false
-                                    })));
-                                await Task.WhenAll(nodes
-                                    .Where(n => !mixedGroups.Contains(n))
-                                    .Select(n => DoHandleNodeAsync(n.Key, n.First(), nodeScope))
-                                    .ToArray());
-                                throw new ActivityCheckpointPauseException();
-                            }
-                        }
-
-                        var handedOff = TryHandOffMixedSuccessors(nodes, nodeScope, actionContext);
-                        await Task.WhenAll(nodes
-                            .Where(n => !handedOff.Contains(n.Key))
-                            .Select(n => DoHandleNodeAsync(n.Key, n.First(), nodeScope))
-                            .ToArray());
+                        var crossingNodes = nodes.Where(group => group.Any(edge => edge.IsCrossScope)).ToArray();
+                        var crossingWork = crossingNodes
+                            .Select(group => HandleCrossingSuccessorAsync(group.First(), nodeScope)).ToArray();
+                        nodes = nodes.Except(crossingNodes).ToArray();
+                        await Task.WhenAll(crossingWork.Append(ExecuteSuccessorsAsync(nodes, nodeScope)));
                     }
                 }
 
             }
+        }
+
+        private async Task ExecuteSuccessorsAsync(IGrouping<Node, Edge>[] nodes, NodeScope nodeScope)
+        {
+            if (Context.PauseAfterFiring && nodes.Length > 0)
+            {
+                Context.AddReadyFirings(nodes.SelectMany(group => group.Select(edge =>
+                    new ReadyActivityFiring
+                    {
+                        NodeIdentifier = group.Key.Identifier,
+                        UpstreamEdgeIdentifier = edge.Identifier,
+                        FrameId = currentFrame.Value?.Id,
+                        ThreadId = nodeScope.ThreadId,
+                        IsRootThread = currentFrame.Value == null
+                    })));
+                throw new ActivityCheckpointPauseException();
+            }
+
+            if (currentFrame.Value != null && nodes.Length > 0 &&
+                handoffCoordinator.Value is { } coordinator &&
+                Context.IsCurrentCallStreamed == false)
+            {
+                var mixedGroups = nodes.Where(group => IsMixedTarget(group.Key, nodeScope)).ToArray();
+                if (mixedGroups.Length > 0 &&
+                    coordinator.TryRequest(StreamedWorkHost, () => ContinueHandedOffFramesAsync(coordinator)))
+                {
+                    Context.AddReadyFirings(mixedGroups.SelectMany(group => group.Select(edge =>
+                        new ReadyActivityFiring
+                        {
+                            NodeIdentifier = group.Key.Identifier,
+                            UpstreamEdgeIdentifier = edge.Identifier,
+                            FrameId = currentFrame.Value?.Id,
+                            ThreadId = nodeScope.ThreadId,
+                            IsRootThread = false
+                        })));
+                    await Task.WhenAll(nodes.Where(group => !mixedGroups.Contains(group))
+                        .Select(group => DoHandleNodeAsync(group.Key, group.First(), nodeScope)));
+                    throw new ActivityCheckpointPauseException();
+                }
+            }
+
+            var handedOff = TryHandOffMixedSuccessors(nodes, nodeScope);
+            await Task.WhenAll(nodes.Where(group => !handedOff.Contains(group.Key))
+                .Select(group => DoHandleNodeAsync(group.Key, group.First(), nodeScope)));
         }
 
         /// <summary>
@@ -1475,7 +1792,7 @@ namespace Stateflows.Activities.Engine
         /// already holds streamed tokens, that successor fires as streamed work. The regular transaction's
         /// responsibility ends at the handoff, so the firing is given to the runtime host instead of awaited.
         /// </summary>
-        private HashSet<Node> TryHandOffMixedSuccessors(IGrouping<Node, Edge>[] nodes, NodeScope nodeScope, ActionContext actionContext)
+        private HashSet<Node> TryHandOffMixedSuccessors(IGrouping<Node, Edge>[] nodes, NodeScope nodeScope)
         {
             var handedOff = new HashSet<Node>();
             var host = StreamedWorkHost;
@@ -1486,7 +1803,7 @@ namespace Stateflows.Activities.Engine
             foreach (var group in nodes)
             {
                 var target = group.Key;
-                if (target.Type is NodeType.Output or NodeType.Final)
+                if (target.Type is NodeType.OutputPin or NodeType.Final)
                     continue;
 
                 var edge = group.First();
@@ -1499,7 +1816,7 @@ namespace Stateflows.Activities.Engine
 
         private bool IsMixedTarget(Node target, NodeScope nodeScope)
         {
-            if (target.Type is NodeType.Output or NodeType.Final)
+            if (target.Type is NodeType.OutputPin or NodeType.Final)
                 return false;
 
             // A data store converts transactional arrivals to streamed work during a streaming busy period.
@@ -1508,7 +1825,7 @@ namespace Stateflows.Activities.Engine
 
             lock (GetLock(target))
             {
-                return Context.GetNodeStreams(target, nodeScope.ThreadId, true)
+                return Context.GetNodeStreams(target, nodeScope, true)
                     .Any(stream => stream.IsStreamed || stream.Tokens.Any(token => token.IsStreamed));
             }
         }
@@ -1524,7 +1841,19 @@ namespace Stateflows.Activities.Engine
             if (Context == null || Context.PauseAfterFiring)
                 return;
 
-            await ResumeReadyFiringsAsync(clearPause: false);
+            var previousScope = invocationScope.Value;
+            var previousFrame = currentFrame.Value;
+            invocationScope.Value = rootNodeScope;
+            currentFrame.Value = null;
+            try
+            {
+                await ResumeReadyFiringsAsync(clearPause: false);
+            }
+            finally
+            {
+                invocationScope.Value = previousScope;
+                currentFrame.Value = previousFrame;
+            }
         }
 
         private async Task<bool> TryForceFinalizeAsync(NodeScope nodeScope)
@@ -1740,7 +2069,7 @@ namespace Stateflows.Activities.Engine
         private async Task<bool> DoHandleEdgeAsync(Edge edge, ActionContext context)
         {
             var flowContext = new FlowContext(context.Context, context.NodeScope, edge);
-            var stream = Context.GetStream(edge.Identifier, context.NodeScope.ThreadId);
+            var stream = Context.GetStream(edge.Identifier, RootContext.GetStreamThreadId(edge, context.NodeScope));
             
             var edgeTokenName = edge.TokenType.GetTokenName();
 
@@ -1786,6 +2115,12 @@ namespace Stateflows.Activities.Engine
 
                 flowContext.TargetTokenCount = processedTokens.Count;
 
+                if (context.NodeScope.CancellationToken.IsCancellationRequested)
+                {
+                    flowContext.ActivationResult = false;
+                    return flowContext;
+                }
+
                 RegisterFlowAttempt(
                     edge,
                     edgeTokenName != typeof(ControlToken).GetTokenName()
@@ -1793,36 +2128,34 @@ namespace Stateflows.Activities.Engine
                         : 1
                 );
 
-                var flowActivated = processedTokens.Count + stream.Tokens.Count >= edge.Weight;
-                flowContext.ActivationResult = flowActivated;
-                if (flowActivated)
+                lock (GetLock(edge.Target))
                 {
-                    if (edgeTokenName != typeof(ControlToken).GetTokenName())
+                    // A concurrent destination firing may have consumed and detached the previous stream while
+                    // this flow's asynchronous pipeline ran. Commit to the current destination-owned marking.
+                    stream = Context.GetStream(edge.Identifier, RootContext.GetStreamThreadId(edge, context.NodeScope));
+                    var flowActivated = processedTokens.Count + stream.Tokens.Count >= edge.Weight;
+                    flowContext.ActivationResult = flowActivated;
+                    if (flowActivated)
                     {
-                        var controlToken = new ControlToken().ToTokenHolder();
-                        controlToken.IsStreamed = context.IsStreamed || processedTokens.Any(token => token.IsStreamed);
-                        processedTokens.Add(controlToken);
-                    }
-
-                    if (!edge.Source.Options.HasFlag(NodeOptions.ImplicitFork) && consumedTokens.Any())
-                    {
-                        foreach (var token in consumedTokens)
+                        if (edgeTokenName != typeof(ControlToken).GetTokenName())
                         {
-                            context.OutputTokens.Remove(token);
+                            var controlToken = new ControlToken().ToTokenHolder();
+                            controlToken.IsStreamed = context.IsStreamed || processedTokens.Any(token => token.IsStreamed);
+                            processedTokens.Add(controlToken);
+                        }
+
+                        if (!edge.Source.Options.HasFlag(NodeOptions.ImplicitFork) && consumedTokens.Any())
+                        {
+                            foreach (var token in consumedTokens)
+                                context.OutputTokens.Remove(token);
                         }
                     }
-                }
 
-                lock (edge.Target)
-                {
                     stream.Consume(processedTokens, edge.Source.Type == NodeType.DataStore);
-                }
+                    flowContext.TokenCount = stream.Tokens.Count;
 
-                flowContext.TokenCount = stream.Tokens.Count;
-
-                if (!flowActivated)
-                {
-                    flowContext.TargetTokenCount = processedTokens.Count;
+                    if (!flowActivated)
+                        flowContext.TargetTokenCount = processedTokens.Count;
                 }
 
                 return flowContext;

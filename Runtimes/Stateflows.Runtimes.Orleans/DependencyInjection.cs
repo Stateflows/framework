@@ -22,14 +22,21 @@ public static class DependencyInjection
     /// <param name="builder">The Orleans silo builder to configure.</param>
     /// <param name="configure">Optional configuration for Stateflows Orleans runtime options.</param>
     /// <returns>The same silo builder, for further Orleans configuration.</returns>
-    /// <remarks>Call this for each silo that hosts Stateflows behavior classes. Configure an Orleans grain storage provider for persisted behavior state.</remarks>
+    /// <remarks>
+    /// Call this for each silo that hosts Stateflows behavior classes. Enables Orleans transactions.
+    /// Configure grain storage with ETag support and reminders. Behavior state uses the Orleans transactional
+    /// storage bridge; existing nontransactional behavior records are not migrated automatically.
+    /// </remarks>
     public static ISiloBuilder AddStateflowsRuntime(this ISiloBuilder builder,
         System.Action<StateflowsRuntimeOptions>? configure = null)
     {
+        builder.UseTransactions();
         var options = builder.Services.AddOptions<StateflowsRuntimeOptions>();
         if (configure != null)
             options.Configure(configure);
         builder.Services.TryAddSingleton<IAttributeToFactoryMapper<StateflowsPersistentStateAttribute>, StateflowsPersistentStateMapper>();
+        builder.Services.TryAddSingleton<IAttributeToFactoryMapper<StateflowsTransactionalStateAttribute>, StateflowsTransactionalStateMapper>();
+        builder.Services.TryAddSingleton<TransactionWorkTracker>();
         builder.Services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IConfigurationValidator, RuntimeConfigurationValidator>());
         builder
@@ -87,7 +94,7 @@ public static class DependencyInjection
                             .Invoke(behavior, [initializationEvent, null])!;
                         var result = await sendTask;
 
-                        if (result.Status is EventStatus.Failed or EventStatus.Overloaded or EventStatus.Undelivered)
+                        if (result.Status is EventStatus.Failed or EventStatus.Aborted or EventStatus.Overloaded or EventStatus.Undelivered)
                         {
                             logger.LogWarning("Default instance of Stateflows behavior class {BehaviorClass} was not initialized: {Status}.", token.BehaviorClass, result.Status);
                             return false;

@@ -17,7 +17,7 @@ using Stateflows.StateMachines.Registration.Interfaces.Base;
 namespace Stateflows.Extensions.MinimalAPIs;
    
 /// <summary>Registers custom behavior endpoints and maps Stateflows' generated HTTP API.</summary>
-/// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/extension-minimal-apis"/>.</remarks>
+/// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/6.4.-Minimal-APIs"/>.</remarks>
 public static class DependencyInjection
 {
     internal static readonly List<System.Action<StateMachineVisitor>> StateMachineEndpointBuilders = [];

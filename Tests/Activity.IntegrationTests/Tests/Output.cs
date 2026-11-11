@@ -33,9 +33,9 @@ namespace Activity.IntegrationTests.Tests
                                 {
                                     c.Output(42);
                                 },
-                                b => b.AddFlow<int, OutputNode>()
+                                b => b.AddFlow<int, OutputPin<int>>()
                             )
-                            .AddOutput()
+                            .AddOutputPin<int>()
                             .AddFlow<int>("final")
                         )
                         .AddAcceptEventAction<SomeEvent>(b => b

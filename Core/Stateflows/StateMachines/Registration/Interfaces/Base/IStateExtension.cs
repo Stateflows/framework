@@ -5,7 +5,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     /// <summary>Applies a typed regular-state definition to the current state.</summary>
     /// <typeparam name="TReturn">The fluent state builder returned after extension.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
     public interface IStateExtension<out TReturn>
     {
         /// <summary>Applies a typed state definition's supported hooks without changing the current state's name.</summary>
@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The current state builder after applying the typed definition.</returns>
         /// <remarks>Supported entry, exit, and definition hooks are applied to the existing state; its registered name is
         /// preserved.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         [DebuggerHidden]
         public TReturn ExtendWith<TState>()
             where TState : class, IState

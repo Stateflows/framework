@@ -91,10 +91,10 @@ internal static class ActivityPinEndpoints
             var segment = Utils.GetEventName<TToken>();
             var route = $"/activities/{activityName}/{(isDefault ? "" : "{instance}/")}output/{segment}";
             var behaviorClass = new BehaviorClass(BehaviorType.Activity, activityName);
-            if (!interceptor.BeforeEventEndpointDefinition<TokensOutput<TToken>>(behaviorClass, isDefault, ref method, ref route))
+            if (!interceptor.BeforeEventEndpointDefinition<TToken>(behaviorClass, isDefault, ref method, ref route))
                 continue;
 
-            EndpointRouteRegistry.EnsureUnique(routes, method, route, Event<TokensOutput<TToken>>.Name, isStructural: true);
+            EndpointRouteRegistry.EnsureUnique(routes, method, route, Event<TToken>.Name, isStructural: true);
             var endpoint = isDefault
                 ? routes.MapMethods(route, [method], (
                     HttpContext context, IBehaviorLocator locator, [FromQuery] bool stream = false)
@@ -103,7 +103,7 @@ internal static class ActivityPinEndpoints
                     HttpContext context, IBehaviorLocator locator, string instance, [FromQuery] bool stream = false)
                     => WatchOutputAsync<TToken>(context, locator, activityName, instance, stream));
             endpoint.WithTags($"{BehaviorType.Activity} {activityName}");
-            interceptor.AfterEventEndpointDefinition<TokensOutput<TToken>>(behaviorClass, isDefault, method, route, endpoint);
+            interceptor.AfterEventEndpointDefinition<TToken>(behaviorClass, isDefault, method, route, endpoint);
             links.AddLink(activityName, new HateoasLink { Rel = $"output/{segment}", Href = route, Method = method },
                 [BehaviorStatus.NotInitialized, BehaviorStatus.Initialized, BehaviorStatus.Finalized]);
         }
@@ -121,16 +121,16 @@ internal static class ActivityPinEndpoints
             var watchFrom = DateTime.Now;
             if (!stream)
             {
-                var next = new TaskCompletionSource<TokensOutput<TToken>>(TaskCreationOptions.RunContinuationsAsynchronously);
-                await using var watcher = await behavior.WatchAsync([Event<TokensOutput<TToken>>.Name], notification =>
+                var next = new TaskCompletionSource<TToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+                await using var watcher = await behavior.WatchAsync([Event<TToken>.Name], notification =>
                 {
                     if (notification.SentAt >= watchFrom)
-                        next.TrySetResult(((EventHolder<TokensOutput<TToken>>)notification).Payload);
+                        next.TrySetResult(((EventHolder<TToken>)notification).Payload);
                 }, watchFrom);
                 try
                 {
                     var notification = await next.Task.WaitAsync(context.RequestAborted);
-                    return Results.Json(new { Tokens = notification.GetAll().ToArray() });
+                    return Results.Json(notification);
                 }
                 catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
                 {
@@ -144,7 +144,7 @@ internal static class ActivityPinEndpoints
                 SingleReader = true,
                 FullMode = BoundedChannelFullMode.Wait
             });
-            await using var outputWatcher = await behavior.WatchAsync([Event<TokensOutput<TToken>>.Name], notification =>
+            await using var outputWatcher = await behavior.WatchAsync([Event<TToken>.Name], notification =>
             {
                 if (notification.SentAt < watchFrom) return;
                 if (!queue.Writer.TryWrite(notification))

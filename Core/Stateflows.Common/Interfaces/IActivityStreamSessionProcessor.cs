@@ -16,6 +16,12 @@ public interface IActivityStreamSessionProcessor
 
     Task<TimeEvent[]> GetActivitySessionTimeEventsAsync(BehaviorId id);
 
+    /// <summary>
+    /// Returns the session-owned mutable context, or null when no session exists. The runtime must not
+    /// serialize it while firings are active or retain it as committed state without detaching it.
+    /// </summary>
+    StateflowsContext? GetActivitySessionContext(BehaviorId id);
+
     Task<bool?> WaitForActivitySessionInitializationAsync(BehaviorId id);
 
     bool IsCurrentActivityInvocationStreamed(BehaviorId id);

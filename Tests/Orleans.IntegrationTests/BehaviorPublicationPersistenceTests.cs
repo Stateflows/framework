@@ -20,7 +20,7 @@ public sealed partial class BehaviorNotificationTests
             using var scope = host.Services.CreateScope();
             using var behavior = await LocateBehaviorAsync(
                 scope.ServiceProvider.GetRequiredService<IBehaviorLocator>(), id, WatchTimeout);
-            var send = behavior.SendAsync(new PublishCustomNotification { Text = "persist-before-return" });
+            var send = behavior.SendAsync(new PublishCustomNotification { Text = "persist-before-return", TimeToLive = 300 });
             await filter.Entered.Task.WaitAsync(WatchTimeout);
             Assert.IsFalse(send.IsCompleted, "The behavior must not return before publication persistence completes.");
             filter.Release.TrySetResult();
@@ -50,7 +50,7 @@ public sealed partial class BehaviorNotificationTests
                 scope.ServiceProvider.GetRequiredService<IBehaviorLocator>(), id, WatchTimeout);
             filter.Release.TrySetResult();
             Assert.AreEqual(EventStatus.Consumed,
-                (await behavior.SendAsync(new PublishCustomNotification()).WaitAsync(WatchTimeout)).Status);
+                (await behavior.SendAsync(new PublishCustomNotification { TimeToLive = 300 }).WaitAsync(WatchTimeout)).Status);
             Assert.IsFalse((await behavior.GetNotificationsAsync<CustomNotification>(DateTime.MinValue)).Any());
             filter.Reject = false;
             var client = host.Services.GetRequiredService<IClusterClient>();

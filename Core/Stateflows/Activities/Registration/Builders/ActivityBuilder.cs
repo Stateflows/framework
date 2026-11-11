@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -110,8 +111,8 @@ namespace Stateflows.Activities.Registration.Builders
             => AddStructuredActivity(actionNodeName, buildAction) as IActivityBuilder;
 
         IOverridenActivityBuilder IReactiveActivityBase<IOverridenActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName,
-            ParallelActivityBuildAction buildAction, int chunkSize)
-            => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction, chunkSize) as IOverridenActivityBuilder;
+            ParallelActivityBuildAction buildAction, int chunkSize, int maxConcurrency)
+            => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction, chunkSize, maxConcurrency) as IOverridenActivityBuilder;
 
         IOverridenActivityBuilder IReactiveActivityBase<IOverridenActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuildAction buildAction,
             int chunkSize)
@@ -132,26 +133,23 @@ namespace Stateflows.Activities.Registration.Builders
         IActivityBuilder IInitialBase<IActivityBuilder>.AddInitial(InitialBuildAction buildAction)
             => AddInitial(buildAction) as IActivityBuilder;
 
-        IActivityBuilder IFinalBase<IActivityBuilder>.AddFinal()
-            => AddFinal() as IActivityBuilder;
-
-        IActivityBuilder IInputBase<IActivityBuilder>.AddInput(InputBuildAction buildAction)
-            => AddInput(buildAction) as IActivityBuilder;
+        IActivityBuilder IFinalBase<IActivityBuilder>.AddFinal(string? name)
+            => AddFinal(name) as IActivityBuilder;
 
         IActivityBuilder IInputBase<IActivityBuilder>.AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
             => (IActivityBuilder)AddInputPin(buildAction);
-        IActivityBuilder IOutputBase<IActivityBuilder>.AddOutputPin<TToken>()
-            => (IActivityBuilder)AddOutputPin<TToken>();
+        IActivityBuilder IActivityOutputBase<IActivityBuilder>.AddOutputPin<TToken>(string? name, PublishEventActionBuildAction buildAction)
+            => (IActivityBuilder)AddRootOutputPin<TToken>(name, buildAction);
 
-        IActivityBuilder IOutputBase<IActivityBuilder>.AddOutput()
-            => AddOutput() as IActivityBuilder;
+        IActivityBuilder IActivityOutputBase<IActivityBuilder>.AddOutputPin<TToken>(PublishEventActionBuildAction buildAction)
+            => (IActivityBuilder)AddRootOutputPin<TToken>(null, buildAction);
 
         IOverridenActivityBuilder IReactiveActivityBase<IOverridenActivityBuilder>.AddStructuredActivity(string actionNodeName,
             ReactiveStructuredActivityBuildAction buildAction)
             => AddStructuredActivity(actionNodeName, buildAction) as IOverridenActivityBuilder;
 
-        IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize)
-            => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction, chunkSize) as IActivityBuilder;
+        IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize, int maxConcurrency)
+            => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction, chunkSize, maxConcurrency) as IActivityBuilder;
 
         IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuildAction buildAction, int chunkSize)
             => AddIterativeActivity<TIterationToken>(actionNodeName, buildAction, chunkSize) as IActivityBuilder;
@@ -350,19 +348,16 @@ namespace Stateflows.Activities.Registration.Builders
         IOverridenActivityBuilder IInitialBase<IOverridenActivityBuilder>.AddInitial(InitialBuildAction buildAction)
             => AddInitial(buildAction) as IOverridenActivityBuilder;
 
-        IOverridenActivityBuilder IFinalBase<IOverridenActivityBuilder>.AddFinal()
-            => AddFinal() as IOverridenActivityBuilder;
-
-        IOverridenActivityBuilder IInputBase<IOverridenActivityBuilder>.AddInput(InputBuildAction buildAction)
-            => AddInput(buildAction) as IOverridenActivityBuilder;
+        IOverridenActivityBuilder IFinalBase<IOverridenActivityBuilder>.AddFinal(string? name)
+            => AddFinal(name) as IOverridenActivityBuilder;
 
         IOverridenActivityBuilder IInputBase<IOverridenActivityBuilder>.AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
             => (IOverridenActivityBuilder)AddInputPin(buildAction);
-        IOverridenActivityBuilder IOutputBase<IOverridenActivityBuilder>.AddOutputPin<TToken>()
-            => (IOverridenActivityBuilder)AddOutputPin<TToken>();
+        IOverridenActivityBuilder IActivityOutputBase<IOverridenActivityBuilder>.AddOutputPin<TToken>(string? name, PublishEventActionBuildAction buildAction)
+            => (IOverridenActivityBuilder)AddRootOutputPin<TToken>(name, buildAction);
 
-        IOverridenActivityBuilder IOutputBase<IOverridenActivityBuilder>.AddOutput()
-            => AddOutput() as IOverridenActivityBuilder;
+        IOverridenActivityBuilder IActivityOutputBase<IOverridenActivityBuilder>.AddOutputPin<TToken>(PublishEventActionBuildAction buildAction)
+            => (IOverridenActivityBuilder)AddRootOutputPin<TToken>(null, buildAction);
 
         IOverridenActivityBuilder ISendEventBase<IOverridenActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync,
             BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
@@ -371,8 +366,8 @@ namespace Stateflows.Activities.Registration.Builders
         IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseInitial(OverridenInitialBuildAction buildAction)
             => UseInitial(buildAction) as IOverridenActivityBuilder;
 
-        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseInput(OverridenInputBuildAction buildAction)
-            => UseInput(buildAction) as IOverridenActivityBuilder;
+        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseInputPin<TToken>(System.Action<IOverridenInputPinBuilder<TToken>> buildAction)
+            => UseInputPin(buildAction) as IOverridenActivityBuilder;
 
         IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseJoin(string joinNodeName, OverridenJoinBuildAction buildAction)
             => UseJoin(joinNodeName, buildAction) as IOverridenActivityBuilder;
@@ -415,6 +410,14 @@ namespace Stateflows.Activities.Registration.Builders
             PublishEventActionDelegateAsync<TEvent> actionAsync,
             PublishEventActionBuildAction buildAction)
             => AddPublishEventAction<TEvent>(actionNodeName, actionAsync, buildAction) as IActivityBuilder;
+
+        IActivityBuilder IPublishEventBase<IActivityBuilder>.AddPublishEventAction<TEvent>(string actionNodeName,
+            Func<IActionContext, Task<IEnumerable<TEvent>>> actionAsync, PublishEventActionBuildAction buildAction)
+            => (IActivityBuilder)AddPublishEventAction(actionNodeName, actionAsync, buildAction);
+
+        IOverridenActivityBuilder IPublishEventBase<IOverridenActivityBuilder>.AddPublishEventAction<TEvent>(string actionNodeName,
+            Func<IActionContext, Task<IEnumerable<TEvent>>> actionAsync, PublishEventActionBuildAction buildAction)
+            => (IOverridenActivityBuilder)AddPublishEventAction(actionNodeName, actionAsync, buildAction);
 
         IOverridenActivityBuilder ISendEventOverrides<IOverridenActivityBuilder>.UseSendEventAction<TEvent>(string actionNodeName, OverridenSendEventActionBuildAction buildAction)
             => UseSendEventAction<TEvent>(actionNodeName, buildAction) as IOverridenActivityBuilder;

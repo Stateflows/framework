@@ -6,7 +6,7 @@ using Stateflows.Common.Utilities;
 namespace Stateflows
 {
     /// <summary>Identifies an action instance by its definition name and instance key.</summary>
-    /// <remarks>Converts to <see cref="BehaviorId"/> for general behavior APIs. See <see href="https://github.com/Stateflows/framework/wiki/behaviors">behaviors</see>.</remarks>
+    /// <remarks>Converts to <see cref="BehaviorId"/> for general behavior APIs. See <see href="https://github.com/Stateflows/framework/wiki/5.-Behaviors">behaviors</see>.</remarks>
     public struct ActionId : IEquatable<ActionId>
     {
         /// <summary>Creates an action identifier.</summary>

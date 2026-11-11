@@ -135,13 +135,16 @@ public sealed class FailedExecutionTests
             probe.Fail = mode == FailureMode.Execution;
             probe.FailAfterExecute = mode == FailureMode.AfterExecute;
 
-            var result = mode == FailureMode.Clear
-                ? await behavior.SendAsync(new Reset())
+            Func<Task<SendResult>> send = () => mode == FailureMode.Clear
+                ? behavior.SendAsync(new Reset())
                 : type == BehaviorType.Entity && mode != FailureMode.Execution
-                ? await behavior.SendAsync(new FieldState<List<string>> { Name = "Items", Value = new List<string> { "changed" } })
-                : await behavior.SendAsync(new Mutate());
+                ? behavior.SendAsync(new FieldState<List<string>> { Name = "Items", Value = new List<string> { "changed" } })
+                : behavior.SendAsync(new Mutate());
 
-            Assert.AreEqual(EventStatus.Failed, result.Status);
+            if (mode is FailureMode.Write or FailureMode.Clear)
+                await TransactionalStorageTestHelpers.AssertTransactionCommitFailureAsync(send, "Expected storage failure.");
+            else
+                Assert.AreEqual(EventStatus.Failed, (await send()).Status);
             Assert.IsFalse(storage.RejectNextWrite, "The execution must reach the rejected storage write.");
             Assert.IsFalse(storage.RejectNextClear, "The execution must reach the rejected storage clear.");
             Assert.AreEqual(before, storage.ContextSnapshot);
@@ -471,7 +474,7 @@ public sealed class FailedExecutionTests
     // Uses the silo's Orleans storage serializer, so persisted state is subject to the same type allow-list as real providers.
     private sealed class FaultStorage : IGrainStorage
     {
-        private readonly ConcurrentDictionary<(string, GrainId), BinaryData> states = new();
+        private readonly ConcurrentDictionary<(string, GrainId), (BinaryData Data, string ETag)> states = new();
         private IGrainStorageSerializer serializer = null!;
         public bool RejectNextWrite;
         public bool RejectNextClear;
@@ -486,35 +489,63 @@ public sealed class FailedExecutionTests
 
         public Task ReadStateAsync<T>(string stateName, GrainId grainId, IGrainState<T> grainState)
         {
-            if (typeof(T) == typeof(BehaviorContextState)) ContextReads++;
-            grainState.RecordExists = states.TryGetValue((stateName, grainId), out var serialized);
-            grainState.State = serialized != null
-                ? serializer.Deserialize<T>(serialized)
-                : Activator.CreateInstance<T>();
+            if (stateName == "Stateflows.BehaviorContext") ContextReads++;
+            if (states.TryGetValue((stateName, grainId), out var stored))
+            {
+                grainState.State = serializer.Deserialize<T>(stored.Data);
+                grainState.ETag = stored.ETag;
+                grainState.RecordExists = true;
+            }
+            else
+            {
+                grainState.State = Activator.CreateInstance<T>();
+                grainState.ETag = null;
+                grainState.RecordExists = false;
+            }
             return Task.CompletedTask;
         }
 
         public Task WriteStateAsync<T>(string stateName, GrainId grainId, IGrainState<T> grainState)
         {
-            if (grainState.State is BehaviorContextState && RejectNextWrite)
+            var data = serializer.Serialize(grainState.State);
+            var committedAdvanced = false;
+            if (stateName == "Stateflows.BehaviorContext")
             {
-                RejectNextWrite = false;
-                throw new InvalidOperationException("Expected storage failure.");
+                var previous = states.TryGetValue((stateName, grainId), out var stored)
+                    ? serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(stored.Data)
+                    : null;
+                var next = serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(data);
+                // Only writes carrying a new prepared/committed behavior version are targeted, not metadata-only writes.
+                if (RejectNextWrite &&
+                    TransactionalStorageTestHelpers.GetLatestSequenceId(next) > TransactionalStorageTestHelpers.GetLatestSequenceId(previous))
+                {
+                    RejectNextWrite = false;
+                    throw new InvalidOperationException("Expected storage failure.");
+                }
+                committedAdvanced = (next?.CommittedSequenceId ?? 0) > (previous?.CommittedSequenceId ?? 0);
             }
-            states[(stateName, grainId)] = serializer.Serialize(grainState.State);
-            if (grainState.State is BehaviorContextState context) ContextSnapshot = context.Payload;
+            var eTag = Guid.NewGuid().ToString("N");
+            states[(stateName, grainId)] = (data, eTag);
+            if (committedAdvanced &&
+                TransactionalStorageTestHelpers.GetCommittedContextState(
+                    serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(data)) is { } context)
+            {
+                ContextSnapshot = context.Payload;
+            }
+            grainState.ETag = eTag;
             grainState.RecordExists = true;
             return Task.CompletedTask;
         }
 
         public Task ClearStateAsync<T>(string stateName, GrainId grainId, IGrainState<T> grainState)
         {
-            if (typeof(T) == typeof(BehaviorContextState) && RejectNextClear)
+            if (stateName == "Stateflows.BehaviorContext" && RejectNextClear)
             {
                 RejectNextClear = false;
                 throw new InvalidOperationException("Expected clear failure.");
             }
             states.TryRemove((stateName, grainId), out _);
+            grainState.ETag = null;
             grainState.RecordExists = false;
             return Task.CompletedTask;
         }

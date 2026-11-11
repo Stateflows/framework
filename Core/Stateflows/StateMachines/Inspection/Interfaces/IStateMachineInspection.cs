@@ -5,7 +5,7 @@ using Stateflows.StateMachines.Inspection.Interfaces;
 namespace Stateflows.StateMachines
 {
     /// <summary>Exposes a machine instance's definition and live execution inspection model.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/observability">inspection and observability</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">inspection and observability</see>.</remarks>
     public interface IStateMachineInspection
     {
         /// <summary>The inspected machine instance identity.</summary>

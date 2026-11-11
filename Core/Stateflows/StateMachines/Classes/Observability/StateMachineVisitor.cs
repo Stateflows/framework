@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines
 {
     /// <summary>Base definition visitor with no-op implementations, allowing individual metadata callbacks to be overridden.</summary>
     /// <remarks>This visits registrations, not runtime executions.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/observability">observability</see>.</remarks>
+    /// See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.</remarks>
     public abstract class StateMachineVisitor : IStateMachineVisitor
     {
         /// <inheritdoc/>

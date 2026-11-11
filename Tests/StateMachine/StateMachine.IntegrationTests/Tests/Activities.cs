@@ -70,13 +70,13 @@ namespace StateMachine.IntegrationTests.Tests
                                     Debug.WriteLine($"value: not available");
                                 }
                             },
-                            b => b.AddFlow<bool, OutputNode>()
+                            b => b.AddFlow<bool, OutputPin<bool>>()
                         )
-                        .AddOutput()
+                        .AddOutputPin<bool>()
                     )
                     .AddActivity("effect", b => b
-                        .AddInput(b => b
-                            .AddFlow<SomeEvent>("main")
+                        .AddInputPin<SomeEvent>(b => b
+                            .AddFlow("main")
                         )
                         .AddAction("main", async c =>
                         {

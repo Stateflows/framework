@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Serialization;
 using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Stateflows;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Activities.Streams;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 
@@ -22,6 +24,147 @@ public sealed class ActivityStreamingLifecycleTests
     {
         [nameof(Stateflows.Common.Stream)] = new Stateflows.Common.Stream()
     };
+
+    [TestMethod]
+    [Timeout(45_000)]
+    public async Task LiveFiringsDoNotSerializeThePersistentMarking()
+    {
+        SerializationMarker.Serializations = 0;
+        var probe = new LifecycleProbe();
+        object? liveContext = null;
+        await using var cluster = await LifecycleCluster.StartAsync(probe, activities => activities
+            .AddActivity("lifecycle-context-ownership", activity => activity
+                .AddInputPin<SerializationMarker>(input => input.AddFlow("store"))
+                .AddInputPin<string>(input => input.AddFlow("keepalive"))
+                .AddInputPin<int>(input => input.AddFlow("tick"))
+                .AddDataStore("store", store => store.AddFlow<SerializationMarker>("consume"))
+                .AddAction("consume", _ =>
+                {
+                    probe.Signal("marker-stored").TrySetResult();
+                    return Task.CompletedTask;
+                })
+                .AddAction("keepalive", async context =>
+                {
+                    liveContext = ((IStateflowsContextProvider)context).Context;
+                    probe.Signal("stream-started").TrySetResult();
+                    await probe.Gate("stream").Task;
+                })
+                .AddAction("tick", context =>
+                {
+                    Assert.AreSame(liveContext, ((IStateflowsContextProvider)context).Context,
+                        "Streamed and regular firings must borrow the same session context.");
+                    var value = context.GetTokensOfType<int>().Single();
+                    if (value == 6)
+                        throw new InvalidOperationException("Expected streamed failure.");
+                    context.Behavior.Publish(new LifecycleNotice { Value = value });
+                    return Task.CompletedTask;
+                }, node => node.Reentrant())));
+        using var behavior = cluster.Factory.CreateBehavior(new ActivityId("lifecycle-context-ownership", "live"));
+        var notices = Channel.CreateUnbounded<int>();
+        await using var watcher = await WatchNoticesAsync(behavior, notices);
+        var failure = new TaskCompletionSource<ActivityStreamFailure>(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var failureWatcher = await behavior.WatchAsync<ActivityStreamFailure>(notification =>
+        {
+            failure.TrySetResult(notification);
+            return Task.CompletedTask;
+        });
+
+        // Introduce the marker into live state only; regular calls may legitimately serialize the committed
+        // baseline to persist receipts or an outbox, but must never serialize the concurrently executing marking.
+        Assert.AreEqual(EventStatus.Accepted,
+            (await behavior.SendAsync(new TokensInput().Add(new SerializationMarker()).Add("hold"), StreamHeader)
+                .WaitAsync(Limit)).Status);
+        await probe.Signal("stream-started").Task.WaitAsync(Limit);
+        await probe.Signal("marker-stored").Task.WaitAsync(Limit);
+        var serializations = System.Threading.Volatile.Read(ref SerializationMarker.Serializations);
+        Assert.IsGreaterThan(0, serializations, "The marker must participate in actual context serialization.");
+
+        for (var value = 1; value <= 5; value++)
+        {
+            Assert.AreEqual(EventStatus.Accepted,
+                (await behavior.SendAsync(new TokensInput().Add(value), StreamHeader).WaitAsync(Limit)).Status);
+            Assert.AreEqual(value, await ReadNoticeAsync(notices));
+            Assert.AreEqual(EventStatus.Consumed,
+                (await behavior.SendAsync(new TokensInput().Add(-value)).WaitAsync(Limit)).Status);
+            Assert.AreEqual(-value, await ReadNoticeAsync(notices));
+        }
+
+        Assert.AreEqual(EventStatus.Accepted,
+            (await behavior.SendAsync(new TokensInput().Add(6), StreamHeader).WaitAsync(Limit)).Status);
+        var failureNotification = await failure.Task.WaitAsync(Limit);
+        CollectionAssert.Contains(failureNotification.ExceptionTypes, typeof(InvalidOperationException).FullName);
+        Assert.AreEqual(EventStatus.Consumed,
+            (await behavior.SendAsync(new TokensInput().Add(7)).WaitAsync(Limit)).Status);
+        Assert.AreEqual(7, await ReadNoticeAsync(notices));
+
+        Assert.AreEqual(serializations, System.Threading.Volatile.Read(ref SerializationMarker.Serializations),
+            "Live execution must not serialize stored tokens merely to refresh the runtime's context reference.");
+        probe.Gate("stream").TrySetResult();
+        await WaitForNaturalQuiescenceAsync(behavior);
+        Assert.IsGreaterThan(serializations, System.Threading.Volatile.Read(ref SerializationMarker.Serializations),
+            "The retained marking must still be serialized at the persistence boundary.");
+    }
+
+    [TestMethod]
+    [Timeout(45_000)]
+    public async Task CheckpointKeepsCommittedContextDetachedFromResumedSession()
+    {
+        var probe = new LifecycleProbe();
+        SerializationMarker? liveMarker = null;
+        await using var cluster = await LifecycleCluster.StartAsync(probe, activities => activities
+            .AddActivity("lifecycle-checkpoint-ownership", activity => activity
+                .AddInputPin<string>(input => input.AddFlow("first"))
+                .AddInputPin<SerializationMarker>(input => input.AddFlow("store"))
+                .AddInputPin<int>(input => input.AddFlow("tick"))
+                .AddDataStore("store", store => store.AddFlow<SerializationMarker>("after"))
+                .AddAction("first", async _ =>
+                {
+                    probe.Signal("first-started").TrySetResult();
+                    await probe.Gate("first").Task;
+                }, node => node.AddControlFlow("after"))
+                .AddAction("after", async context =>
+                {
+                    liveMarker = context.GetTokensOfType<SerializationMarker>().Single();
+                    probe.Signal("after-started").TrySetResult();
+                    await probe.Gate("after").Task;
+                })
+                .AddAction("tick", context =>
+                {
+                    context.Behavior.Publish(new LifecycleNotice { Value = context.GetTokensOfType<int>().Single() });
+                    return Task.CompletedTask;
+                })),
+            options => options.ActivityCheckpointPauseRequestedForTesting = _ =>
+                probe.Signal("pause-requested").TrySetResult());
+        using var behavior = cluster.Factory.CreateBehavior(new ActivityId("lifecycle-checkpoint-ownership", "checkpoint"));
+        var notices = Channel.CreateUnbounded<int>();
+        await using var watcher = await WatchNoticesAsync(behavior, notices);
+
+        Assert.AreEqual(EventStatus.Accepted,
+            (await behavior.SendAsync(new TokensInput().Add("start").Add(new SerializationMarker()), StreamHeader)
+                .WaitAsync(Limit)).Status);
+        await probe.Signal("first-started").Task.WaitAsync(Limit);
+        var checkpoint = behavior.SendAsync(new ActivityCheckpoint());
+        await probe.Signal("pause-requested").Task.WaitAsync(Limit);
+        probe.Gate("first").TrySetResult();
+        Assert.AreEqual(EventStatus.Consumed, (await checkpoint.WaitAsync(Limit)).Status);
+        await probe.Signal("after-started").Task.WaitAsync(Limit);
+        Assert.IsNotNull(liveMarker);
+        var serializations = System.Threading.Volatile.Read(ref liveMarker.InstanceSerializations);
+
+        for (var value = 1; value <= 3; value++)
+        {
+            Assert.AreEqual(EventStatus.Consumed,
+                (await behavior.SendAsync(new TokensInput().Add(value)).WaitAsync(Limit)).Status);
+            Assert.AreEqual(value, await ReadNoticeAsync(notices));
+        }
+
+        Assert.AreEqual(serializations, System.Threading.Volatile.Read(ref liveMarker.InstanceSerializations),
+            "Committing receipts and publications must serialize detached checkpoint state, not the resumed live marker.");
+        probe.Gate("after").TrySetResult();
+        await WaitForNaturalQuiescenceAsync(behavior);
+        Assert.IsGreaterThan(serializations, System.Threading.Volatile.Read(ref liveMarker.InstanceSerializations),
+            "The live marker must be transferred to persistence after its session has ended.");
+    }
 
     [TestMethod]
     [Timeout(45_000)]
@@ -83,7 +226,8 @@ public sealed class ActivityStreamingLifecycleTests
         var probe = new LifecycleProbe();
         await using var cluster = await LifecycleCluster.StartAsync(probe, activities => activities
             .AddActivity("lifecycle-fifo", activity => activity
-                .AddInput(input => input.AddFlow<string>("stream").AddFlow<int>("regular"))
+                .AddInputPin<string>(input => input.AddFlow("stream"))
+                .AddInputPin<int>(input => input.AddFlow("regular"))
                 .AddAction("stream", async _ =>
                 {
                     probe.Signal("stream-started").TrySetResult();
@@ -145,7 +289,8 @@ public sealed class ActivityStreamingLifecycleTests
         var probe = new LifecycleProbe();
         await using var cluster = await LifecycleCluster.StartAsync(probe, activities => activities
             .AddActivity("lifecycle-immediate", activity => activity
-                .AddInput(input => input.AddFlow<int>("late").AddFlow<string>("read"))
+                .AddInputPin<int>(input => input.AddFlow("late"))
+                .AddInputPin<string>(input => input.AddFlow("read"))
                 .AddAction("late", async context =>
                 {
                     await context.Behavior.Values.SetAsync("value", 7);
@@ -166,8 +311,8 @@ public sealed class ActivityStreamingLifecycleTests
                     Interlocked.Increment(ref probe.DownstreamEffects);
                     context.PassAllTokensOn();
                     return Task.CompletedTask;
-                }, node => node.AddFlow<int, OutputNode>())
-                .AddOutput()
+                }, node => node.AddFlow<int, OutputPin<int>>())
+                .AddOutputPin<int>()
                 .AddAction("read", async context =>
                 {
                     var (found, value) = await context.Behavior.Values.TryGetAsync<int>("value");
@@ -182,9 +327,9 @@ public sealed class ActivityStreamingLifecycleTests
                 })));
         using var behavior = cluster.Factory.CreateBehavior(new ActivityId("lifecycle-immediate", "cancel"));
         var notices = Channel.CreateUnbounded<int>();
-        var outputs = Channel.CreateUnbounded<TokensOutput>();
+        var outputs = Channel.CreateUnbounded<int>();
         await using var watcher = await WatchNoticesAsync(behavior, notices);
-        await using var outputWatcher = await behavior.WatchAsync<TokensOutput>(output =>
+        await using var outputWatcher = await behavior.WatchAsync<int>(output =>
         {
             outputs.Writer.TryWrite(output);
             return Task.CompletedTask;
@@ -211,10 +356,9 @@ public sealed class ActivityStreamingLifecycleTests
             "Late outputs from the cancelled generation must not start successor nodes.");
         Assert.IsFalse(outputs.Reader.TryRead(out _), "Late output tokens must not be published.");
         Assert.IsFalse(notices.Reader.TryRead(out _), "A cancelled generation must not publish late notices.");
-        var cancelledOutput = await behavior.RequestAsync(new TokensOutputRequest()).WaitAsync(Limit);
-        Assert.AreEqual(EventStatus.Consumed, cancelledOutput.Status);
-        Assert.AreEqual(0, cancelledOutput.Response!.Tokens.Count,
-            "The finalized marking must not retain cancelled-generation output tokens.");
+        var cancelledOutput = await behavior.GetNotificationsAsync<int>(DateTime.MinValue).WaitAsync(Limit);
+        Assert.AreEqual(0, cancelledOutput.Count(),
+            "The finalized generation must not publish cancelled-generation output tokens.");
 
         // Reset preserves the watcher but clears the finalized marking so a new generation can probe it.
         Assert.AreEqual(EventStatus.Consumed,
@@ -233,7 +377,8 @@ public sealed class ActivityStreamingLifecycleTests
         var probe = new LifecycleProbe();
         await using var cluster = await LifecycleCluster.StartAsync(probe, activities => activities
             .AddActivity("lifecycle-queued", activity => activity
-                .AddInput(input => input.AddFlow<string>("stream").AddFlow<int>("regular"))
+                .AddInputPin<string>(input => input.AddFlow("stream"))
+                .AddInputPin<int>(input => input.AddFlow("regular"))
                 .AddAction("stream", async context =>
                 {
                     using var registration = context.CancellationToken.Register(() =>
@@ -290,7 +435,8 @@ public sealed class ActivityStreamingLifecycleTests
         var probe = new LifecycleProbe();
         await using var cluster = await LifecycleCluster.StartAsync(probe, activities => activities
             .AddActivity("lifecycle-reset", activity => activity
-                .AddInput(input => input.AddFlow<int>("first").AddFlow<string>("read"))
+                .AddInputPin<int>(input => input.AddFlow("first"))
+                .AddInputPin<string>(input => input.AddFlow("read"))
                 .AddAction("first", async context =>
                 {
                     await context.Behavior.Values.SetAsync("value", 99);
@@ -304,8 +450,8 @@ public sealed class ActivityStreamingLifecycleTests
                     context.Behavior.Publish(new LifecycleNotice { Value = 99 });
                     context.PassAllTokensOn();
                     return Task.CompletedTask;
-                }, node => node.AddFlow<int, OutputNode>())
-                .AddOutput()
+                }, node => node.AddFlow<int, OutputPin<int>>())
+                .AddOutputPin<int>()
                 .AddAction("read", async context =>
                 {
                     var (found, value) = await context.Behavior.Values.TryGetAsync<int>("value");
@@ -335,14 +481,14 @@ public sealed class ActivityStreamingLifecycleTests
             "Ready work from the reset generation must not be resumed after the checkpoint barrier.");
         Assert.AreEqual(7, await ReadNoticeAsync(notices),
             "The reset generation's publication must arrive without a discarded successor's notice.");
-        var output = await behavior.RequestAsync(new TokensOutputRequest()).WaitAsync(Limit);
-        Assert.AreEqual(EventStatus.Consumed, output.Status);
-        Assert.AreEqual(0, output.Response!.Tokens.Count, "Reset must discard old marking and output tokens.");
+        var output = await behavior.GetNotificationsAsync<int>(DateTime.MinValue).WaitAsync(Limit);
+        Assert.AreEqual(0, output.Count(), "Discarded successor work must not publish output.");
     }
 
     private static ActivitiesBuildAction ValueActivity(LifecycleProbe probe) => activities => activities
         .AddActivity("lifecycle-values", activity => activity
-            .AddInput(input => input.AddFlow<string>("stream").AddFlow<int>("regular"))
+            .AddInputPin<string>(input => input.AddFlow("stream"))
+            .AddInputPin<int>(input => input.AddFlow("regular"))
             .AddAction("stream", async context =>
             {
                 probe.Signal("stream-started").TrySetResult();
@@ -404,6 +550,20 @@ public sealed class ActivityStreamingLifecycleTests
     public sealed class LifecycleNotice
     {
         public int Value { get; set; }
+    }
+
+    public sealed class SerializationMarker
+    {
+        public static int Serializations;
+        [Newtonsoft.Json.JsonIgnore]
+        public int InstanceSerializations;
+
+        [OnSerializing]
+        internal void OnSerializing(StreamingContext context)
+        {
+            Interlocked.Increment(ref Serializations);
+            Interlocked.Increment(ref InstanceSerializations);
+        }
     }
 
     private sealed class LifecycleProbe

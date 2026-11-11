@@ -36,7 +36,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (activity != null)
                 {
                     activity.DisplayName += $": {status}";
-                    if (status == EventStatus.Failed)
+                    if (status is EventStatus.Failed or EventStatus.Aborted)
                     {
                         activity.SetStatus(ActivityStatusCode.Error);
                     }

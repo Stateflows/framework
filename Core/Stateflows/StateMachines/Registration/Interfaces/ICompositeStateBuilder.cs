@@ -4,7 +4,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 {
     /// <summary>Defines a composite state's lifecycle, outgoing transitions, and nested region before selecting its
     /// initial vertex.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface ICompositeStateBuilder :
         ICompositeStateExtension<ICompositeStateBuilder>,
         IStateEvents<ICompositeStateBuilder>,
@@ -19,7 +19,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     
     /// <summary>Continues a composite definition after its initial vertex is selected, allowing nested vertices and a
     /// final state.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface IInitializedCompositeStateBuilder :
         ICompositeStateExtension<IInitializedCompositeStateBuilder>,
         IStateEvents<IInitializedCompositeStateBuilder>,
@@ -34,7 +34,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     /// <summary>Configures the enclosing composite state's behavior after its final state closes nested structural
     /// additions.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface IFinalizedCompositeStateBuilder :
         ICompositeStateExtension<IFinalizedCompositeStateBuilder>,
         IStateEvents<IFinalizedCompositeStateBuilder>,
@@ -45,8 +45,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateDoAction<IBehaviorFinalizedCompositeStateBuilder>;
 
     /// <summary>Extends an inherited composite state, its nested elements, transitions, and deferrals.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IOverridenCompositeStateBuilder :
         ICompositeStateExtension<IOverridenCompositeStateBuilder>,
         IStateEvents<IOverridenCompositeStateBuilder>,
@@ -65,8 +65,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     /// <summary>Continues an inherited composite definition after its regionalization operation has been used.
     /// </summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-regions" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.1.-Regions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IOverridenRegionalizedCompositeStateBuilder :
         ICompositeStateExtension<IOverridenRegionalizedCompositeStateBuilder>,
         IStateEvents<IOverridenRegionalizedCompositeStateBuilder>,
@@ -84,7 +84,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     /// <summary>Configures an inherited composite state after adding its final state, retaining inherited-element
     /// overrides.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface IFinalizedOverridenCompositeStateBuilder :
         ICompositeStateExtension<IFinalizedOverridenCompositeStateBuilder>,
         IStateEvents<IFinalizedOverridenCompositeStateBuilder>,
@@ -99,7 +99,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateDoAction<IBehaviorFinalizedOverridenCompositeStateBuilder>;
 
     /// <summary>Configures an inherited composite state after final-state selection and regionalization.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-regions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.1.-Regions" />
     public interface IFinalizedOverridenRegionalizedCompositeStateBuilder :
         ICompositeStateExtension<IFinalizedOverridenRegionalizedCompositeStateBuilder>,
         IStateEvents<IFinalizedOverridenRegionalizedCompositeStateBuilder>,
@@ -115,7 +115,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     /// <summary>Continues a composite-state definition after assigning its embedded do behavior, before selecting the
     /// nested initial vertex.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface IBehaviorCompositeStateBuilder :
         ICompositeStateExtension<IBehaviorCompositeStateBuilder>,
         IStateEvents<IBehaviorCompositeStateBuilder>,
@@ -128,7 +128,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     
     /// <summary>Continues a composite definition with an assigned do behavior and a selected nested initial vertex.
     /// </summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface IBehaviorInitializedCompositeStateBuilder :
         ICompositeStateExtension<IBehaviorInitializedCompositeStateBuilder>,
         IStateEvents<IBehaviorInitializedCompositeStateBuilder>,
@@ -141,7 +141,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     /// <summary>Configures a composite state's behavior after its do behavior and nested final state have been
     /// assigned.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface IBehaviorFinalizedCompositeStateBuilder :
         ICompositeStateExtension<IBehaviorFinalizedCompositeStateBuilder>,
         IStateEvents<IBehaviorFinalizedCompositeStateBuilder>,
@@ -150,8 +150,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateTransitions<IBehaviorFinalizedCompositeStateBuilder>;
 
     /// <summary>Extends an inherited composite state whose embedded do behavior has already been assigned.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IBehaviorOverridenCompositeStateBuilder :
         ICompositeStateExtension<IBehaviorOverridenCompositeStateBuilder>,
         IStateEvents<IBehaviorOverridenCompositeStateBuilder>,
@@ -168,8 +168,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     /// <summary>Continues an inherited composite definition after assigning a do behavior and establishing its region
     /// structure.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-regions" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.1.-Regions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IBehaviorOverridenRegionalizedCompositeStateBuilder :
         ICompositeStateExtension<IBehaviorOverridenRegionalizedCompositeStateBuilder>,
         IStateEvents<IBehaviorOverridenRegionalizedCompositeStateBuilder>,
@@ -185,7 +185,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     /// <summary>Configures an inherited composite state with an assigned do behavior and a selected nested final state.
     /// </summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface IBehaviorFinalizedOverridenCompositeStateBuilder :
         ICompositeStateExtension<IBehaviorFinalizedOverridenCompositeStateBuilder>,
         IStateEvents<IBehaviorFinalizedOverridenCompositeStateBuilder>,
@@ -199,7 +199,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     /// <summary>Configures inherited composite behavior after do-behavior assignment, final-state selection, and
     /// regionalization.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-regions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.1.-Regions" />
     public interface IBehaviorFinalizedOverridenRegionalizedCompositeStateBuilder :
         ICompositeStateExtension<IBehaviorFinalizedOverridenRegionalizedCompositeStateBuilder>,
         IStateEvents<IBehaviorFinalizedOverridenRegionalizedCompositeStateBuilder>,

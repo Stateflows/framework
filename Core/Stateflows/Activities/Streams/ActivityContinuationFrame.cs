@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Stateflows.Common;
+using Newtonsoft.Json;
 
 namespace Stateflows.Activities.Streams;
 
@@ -23,6 +24,14 @@ public enum ActivityContinuationKind
 /// </summary>
 public sealed class ActivityContinuationFrame
 {
+    [JsonProperty]
+    internal List<List<TokenHolder>> PendingInput { get; set; } = [];
+
+    [JsonProperty]
+    internal bool NetworkStarted { get; set; }
+
+    [JsonProperty]
+    internal Guid? IterationThreadId { get; set; }
     /// <summary>Unique identifier of the suspended invocation.</summary>
     public Guid Id { get; set; } = Guid.NewGuid();
 
@@ -53,7 +62,8 @@ public sealed class ActivityContinuationFrame
     /// <summary>Input tokens which are not partitioned and are delivered to every partition.</summary>
     public List<TokenHolder> RestOfInput { get; set; } = [];
 
-    /// <summary>The input partitions of an iterative or parallel invocation, in original order.</summary>
+    /// <summary>The input partitions of an iterative or parallel invocation, in original order.
+    /// Completed interleaved partitions are removed after their output and scope are drained.</summary>
     public List<ActivityContinuationPartition> Partitions { get; set; } = [];
 
     /// <summary>Output collected from partitions that already completed.</summary>
@@ -66,6 +76,8 @@ public sealed class ActivityContinuationFrame
 /// <summary>One input partition of a suspended iterative or parallel invocation.</summary>
 public sealed class ActivityContinuationPartition
 {
+    [JsonProperty]
+    internal List<TokenHolder>? ArrivalInput { get; set; }
     /// <summary>The execution partition used by this input partition.</summary>
     public Guid ThreadId { get; set; } = Guid.NewGuid();
 

@@ -22,5 +22,11 @@ internal sealed class OutboxPublicationScope : IDisposable
 
     public OutboxPublication[] GetPublications() => publications.ToArray();
 
+    public static void EnqueueSend(string destinationKey, OrleansEventHolder envelope)
+    {
+        var scope = Current.Value ?? throw new InvalidOperationException("A staged send requires an active Orleans execution outbox.");
+        scope.publications.Enqueue(new OutboxPublication { DestinationKey = destinationKey, Notifications = [envelope] });
+    }
+
     public void Dispose() => Current.Value = previous;
 }

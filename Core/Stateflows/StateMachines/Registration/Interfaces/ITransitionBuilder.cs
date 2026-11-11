@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     /// <summary>Configures an event-triggered transition's metadata, guard, effect, and target semantics.</summary>
     /// <typeparam name="TEvent">Trigger event payload type. Exception triggers also match derived exception types;
     /// ordinary event triggers use exact matching.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
     public interface ITransitionBuilder<TEvent> :
         IElementMetadataBuilder<ITransitionBuilder<TEvent>>,
         ITriggeredTransitionUtils<ITransitionBuilder<TEvent>>,
@@ -20,8 +20,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     /// <summary>Extends an inherited transition, including narrowing its trigger to a compatible event type.</summary>
     /// <typeparam name="TEvent">Trigger event payload type. Exception triggers also match derived exception types;
     /// ordinary event triggers use exact matching.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IOverridenTransitionBuilder<TEvent> :
         IElementMetadataBuilder<IOverridenTransitionBuilder<TEvent>>,
         ITriggeredTransitionUtils<IOverridenTransitionBuilder<TEvent>>,
@@ -34,7 +34,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         /// <typeparam name="TTrigger">Replacement trigger type assignable to the transition's current event type.
         /// </typeparam>
         /// <returns>A builder for the same transition with the narrowed payload type.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
         [DebuggerHidden]
         IOverridenTransitionBuilder<TTrigger> ChangeTrigger<TTrigger>()
             where TTrigger : TEvent
@@ -73,7 +73,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         /// <exception cref="System.ArgumentException">The event name is null, empty, or whitespace.</exception>
         /// <exception cref="System.InvalidOperationException">The original trigger cannot accept a
         /// <see cref="StructuralEvent" /> payload.</exception>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
         IOverridenTransitionBuilder<StructuralEvent> ChangeTrigger(string eventName)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);

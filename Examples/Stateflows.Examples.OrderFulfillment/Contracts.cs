@@ -1,3 +1,4 @@
+using Stateflows.Common;
 using Stateflows.Extensions.MinimalAPIs.Attributes;
 
 namespace Stateflows.Examples.OrderFulfillment;
@@ -73,6 +74,7 @@ public sealed record Attempt(Operation Operation, int Number, string Outcome);
 public sealed record AuditEntry(DateTimeOffset At, string Message);
 public sealed record Invoice(string Number, decimal Total);
 
+[Retain]
 public sealed record OrderSnapshot(
     SubmitOrder? Order,
     string Stage,

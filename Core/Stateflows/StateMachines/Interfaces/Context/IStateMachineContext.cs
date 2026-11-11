@@ -3,7 +3,7 @@
 namespace Stateflows.StateMachines
 {
     /// <summary>Exposes a state-machine instance and its current active-state configuration.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/behavior-values">behavior and state values</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.1.-Behavior-Values">behavior and state values</see>.</remarks>
     public interface IStateMachineContext : IBehaviorContext
     {
         /// <summary>

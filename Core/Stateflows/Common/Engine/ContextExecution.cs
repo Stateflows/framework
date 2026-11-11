@@ -61,9 +61,6 @@ namespace Stateflows.Common.Engine
                     return EventStatus.Failed;
                 }
 
-                if (staging != null)
-                    await staging.ExecuteBeforeCommitAsync();
-
                 if (execution.Persist && result != EventStatus.Undelivered)
                 {
                     execution.Context.LastExecutedAt = DateTime.Now;

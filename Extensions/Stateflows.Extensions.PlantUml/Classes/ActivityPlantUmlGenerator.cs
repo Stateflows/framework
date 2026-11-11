@@ -4,38 +4,25 @@ using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Activities;
 using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Activities.Inspection.Classes;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
     internal static class ActivityPlantUmlGenerator
     {
-        private static string GetNodeName(INodeInspection node, string parentName,
-            IReadOnlyDictionary<INodeInspection, string> pins)
+        private static string GetNodeName(INodeInspection node, IReadOnlyDictionary<INodeInspection, string> pins)
         {
             if (pins.TryGetValue(node, out var pin))
                 return pin;
 
-            var nodeName = node.Name.ToShortName();
-
-            if (node.Type != NodeType.Final && node.Type != NodeType.Initial)
-            {
-                return (node.Type == NodeType.Input || node.Type == NodeType.Output) && parentName != null
-                    ? $"\"{parentName}.{nodeName}\""
-                    : $"\"{nodeName}\"";
-            }
-            else
-            {
-                return parentName != null
-                    ? $"\"{parentName}.{nodeName}\""
-                    : "(*)";
-            }
+            return node.Type is NodeType.Final or NodeType.Initial ? "(*)" : $"\"{node.Name}\"";
         }
         private static void GetPlantUml(int indentCount, IEnumerable<INodeInspection> nodes, StringBuilder builder,
-            IReadOnlyDictionary<INodeInspection, string> pins, string parentName = null)
+            IReadOnlyDictionary<INodeInspection, string> pins)
         {
             foreach (var node in nodes.Where(pins.ContainsKey))
             {
-                var direction = node.Type == NodeType.Input ? "Input" : "Output";
+                var direction = node.Type == NodeType.InputPin ? "Input" : "Output";
                 var tokenName = node.PinTokenType.GetTokenName().ToShortName();
                 var pin = pins[node];
                 // Legacy Activity syntax declares nodes through links; a hidden self-link also covers isolated pins.
@@ -44,12 +31,12 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             foreach (var node in nodes)
             {
-                GetPlantUml(indentCount, node, builder, pins, parentName);
+                GetPlantUml(indentCount, node, builder, pins);
             }
         }
 
         private static void GetPlantUml(int indentCount, INodeInspection node, StringBuilder builder,
-            IReadOnlyDictionary<INodeInspection, string> pins, string parentName = null)
+            IReadOnlyDictionary<INodeInspection, string> pins)
         {
             string indent = new string(' ', indentCount);
 
@@ -60,16 +47,21 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             if (node.Nodes.Any())
             {
-                var nodeName = node.Name.ToShortName();
-                builder.AppendLine($"{indent}partition \"{node.Type} {nodeName}\" " + "{");
-                GetPlantUml(indentCount + 2, node.Nodes, builder, pins, nodeName);
+                var nodeName = node.Name;
+                var options = node is NodeInspection inspection
+                    ? (inspection.Options.HasFlag(NodeOptions.Interleave) ? " <<interleave>>" : "") +
+                        (node.Type == NodeType.ParallelActivity && inspection.MaxConcurrency > 0
+                            ? $" [maxConcurrency={inspection.MaxConcurrency}]" : "")
+                    : "";
+                builder.AppendLine($"{indent}partition \"{node.Type} {nodeName}{options}\" " + "{");
+                GetPlantUml(indentCount + 2, node.Nodes, builder, pins);
                 builder.AppendLine($"{indent}" + "}");
             }
 
             foreach (var flow in node.Flows)
             {
-                var source = GetNodeName(flow.Source, parentName, pins);
-                var target = GetNodeName(flow.Target, parentName, pins);
+                var source = GetNodeName(flow.Source, pins);
+                var target = GetNodeName(flow.Target, pins);
 
                 switch (flow.Status)
                 {
@@ -134,8 +126,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
             var nodes = FlattenNodes(activity.Nodes).ToArray();
             var names = nodes.Select(node => node.Name.ToShortName()).ToHashSet();
             var index = 0;
-            foreach (var node in nodes.Where(node => node.PinTokenType != null &&
-                (node.Type == NodeType.Input || node.Type == NodeType.Output)))
+            foreach (var node in nodes.Where(node => node.PinTokenType != null))
             {
                 string alias;
                 do

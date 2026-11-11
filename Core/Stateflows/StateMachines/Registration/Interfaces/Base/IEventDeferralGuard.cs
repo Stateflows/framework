@@ -7,14 +7,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// <summary>Composes deferral predicates into conjunctions and nested guard expressions.</summary>
     /// <typeparam name="TEvent">Deferred event payload type.</typeparam>
     /// <typeparam name="TReturn">The fluent deferral builder returned after registration.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
     public interface IEventDeferralGuard<TEvent, out TReturn> : IBaseDeferralGuard<TEvent, TReturn>
     {
         /// <summary>Adds a composed predicate to the current deferral rule.</summary>
         /// <param name="guardExpression">Callback adding predicates and nested Boolean expressions. Predicates at the root
         /// are combined with AND.</param>
         /// <returns>The current deferral builder after adding the composed predicate.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddGuardExpression(Func<IEventDeferralGuardBuilder<TEvent>, IEventDeferralGuardBuilder<TEvent>> guardExpression)
         {
             var deferral = (IDeferralBuilder)this;
@@ -31,7 +31,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard2">Typed guard implementing <see cref="IDeferralGuard&lt;TEvent&gt;" />. Its result must
         /// be true for this predicate to accept.</typeparam>
         /// <returns>The current deferral builder after adding the guard conjunction.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IDeferralGuard<TEvent>
             where TGuard2 : class, IDeferralGuard<TEvent>
@@ -48,7 +48,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard3">Typed guard implementing <see cref="IDeferralGuard&lt;TEvent&gt;" />. Its result must
         /// be true for this predicate to accept.</typeparam>
         /// <returns>The current deferral builder after adding the guard conjunction.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, IDeferralGuard<TEvent>
             where TGuard2 : class, IDeferralGuard<TEvent>
@@ -69,7 +69,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard4">Typed guard implementing <see cref="IDeferralGuard&lt;TEvent&gt;" />. Its result must
         /// be true for this predicate to accept.</typeparam>
         /// <returns>The current deferral builder after adding the guard conjunction.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, IDeferralGuard<TEvent>
             where TGuard2 : class, IDeferralGuard<TEvent>
@@ -94,7 +94,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard5">Typed guard implementing <see cref="IDeferralGuard&lt;TEvent&gt;" />. Its result must
         /// be true for this predicate to accept.</typeparam>
         /// <returns>The current deferral builder after adding the guard conjunction.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IDeferralGuard<TEvent>
             where TGuard2 : class, IDeferralGuard<TEvent>

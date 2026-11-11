@@ -29,6 +29,7 @@ internal sealed partial class BoundActivityDocument(
     private readonly Dictionary<string, ClrBinding> bindings = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Type> resolvedTypes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Dictionary<string, string>> targetAliases = new(StringComparer.Ordinal);
+    private readonly HashSet<string> nodeNames = new(StringComparer.Ordinal);
 
     public string Name => document.Value<string>("name") ?? "<document>";
     public int Version => document.Value<int?>("version") ?? 1;
@@ -200,9 +201,8 @@ internal sealed partial class BoundActivityDocument(
         _ = target;
     }
 
-    private void BindNodes(JToken parent, string path, bool reactive)
+    private void BindNodes(JToken parent, string path, bool reactive, string parentName)
     {
-        var names = new HashSet<string>(StringComparer.Ordinal);
         var specialCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         var aliases = new Dictionary<string, string>(StringComparer.Ordinal);
         targetAliases[path] = aliases;
@@ -213,40 +213,38 @@ internal sealed partial class BoundActivityDocument(
             var pinToken = kind is "inputPin" or "outputPin"
                 ? BindType(node.Value<string>("tokenType")!, nodePath + "/tokenType")
                 : null;
+            var registeredName = kind switch
+            {
+                "initial" => $"{parentName}.initial",
+                "final" => name ?? FinalNode.Name,
+                "inputPin" when pinToken != null => $"{parentName}.{TypedPinName(kind, pinToken)}",
+                "outputPin" when pinToken != null => name ?? TypedPinName(kind, pinToken),
+                _ => name
+            };
+            if (registeredName is { Length: > 0 } && !nodeNames.Add(registeredName))
+                Error(nodePath + "/name", $"Node name '{registeredName}' is duplicated in the Activity.", "ACT-004");
             if (!reactive && kind is "acceptEvent" or "timeEvent" or "publishEvent")
                 Error(nodePath + "/kind", $"Node kind '{kind}' requires a reactive structured builder.", "ACT-036");
             if (node["options"] != null &&
                 kind is not ("action" or "structured" or "parallel" or "iterative"))
                 Error(nodePath + "/options", $"Node kind '{kind}' does not expose configurable node options.");
-            if (kind is "initial" or "input" or "output" or "final" or "inputPin" or "outputPin")
+            if (kind is "initial" or "final" or "inputPin" or "outputPin")
             {
-                if (kind is "initial" or "input" or "output" or "final")
+                if (kind is "initial" or "final")
                     specialCounts[kind] = specialCounts.GetValueOrDefault(kind) + 1;
                 if (name is { Length: > 0 })
-                    aliases[name] = kind switch
-                    {
-                        "initial" => "InitialNode",
-                        "input" => "InputNode",
-                        "output" => OutputNode.Name,
-                        "final" => FinalNode.Name,
-                        "inputPin" when pinToken != null => TypedPinName(kind, pinToken),
-                        "outputPin" when pinToken != null => TypedPinName(kind, pinToken),
-                        _ => name
-                    };
+                    aliases[name] = registeredName ?? name;
             }
             else
             {
-                if (name is { Length: > 0 } && !names.Add(name))
-                    Error(nodePath + "/name", $"Node name '{name}' is duplicated in this scope.");
                 if (name is { Length: > 0 }) aliases[name] = name;
             }
 
             var allowedFlowKinds = kind switch
             {
                 "initial" => new[] { "control" },
-                "input" => new[] { "object" },
                 "inputPin" => new[] { "object" },
-                "output" or "outputPin" or "final" => Array.Empty<string>(),
+                "outputPin" or "final" => Array.Empty<string>(),
                 "dataStore" => new[] { "object" },
                 "sendEvent" or "publishEvent" => new[] { "control" },
                 "decision" when node.Value<string>("mode") == "control" => new[] { "control", "elseControl" },
@@ -295,14 +293,14 @@ internal sealed partial class BoundActivityDocument(
                         Error(nodePath + "/reactive", "A reactive structured activity requires a reactive parent builder.");
                     BindStructuredCapabilities(node, nodePath);
                     BindDefinitions(node, nodePath, typeof(IStructuredActivityNodeDefinition), typeof(IStructuredActivityBuilder));
-                    BindNodes(node, nodePath, node.Value<bool?>("reactive") == true);
+                    BindNodes(node, nodePath, node.Value<bool?>("reactive") == true, name!);
                     break;
                 case "parallel":
                 case "iterative":
                     BindType(node.Value<string>("iterationTokenType")!, nodePath + "/iterationTokenType");
                     BindStructuredCapabilities(node, nodePath);
                     BindDefinitions(node, nodePath, typeof(IStructuredActivityNodeDefinition), typeof(IStructuredActivityBuilder));
-                    BindNodes(node, nodePath, false);
+                    BindNodes(node, nodePath, false, name!);
                     break;
             }
 
@@ -346,7 +344,7 @@ internal sealed partial class BoundActivityDocument(
     private void BindInfrastructure()
     {
         BindDefinitions(document, "", typeof(IActivity), typeof(IActivityBuilder));
-        BindNodes(document, "", true);
+        BindNodes(document, "", true, Name);
 
         foreach (var (initializer, path) in Items(document, "", "initializers"))
         {
@@ -448,9 +446,6 @@ internal sealed partial class BoundActivityDocument(
             case "initial":
                 CallGenericInterface(parent, typeof(IInitialBase<>), "AddInitial", [], [CreateCallback(typeof(InitialBuildAction), callback)]);
                 break;
-            case "input":
-                CallGenericInterface(parent, typeof(IInputBase<>), "AddInput", [], [CreateCallback(typeof(InputBuildAction), callback)]);
-                break;
             case "inputPin":
             {
                 var token = resolvedTypes[path + "/tokenType"];
@@ -459,15 +454,18 @@ internal sealed partial class BoundActivityDocument(
                     [CreateCallback(typeof(Action<>).MakeGenericType(builderType), callback)], methodParameterCount: 1);
                 break;
             }
-            case "output":
-                CallGenericInterface(parent, typeof(IOutputBase<>), "AddOutput", [], []);
-                break;
             case "outputPin":
-                CallGenericInterface(parent, typeof(IOutputBase<>), "AddOutputPin",
-                    [resolvedTypes[path + "/tokenType"]], []);
+            {
+                var outputInterface = parent is IActivityBuilder ? typeof(IActivityOutputBase<>) : typeof(IOutputBase<>);
+                var outputToken = resolvedTypes[path + "/tokenType"];
+                if (parent is IActivityBuilder)
+                    CallGenericInterface(parent, outputInterface, "AddOutputPin", [outputToken], [name, null], methodParameterCount: 2);
+                else
+                    CallGenericInterface(parent, outputInterface, "AddOutputPin", [outputToken], [name], methodParameterCount: 1);
                 break;
+            }
             case "final":
-                CallGenericInterface(parent, typeof(IFinalBase<>), "AddFinal", [], []);
+                CallGenericInterface(parent, typeof(IFinalBase<>), "AddFinal", [], [name], methodParameterCount: 1);
                 break;
             case "action":
             {
@@ -524,8 +522,14 @@ internal sealed partial class BoundActivityDocument(
             {
                 var eventType = resolvedTypes[path + "/eventType"];
                 var binding = bindings[path + "/implementation"];
-                var actionCallback = CreateCallback(typeof(PublishEventActionBuildAction), callback);
-                var generate = CreateBoundDelegate(typeof(PublishEventActionDelegateAsync<>).MakeGenericType(eventType),
+                var actionCallback = CreateCallback(typeof(PublishEventActionBuildAction), child =>
+                {
+                    typeof(BoundActivityDocument).GetMethod(nameof(ConfigurePublication), BindingFlags.Static | BindingFlags.NonPublic)!
+                        .MakeGenericMethod(eventType, binding.Type).Invoke(null, [child]);
+                    callback(child);
+                });
+                var generate = CreateBoundDelegate(typeof(Func<,>).MakeGenericType(typeof(IActionContext),
+                        typeof(Task<>).MakeGenericType(typeof(IEnumerable<>).MakeGenericType(eventType))),
                     nameof(GeneratePublishEvent), eventType, binding.Type, binding);
                 CallGenericInterface(parent, typeof(IPublishEventBase<>), "AddPublishEventAction",
                     [eventType], [name!, generate, actionCallback], methodParameterCount: 3);
@@ -600,7 +604,9 @@ internal sealed partial class BoundActivityDocument(
             ? typeof(IReactiveActivityBase<>)
             : typeof(IActivityBase<>);
         CallGenericInterface(parent, activityBase, kind == "parallel" ? "AddParallelActivity" : "AddIterativeActivity",
-            [token], [name, CreateCallback(delegateType, callback), chunk], methodParameterCount: 3);
+            [token], kind == "parallel"
+                ? [name, CreateCallback(delegateType, callback), chunk, node.Value<int?>("maxConcurrency") ?? -1]
+                : [name, CreateCallback(delegateType, callback), chunk], methodParameterCount: kind == "parallel" ? 4 : 3);
     }
 
     private void ConfigureNode(object nodeBuilder, JToken node, string path, string kind, bool reactive)
@@ -641,6 +647,7 @@ internal sealed partial class BoundActivityDocument(
                 "implicitJoin" => NodeOptions.ImplicitJoin,
                 "implicitFork" => NodeOptions.ImplicitFork,
                 "reentrant" => NodeOptions.Reentrant,
+                "interleave" => NodeOptions.Interleave,
                 _ => NodeOptions.None
             };
         CallGenericInterface(nodeBuilder, typeof(INodeOptions<>), "SetOptions", [], [flags], methodParameterCount: 1);
@@ -907,11 +914,14 @@ internal sealed partial class BoundActivityDocument(
     private static object? InvokeInterface(object target, Type interfaceType, string methodName, Type[] typeArguments,
         object?[] arguments, int? methodParameterCount)
     {
-        var method = interfaceType.GetMethods().First(m => m.Name == methodName &&
+        var method = interfaceType.GetMethods().Where(m => m.Name == methodName &&
             (methodParameterCount == null || m.GetParameters().Length == methodParameterCount) &&
             m.IsGenericMethodDefinition == (typeArguments.Length > 0) &&
-            (!m.IsGenericMethodDefinition || m.GetGenericArguments().Length == typeArguments.Length));
-        if (method.IsGenericMethodDefinition) method = method.MakeGenericMethod(typeArguments);
+            (!m.IsGenericMethodDefinition || m.GetGenericArguments().Length == typeArguments.Length))
+            .Select(m => m.IsGenericMethodDefinition ? m.MakeGenericMethod(typeArguments) : m)
+            .First(m => m.GetParameters().Length == arguments.Length &&
+                m.GetParameters().Select((parameter, index) =>
+                    arguments[index] == null || parameter.ParameterType.IsInstanceOfType(arguments[index])).All(matches => matches));
         try { return method.Invoke(target, arguments); }
         catch (TargetInvocationException exception) when (exception.InnerException != null)
         {
@@ -980,12 +990,27 @@ internal sealed partial class BoundActivityDocument(
         return await action.SelectTargetAsync();
     }
 
-    private static async Task<TEvent> GeneratePublishEvent<TEvent, TNode>(ClrBinding binding, IActionContext context)
+    private static void ConfigurePublication<TEvent, TNode>(IPublishEventActionBuilder builder)
+        where TNode : class, IPublishEventActionNode<TEvent>
+        => builder.SetPublishScope(TNode.PublishScope).SetTimeToLive(TNode.TimeToLive)
+            .SetRetain(TNode.Retain).SetImmediatePublish(TNode.ImmediatePublish);
+
+    private static async Task<IEnumerable<TEvent>> GeneratePublishEvent<TEvent, TNode>(ClrBinding binding, IActionContext context)
         where TNode : class, IPublishEventActionNode<TEvent>
     {
-        var action = await ((BaseContext)context).NodeScope.GetPublishEventActionAsync<TEvent, TNode>(context);
-        binding.Configure(action);
-        return await action.GenerateEventAsync();
+        InputTokens.TokensHolder.Value = ((ActionContext)context).InputTokens;
+        OutputTokens.TokensHolder.Value = ((ActionContext)context).OutputTokens;
+        ActivityNodeContextAccessor.Context.Value = context;
+        try
+        {
+            var action = await ((BaseContext)context).NodeScope.GetPublishEventActionAsync<TEvent, TNode>(context);
+            binding.Configure(action);
+            return (await action.GenerateEventsAsync()).ToArray();
+        }
+        finally
+        {
+            ActivityNodeContextAccessor.Context.Value = null;
+        }
     }
 
     private void AddStructuredLifecycle(object builder, ClrBinding binding, string property)

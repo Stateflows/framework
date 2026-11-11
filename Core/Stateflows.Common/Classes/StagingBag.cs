@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Stateflows.Common.Classes;
 
-/// <summary>Owns in-memory operations staged by one behavior execution.</summary>
-/// <remarks>Runtime infrastructure. Target changes are not rolled back if a later operation or source commit fails.</remarks>
+/// <summary>Owns staged operations and the optional durable send hook of one behavior execution.</summary>
+/// <remarks>Runtime infrastructure for post-commit sends.</remarks>
 public sealed class StagingBag : IDisposable
 {
     private static readonly AsyncLocal<StagingBag> current = new();
     private readonly StagingBag previous;
     private readonly Func<bool> isStreamed;
-    private readonly Queue<Func<Task>> beforeCommit = new();
+    private readonly Action<BehaviorId, EventHolder> stageDurably;
     private readonly Queue<Action> afterCommit = new();
+    private readonly object sync = new();
     private readonly List<IDisposable> resources = new();
     private bool closed;
 
@@ -21,11 +21,21 @@ public sealed class StagingBag : IDisposable
     public static bool IsActive => current.Value != null;
 
     /// <summary>Starts an execution-local staging bag.</summary>
-    public StagingBag(Func<bool> isStreamed = null)
+    public StagingBag(Func<bool> isStreamed = null, Action<BehaviorId, EventHolder> stageDurably = null)
     {
         this.isStreamed = isStreamed;
+        this.stageDurably = stageDurably;
         previous = current.Value;
         current.Value = this;
+    }
+
+    /// <summary>Records a send through the runtime's durable staging mechanism when available.</summary>
+    public bool TryStageDurably(BehaviorId destination, EventHolder envelope)
+    {
+        if (stageDurably == null)
+            return false;
+        stageDurably(destination, envelope);
+        return true;
     }
 
     /// <summary>Requires an open transactional staging bag.</summary>
@@ -39,39 +49,13 @@ public sealed class StagingBag : IDisposable
         return bag;
     }
 
-    /// <summary>Registers a pre-commit operation and its owned resource.</summary>
-    public void AddBeforeCommit(Func<Task> operation, IDisposable resource)
-    {
-        lock (beforeCommit)
-        {
-            beforeCommit.Enqueue(operation);
-            resources.Add(resource);
-        }
-    }
-
     /// <summary>Registers a post-commit send and its owned resource.</summary>
     public void AddAfterCommit(Action operation, IDisposable resource)
     {
-        lock (beforeCommit)
+        lock (sync)
         {
             afterCommit.Enqueue(operation);
             resources.Add(resource);
-        }
-    }
-
-    /// <summary>Executes staged entity operations in registration order; the first failure stops dispatch.</summary>
-    public async Task ExecuteBeforeCommitAsync()
-    {
-        while (true)
-        {
-            Func<Task> operation;
-            lock (beforeCommit)
-            {
-                if (beforeCommit.Count == 0)
-                    return;
-                operation = beforeCommit.Dequeue();
-            }
-            await operation();
         }
     }
 
@@ -90,7 +74,6 @@ public sealed class StagingBag : IDisposable
         current.Value = previous;
         foreach (var resource in resources)
             resource.Dispose();
-        beforeCommit.Clear();
         afterCommit.Clear();
         resources.Clear();
     }

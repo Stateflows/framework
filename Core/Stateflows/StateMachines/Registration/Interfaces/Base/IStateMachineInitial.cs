@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// <typeparam name="TReturn">The initialized definition stage returned after the initial vertex is selected.
     /// </typeparam>
     /// <remarks>This selection is part of registration, not an immediate runtime entry into the state.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
     public interface IStateMachineInitial<out TReturn>
     {
         #region AddInitialState
@@ -17,14 +17,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="stateBuildAction">Optional callback configuring the state's lifecycle handlers and outgoing
         /// transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized builder stage after selecting its initial state.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddInitialState(string stateName, StateBuildAction stateBuildAction = null);
         
         /// <summary>Adds an initial state to the current machine or region.</summary>
         /// <param name="stateBuildAction">Optional callback configuring the state's lifecycle handlers and outgoing
         /// transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized builder stage after selecting its initial state.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddInitialState(StateBuildAction stateBuildAction = null)
             => AddInitialState(null, stateBuildAction);
 
@@ -34,7 +34,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="stateBuildAction">Optional callback configuring the state's lifecycle handlers and outgoing
         /// transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized builder stage.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         [DebuggerHidden]
         public TReturn AddInitialState<TState>(StateBuildAction stateBuildAction = null)
             where TState : class, IState
@@ -46,7 +46,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="stateBuildAction">Optional callback configuring the state's lifecycle handlers and outgoing
         /// transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized builder stage.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         [DebuggerHidden]
         public TReturn AddInitialState<TState>(string stateName, StateBuildAction stateBuildAction = null)
             where TState : class, IState
@@ -74,7 +74,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="compositeStateBuildAction">Callback configuring the composite state's lifecycle, nested states, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized stage, not the nested composite builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         TReturn AddInitialCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction);
 
         /// <summary>Adds an initial composite state to the current machine or region.</summary>
@@ -83,7 +83,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="compositeStateBuildAction">Callback configuring the composite state's lifecycle, nested states, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized builder stage.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         public TReturn AddInitialCompositeState<TCompositeState>(CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
@@ -95,7 +95,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="compositeStateBuildAction">Callback configuring the composite state's lifecycle, nested states, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized builder stage.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         public TReturn AddInitialCompositeState<TCompositeState>(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
@@ -123,7 +123,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="orthogonalStateBuildAction">Callback configuring the orthogonal state's lifecycle, regions, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized stage, not the nested orthogonal builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.3.-Orthogonal-State" />
         TReturn AddInitialOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction);
 
         /// <summary>Adds an initial orthogonal state to the current machine or region.</summary>
@@ -132,7 +132,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="orthogonalStateBuildAction">Callback configuring the orthogonal state's lifecycle, regions, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized builder stage.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.3.-Orthogonal-State" />
         [DebuggerHidden]
         public TReturn AddInitialOrthogonalState<TOrthogonalState>(OrthogonalStateBuildAction orthogonalStateBuildAction)
             where TOrthogonalState : class, IOrthogonalState
@@ -144,7 +144,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="orthogonalStateBuildAction">Callback configuring the orthogonal state's lifecycle, regions, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition's initialized builder stage.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.3.-Orthogonal-State" />
         [DebuggerHidden]
         public TReturn AddInitialOrthogonalState<TOrthogonalState>(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
             where TOrthogonalState : class, IOrthogonalState

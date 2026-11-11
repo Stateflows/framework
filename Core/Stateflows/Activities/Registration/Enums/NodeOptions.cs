@@ -14,6 +14,8 @@ namespace Stateflows.Activities
         ImplicitFork = 2,
         /// <summary>Allows overlapping action invocations within the same execution scope, each with fixed input tokens.</summary>
         Reentrant = 4,
+        /// <summary>Admits arrivals into an active structured, parallel or iterative invocation. Mutually exclusive with Reentrant.</summary>
+        Interleave = 8,
         /// <summary>Default options for ordinary action nodes.</summary>
         ActionDefault = ImplicitJoin | ImplicitFork,
         /// <summary>Default options for control nodes.</summary>

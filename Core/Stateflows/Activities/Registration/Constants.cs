@@ -16,7 +16,6 @@
         public const string NodeTimeEvents = nameof(NodeTimeEvents);
         public const string NodeStartupEvents = nameof(NodeStartupEvents);
         public const string OutputTokens = nameof(OutputTokens);
-        public const string ActivityOutputTokens = nameof(ActivityOutputTokens);
         public const string ActivatedNodes = nameof(ActivatedNodes); 
         public const string PendingNodes = nameof(PendingNodes);
         public const string FlowTokensCount = nameof(FlowTokensCount);

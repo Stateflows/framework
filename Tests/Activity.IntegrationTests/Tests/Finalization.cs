@@ -70,8 +70,8 @@ namespace Activity.IntegrationTests.Tests
                         })
                     )
                     .AddActivity("non-finalized-input", b => b
-                        .AddInput(b => b
-                            .AddFlow<int>("action")
+                        .AddInputPin<int>(b => b
+                            .AddFlow("action")
                         )
                         .AddAction("action", async c => { })
                     )

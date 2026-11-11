@@ -19,6 +19,7 @@ public sealed class Pins : StateflowsTestClass
     private readonly ConcurrentBag<string> executions = [];
     private readonly PinObserver observer = new();
     private int initializations;
+    private int executionsWithoutInputPins;
 
     [TestInitialize]
     public override void Initialize() => base.Initialize();
@@ -40,8 +41,8 @@ public sealed class Pins : StateflowsTestClass
                     .AddFlow("number"))
                 .AddInputPin<string>(pin => pin.AddFlow<OutputPin<string>>()
                     .AddFlow("text"))
-                .AddOutputPin<int>()
-                .AddOutputPin<string>()
+                .AddOutputPin<int>(pin => pin.SetTimeToLive(300))
+                .AddOutputPin<string>(pin => pin.SetTimeToLive(300))
                 .AddAction("number", context =>
                 {
                     foreach (var value in context.GetTokensOfType<int>())
@@ -57,30 +58,35 @@ public sealed class Pins : StateflowsTestClass
                 .AddObserver(_ => observer));
             activities.AddActivity("pin-variance", activity => activity
                 .AddInputPin<IAnimal>(pin => pin.AddFlow<OutputPin<IAnimal>>())
-                .AddOutputPin<IAnimal>());
+                .AddOutputPin<IAnimal>(pin => pin.SetTimeToLive(300)));
             activities.AddActivity("pin-transform", activity => activity
                 .AddInputPin<int>(pin => pin.AddFlow<OutputPin<string>>(flow =>
                     flow.AddTransformation<string>(context => Task.FromResult(context.Token.ToString()))))
-                .AddOutputPin<string>());
-            activities.AddActivity("legacy-target", activity => activity
-                .AddInputPin<int>(pin => pin.AddFlow<OutputNode>())
-                .AddOutputPin<string>());
-            activities.AddActivity("legacy-input", activity => activity
-                .AddInput(pin => pin.AddFlow<int, OutputPin<int>>())
-                .AddOutputPin<int>());
+                .AddOutputPin<string>(pin => pin.SetTimeToLive(300)));
+            activities.AddActivity("pin-direct-output", activity => activity
+                .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>())
+                .AddOutputPin<int>(pin => pin.SetTimeToLive(300)));
+            activities.AddActivity("no-input-pins", activity => activity
+                .AddInitial(initial => initial.AddControlFlow("unreachable"))
+                .AddAction("unreachable", _ =>
+                {
+                    executionsWithoutInputPins++;
+                    return Task.CompletedTask;
+                }));
 
             foreach (var kind in new[] { "structured", "parallel", "iterative", "reactive" })
                 activities.AddActivity($"pins-{kind}", activity =>
                 {
                     activity.AddInputPin<int>(pin => pin.AddFlow("scope"))
                         .AddInputPin<string>(pin => pin.AddFlow("scope"))
-                        .AddOutputPin<int>().AddOutputPin<string>();
+                        .AddOutputPin<int>("root-int", pin => pin.SetTimeToLive(300))
+                        .AddOutputPin<string>("root-text", pin => pin.SetTimeToLive(300));
                     void Configure(IStructuredActivityBuilder scope) => scope
-                        .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>())
-                        .AddInputPin<string>(pin => pin.AddFlow<OutputPin<string>>())
-                        .AddOutputPin<int>().AddOutputPin<string>()
-                        .AddFlow<int, OutputPin<int>>()
-                        .AddFlow<string, OutputPin<string>>();
+                        .AddInputPin<int>(pin => pin.AddFlow("scope-int"))
+                        .AddInputPin<string>(pin => pin.AddFlow("scope-text"))
+                        .AddOutputPin<int>("scope-int").AddOutputPin<string>("scope-text")
+                        .AddFlow<int>("root-int")
+                        .AddFlow<string>("root-text");
                     switch (kind)
                     {
                         case "structured":
@@ -94,11 +100,11 @@ public sealed class Pins : StateflowsTestClass
                             break;
                         case "reactive":
                             activity.AddStructuredActivity("scope", (IReactiveStructuredActivityBuilder scope) => scope
-                                .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>())
-                                .AddInputPin<string>(pin => pin.AddFlow<OutputPin<string>>())
-                                .AddOutputPin<int>().AddOutputPin<string>()
-                                .AddFlow<int, OutputPin<int>>()
-                                .AddFlow<string, OutputPin<string>>());
+                                .AddInputPin<int>(pin => pin.AddFlow("scope-int"))
+                                .AddInputPin<string>(pin => pin.AddFlow("scope-text"))
+                                .AddOutputPin<int>("scope-int").AddOutputPin<string>("scope-text")
+                                .AddFlow<int>("root-int")
+                                .AddFlow<string>("root-text"));
                             break;
                     }
                     activity.AddObserver(_ => observer);
@@ -122,9 +128,8 @@ public sealed class Pins : StateflowsTestClass
         Assert.AreEqual(0, observer.Executed.Count(type => type == typeof(string)));
         Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(new TokensInput().Add(43).Add("hello"))).Status);
         CollectionAssert.AreEquivalent(new[] { "number:42", "number:43", "text:hello" }, executions.ToArray());
-        var output = (await activity.GetOutputAsync()).Response;
-        CollectionAssert.AreEquivalent(new[] { 42, 43 }, output.GetOfType<int>().ToArray());
-        CollectionAssert.AreEqual(new[] { "hello" }, output.GetOfType<string>().ToArray());
+        CollectionAssert.AreEquivalent(new[] { 42, 43 }, (await activity.GetOutputAsync<int>(DateTime.MinValue)).ToArray());
+        CollectionAssert.AreEqual(new[] { "hello" }, (await activity.GetOutputAsync<string>(DateTime.MinValue)).ToArray());
     }
 
     [TestMethod]
@@ -144,12 +149,22 @@ public sealed class Pins : StateflowsTestClass
     }
 
     [TestMethod]
+    public async Task TokenInputIsRejectedWhenTheActivityDeclaresNoInputPins()
+    {
+        var activity = Locate("no-input-pins");
+        Assert.AreEqual(EventStatus.Rejected, (await activity.SendAsync(new TokensInput().Add(42))).Status);
+        Assert.AreEqual(0, executionsWithoutInputPins);
+    }
+
+    [TestMethod]
     public async Task PinsUseRuntimeTypeIncludingInterfacesAndTypedNulls()
     {
         var activity = Locate("pin-variance");
         IAnimal animal = new Dog { Name = "Rex" };
         Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(new TokensInput().Add(animal))).Status);
-        Assert.AreEqual("Rex", (await activity.GetOutputAsync<Dog>()).Response.GetAll().Single().Name);
+        Assert.AreEqual("Rex", (await activity.GetOutputAsync<IAnimal>(DateTime.MinValue)).Single().Name);
+        Assert.AreEqual(0, (await activity.GetOutputAsync<Dog>(DateTime.MinValue)).Count(),
+            "Publication uses the pin's declared event type, without synthesizing subtype notifications.");
         Assert.AreEqual(EventStatus.Rejected, (await activity.SendAsync(new TokensInput().Add(new object()))).Status);
         var text = Locate("pins");
         Assert.AreEqual(EventStatus.Consumed, (await text.SendAsync(new TokensInput().Add<string>(null!))).Status);
@@ -160,19 +175,15 @@ public sealed class Pins : StateflowsTestClass
     {
         var activity = Locate("pin-transform");
         Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(new TokensInput().Add(42))).Status);
-        CollectionAssert.AreEqual(new[] { "42" }, (await activity.GetOutputAsync<string>()).Response.GetAll().ToArray());
+        CollectionAssert.AreEqual(new[] { "42" }, (await activity.GetOutputAsync<string>(DateTime.MinValue)).ToArray());
     }
 
     [TestMethod]
-    [DataRow("legacy-target")]
-    [DataRow("legacy-input")]
-    public async Task DeprecatedBoundariesRemainPermissive(string name)
+    public async Task InputPinRoutesToItsTypedOutputPin()
     {
-        var activity = Locate(name);
-        var input = new TokensInput().Add(42);
-        if (name == "legacy-input") input.Add("ignored");
-        Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(input)).Status);
-        CollectionAssert.AreEqual(new[] { 42 }, (await activity.GetOutputAsync<int>()).Response.GetAll().ToArray());
+        var activity = Locate("pin-direct-output");
+        Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(new TokensInput().Add(42))).Status);
+        CollectionAssert.AreEqual(new[] { 42 }, (await activity.GetOutputAsync<int>(DateTime.MinValue)).ToArray());
     }
 
     [TestMethod]
@@ -184,9 +195,8 @@ public sealed class Pins : StateflowsTestClass
     {
         var activity = Locate($"pins-{kind}");
         Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(new TokensInput().Add(42).Add("hello"))).Status);
-        var output = (await activity.GetOutputAsync()).Response;
-        CollectionAssert.AreEqual(new[] { 42 }, output.GetOfType<int>().ToArray());
-        CollectionAssert.AreEqual(new[] { "hello" }, output.GetOfType<string>().ToArray());
+        CollectionAssert.AreEqual(new[] { 42 }, (await activity.GetOutputAsync<int>(DateTime.MinValue)).ToArray());
+        CollectionAssert.AreEqual(new[] { "hello" }, (await activity.GetOutputAsync<string>(DateTime.MinValue)).ToArray());
         Assert.IsNotNull(observer.Scope);
         CollectionAssert.AreEquivalent(new[] { typeof(int), typeof(string) }, observer.InputTypes);
         CollectionAssert.AreEquivalent(new[] { typeof(int), typeof(string) }, observer.OutputTypes);
@@ -222,7 +232,9 @@ public sealed class Pins : StateflowsTestClass
     [DataRow("output", "ACT-056")]
     [DataRow("transformation", "ACT-056")]
     [DataRow("structure-input", "ACT-057")]
+    [DataRow("structure-missing-input", "ACT-057")]
     [DataRow("structure-output", "ACT-058")]
+    [DataRow("structure-missing-output", "ACT-058")]
     [DataRow("control-pin", "ACT-056")]
     [DataRow("control-output", "ACT-056")]
     public void InvalidBoundaryContractsAreRejected(string kind, string rule)
@@ -242,10 +254,23 @@ public sealed class Pins : StateflowsTestClass
                     activity.AddInputPin<int>(pin => pin.AddFlow("scope"))
                         .AddStructuredActivity("scope", scope => scope.AddInputPin<string>(pin => pin.AddFlow<OutputPin<string>>()).AddOutputPin<string>());
                     break;
+                case "structure-missing-input":
+                    activity.AddInputPin<object>(pin => pin.AddFlow("scope"))
+                        .AddStructuredActivity("scope", scope => scope
+                            .AddInitial(initial => initial.AddControlFlow<FinalNode>())
+                            .AddFinal());
+                    break;
                 case "structure-output":
                     activity.AddInputPin<int>(pin => pin.AddFlow("scope"))
                         .AddStructuredActivity("scope", scope => scope.AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>()).AddOutputPin<int>()
                             .AddFlow<string, OutputPin<string>>()).AddOutputPin<string>();
+                    break;
+                case "structure-missing-output":
+                    activity.AddInputPin<object>(pin => pin.AddFlow("scope"))
+                        .AddStructuredActivity("scope", scope => scope
+                            .AddInputPin<object>(_ => { })
+                            .AddFlow<object, OutputPin<object>>())
+                        .AddOutputPin<object>();
                     break;
                 case "control-pin":
                     activity.AddInputPin<ControlToken>(_ => { });
@@ -263,24 +288,40 @@ public sealed class Pins : StateflowsTestClass
     {
         var graph = Build(activity => activity
             .AddInputPin<int>(pin => pin.AddFlow("scope"))
+            .AddOutputPin<int>("root-result")
             .AddStructuredActivity("scope", scope => scope
-                .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>()).AddOutputPin<int>()));
+                .AddInputPin<int>(pin => pin.AddFlow("scope-result")).AddOutputPin<int>("scope-result")));
         var visitor = new PinVisitor();
         foreach (var visit in graph.VisitingTasks) await visit(visitor);
-        CollectionAssert.AreEquivalent(new[] { "input:Int32:root", "input:Int32:scope", "output:Int32:scope" }, visitor.Pins.ToArray());
+        CollectionAssert.AreEquivalent(new[]
+        {
+            "input:Int32:root:definition-pins.Stateflows.Activities.InputPin<System.Int32>",
+            "output:Int32:root:root-result",
+            "input:Int32:scope:scope.Stateflows.Activities.InputPin<System.Int32>",
+            "output:Int32:scope:scope-result"
+        }, visitor.Pins.ToArray());
+
+        Assert.AreEqual(NodeType.InputPin, graph.InputPins.Single().Type);
+        var rootOutput = graph.OutputPins.Single();
+        Assert.IsTrue(rootOutput.IsOutputPin);
+        Assert.AreEqual(NodeType.PublishEventAction, rootOutput.Type);
+        var scope = graph.Nodes.Values.Single(node => node.Name == "scope");
+        Assert.AreEqual(NodeType.InputPin, scope.InputPins.Single().Type);
+        Assert.AreEqual(NodeType.OutputPin, scope.OutputPins.Single().Type);
     }
 
     [TestMethod]
     public void InheritedPinsAndEveryOverrideBuilderRetainIndependentBoundaryMetadata()
     {
         var graph = Build(activity => activity.UseActivity<PinBase>(inherited => inherited
-            .AddInputPin<string>(pin => pin.AddFlow<OutputPin<string>>()).AddOutputPin<string>()
+            .AddInputPin<string>(pin => pin.AddFlow("root-text")).AddOutputPin<string>("root-text")
+            .UseInputPin<int>(pin => pin.UseFlow("scope", _ => { }))
             .UseStructuredActivity("scope", scope => scope
-                .AddInputPin<string>(pin => pin.AddFlow<OutputPin<string>>()).AddOutputPin<string>())
+                .AddInputPin<string>(pin => pin.AddFlow("scope-text")).AddOutputPin<string>("scope-text"))
             .UseParallelActivity<int>("parallel", scope => scope
-                .AddInputPin<string>(pin => pin.AddFlow<OutputPin<string>>()).AddOutputPin<string>())
+                .AddInputPin<string>(pin => pin.AddFlow("parallel-text")).AddOutputPin<string>("parallel-text"))
             .UseIterativeActivity<int>("iterative", scope => scope
-                .AddInputPin<string>(pin => pin.AddFlow<OutputPin<string>>()).AddOutputPin<string>())));
+                .AddInputPin<string>(pin => pin.AddFlow("iterative-text")).AddOutputPin<string>("iterative-text"))));
         foreach (var scope in new[] { graph }.Concat(graph.Nodes.Values.Where(node => node.InputPins.Any())))
         {
             CollectionAssert.AreEquivalent(new[] { typeof(int), typeof(string) }, scope.InputPins.Select(pin => pin.PinTokenType).ToArray());
@@ -293,16 +334,16 @@ public sealed class Pins : StateflowsTestClass
         public static void Build(IActivityBuilder activity)
         {
             activity.AddInputPin<int>(pin => pin.AddFlow("scope").AddFlow("parallel").AddFlow("iterative"))
-                .AddOutputPin<int>()
+            .AddOutputPin<int>("root-int")
                 .AddStructuredActivity("scope", scope => scope
-                    .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>()).AddOutputPin<int>()
-                    .AddFlow<int, OutputPin<int>>())
+                .AddInputPin<int>(pin => pin.AddFlow("scope-int")).AddOutputPin<int>("scope-int")
+                .AddFlow<int>("root-int"))
                 .AddParallelActivity<int>("parallel", scope => scope
-                    .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>()).AddOutputPin<int>()
-                    .AddFlow<int, OutputPin<int>>())
+                .AddInputPin<int>(pin => pin.AddFlow("parallel-int")).AddOutputPin<int>("parallel-int")
+                .AddFlow<int>("root-int"))
                 .AddIterativeActivity<int>("iterative", scope => scope
-                    .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>()).AddOutputPin<int>()
-                    .AddFlow<int, OutputPin<int>>());
+                .AddInputPin<int>(pin => pin.AddFlow("iterative-int")).AddOutputPin<int>("iterative-int")
+                .AddFlow<int>("root-int"));
         }
     }
 
@@ -311,12 +352,12 @@ public sealed class Pins : StateflowsTestClass
         public List<string> Pins { get; } = [];
         public override Task InputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
         {
-            Pins.Add($"input:{typeof(TToken).Name}:{parentNodeName ?? "root"}");
+            Pins.Add($"input:{typeof(TToken).Name}:{parentNodeName ?? "root"}:{nodeName}");
             return Task.CompletedTask;
         }
         public override Task OutputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
         {
-            Pins.Add($"output:{typeof(TToken).Name}:{parentNodeName ?? "root"}");
+            Pins.Add($"output:{typeof(TToken).Name}:{parentNodeName ?? "root"}:{nodeName}");
             return Task.CompletedTask;
         }
     }
@@ -329,7 +370,7 @@ public sealed class Pins : StateflowsTestClass
         public Type[] OutputTypes { get; private set; } = [];
         public override Task OnNodeExecuteAsync(IActivityNodeContext context, Func<Task> next)
         {
-            if (context.Node.NodeType == NodeType.Input)
+            if (context.Node.NodeType == NodeType.InputPin)
                 Executed.Add(((NodeContext)context.Node).Node.PinTokenType!);
             if (context.Node.Name == "scope")
             {
@@ -338,7 +379,7 @@ public sealed class Pins : StateflowsTestClass
                 OutputTypes = Scope.OutputPins.Select(pin => pin.TokenType).ToArray();
                 foreach (var pin in Scope.InputPins)
                 {
-                    Assert.AreEqual(NodeType.Input, pin.NodeType);
+                    Assert.AreEqual(NodeType.InputPin, pin.NodeType);
                     Assert.AreEqual(1, pin.OutgoingFlows.Count());
                     Assert.IsTrue(pin.TryGetParentNode(out var parent));
                     Assert.AreEqual("scope", parent.Name);

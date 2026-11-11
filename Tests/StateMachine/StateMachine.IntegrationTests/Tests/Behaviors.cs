@@ -90,6 +90,7 @@ namespace StateMachine.IntegrationTests.Tests
                         })
                     )
                     .AddActivity("integrated", b => b
+                        .AddInputPin<SomeEvent>(_ => { })
                         .AddInitial(b => b
                             .AddControlFlow("effect")
                         )
@@ -103,8 +104,8 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                     )
                     .AddActivity("guard", b => b
-                        .AddInput(b => b
-                            .AddFlow<SomeEvent>("guard")
+                        .AddInputPin<SomeEvent>(b => b
+                            .AddFlow("guard")
                         )
                         .AddAction(
                             "guard",
@@ -113,9 +114,9 @@ namespace StateMachine.IntegrationTests.Tests
                                 var t = c.GetTokensOfType<SomeEvent>().First();
                                 c.Output(t.TheresSomethingHappeningHere != string.Empty);
                             },
-                            b => b.AddFlow<bool, OutputNode>()
+                            b => b.AddFlow<bool, OutputPin<bool>>()
                         )
-                        .AddOutput()
+                        .AddOutputPin<bool>()
                     )
                 )
                 ;

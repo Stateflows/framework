@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,9 +26,11 @@ public sealed class ActivityStreamingRecoveryTests
 
     [TestMethod]
     [Timeout(120_000)]
-    [DataRow(false)]
-    [DataRow(true)]
-    public async Task CheckpointedContinuationsRecoverAfterReactivationLikeContinuousRun(bool standalone)
+    [DataRow(false, false)]
+    [DataRow(true, false)]
+    [DataRow(false, true)]
+    [DataRow(true, true)]
+    public async Task CheckpointedContinuationsRecoverAfterReactivationLikeContinuousRun(bool standalone, bool interleave)
     {
         var probe = new RecoveryProbe();
         var ports = GetPorts();
@@ -74,7 +76,7 @@ public sealed class ActivityStreamingRecoveryTests
                         }))
                     .AddActivity("recovery-structured", activity => activity
                         .AddInputPin<int>(input => input.AddFlow("scope"))
-                        .AddStructuredActivity("scope", scope => scope
+                        .AddStructuredActivity("scope", scope => (interleave ? scope.Interleave() : scope)
                             .AddOnInitialize(context =>
                             {
                                 probe.Count(context.Behavior.Id.Instance, "initialize");
@@ -104,7 +106,7 @@ public sealed class ActivityStreamingRecoveryTests
                         }))
                     .AddActivity("recovery-iterative", activity => activity
                         .AddInputPin<int>(input => input.AddFlow("loop"))
-                        .AddIterativeActivity<int>("loop", loop => loop
+                        .AddIterativeActivity<int>("loop", loop => (interleave ? loop.Interleave() : loop)
                             .AddOnInitialize(context =>
                             {
                                 probe.Count(context.Behavior.Id.Instance, "initialize");
@@ -143,7 +145,7 @@ public sealed class ActivityStreamingRecoveryTests
                         }))
                     .AddActivity("recovery-parallel", activity => activity
                         .AddInputPin<int>(input => input.AddFlow("parallel"))
-                        .AddParallelActivity<int>("parallel", parallel => parallel
+                        .AddParallelActivity<int>("parallel", parallel => (interleave ? parallel.Interleave() : parallel)
                             .AddOnInitialize(context =>
                             {
                                 probe.Count(context.Behavior.Id.Instance, "initialize");
@@ -251,10 +253,18 @@ public sealed class ActivityStreamingRecoveryTests
                 Assert.IsFalse(snapshot.Keys.Any(key => key.StartsWith("second") || key is "b" or "c" or "after"),
                     $"{activity}: successors must not start at the checkpoint barrier: {string.Join(";", snapshot)}");
 
-                await management.ForceActivationCollection(TimeSpan.Zero);
-                Assert.AreEqual(0, (await management.GetSimpleGrainStatistics())
-                    .Where(statistic => statistic.GrainType.Contains(nameof(StateflowsBehavior)))
-                    .Sum(statistic => statistic.ActivationCount), $"{activity}: the activation must be collected.");
+                var collectionDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+                int remainingActivations;
+                do
+                {
+                    await management.ForceActivationCollection(TimeSpan.Zero);
+                    remainingActivations = (await management.GetSimpleGrainStatistics())
+                        .Where(statistic => statistic.GrainType.Contains(nameof(StateflowsBehavior)))
+                        .Sum(statistic => statistic.ActivationCount);
+                    if (remainingActivations > 0)
+                        await Task.Delay(50);
+                } while (remainingActivations > 0 && DateTime.UtcNow < collectionDeadline);
+                Assert.AreEqual(0, remainingActivations, $"{activity}: the activation must be collected.");
 
                 // Reactivation automatically resumes checkpointed ready work before serving the call.
                 await behavior.GetStatusAsync().WaitAsync(TimeSpan.FromSeconds(10));
@@ -311,7 +321,7 @@ public sealed class ActivityStreamingRecoveryTests
                 services.AddStateflows(sf => sf.AddActivities(activities => activities
                     .AddActivity("handoff", activity => activity
                         .AddInitial(initial => initial.AddControlFlow("accept"))
-                        .AddInput(input => input.AddFlow<int>("join").AddFlow<int>("keepalive"))
+                        .AddInputPin<int>(input => input.AddFlow("join").AddFlow("keepalive"))
                         .AddAcceptEventAction<HandoffEvent>("accept", context =>
                         {
                             probe.Count(context.Behavior.Id.Instance, "accept");

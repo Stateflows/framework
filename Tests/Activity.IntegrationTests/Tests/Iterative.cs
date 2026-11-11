@@ -31,8 +31,8 @@ namespace Activity.IntegrationTests.Tests
                             b => b.AddFlow<int>("iterative")
                         )
                         .AddIterativeActivity<int>("iterative", b => b
-                            .AddInput(b => b
-                                .AddFlow<int>("action1")
+                            .AddInputPin<int>(b => b
+                                .AddFlow("action1")
                             )
                             .AddAction("action1",
                                 async c =>
@@ -53,8 +53,8 @@ namespace Activity.IntegrationTests.Tests
                             b => b.AddFlow<int>("iterative")
                         )
                         .AddIterativeActivity<int>("iterative", b => b
-                            .AddInput(b => b
-                                .AddFlow<int>("action1")
+                            .AddInputPin<int>(b => b
+                                .AddFlow("action1")
                             )
                             .AddAction("action1",
                                 async c =>
@@ -64,9 +64,9 @@ namespace Activity.IntegrationTests.Tests
                                     ExecutionSum1 += sum;
                                     c.Output(sum);
                                 },
-                                b => b.AddFlow<int, OutputNode>()
+                                b => b.AddFlow<int, OutputPin<int>>()
                             )
-                            .AddOutput()
+                            .AddOutputPin<int>()
                             // .AddControlFlow("collect"),
                             .AddFlow<int>("collect"),
                             5
@@ -85,8 +85,8 @@ namespace Activity.IntegrationTests.Tests
                             b => b.AddFlow<int>("iterative")
                         )
                         .AddIterativeActivity<int>("iterative", b => b
-                            .AddInput(b => b
-                                .AddFlow<int>("action1")
+                            .AddInputPin<int>(b => b
+                                .AddFlow("action1")
                             )
                             .AddAction("action1",
                                 async c =>

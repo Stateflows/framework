@@ -48,6 +48,54 @@ public class JsonDefinitions
     internal static JObject Action(JObject model) => (JObject)model["nodes"]![1]!;
 
     [TestMethod]
+    [DataRow("structured", -1)]
+    [DataRow("parallel", -1)]
+    [DataRow("parallel", 2)]
+    [DataRow("iterative", -1)]
+    public void StructuralOptionsAndParallelConcurrencyRegisterFromJson(string kind, int limit)
+    {
+        var node = new JObject
+        {
+            ["kind"] = kind,
+            ["name"] = "work",
+            ["options"] = new JArray("implicitJoin", "implicitFork", "interleave"),
+            ["nodes"] = new JArray()
+        };
+        if (kind != "structured") node["iterationTokenType"] = "int";
+        if (kind == "parallel") node["maxConcurrency"] = limit;
+        var model = new JObject
+        {
+            ["formatVersion"] = "1.0", ["name"] = "json-interleave",
+            ["nodes"] = new JArray(
+                new JObject
+                {
+                    ["kind"] = "initial",
+                    ["flows"] = new JArray(new JObject { ["kind"] = "control", ["target"] = "work" })
+                }, node)
+        };
+        var (register, builder) = Host();
+        Assert.IsFalse(JsonActivityDefinition.Parse(model.ToString(), Options()).Register(builder).HasErrors);
+        var work = register.Activities["json-interleave.current"].AllNodes.Values.Single(candidate => candidate.Name == "work");
+        Assert.IsTrue(work.Options.HasFlag(NodeOptions.Interleave));
+        Assert.AreEqual(limit, work.MaxConcurrency);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-2)]
+    public void JsonRejectsInvalidParallelConcurrency(int limit)
+    {
+        var model = Model();
+        model["nodes"] = new JArray(
+            new JObject
+            {
+                ["kind"] = "parallel", ["name"] = "work", ["iterationTokenType"] = "int",
+                ["maxConcurrency"] = limit, ["nodes"] = new JArray()
+            });
+        Assert.Throws<Exception>(() => JsonActivityDefinition.Parse(model.ToString(), Options()));
+    }
+
+    [TestMethod]
     public void MinimalModelRegistersWithResolvedSpecialNodeAlias()
     {
         var (register, builder) = Host();
@@ -56,8 +104,77 @@ public class JsonDefinitions
         var graph = register.Activities["json-activity.1"];
         Assert.AreEqual(3, graph.AllNodes.Count);
         Assert.AreEqual(2, graph.AllEdges.Count);
-        Assert.AreEqual(NodeType.Final, graph.AllEdgesList.Single(edge => edge.SourceName == "action").Target.Type);
+        var final = graph.AllEdgesList.Single(edge => edge.SourceName == "action").Target;
+        Assert.AreEqual(NodeType.Final, final.Type);
+        Assert.AreEqual("done", final.Name);
+        Assert.IsTrue(graph.AllNodes.Values.Any(node => node.Name == "json-activity.initial"));
         Assert.AreSame(graph, register.Activities["json-activity.current"]);
+    }
+
+    [TestMethod]
+    public void JsonFlowsResolveGlobalNamesAndInferScopeCrossings()
+    {
+        const string json = """
+            {
+              "formatVersion": "1.0",
+              "name": "json-cross-scope",
+              "nodes": [
+                { "kind": "initial", "flows": [
+                  { "kind": "control", "target": "source" },
+                  { "kind": "control", "target": "work" }
+                ] },
+                { "kind": "action", "name": "source", "implementation": { "clrType": "action" },
+                  "flows": [{ "kind": "control", "target": "nested-target" }] },
+                { "kind": "structured", "name": "work", "nodes": [
+                  { "kind": "initial", "flows": [{ "kind": "control", "target": "nested-target" }] },
+                  { "kind": "action", "name": "nested-target", "implementation": { "clrType": "action" } }
+                ] }
+              ]
+            }
+            """;
+        var (register, builder) = Host();
+        Assert.IsFalse(JsonActivityDefinition.Parse(json, Options()).Register(builder).HasErrors);
+
+        var graph = register.Activities["json-cross-scope.current"];
+        var crossing = graph.AllEdgesList.Single(edge => edge.SourceName == "source");
+        Assert.IsTrue(crossing.IsCrossScope);
+        Assert.AreEqual("nested-target", crossing.Target.Name);
+        Assert.IsTrue(graph.AllNodes.Values.Any(node => node.Name == "json-cross-scope.initial"));
+        Assert.IsTrue(graph.AllNodes.Values.Any(node => node.Name == "work.initial"));
+    }
+
+    [TestMethod]
+    public void JsonPinsUseScopedInputNamesAndCustomOutputTargets()
+    {
+        const string json = """
+            {
+              "formatVersion": "1.0",
+              "name": "json-pins",
+              "nodes": [
+                { "kind": "initial", "flows": [{ "kind": "control", "target": "scope" }] },
+                { "kind": "inputPin", "name": "incoming", "tokenType": "int",
+                  "flows": [{ "kind": "object", "tokenType": "int", "target": "root-result" }] },
+                { "kind": "outputPin", "name": "root-result", "tokenType": "int" },
+                { "kind": "structured", "name": "scope", "nodes": [
+                  { "kind": "inputPin", "name": "nested-input", "tokenType": "int",
+                    "flows": [{ "kind": "object", "tokenType": "int", "target": "nested-result" }] },
+                  { "kind": "outputPin", "name": "nested-result", "tokenType": "int" }
+                ] }
+              ]
+            }
+            """;
+        var (register, builder) = Host();
+        Assert.IsFalse(JsonActivityDefinition.Parse(json, Options()).Register(builder).HasErrors);
+
+        var graph = register.Activities["json-pins.current"];
+        var inputNames = graph.AllNodes.Values.Where(node => node.Type == NodeType.InputPin)
+            .Select(node => node.Name).ToHashSet(StringComparer.Ordinal);
+        Assert.IsTrue(inputNames.Contains("json-pins.Stateflows.Activities.InputPin<System.Int32>"));
+        Assert.IsTrue(inputNames.Contains("scope.Stateflows.Activities.InputPin<System.Int32>"));
+        Assert.IsTrue(graph.AllNamedNodes.ContainsKey("root-result"));
+        Assert.IsTrue(graph.AllNamedNodes.ContainsKey("nested-result"));
+        Assert.IsTrue(graph.AllEdgesList.Any(edge => edge.TargetName == "root-result" && edge.Target?.Parent == graph));
+        Assert.IsTrue(graph.AllEdgesList.Any(edge => edge.TargetName == "nested-result" && edge.Target?.Parent?.Name == "scope"));
     }
 
     [TestMethod]
@@ -78,6 +195,8 @@ public class JsonDefinitions
     [DataRow("formatVersion")]
     [DataRow("missingImplementation")]
     [DataRow("unknownNode")]
+    [DataRow("legacyInputKind")]
+    [DataRow("legacyOutputKind")]
     [DataRow("finalFlows")]
     [DataRow("initialOptions")]
     [DataRow("negativeWeight")]
@@ -99,6 +218,8 @@ public class JsonDefinitions
             case "formatVersion": model["formatVersion"] = "2.0"; break;
             case "missingImplementation": action.Remove("implementation"); break;
             case "unknownNode": action["kind"] = "unknown"; break;
+            case "legacyInputKind": action["kind"] = "input"; break;
+            case "legacyOutputKind": action["kind"] = "output"; break;
             case "finalFlows": model["nodes"]![2]!["flows"] = new JArray(); break;
             case "initialOptions": model["nodes"]![0]!["options"] = new JArray(); break;
             case "negativeWeight": action["flows"]![0]!["weight"] = -1; break;
@@ -120,6 +241,17 @@ public class JsonDefinitions
         }
         var exception = Assert.Throws<JsonActivityException>(() => JsonActivityDefinition.Parse(model.ToString(), Options()));
         Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d => d.RuleId == "JSON-002"));
+    }
+
+    [TestMethod]
+    public void SchemaReportsMultiplePropertyLocations()
+    {
+        var model = Model();
+        model["formatVersion"] = "2.0";
+        model["name"] = 123;
+        var exception = Assert.Throws<JsonActivityException>(() => JsonActivityDefinition.Parse(model.ToString(), Options()));
+        Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d => d.RuleId == "JSON-002" && d.ElementPath == "/formatVersion"));
+        Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d => d.RuleId == "JSON-002" && d.ElementPath == "/name"));
     }
 
     [TestMethod]

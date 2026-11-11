@@ -7,7 +7,7 @@ using Stateflows.StateMachines.Attributes;
 namespace Stateflows.StateMachines
 {
     /// <summary>Supplies a typed state-machine definition evaluated during registration, not per event.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/state-machines">state machines</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines">state machines</see>.</remarks>
     public interface IStateMachine : IStateMachineElement
     {
         /// <summary>Defines the machine's states, lifecycle callbacks, transitions, and local middleware.</summary>

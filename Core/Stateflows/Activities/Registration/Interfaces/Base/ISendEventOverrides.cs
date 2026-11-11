@@ -4,7 +4,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     /// <summary>Overrides event-sending nodes in an inherited activity.</summary>
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-send-event-action-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.11.-Send-Event-Action-Node" />
     public interface ISendEventOverrides<out TReturn>
     {
         /// <summary>Selects and replaces the matching inherited node.</summary>
@@ -13,8 +13,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-send-event-action-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.11.-Send-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseSendEventAction<TEvent>(string actionNodeName, OverridenSendEventActionBuildAction buildAction);
         
         /// <summary>Selects and replaces the matching inherited node.</summary>
@@ -24,8 +24,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-send-event-action-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.11.-Send-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         TReturn UseSendEventAction<TEvent, TSendEventAction>(OverridenSendEventActionBuildAction buildAction)
             where TSendEventAction : class, ISendEventActionNode<TEvent>

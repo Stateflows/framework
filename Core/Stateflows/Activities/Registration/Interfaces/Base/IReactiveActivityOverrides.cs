@@ -4,7 +4,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     /// <summary>Overrides reactive structured, parallel, and iterative nodes in a base activity.</summary>
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
     public interface IReactiveActivityOverrides<out TReturn> : IActivityActionOverrides<TReturn>
     {
         #region UseStructuredActivity
@@ -13,16 +13,16 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseStructuredActivity(string actionNodeName, OverridenReactiveStructuredActivityBuildAction buildAction);
         
         /// <summary>Selects and extends the inherited Activity definition.</summary>
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseStructuredActivity(OverridenReactiveStructuredActivityBuildAction buildAction)
             => UseStructuredActivity(StructuredActivityNode.Name, buildAction);
@@ -33,8 +33,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseStructuredActivity<TStructuredActivity>(OverridenReactiveStructuredActivityBuildAction buildAction)
             where TStructuredActivity : class, IStructuredActivityNode
@@ -48,8 +48,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseParallelActivity<TParallelizationToken>(string actionNodeName, OverridenParallelActivityBuildAction buildAction);
         
         /// <summary>Selects and extends the inherited Activity definition.</summary>
@@ -57,8 +57,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseParallelActivity<TParallelizationToken>(OverridenParallelActivityBuildAction buildAction)
             => UseParallelActivity<TParallelizationToken>(ParallelActivityNode<TParallelizationToken>.Name, buildAction);
@@ -70,8 +70,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseParallelActivity<TParallelizationToken, TParallelActivity>(OverridenParallelActivityBuildAction buildAction)
             where TParallelActivity : class, IStructuredActivityNode
@@ -85,8 +85,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseIterativeActivity<TToken>(string actionNodeName, OverridenIterativeActivityBuildAction buildAction);
         
         /// <summary>Selects and extends the inherited Activity definition.</summary>
@@ -94,8 +94,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseIterativeActivity<TIterationToken>(OverridenIterativeActivityBuildAction buildAction)
             => UseIterativeActivity<TIterationToken>(IterativeActivityNode<TIterationToken>.Name, buildAction);
@@ -107,8 +107,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseIterativeActivity<TIterationToken, TIterativeActivity>(OverridenIterativeActivityBuildAction buildAction)
             where TIterativeActivity : class, IStructuredActivityNode

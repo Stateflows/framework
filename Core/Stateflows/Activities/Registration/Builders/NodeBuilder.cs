@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Activities.Models;
@@ -9,6 +9,7 @@ using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
+using Stateflows.Entities.Enums;
 
 namespace Stateflows.Activities.Registration
 {
@@ -23,8 +24,6 @@ namespace Stateflows.Activities.Registration
         IOverridenPublishEventActionBuilder,
         IInitialBuilder,
         IOverridenInitialBuilder,
-        IInputBuilder,
-        IOverridenInputBuilder,
         IMergeBuilder,
         IOverridenMergeBuilder,
         IJoinBuilder,
@@ -42,49 +41,71 @@ namespace Stateflows.Activities.Registration
 
         public BaseActivityBuilder ActivityBuilder { get; } = activityBuilder;
 
+        public IPublishEventActionBuilder SetPublishScope(PublishScope scope)
+        {
+            if ((scope & ~(PublishScope.Self | PublishScope.Parent | PublishScope.Owner)) != 0)
+                throw new ArgumentOutOfRangeException(nameof(scope));
+            Node.PublishScope = scope;
+            return this;
+        }
+
+        public IPublishEventActionBuilder SetTimeToLive(int secondsToLive)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(secondsToLive);
+            Node.TimeToLive = secondsToLive;
+            return this;
+        }
+
+        public IPublishEventActionBuilder SetRetain(bool retain)
+        {
+            Node.Retain = retain;
+            return this;
+        }
+
+        public IPublishEventActionBuilder SetImmediatePublish(bool immediatePublish)
+        {
+            Node.ImmediatePublish = immediatePublish;
+            return this;
+        }
+
         public IActionBuilder AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction = null)
         {
-            var result = AddFlowInternal<ControlToken>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));
+            var edge = AddFlowInternal<ControlToken>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));
             
-            Graph.VisitingTasks.Add(v => v.ControlFlowAddedAsync(Graph.Name, Graph.Version, Node.Name, targetNodeName, false));
+            Graph.VisitingTasks.Add(v => v.ControlFlowAddedAsync(Graph.Name, Graph.Version, Node.Name, edge.IsCrossScope ? edge.TargetName : targetNodeName, false));
             
-            return result;
+            return this;
         }
 
         public IActionBuilder AddElseControlFlow(string targetNodeName, ElseControlFlowBuildAction buildAction = null)
         {
-            var result = AddFlowInternal<ControlToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseControlFlowBuilder));
+            var edge = AddFlowInternal<ControlToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseControlFlowBuilder));
             
-            Graph.VisitingTasks.Add(v => v.ControlFlowAddedAsync(Graph.Name, Graph.Version, Node.Name, targetNodeName, true));
+            Graph.VisitingTasks.Add(v => v.ControlFlowAddedAsync(Graph.Name, Graph.Version, Node.Name, edge.IsCrossScope ? edge.TargetName : targetNodeName, true));
             
-            return result;
+            return this;
         }
 
         public IActionBuilder AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
         {
-            var result = AddFlowInternal<TToken>(targetNodeName, false, buildAction);
+            var edge = AddFlowInternal<TToken>(targetNodeName, false, buildAction);
             
-            Graph.VisitingTasks.Add(v => v.FlowAddedAsync<TToken>(Graph.Name, Graph.Version, Node.Name, targetNodeName, false));
+            Graph.VisitingTasks.Add(v => v.FlowAddedAsync<TToken>(Graph.Name, Graph.Version, Node.Name, edge.IsCrossScope ? edge.TargetName : targetNodeName, false));
             
-            return result;
+            return this;
         }
 
         public IActionBuilder AddElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
         {
-            var result = AddFlowInternal<TToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseObjectFlowBuilder<TToken>));
+            var edge = AddFlowInternal<TToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseObjectFlowBuilder<TToken>));
             
-            Graph.VisitingTasks.Add(v => v.FlowAddedAsync<TToken>(Graph.Name, Graph.Version, Node.Name, targetNodeName, true));
+            Graph.VisitingTasks.Add(v => v.FlowAddedAsync<TToken>(Graph.Name, Graph.Version, Node.Name, edge.IsCrossScope ? edge.TargetName : targetNodeName, true));
             
-            return result;
+            return this;
         }
 
-        public IActionBuilder AddFlowInternal<TToken>(string targetNodeName, bool isElse, ObjectFlowBuildAction<TToken> buildAction = null)
+        private Edge AddFlowInternal<TToken>(string targetNodeName, bool isElse, ObjectFlowBuildAction<TToken> buildAction = null)
         {
-            if (Node.Parent.Type != NodeType.Activity)
-            {
-                targetNodeName = $"{Node.Parent.Name}.{targetNodeName}";
-            }
-
             var edge = new Edge()
             {
                 TokenType = typeof(TToken),
@@ -101,7 +122,7 @@ namespace Stateflows.Activities.Registration
 
             buildAction?.Invoke(new FlowBuilder<TToken>(edge));
 
-            return this;
+            return edge;
         }
 
         public IActionBuilder SetOptions(NodeOptions nodeOptions)
@@ -157,9 +178,6 @@ namespace Stateflows.Activities.Registration
         IActionBuilder IExceptionHandlerBase<IActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as IActionBuilder;
 
-        IInputBuilder IObjectFlowBase<IInputBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddFlow<TToken>(targetNodeName, buildAction) as IInputBuilder;
-
         void IObjectFlowBase.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction);
 
@@ -195,9 +213,6 @@ namespace Stateflows.Activities.Registration
 
         IOverridenInitialBuilder IControlFlowBase<IOverridenInitialBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IOverridenInitialBuilder;
-
-        IOverridenInputBuilder IObjectFlowBase<IOverridenInputBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddFlow<TToken>(targetNodeName, buildAction) as IOverridenInputBuilder;
 
         IOverridenForkBuilder IObjectFlowBase<IOverridenForkBuilder>.AddFlow<TToken>(string targetNodeName,
             ObjectFlowBuildAction<TToken> buildAction)
@@ -250,9 +265,6 @@ namespace Stateflows.Activities.Registration
 
         IOverridenInitialBuilder IOverridenControlFlowBase<IOverridenInitialBuilder>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => UseControlFlow(targetNodeName, buildAction);
-
-        IOverridenInputBuilder IOverridenObjectFlowBase<IOverridenInputBuilder>.UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => UseFlow(targetNodeName, buildAction);
 
         void IOverridenObjectFlowBase.UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => UseFlow<TToken>(targetNodeName, buildAction);

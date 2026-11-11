@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ILGPU" Version="1.5.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.FluentValidation\Stateflows.Extensions.FluentValidation.csproj" />
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
+    <ProjectReference Include="..\..\Runtimes\Stateflows.Runtimes.Orleans\Stateflows.Runtimes.Orleans.csproj" />
+  </ItemGroup>
+</Project>

@@ -325,6 +325,9 @@ namespace Stateflows.Activities.Engine
                 ? session.Context.Context.PendingTimeEvents.Values.ToArray()
                 : []);
 
+        public StateflowsContext? GetActivitySessionContext(BehaviorId id)
+            => activitySessions.TryGetValue(id, out var session) ? session.Context.Context : null;
+
         public async Task<bool?> WaitForActivitySessionInitializationAsync(BehaviorId id)
         {
             if (!activitySessions.TryGetValue(id, out var session))

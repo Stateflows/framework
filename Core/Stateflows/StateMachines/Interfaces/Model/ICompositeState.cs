@@ -46,7 +46,7 @@ namespace Stateflows.StateMachines
     }
 
     /// <summary>Supplies the fluent definition of a composite state and its nested region.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state">composite states</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State">composite states</see>.</remarks>
     public interface ICompositeStateDefinition : ICompositeState
     {
         /// <summary>Configures the composite state's lifecycle, transitions, and nested vertices.</summary>

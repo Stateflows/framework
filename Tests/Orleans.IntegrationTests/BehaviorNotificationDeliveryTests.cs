@@ -519,7 +519,7 @@ public sealed partial class BehaviorNotificationTests
                                     .AddEffect(c => retainedValues.TryWrite(c.Event.Value))))))
                     .AddActions(actions => actions.AddAction("publishing-action", c =>
                         {
-                            c.Behavior.Publish(new CustomNotification { Text = "from-action" });
+                            c.Behavior.PublishTimed(new CustomNotification { Text = "from-action" }, 300);
                             return Task.CompletedTask;
                         }, b => b.SetIsStateless(true))
                         .AddAction("stateful-action", c =>
@@ -645,15 +645,34 @@ public sealed partial class BehaviorNotificationTests
     private sealed class FaultingNotificationsStorage : IGrainStorage
     {
         private readonly ConcurrentDictionary<(string StateName, GrainId GrainId), (BinaryData Data, string ETag)> states = new();
+        private readonly object writeSync = new();
         private IGrainStorageSerializer serializer = null!;
         private int failureMode;
         private int contextFailureMode;
         private int contextWrites;
         private int notificationsReads;
+        private int notificationsWrites;
 
         public int NotificationsReads => System.Threading.Volatile.Read(ref notificationsReads);
+        public int NotificationsWrites => System.Threading.Volatile.Read(ref notificationsWrites);
         public int ContextWrites => System.Threading.Volatile.Read(ref contextWrites);
         public ConcurrentQueue<BehaviorContextState> ContextCommits { get; } = new();
+
+        public NotificationsState GetNotificationsState(BehaviorId id)
+        {
+            var stored = states.Single(p => p.Key.StateName == "Stateflows.Notifications" &&
+                p.Key.GrainId.Key.ToString() == GetBehaviorGrainKey(id)).Value;
+            return serializer.Deserialize<NotificationsState>(stored.Data);
+        }
+
+        public void UpdateNotificationsState(BehaviorId id, System.Action<NotificationsState> update)
+        {
+            var key = states.Keys.Single(p => p.StateName == "Stateflows.Notifications" &&
+                p.GrainId.Key.ToString() == GetBehaviorGrainKey(id));
+            var state = GetNotificationsState(id);
+            update(state);
+            states[key] = (serializer.Serialize(state), Guid.NewGuid().ToString("N"));
+        }
 
         public IGrainStorage Attach(IGrainStorageSerializer storageSerializer)
         {
@@ -668,15 +687,19 @@ public sealed partial class BehaviorNotificationTests
             => System.Threading.Volatile.Write(ref contextFailureMode, commitBeforeFailure ? 2 : 1);
 
         public bool HasContext(BehaviorId id)
-            => states.Keys.Any(p => p.StateName == "Stateflows.BehaviorContext" &&
-                p.GrainId.Key.ToString() == GetBehaviorGrainKey(id));
+            => states.Any(p => p.Key.StateName == "Stateflows.BehaviorContext" &&
+                p.Key.GrainId.Key.ToString() == GetBehaviorGrainKey(id) &&
+                !string.IsNullOrEmpty(TransactionalStorageTestHelpers.GetCommittedContextState(
+                    serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(p.Value.Data))?.Payload));
 
         public Stateflows.Common.Context.StateflowsContext GetContext(BehaviorId id)
         {
             var stored = states.Single(p => p.Key.StateName == "Stateflows.BehaviorContext" &&
                 p.Key.GrainId.Key.ToString() == GetBehaviorGrainKey(id)).Value;
+            var committed = TransactionalStorageTestHelpers.GetCommittedContextState(
+                serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(stored.Data));
             return StateflowsJsonConverter.DeserializeObject<Stateflows.Common.Context.StateflowsContext>(
-                serializer.Deserialize<BehaviorContextState>(stored.Data)!.Payload)!;
+                committed!.Payload)!;
         }
 
         public void UpdateContext(BehaviorId id, System.Action<Stateflows.Common.Context.StateflowsContext> update)
@@ -685,10 +708,11 @@ public sealed partial class BehaviorNotificationTests
                 p.GrainId.Key.ToString() == GetBehaviorGrainKey(id));
             var context = GetContext(id);
             update(context);
-            states[key] = (serializer.Serialize(new BehaviorContextState
-            {
-                Payload = StateflowsJsonConverter.SerializePolymorphicObject(context)
-            }), Guid.NewGuid().ToString("N"));
+            var stored = states[key];
+            var record = serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(stored.Data)!;
+            var committed = TransactionalStorageTestHelpers.GetCommittedContextState(record)!;
+            committed.Payload = StateflowsJsonConverter.SerializePolymorphicObject(context);
+            states[key] = (serializer.Serialize(record), Guid.NewGuid().ToString("N"));
         }
 
         public Task ReadStateAsync<T>(string stateName, GrainId grainId, IGrainState<T> grainState)
@@ -716,26 +740,56 @@ public sealed partial class BehaviorNotificationTests
 
         public Task WriteStateAsync<T>(string stateName, GrainId grainId, IGrainState<T> grainState)
         {
-            if (stateName == "Stateflows.BehaviorContext") Interlocked.Increment(ref contextWrites);
-            var mode = stateName == "Stateflows.Notifications" ? Interlocked.Exchange(ref failureMode, 0)
-                : stateName == "Stateflows.BehaviorContext" ? Interlocked.Exchange(ref contextFailureMode, 0) : 0;
-            if (mode == 1)
+            lock (writeSync)
             {
-                throw new InvalidOperationException("Injected notifications storage write failure.");
-            }
+                var data = serializer.Serialize(grainState.State);
+                var mode = 0;
+                var committedAdvanced = false;
+                if (stateName == "Stateflows.Notifications")
+                {
+                    Interlocked.Increment(ref notificationsWrites);
+                    mode = Interlocked.Exchange(ref failureMode, 0);
+                }
+                else if (stateName == "Stateflows.BehaviorContext")
+                {
+                    // Orleans transactions also persist metadata-only records; only writes carrying a new transactional
+                    // state version (prepared or committed) count as behavior writes and are eligible for fault injection.
+                    var previous = states.TryGetValue((stateName, grainId), out var stored)
+                        ? serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(stored.Data)
+                        : null;
+                    var next = serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(data);
+                    if (TransactionalStorageTestHelpers.GetLatestSequenceId(next) > TransactionalStorageTestHelpers.GetLatestSequenceId(previous))
+                    {
+                        Interlocked.Increment(ref contextWrites);
+                        mode = Interlocked.Exchange(ref contextFailureMode, 0);
+                    }
+                    committedAdvanced = (next?.CommittedSequenceId ?? 0) > (previous?.CommittedSequenceId ?? 0);
+                }
 
-            var eTag = Guid.NewGuid().ToString("N");
-            states[(stateName, grainId)] = (serializer.Serialize(grainState.State), eTag);
-            if (grainState.State is BehaviorContextState committed)
-                ContextCommits.Enqueue(committed);
-            if (mode == 2)
-            {
-                throw new InvalidOperationException("Injected notifications storage acknowledgement failure.");
-            }
+                if (mode == 1)
+                {
+                    throw new InvalidOperationException("Injected notifications storage write failure.");
+                }
 
-            grainState.ETag = eTag;
-            grainState.RecordExists = true;
-            return Task.CompletedTask;
+                var eTag = Guid.NewGuid().ToString("N");
+                states[(stateName, grainId)] = (data, eTag);
+                if (committedAdvanced &&
+                    TransactionalStorageTestHelpers.GetCommittedContextState(
+                        serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(data)) is { } committed)
+                {
+                    ContextCommits.Enqueue(committed);
+                }
+
+                if (mode == 2)
+                {
+                    // The record is durable, but the caller never learns its new ETag, as with a lost acknowledgement.
+                    throw new InvalidOperationException("Injected notifications storage acknowledgement failure.");
+                }
+
+                grainState.ETag = eTag;
+                grainState.RecordExists = true;
+                return Task.CompletedTask;
+            }
         }
 
         public Task ClearStateAsync<T>(string stateName, GrainId grainId, IGrainState<T> grainState)
@@ -772,7 +826,7 @@ public sealed partial class BehaviorNotificationTests
         TNotification notification,
         BehaviorId publisherId,
         bool retained = false,
-        int timeToLive = 0,
+        int timeToLive = 300,
         DateTime? sentAt = null)
     {
         EventHolder holder = notification.ToEventHolder(publisherId);

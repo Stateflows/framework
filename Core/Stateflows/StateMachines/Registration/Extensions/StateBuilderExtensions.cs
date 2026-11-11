@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines;
 /// State-level subscriptions are awaited on entry and removed on exit; machine-level subscriptions are queued
 /// before each initialization attempt and are not paired with an exit callback.
 /// Missing parent or owner contexts cause subscription callbacks to do nothing.
-/// See <see href="https://github.com/Stateflows/framework/wiki/behavioral-groups">behavioral groups</see>.</remarks>
+/// See <see href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups">behavioral groups</see>.</remarks>
 public static class StateBuilderExtensions
 {
     private static EntityId GetEntityId(BehaviorId behaviorId, string entityName)

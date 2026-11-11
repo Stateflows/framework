@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Title>Union types extension for Stateflows framework</Title>
+    <Version>$(STATEFLOWS_VERSION)</Version>
+    <Authors>Stateflows</Authors>
+    <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
+    <PackageIcon>stateflows-logo-1024.png</PackageIcon>
+    <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Stateflows;state-machine;activity;workflow;union-types</PackageTags>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageOutputPath>..\..\NuGet</PackageOutputPath>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <LangVersion>default</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="True" PackagePath="\" />
+    <None Include="..\..\stateflows-logo-1024.png" Pack="True" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="UnionTypes.IntegrationTests" />
+    <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md" Pack="True" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

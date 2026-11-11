@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines
 {
     /// <summary>Base exception handler that leaves every failure unacknowledged unless an operation is overridden.</summary>
     /// <remarks>Returning true from an override acknowledges a failure but does not recover execution.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/observability">observability</see>.</remarks>
+    /// See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.</remarks>
     public abstract class StateMachineExceptionHandler : IStateMachineExceptionHandler
     {
         /// <inheritdoc/>

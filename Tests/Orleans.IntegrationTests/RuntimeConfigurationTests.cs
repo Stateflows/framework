@@ -173,6 +173,7 @@ public sealed class RuntimeConfigurationTests
         {
             Reads.Add(stateName);
             grainState.State = Activator.CreateInstance<T>();
+            grainState.ETag = null;
             grainState.RecordExists = false;
             return Task.CompletedTask;
         }

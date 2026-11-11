@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines
     /// returning true acknowledges the exception. Execution still fails and its context
     /// changes are not persisted. IDE break-on-thrown settings control debugger stops
     /// independently of acknowledgement.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/observability">observability</see>.
+    /// See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.
     /// </summary>
     public interface IStateMachineExceptionHandler
     {

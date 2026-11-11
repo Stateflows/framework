@@ -41,7 +41,7 @@ namespace Stateflows.StateMachines
     }
 
     /// <summary>Supplies the fluent definition of a typed regular state.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/state-machine-state">states</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State">states</see>.</remarks>
     public interface IStateDefinition : IState
     {
         /// <summary>Configures this state's actions, transitions, and deferrals during machine registration.</summary>

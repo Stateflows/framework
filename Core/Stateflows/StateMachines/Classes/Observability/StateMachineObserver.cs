@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines
 {
     /// <summary>Base observer that forwards every operation to its continuation.</summary>
     /// <remarks>Override only the operations of interest and preserve the exactly-once, awaited continuation contract.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/observability">observability</see>.</remarks>
+    /// See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.</remarks>
     public abstract class StateMachineObserver : IStateMachineObserver
     {
         /// <inheritdoc/>

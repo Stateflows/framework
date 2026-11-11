@@ -86,8 +86,8 @@ namespace Activity.IntegrationTests.Tests
                             b => b.AddFlow<int>("structured")
                         )
                         .AddStructuredActivity("structured", b => b
-                            .AddInput(b => b
-                                .AddFlow<int>("report")
+                            .AddInputPin<int>(b => b
+                                .AddFlow("report")
                             )
                             .AddAcceptEventAction<SomeEvent>(
                                 "accept",

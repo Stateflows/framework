@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines
     /// replacement. Observers must not change state or suppress continuation failures.
     /// Use try/finally for cleanup that must run on failure. Missing, repeated, or
     /// unfinished continuation calls fail execution.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/observability">observability</see>.
+    /// See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.
     /// </remarks>
     public interface IStateMachineObserver
     {

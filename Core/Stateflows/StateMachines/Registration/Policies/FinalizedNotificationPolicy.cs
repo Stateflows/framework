@@ -19,7 +19,7 @@ internal class FinalizedNotification : StateMachineObserver
 
 /// <summary>Notifies an enclosing behavior after the embedded machine successfully finalizes.</summary>
 /// <remarks>Queues a <see cref="SubmachineFinalized"/> notification when a parent context exists.
-/// See <see href="https://github.com/Stateflows/framework/wiki/behavioral-groups">behavioral groups</see>.</remarks>
+/// See <see href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups">behavioral groups</see>.</remarks>
 public static class FinalizedNotificationPolicy
 {
     /// <summary>Registers finalization notification on a fluent machine definition.</summary>

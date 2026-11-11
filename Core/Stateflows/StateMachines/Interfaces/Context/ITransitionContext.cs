@@ -3,7 +3,7 @@
 namespace Stateflows.StateMachines
 {
     /// <summary>Describes the source, optional target, and triggering event of the current transition.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/state-machine-transition">transition semantics</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition">transition semantics</see>.</remarks>
     public interface ITransitionContext
     {
         /// <summary>The state from which the transition originates.</summary>

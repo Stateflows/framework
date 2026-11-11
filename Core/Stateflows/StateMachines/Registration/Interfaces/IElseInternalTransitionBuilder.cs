@@ -6,8 +6,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     /// </summary>
     /// <typeparam name="TEvent">Trigger event payload type. Exception triggers also match derived exception types;
     /// ordinary event triggers use exact matching.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
     public interface IElseInternalTransitionBuilder<TEvent> :
         ITriggeredTransitionUtils<IElseInternalTransitionBuilder<TEvent>>,
         IEffect<TEvent, IElseInternalTransitionBuilder<TEvent>>
@@ -16,9 +16,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     /// <summary>Extends effects on an inherited fallback internal transition.</summary>
     /// <typeparam name="TEvent">Trigger event payload type. Exception triggers also match derived exception types;
     /// ordinary event triggers use exact matching.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
     public interface IOverridenElseInternalTransitionBuilder<TEvent> :
         ITriggeredTransitionUtils<IOverridenElseInternalTransitionBuilder<TEvent>>,
         IEffect<TEvent, IOverridenElseInternalTransitionBuilder<TEvent>>

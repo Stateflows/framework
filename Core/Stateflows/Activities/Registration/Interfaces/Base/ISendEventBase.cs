@@ -8,7 +8,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     /// <summary>Adds nodes that generate events and send them to selected behavior instances.</summary>
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-send-event-action-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.11.-Send-Event-Action-Node" />
     public interface ISendEventBase<out TReturn>
     {
         /// <summary>Adds an action node that creates an event and sends it to a selected behavior.</summary>
@@ -21,7 +21,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-send-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.11.-Send-Event-Action-Node" />
         TReturn AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction = null);
         
         [DebuggerHidden]
@@ -47,7 +47,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-send-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.11.-Send-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddSendEventAction<TEvent, TSendEventAction>(SendEventActionBuildAction buildAction = null)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
@@ -61,7 +61,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-send-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.11.-Send-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddSendEventAction<TEvent, TSendEventAction>(string actionNodeName, SendEventActionBuildAction buildAction = null)
             where TSendEventAction : class, ISendEventActionNode<TEvent>

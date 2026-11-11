@@ -12,10 +12,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
-    <PackageReference Include="Microsoft.Orleans.Persistence.AdoNet" Version="10.4.0" />
-    <PackageReference Include="Microsoft.Orleans.Reminders.AdoNet" Version="10.4.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="4.5.1" />
-    <PackageReference Include="MSTest.TestFramework" Version="4.5.1" />
+    <PackageReference Include="Microsoft.Orleans.Persistence.AdoNet" Version="10.4.2" />
+    <PackageReference Include="Microsoft.Orleans.Reminders.AdoNet" Version="10.4.2" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.5.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.5.2" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.0" />
     <PackageReference Include="coverlet.collector" Version="10.1.0">
       <PrivateAssets>all</PrivateAssets>
@@ -38,7 +38,7 @@
 
   <Target Name="CopyOrleansIntegrationSiloHost" AfterTargets="Build">
     <ItemGroup>
-      <OrleansIntegrationSiloHostFiles Include="$(MSBuildThisFileDirectory)..\Orleans.IntegrationTests.SiloHost\bin\$(Configuration)\net8.0\**\*.*" />
+      <OrleansIntegrationSiloHostFiles Include="$(MSBuildThisFileDirectory)..\Orleans.IntegrationTests.SiloHost\bin\$(Configuration)\$(TargetFramework)\**\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(OrleansIntegrationSiloHostFiles)" DestinationFiles="@(OrleansIntegrationSiloHostFiles->'$(OutDir)SiloHost\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>

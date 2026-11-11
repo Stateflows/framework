@@ -5,7 +5,7 @@ namespace Stateflows.Actions.Registration.Interfaces.Base;
 /// <summary>Configures action interceptors, observers, and exception handlers.</summary>
 /// <typeparam name="TReturn">The builder type returned for fluent configuration.</typeparam>
 /// <remarks>Global and action-local observability components are composed by the action runtime.</remarks>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/observability">Observability documentation</seealso>
+/// <seealso href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">Observability documentation</seealso>
 public interface IActionObservability<out TReturn>
 {
     /// <summary>Adds an interceptor using a synchronous factory.</summary>

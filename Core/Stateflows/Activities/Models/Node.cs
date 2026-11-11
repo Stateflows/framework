@@ -8,6 +8,7 @@ using Stateflows.Common.Utilities;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Exceptions;
+using Stateflows.Entities.Enums;
 
 namespace Stateflows.Activities.Models
 {
@@ -21,17 +22,19 @@ namespace Stateflows.Activities.Models
         public string Name { get; set; }
         public NodeType Type { get; set; }
         public Type? PinTokenType { get; set; }
-        public IEnumerable<Node> InputPins => Nodes.Values.Where(node => node.Type == NodeType.Input && node.PinTokenType != null);
-        public IEnumerable<Node> OutputPins => Nodes.Values.Where(node => node.Type == NodeType.Output && node.PinTokenType != null);
-        public IEnumerable<Node> InputNodes => Nodes.Values.Where(node => node.Type == NodeType.Input);
-        public IEnumerable<Node> OutputNodes => Nodes.Values.Where(node => node.Type == NodeType.Output);
+        public bool IsOutputPin => PinTokenType != null &&
+            (Type == NodeType.OutputPin || Type == NodeType.PublishEventAction && Parent is Graph);
+        public PublishScope PublishScope { get; set; } = PublishScope.Self;
+        public int TimeToLive { get; set; }
+        public bool Retain { get; set; }
+        public bool ImmediatePublish { get; set; }
+        public IEnumerable<Node> InputPins => Nodes.Values.Where(node => node.Type == NodeType.InputPin);
+        public IEnumerable<Node> OutputPins => Nodes.Values.Where(node => node.IsOutputPin);
 
         public bool AcceptsInput(IEnumerable<TokenHolder> tokens)
         {
-            if (InputNodes.Any(node => node.PinTokenType == null))
-                return true;
             var types = InputPins.Select(pin => pin.PinTokenType!).ToArray();
-            return types.Length == 0 || tokens.All(token => types.Any(type => type.IsAssignableFrom(token.ActualPayloadType)));
+            return tokens.All(token => types.Any(type => type.IsAssignableFrom(token.ActualPayloadType)));
         }
         public NodeOptions Options { get; set; } = NodeOptions.ActionDefault;
 
@@ -43,6 +46,8 @@ namespace Stateflows.Activities.Models
         public IEnumerable<Type> ActualEventTypes { get; set; }
 
         public int ChunkSize { get; set; }
+
+        internal int MaxConcurrency { get; set; } = -1;
         public bool Anchored { get; set; } = true;
 
         internal Func<IActivityVisitor, Task>? VisitingTask { get; set; } = null;
@@ -165,38 +170,6 @@ namespace Stateflows.Activities.Models
         public IEnumerable<Node> InitialNodes
             => initialNodes ??= Nodes.Values
                 .Where(n => n.Type == NodeType.Initial);
-
-        private Node inputNode;
-        private bool inputNodeSet;
-        public Node InputNode
-        {
-            get
-            {
-                if (!inputNodeSet)
-                {
-                    inputNode = Nodes.Values.FirstOrDefault(n => n.Type == NodeType.Input);
-                    inputNodeSet = true;
-                }
-
-                return inputNode;
-            }
-        }
-
-        private Node outputNode;
-        private bool outputNodeSet;
-        public Node OutputNode
-        {
-            get
-            {
-                if (!outputNodeSet)
-                {
-                    outputNode = Nodes.Values.FirstOrDefault(n => n.Type == NodeType.Output);
-                    outputNodeSet = true;
-                }
-
-                return outputNode;
-            }
-        }
 
         private Node finalNode;
         private bool finalNodeSet;

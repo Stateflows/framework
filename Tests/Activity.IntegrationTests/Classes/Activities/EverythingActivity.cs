@@ -1,4 +1,4 @@
-﻿using Activity.IntegrationTests.Classes.Actions;
+using Activity.IntegrationTests.Classes.Actions;
 using Activity.IntegrationTests.Classes.Events;
 using Activity.IntegrationTests.Classes.Flow;
 using Stateflows.Activities.Registration.Interfaces;
@@ -23,16 +23,16 @@ namespace Activity.IntegrationTests.Classes.Activities
                     .AddControlFlow<ControlFlow, Action1>()
                 )
                 
-                .AddInput(b => b
-                    .AddFlow<int>("action1")
-                    .AddFlow<int, Action1>()
-                    .AddFlow<int, IntFlow>("action1")
-                    .AddFlow<int, IntStringFlow>("action1")
-                    .AddFlow<int, IntFlow, Action1>()
-                    .AddFlow<int, IntStringFlow, Action1>()
+                .AddInputPin<int>(b => b
+                    .AddFlow("action1")
+                    .AddFlow<Action1>()
+                    .AddFlow<IntFlow>("action1")
+                    .AddFlow<IntStringFlow>("action1")
+                    .AddFlow<IntFlow, Action1>()
+                    .AddFlow<IntStringFlow, Action1>()
                 )
                 
-                .AddOutput()
+                .AddOutputPin<int>()
                 .AddFinal()
 
                 .AddDataStore("dataStore1", b => b
@@ -646,15 +646,15 @@ namespace Activity.IntegrationTests.Classes.Activities
                         .AddControlFlow<ControlFlow>("action1")
                         .AddControlFlow<ControlFlow, Action1>()
                     )
-                    .AddInput(b => b
-                        .AddFlow<int>("action1")
-                        .AddFlow<int, Action1>()
-                        .AddFlow<int, IntFlow>("action1")
-                        .AddFlow<int, IntStringFlow>("action1")
-                        .AddFlow<int, IntFlow, Action1>()
-                        .AddFlow<int, IntStringFlow, Action1>()
+                    .AddInputPin<int>(b => b
+                        .AddFlow("action1")
+                        .AddFlow<Action1>()
+                        .AddFlow<IntFlow>("action1")
+                        .AddFlow<IntStringFlow>("action1")
+                        .AddFlow<IntFlow, Action1>()
+                        .AddFlow<IntStringFlow, Action1>()
                     )
-                    .AddOutput()
+                    .AddOutputPin<int>()
                     .AddFinal()
                     .AddDataStore("dataStore1", b => b
                         .AddFlow<int>("action1")
@@ -1249,15 +1249,15 @@ namespace Activity.IntegrationTests.Classes.Activities
                         .AddControlFlow<ControlFlow>("action1")
                         .AddControlFlow<ControlFlow, Action1>()
                     )
-                    .AddInput(b => b
-                        .AddFlow<int>("action1")
-                        .AddFlow<int, Action1>()
-                        .AddFlow<int, IntFlow>("action1")
-                        .AddFlow<int, IntStringFlow>("action1")
-                        .AddFlow<int, IntFlow, Action1>()
-                        .AddFlow<int, IntStringFlow, Action1>()
+                    .AddInputPin<int>(b => b
+                        .AddFlow("action1")
+                        .AddFlow<Action1>()
+                        .AddFlow<IntFlow>("action1")
+                        .AddFlow<IntStringFlow>("action1")
+                        .AddFlow<IntFlow, Action1>()
+                        .AddFlow<IntStringFlow, Action1>()
                     )
-                    .AddOutput()
+                    .AddOutputPin<int>()
                     .AddFinal()
                     .AddDataStore("dataStore1", b => b
                         .AddFlow<int>("action1")
@@ -1594,15 +1594,15 @@ namespace Activity.IntegrationTests.Classes.Activities
                         .AddControlFlow<ControlFlow>("action1")
                         .AddControlFlow<ControlFlow, Action1>()
                     )
-                    .AddInput(b => b
-                        .AddFlow<int>("action1")
-                        .AddFlow<int, Action1>()
-                        .AddFlow<int, IntFlow>("action1")
-                        .AddFlow<int, IntStringFlow>("action1")
-                        .AddFlow<int, IntFlow, Action1>()
-                        .AddFlow<int, IntStringFlow, Action1>()
+                    .AddInputPin<int>(b => b
+                        .AddFlow("action1")
+                        .AddFlow<Action1>()
+                        .AddFlow<IntFlow>("action1")
+                        .AddFlow<IntStringFlow>("action1")
+                        .AddFlow<IntFlow, Action1>()
+                        .AddFlow<IntStringFlow, Action1>()
                     )
-                    .AddOutput()
+                    .AddOutputPin<int>()
                     .AddFinal()
                     .AddDataStore("dataStore1", b => b
                         .AddFlow<int>("action1")

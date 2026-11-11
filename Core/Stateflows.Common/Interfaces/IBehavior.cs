@@ -10,8 +10,8 @@ namespace Stateflows.Common
     /// </summary>
     /// <remarks>
     /// A handle identifies a behavior through <see cref="Id"/> and should be disposed when no longer needed.
-    /// See the <see href="https://github.com/Stateflows/framework/wiki/behaviors">behavior documentation</see>
-    /// and <see href="https://github.com/Stateflows/framework/wiki/messaging-patterns">messaging patterns</see>.
+    /// See the <see href="https://github.com/Stateflows/framework/wiki/5.-Behaviors">behavior documentation</see>
+    /// and <see href="https://github.com/Stateflows/framework/wiki/4.2.-Messaging-Patterns">messaging patterns</see>.
     /// </remarks>
     public interface IBehavior : IWatches, IDisposable
     {

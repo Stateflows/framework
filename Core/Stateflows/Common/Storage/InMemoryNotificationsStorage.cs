@@ -33,7 +33,8 @@ namespace Stateflows.Common.Storage
                     tenantNotifications.Add(behaviorId, behaviorNotifications);
                 }
                 
-                behaviorNotifications.AddRange(notifications);
+                behaviorNotifications.AddRange(notifications.Where(n => n.Retained || n.TimeToLive > 0));
+                Prune(behaviorNotifications);
             }
             
             return Task.CompletedTask;
@@ -51,11 +52,32 @@ namespace Stateflows.Common.Storage
 
                 if (tenantNotifications.TryGetValue(behaviorId, out var behaviorNotifications))
                 {
-                    return Task.FromResult(behaviorNotifications.Where(n => notificationNames.Contains(n.Name) && n.SentAt >= lastNotificationCheck));
+                    Prune(behaviorNotifications);
+                    var now = DateTime.Now;
+                    var matching = behaviorNotifications.Where(n => notificationNames.Contains(n.Name)).ToArray();
+                    var latestRetained = matching.Where(n => n.Retained)
+                        .GroupBy(n => n.Name)
+                        .Select(group => group.Last())
+                        .ToHashSet();
+                    return Task.FromResult<IEnumerable<EventHolder>>(matching
+                        .Where(n => (n.TimeToLive == 0 || n.SentAt.AddSeconds(n.TimeToLive) > now) &&
+                            (n.SentAt >= lastNotificationCheck || latestRetained.Contains(n)))
+                        .ToArray());
                 }
             }
-            
+
             return Task.FromResult<IEnumerable<EventHolder>>(Array.Empty<EventHolder>());
+        }
+
+        private static void Prune(List<EventHolder> notifications)
+        {
+            var now = DateTime.Now;
+            var latestRetained = notifications.Where(n => n.Retained)
+                .GroupBy(n => n.Name).Select(group => group.Last()).ToHashSet();
+            notifications.RemoveAll(n =>
+                (!n.Retained && n.TimeToLive <= 0) ||
+                (n.Retained && !latestRetained.Contains(n)) ||
+                (n.TimeToLive > 0 && n.SentAt.AddSeconds(n.TimeToLive) <= now));
         }
 
         public void Dispose()

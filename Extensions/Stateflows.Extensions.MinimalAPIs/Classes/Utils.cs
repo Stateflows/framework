@@ -160,6 +160,7 @@ internal static class Utils
             EventStatus.Duplicated => Results.Content(jsonResult, "application/json", statusCode: 200),
             EventStatus.NotConsumed => Results.Content(jsonResult, "application/json", statusCode: 409),
             EventStatus.Failed => Results.Content(jsonResult, "application/json", statusCode: 500), // 500 server error
+            EventStatus.Aborted => Results.Content(jsonResult, "application/json", statusCode: 409),
             EventStatus.Forwarded => Results.Content(jsonResult, "application/json", statusCode: 202), // 202 accepted
             EventStatus.Overloaded => Results.Content(jsonResult, "application/json", statusCode: 503), // 503 service unavailable, retryable
             _ => Results.Content(jsonResult, "application/json", statusCode: 500), // 500 server error

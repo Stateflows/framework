@@ -161,7 +161,7 @@
         "options": {
           "type": "array",
           "uniqueItems": true,
-          "items": { "enum": ["implicitJoin", "implicitFork", "reentrant"] }
+          "items": { "enum": ["implicitJoin", "implicitFork", "reentrant", "interleave"] }
         }
       }
     },
@@ -200,41 +200,11 @@
             { "$ref": "#/$defs/nodeBase" },
             {
               "type": "object",
-              "required": ["kind"],
-              "properties": { "kind": { "const": "input" } },
-              "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
-            }
-          ],
-          "unevaluatedProperties": false
-        },
-        {
-          "allOf": [
-            { "$ref": "#/$defs/nodeBase" },
-            {
-              "type": "object",
               "required": ["kind", "tokenType"],
               "properties": {
                 "kind": { "const": "outputPin" },
                 "tokenType": { "type": "string", "minLength": 1 }
               },
-              "not": {
-                "anyOf": [
-                  { "required": ["flows"] },
-                  { "required": ["options"] },
-                  { "required": ["exceptionHandlers"] }
-                ]
-              }
-            }
-          ],
-          "unevaluatedProperties": false
-        },
-        {
-          "allOf": [
-            { "$ref": "#/$defs/nodeBase" },
-            {
-              "type": "object",
-              "required": ["kind"],
-              "properties": { "kind": { "const": "output" } },
               "not": {
                 "anyOf": [
                   { "required": ["flows"] },
@@ -417,8 +387,11 @@
                 "nodes": { "$ref": "#/$defs/nodes" },
                 "definitions": { "$ref": "#/$defs/bindings" },
                 "iterationTokenType": { "type": "string", "minLength": 1 },
-                "chunkSize": { "type": "integer", "minimum": 1, "default": 1 }
-              }
+                "chunkSize": { "type": "integer", "minimum": 1, "default": 1 },
+                "maxConcurrency": { "type": "integer", "default": -1, "anyOf": [{ "const": -1 }, { "minimum": 1 }] }
+              },
+              "if": { "properties": { "kind": { "const": "iterative" } } },
+              "then": { "not": { "required": ["maxConcurrency"] } }
             }
           ],
           "unevaluatedProperties": false

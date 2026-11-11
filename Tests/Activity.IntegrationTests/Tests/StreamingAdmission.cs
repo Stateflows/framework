@@ -12,6 +12,15 @@ namespace Activity.IntegrationTests.Tests;
 public sealed class StreamingAdmission
 {
     [TestMethod]
+    public void LoadingLegacyActivityStateDiscardsItsOutputArchive()
+    {
+        var state = NewRoot().Context;
+        state.Values["ActivityOutputTokens"] = new List<TokenHolder> { 42.ToTokenHolder() };
+        var restored = new RootContext(StateflowsJsonConverter.Clone(state));
+        Assert.IsFalse(restored.Context.Values.ContainsKey("ActivityOutputTokens"));
+    }
+
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public void TokenCopiesAndSerializationPreservePayloadTypeIdentityAndColor(bool streamed)
@@ -164,7 +173,6 @@ public sealed class StreamingAdmission
         flow.Consume([42.ToTokenHolder()], isPersistent: false);
         flow.Consume(new ControlToken().ToTokenHolder());
         root.GetOutputTokens("output", thread).Add(17.ToTokenHolder());
-        root.ActivityOutputTokens.Add(23.ToTokenHolder());
 
         var transaction = root.BeginInvocationProvenance(false, trackTransaction: true, callRoot: true);
         root.BeginStreamingBusyPeriod();
@@ -179,7 +187,6 @@ public sealed class StreamingAdmission
         Assert.IsTrue(flow.IsStreamed);
         Assert.IsTrue(flow.Tokens.Single().IsStreamed);
         Assert.IsTrue(root.GetOutputTokens("output", thread).Single().IsStreamed);
-        Assert.IsTrue(root.ActivityOutputTokens.Single().IsStreamed);
 
         var hydrated = new RootContext(StateflowsJsonConverter.Clone(root.Context));
         Assert.IsTrue(hydrated.GetStream("waiting", thread).IsStreamed);

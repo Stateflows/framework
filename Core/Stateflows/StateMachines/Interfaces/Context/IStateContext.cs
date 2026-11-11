@@ -3,7 +3,7 @@
 namespace Stateflows.StateMachines
 {
     /// <summary>Provides the identity, persistent values, and containment of a state in a machine instance.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/behavior-values">behavior and state values</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.1.-Behavior-Values">behavior and state values</see>.</remarks>
     public interface IStateContext
     {
         /// <summary>The registered state name, rather than its display label or CLR type name.</summary>

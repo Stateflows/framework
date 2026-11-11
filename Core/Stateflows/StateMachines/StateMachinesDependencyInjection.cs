@@ -18,7 +18,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 namespace Stateflows.StateMachines
 {
     /// <summary>Registers state-machine definitions and their runtime services with Stateflows.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/behaviors">behavior registration</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.-Behaviors">behavior registration</see>.</remarks>
     public static class StateMachinesDependencyInjection
     {
         private static readonly Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new();

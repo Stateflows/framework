@@ -7,7 +7,7 @@ namespace Stateflows
     /// <summary>
     /// Identifies one behavior instance by its behavior class and instance key.
     /// </summary>
-    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/behaviors">behavior documentation</see>.</remarks>
+    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/5.-Behaviors">behavior documentation</see>.</remarks>
     public struct BehaviorId : IEquatable<BehaviorId>
     {
         /// <summary>Creates an identifier from a behavior class and instance key.</summary>

@@ -23,15 +23,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// context.</typeparam>
     /// <typeparam name="TReturn">The fluent builder returned after configuring the guard.</typeparam>
     /// <remarks>Each added guard must accept the transition for it to be eligible. See
-    /// <see href="https://github.com/Stateflows/framework/wiki/state-machine-transition">transitions</see>.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+    /// <see href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition">transitions</see>.</remarks>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
     public interface IBaseGuard<out TEvent, out TReturn>
     {
         /// <summary>Registers predicates for the current transition.</summary>
         /// <param name="guardAsync">Asynchronous predicate receiving the transition context. Must return true to permit the
         /// transition.</param>
         /// <returns>The current fluent builder with the predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)
             => AddGuards(guardAsync);
         
@@ -39,14 +39,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guardsAsync">Asynchronous predicates receiving the transition context. Each must return true to
         /// permit the transition.</param>
         /// <returns>The current fluent builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync);
 
         /// <summary>Registers predicates for the current transition.</summary>
         /// <param name="guardDelegate">Predicate returning <c>bool</c> or <c>Task&lt;bool&gt;</c>; parameters are resolved
         /// from execution services and supported contexts.</param>
         /// <returns>The current fluent builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         private TReturn AddGuard(Delegate guardDelegate)
             => AddGuard(c => guardDelegate.InvokeDelegatePredicateAsync(
                 StateflowsActivator.ResolveParameterValueFactories(
@@ -69,7 +69,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TActivity">Embedded behavior implementation of <see cref="IActivity" />. Its definition is
         /// registered for this embedding site.</typeparam>
         /// <returns>The current fluent builder with the activity guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddGuardActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
@@ -91,7 +91,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="activityBuildAction">Callback configuring the embedded Activity's nodes, flows, and lifecycle.
         /// </param>
         /// <returns>The current fluent builder with the activity guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddGuardActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -113,7 +113,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
         /// </param>
         /// <returns>The current fluent builder with the action guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddGuardAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
@@ -137,7 +137,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
         /// </param>
         /// <returns>The current fluent builder with the action guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddGuardAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -157,7 +157,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guard">Synchronous predicate receiving the transition context. Must return true to permit the
         /// transition.</param>
         /// <returns>The current fluent builder with the predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         [DebuggerHidden]
         public TReturn AddGuard(Func<ITransitionContext<TEvent>, bool> guard)
             => AddGuards(guard);
@@ -166,7 +166,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guards">Synchronous predicates receiving the transition context. Each must return true to permit
         /// the transition.</param>
         /// <returns>The current fluent builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         public TReturn AddGuards(params Func<ITransitionContext<TEvent>, bool>[] guards)
             => AddGuards(guards.Select(guard => guard.ToAsync()).ToArray());
 
@@ -176,7 +176,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the activated typed handler before its handler method is
         /// invoked.</param>
         /// <returns>The current fluent builder with the typed guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         [DebuggerHidden]
         TReturn AddGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, ITransitionGuard<TEvent>
@@ -191,7 +191,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guardAsync">Asynchronous predicate receiving the transition context. Must return false for the
         /// negated guard to permit the transition.</param>
         /// <returns>The current fluent builder with the inverted predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         [DebuggerHidden]
         TReturn AddNegatedGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)
             => AddNegatedGuards(guardAsync);
@@ -200,7 +200,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guardsAsync">Asynchronous predicates receiving the transition context. Each must return false for
         /// the negated guard to permit the transition.</param>
         /// <returns>The current fluent transition builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddNegatedGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
             => AddGuards(guardsAsync.Select<Func<ITransitionContext<TEvent>, Task<bool>>, Func<ITransitionContext<TEvent>, Task<bool>>>(guardAsync => async c => !await guardAsync.Invoke(c)).ToArray());
 
@@ -208,7 +208,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guard">Synchronous predicate receiving the transition context. Must return false for the negated
         /// guard to permit the transition.</param>
         /// <returns>The current fluent builder with the inverted predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         [DebuggerHidden]
         public TReturn AddNegatedGuard(Func<ITransitionContext<TEvent>, bool> guard)
             => AddNegatedGuards(guard);
@@ -217,7 +217,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guards">Synchronous predicates receiving the transition context. Each must return false for the
         /// negated guard to permit the transition.</param>
         /// <returns>The current fluent transition builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         public TReturn AddNegatedGuards(params Func<ITransitionContext<TEvent>, bool>[] guards)
             => AddNegatedGuards(guards.Select(guard => guard.ToAsync()).ToArray());
         
@@ -227,7 +227,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the activated typed handler before its handler method is
         /// invoked.</param>
         /// <returns>The current fluent builder with the inverted typed guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         [DebuggerHidden]
         TReturn AddNegatedGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, ITransitionGuard<TEvent>
