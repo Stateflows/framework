@@ -20,7 +20,7 @@ internal sealed class NotificationsState
     public long LastSequence { get; set; }
 
     /// <summary>
-    /// All stored notifications ordered by <see cref="StoredNotification.Sequence"/>.
+    /// Unexpired positive-TTL history and latest retained values, ordered by <see cref="StoredNotification.Sequence"/>.
     /// </summary>
     [Id(2)]
     public List<StoredNotification> History { get; set; } = [];
@@ -54,18 +54,39 @@ internal sealed class NotificationsState
     [Id(7)]
     public Dictionary<string, long> PublicationWatermarks { get; set; } = [];
 
-    public NotificationsState Clone()
+    [Flags]
+    internal enum Collections
+    {
+        None = 0,
+        History = 1,
+        Subscriptions = 2,
+        Pending = 4,
+        LatestRetained = 8,
+        PublicationWatermarks = 16,
+    }
+
+    // Unselected collections are shared and must not be mutated by the candidate.
+    // A subscriber key limits nested set/list copying to that subscriber.
+    public NotificationsState Clone(Collections collections, string? subscriberKey = null)
         => new()
         {
             Version = Version,
             LastSequence = LastSequence,
             // StoredNotification and PendingDelivery are treated as immutable, so shallow item copies are sufficient
-            History = [..History],
-            Subscriptions = Subscriptions.ToDictionary(p => p.Key, p => new HashSet<string>(p.Value)),
-            Pending = Pending.ToDictionary(p => p.Key, p => new List<PendingDelivery>(p.Value)),
+            History = collections.HasFlag(Collections.History) ? [..History] : History,
+            Subscriptions = collections.HasFlag(Collections.Subscriptions)
+                ? Subscriptions.ToDictionary(p => p.Key,
+                    p => subscriberKey == null || p.Key == subscriberKey ? new HashSet<string>(p.Value) : p.Value)
+                : Subscriptions,
+            Pending = collections.HasFlag(Collections.Pending)
+                ? Pending.ToDictionary(p => p.Key,
+                    p => subscriberKey == null || p.Key == subscriberKey ? new List<PendingDelivery>(p.Value) : p.Value)
+                : Pending,
             LegacyMigrated = LegacyMigrated,
-            LatestRetained = new Dictionary<string, long>(LatestRetained),
-            PublicationWatermarks = new Dictionary<string, long>(PublicationWatermarks),
+            LatestRetained = collections.HasFlag(Collections.LatestRetained)
+                ? new Dictionary<string, long>(LatestRetained) : LatestRetained,
+            PublicationWatermarks = collections.HasFlag(Collections.PublicationWatermarks)
+                ? new Dictionary<string, long>(PublicationWatermarks) : PublicationWatermarks,
         };
 }
 

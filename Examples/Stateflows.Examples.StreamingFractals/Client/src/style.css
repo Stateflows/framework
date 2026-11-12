@@ -1,0 +1,50 @@
+:root { font-family: "Segoe UI", system-ui, sans-serif; color: #dce5f6; background: #080d19; font-synthesis: none; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: radial-gradient(ellipse at 30% 0, #12253a 0, transparent 55%); min-height: 100vh; }
+main { max-width: 1340px; margin: auto; padding: 32px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; }
+.eyebrow { color: #89a3be; font-size: 11px; letter-spacing: 2px; font-weight: 600; }
+h1 { font-size: 36px; letter-spacing: -1.5px; margin: 0; font-weight: 600; }
+h1 span { color: #60e8c1; font-weight: 300; margin-left: 7px; }
+h2 { font-size: 25px; letter-spacing: -.5px; margin: 10px 0; }
+.connection { display: flex; align-items: center; gap: 9px; color: #9eb4cc; font-size: 13px; }
+.connection i { width: 8px; height: 8px; border-radius: 50%; background: #e6a46a; }
+.connection i.live { background: #60e8c1; box-shadow: 0 0 12px #60e8c166; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 300px; border: 1px solid #26344a; border-radius: 16px; overflow: hidden; background: #0c1422; }
+.canvas-wrap { position: relative; align-self: center; background: #050914; }
+canvas { width: 100%; height: auto; display: block; cursor: crosshair; touch-action: none; }
+.canvas-caption { position: absolute; bottom: 14px; left: 16px; right: 16px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; font: 12px Consolas, monospace; color: #d9e8ff; text-shadow: 0 1px 5px #000; }
+aside { padding: 24px; border-left: 1px solid #26344a; }
+.hint { color: #91a5bd; font-size: 13px; line-height: 1.65; }
+label { display: flex; justify-content: space-between; font-size: 12px; margin-top: 20px; margin-bottom: 8px; }
+output { color: #60e8c1; font-variant-numeric: tabular-nums; }
+input[type="range"] { width: 100%; accent-color: #60e8c1; cursor: pointer; }
+select, button { border: 1px solid #34445c; background: #142034; border-radius: 7px; padding: 10px; color: #dce5f6; font: inherit; font-size: 12px; }
+select { width: 100%; }
+button { cursor: pointer; }
+button:hover { border-color: #60e8c1; }
+button:disabled { opacity: .45; cursor: default; }
+.buttons { display: flex; gap: 8px; margin-top: 24px; }
+.buttons button { flex: 1; }
+.primary { width: 100%; background: #60e8c1; color: #08151c; font-weight: 600; margin-top: 12px; }
+.local-tag { color: #819ab4; font-size: 10px; }
+#status { color: #b7c9df; font-size: 12px; line-height: 1.5; min-height: 36px; overflow-wrap: anywhere; }
+.progress { height: 3px; border-radius: 3px; background: #26344a; overflow: hidden; }
+#progress { height: 100%; background: #60e8c1; width: 0; transition: width 100ms; }
+.small { font-size: 11px; }
+.metrics { display: grid; grid-template-columns: repeat(7, 1fr); margin: 24px 0; border: 1px solid #26344a; border-radius: 12px; padding: 22px 10px; background: #0c142288; }
+.metrics div { text-align: center; border-right: 1px solid #26344a; }
+.metrics div:last-child { border: 0; }
+.metrics span { display: block; font-size: 23px; font-variant-numeric: tabular-nums; }
+.metrics small { display: block; color: #819ab4; font-size: 11px; margin-top: 6px; }
+details { border: 1px solid #26344a; border-radius: 10px; color: #a7bdd3; font-size: 13px; }
+summary { padding: 18px; cursor: pointer; }
+.explanation { padding: 0 20px 20px; line-height: 1.7; }
+.graph { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 15px 0; }
+.graph span { border: 1px solid #365269; border-radius: 8px; padding: 12px 20px; text-align: center; color: #60e8c1; }
+.graph small { color: #9eb4cc; }
+a { color: #60e8c1; }
+footer { text-align: center; color: #637b97; font-size: 11px; padding: 24px 0 0; }
+:focus-visible { outline: 2px solid #60e8c1; outline-offset: 4px; }
+@media (max-width: 950px) { .workspace { grid-template-columns: 1fr; } aside { border-left: 0; border-top: 1px solid #26344a; } .metrics { grid-template-columns: repeat(3, 1fr); gap: 20px 0; } .metrics div:nth-child(3) { border: 0; } }
+@media (max-width: 540px) { main { padding: 16px; } h1 { font-size: 30px; } .eyebrow { font-size: 9px; } .metrics span { font-size: 18px; } .graph { gap: 7px; } .graph span { padding: 9px; font-size: 11px; } .canvas-caption { font-size: 10px; } }

@@ -3,7 +3,10 @@
 namespace Stateflows.Common
 {
     /// <summary>Sets the lifetime, in seconds, for notifications of a type.</summary>
-    /// <remarks>The notification subscriber gives this type-level setting precedence over a time-to-live delivery header.</remarks>
+    /// <remarks>
+    /// Zero disables notification history and subscription retries unless the notification is retained.
+    /// The notification subscriber gives this type-level setting precedence over a time-to-live delivery header.
+    /// </remarks>
     [AttributeUsage(
         AttributeTargets.Class | AttributeTargets.Enum | AttributeTargets.Interface | AttributeTargets.Struct,
         AllowMultiple = false)]

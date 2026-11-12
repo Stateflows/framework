@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Json.Schema;
 using Stateflows.Common;
@@ -21,7 +22,10 @@ public class JsonStructuralEventSchema
     }
 
     private static bool IsValid(JsonNode document)
-        => Schema.Evaluate(document, new EvaluationOptions { OutputFormat = OutputFormat.List }).IsValid;
+    {
+        using var parsed = JsonDocument.Parse(document.ToJsonString());
+        return Schema.Evaluate(parsed.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.List }).IsValid;
+    }
 
     private static JsonObject Document(JsonNode? field = null) => new()
     {

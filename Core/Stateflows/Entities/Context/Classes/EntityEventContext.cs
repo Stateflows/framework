@@ -14,7 +14,7 @@ namespace Stateflows.Entities.Context.Classes
 
         public override object ExecutionTrigger => Event!;
 
-        public override Guid ExecutionTriggerId => EventId;
+        public override Guid? ExecutionTriggerId => EventId;
 
         public override IDictionary<string, EventHeader> Headers { get; } = eventHolder.Headers;
     }

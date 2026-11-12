@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Stateflows.Activities.Inspection.Interfaces
 {
@@ -10,6 +11,9 @@ namespace Stateflows.Activities.Inspection.Interfaces
 
         /// <summary>The node's kind.</summary>
         NodeType Type { get; }
+
+        /// <summary>The declared token type of a typed boundary pin, or null for other nodes.</summary>
+        Type PinTokenType => null;
 
         /// <summary>Whether the node is active.</summary>
         bool Active { get; }

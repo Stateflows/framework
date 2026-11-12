@@ -36,7 +36,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.ClearScript.Core" Version="7.5.1.1" />
+      <PackageReference Include="Microsoft.ClearScript.Core" Version="[7.5.1.1]" />
     </ItemGroup>
 
     <ItemGroup>

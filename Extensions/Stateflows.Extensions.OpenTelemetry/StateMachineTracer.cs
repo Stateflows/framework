@@ -52,7 +52,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 {
                     var noTracing =
                         context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
-                        context.Headers.Values.Any(h => h is NoTracing);
+                        context.Headers?.Values.Any(h => h is NoTracing) == true;
 
                     Skip = noTracing;
 
@@ -62,7 +62,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                             ? "Completion"
                             : Event.GetName(context.Event).ToShortName();
 
-                        var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
+                        var header = context.Headers?.Values.FirstOrDefault(h => h is ActivityHeader);
                         if (header is ActivityHeader activityHeader)
                         {
                             EventProcessingActivity = Source.StartActivity(
@@ -303,7 +303,7 @@ namespace Stateflows.Extensions.OpenTelemetry
 
                     if (EventProcessingActivity == null)
                     {
-                        var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
+                        var header = context.Headers?.Values.FirstOrDefault(h => h is ActivityHeader);
                         if (header is ActivityHeader activityHeader)
                         {
                             InitializerActivity = Source.StartActivity(
@@ -662,7 +662,9 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             var eventName = context.ExecutionTrigger is Completion
                 ? "Completion"
-                : Event.GetName(context.ExecutionTrigger).ToShortName();
+                : context.ExecutionTrigger is { } trigger
+                    ? Event.GetName(trigger).ToShortName()
+                    : context.ExecutionMode.ToString();
 
             if (exception == null!)
             {

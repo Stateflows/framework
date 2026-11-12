@@ -490,6 +490,45 @@ that do not exist in the current model.
 
 ## Activities
 
+### Structural interleaving and parallel limits
+
+Structured, parallel and iterative nodes accept `"interleave"` in their existing
+`options` array, mapping to `NodeOptions.Interleave` and parameterless
+`.Interleave()` on the structural builder. Options arrays replace the default
+flags, so include `"implicitJoin"` and `"implicitFork"` when wanted.
+`"reentrant"` and `"interleave"` together fail registration, and actions reject
+`"interleave"`. Existing action-only reentrancy remains unchanged.
+
+```json
+{
+  "kind": "parallel",
+  "name": "jobs",
+  "iterationTokenType": "job",
+  "chunkSize": 10,
+  "maxConcurrency": 4,
+  "options": ["implicitJoin", "implicitFork", "interleave"],
+  "nodes": []
+}
+```
+
+`job` must be a host-registered type alias; configure the nested graph in `nodes`
+and connect incoming flows as for any parallel node. `maxConcurrency` is only a
+parallel-node property: its default `-1` is unlimited, positive values bound
+active Activity partitions per invocation, and `0` or values below `-1` are
+invalid. Queued chunks wait asynchronously for slots. Iterative nodes remain
+sequential and do not accept this property.
+
+Each interleaved arrival is chunked separately, including the final partial
+chunk. Common input comes only from that arrival. Parallel/iterative invocations
+finalize when executable/running work drains, aggregate normal output and discard
+stranded flow tokens. Arrivals after finalization starts wait until finalization
+and output routing finish, then initialize a fresh invocation. Structured nodes
+instead feed their existing active input boundaries without repeating
+initialization or Initial control, retaining ordinary event-wait rules.
+Interleaving is a Stateflows extension, not UML expansion `stream` mode,
+graceful closure or live boundary output; checkpoint and cancellation behavior
+is the same as for the fluent API.
+
 Register a document with host-owned aliases for each CLR capability, token, event, exception,
 and configuration type:
 
@@ -510,10 +549,13 @@ services.AddStateflows(stateflows => stateflows.AddActivities(activities =>
 ```
 
 An activity document declares root nodes in `nodes`; structured, parallel, and iterative nodes own
-recursive `nodes` arrays. Special initial/input/output/final nodes use the builder's generated names.
-An optional `name` on a special node is a document-local target alias only; it does not change the
-name reported by the builder or visitors. Every flow is authored under its source node and resolves
-its target in that same scope.
+recursive `nodes` arrays. Activity node names are globally unique, including across nested scopes.
+Initial nodes use `{parentName}.initial`; final nodes use their document `name` (the builder API
+defaults to `FinalNode.Name` when the name is omitted). Input/output boundaries and typed pins keep
+their generated names based on node kind and token type; an optional `name` on a special node is a
+document-local target alias only and does not change the name reported by the builder or visitors.
+Every flow is authored under its source node and resolves its target by globally unique registered
+name. A target outside the source's containing scope is automatically routed as a crossing flow.
 
 ```json
 {
@@ -555,14 +597,49 @@ its target in that same scope.
 }
 ```
 
-Supported node kinds are `initial`, `input`, `output`, `final`, `action`, `decision`, `fork`,
-`join`, `merge`, `dataStore`, `acceptEvent`, `timeEvent`, `sendEvent`, `publishEvent`, `structured`,
-`parallel`, and `iterative`. Flow kinds are `control`, `object`, `elseControl`, and `elseObject`.
+Supported node kinds are `initial`, `inputPin`, `outputPin`, `final`, `action`,
+`decision`, `fork`, `join`, `merge`, `dataStore`, `acceptEvent`, `timeEvent`, `sendEvent`,
+`publishEvent`, `structured`, `parallel`, and `iterative`. Flow kinds are `control`, `object`,
+`elseControl`, and `elseObject`.
 Object-flow `pipeline` stages run in array order. A guard must implement `IFlowGuard<T>` for the
 token type at that point; a transformation must implement `IFlowTransformation<TInput,TOutput>`.
 The output token alias declares the transformation's result type and becomes the type seen by later
 stages and the destination. Control flows accept control guards only; else flows cannot contain
 guards. Weights default to one and must be nonnegative.
+
+Use `inputPin` and `outputPin` to declare typed object boundaries in an Activity scope, including
+structured, parallel, and iterative scopes. Each requires a host-registered `tokenType` alias.
+An input pin routes only object flows of its declared token type; its flow may use the same guard
+and transformation pipeline as other object flows. Output pins are object-flow targets and accept
+tokens compatible with their declared type. Input pin names are generated as
+`{parentName}.{InputPin<TToken>.Name}`; an optional input-pin `name` is only a local JSON alias,
+not the registered node name. Output pins default to `OutputPin<TToken>.Name`; set `name` to use a
+custom globally unique registered name, and target that pin by the supplied name in flows.
+`OutputPin<TToken>` target markers refer only to the default name. Multiple pins with different
+token types can be declared in a scope.
+
+```json
+{
+  "kind": "structured",
+  "name": "normalize",
+  "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "validated" }],
+  "nodes": [
+    {
+      "kind": "inputPin",
+      "name": "incomingOrder",
+      "tokenType": "tokens.order",
+      "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "validate" }]
+    },
+    {
+      "kind": "action",
+      "name": "validate",
+      "implementation": { "clrType": "nodes.validate" },
+      "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "outgoingOrder" }]
+    },
+    { "kind": "outputPin", "name": "outgoingOrder", "tokenType": "tokens.order" }
+  ]
+}
+```
 
 CLR `definitions` are additive. Root definitions implement `IActivity` and expose static
 `Build(IActivityBuilder)`; nested structured definitions implement `IStructuredActivityNodeDefinition`

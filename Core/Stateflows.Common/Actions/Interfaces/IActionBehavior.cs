@@ -5,7 +5,7 @@ using Stateflows.Common.Interfaces;
 namespace Stateflows.Actions
 {
     /// <summary>A client handle for sending events to an action and executing it with token input and output.</summary>
-    /// <remarks>Obtaining a handle does not execute the action. See <see href="https://github.com/Stateflows/framework/wiki/behaviors">behaviors</see>.</remarks>
+    /// <remarks>Obtaining a handle does not execute the action. See <see href="https://github.com/Stateflows/framework/wiki/5.-Behaviors">behaviors</see>.</remarks>
     public interface IActionBehavior : IBehavior, IInputOutput
     {
         /// <summary>Executes the action with an empty token-input request.</summary>

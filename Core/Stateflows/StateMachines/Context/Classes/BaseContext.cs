@@ -18,9 +18,10 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public RootContext Context { get; }
 
-        public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
-        public Guid ExecutionTriggerId => Context.ExecutionTriggerHolder.Id;
-        public virtual IDictionary<string, EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
+        public ExecutionMode ExecutionMode => ExecutionMode.Transactional;
+        public object? ExecutionTrigger => Context.ExecutionTriggerHolder?.BoxedPayload;
+        public Guid? ExecutionTriggerId => Context.ExecutionTriggerHolder?.Id;
+        public virtual IDictionary<string, EventHeader>? Headers => Context.ExecutionTriggerHolder?.Headers;
 
         public IEnumerable<IExecutionStep> ExecutionSteps => Context.ExecutionSteps;
 

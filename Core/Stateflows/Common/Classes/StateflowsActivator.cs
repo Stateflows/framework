@@ -179,6 +179,12 @@ namespace Stateflows.Common.Classes
                     continue;
                 }
                 
+                if (parameter.ParameterType == typeof(CancellationToken))
+                {
+                    parameterValues[i] = serviceProvider.GetRequiredService<IExecutionContext>().CancellationToken;
+                    continue;
+                }
+
                 var globalAttribute = parameter.GetCustomAttribute<GlobalValueAttribute>();
                 if (globalAttribute != null)
                 {
@@ -485,6 +491,7 @@ namespace Stateflows.Common.Classes
                 if (parameter.ParameterType == typeof(CancellationToken))
                 {
                     factories[i] = () => Task.FromResult((object)serviceProvider.GetRequiredService<IExecutionContext>().CancellationToken);
+                    continue;
                 }
 
                 var globalAttribute = parameter.GetCustomAttribute<GlobalValueAttribute>();

@@ -114,6 +114,17 @@ public class JsonDefinitions
     }
 
     [TestMethod]
+    public void SchemaReportsMultiplePropertyLocations()
+    {
+        var model = Model();
+        model["formatVersion"] = "2.0";
+        model["name"] = 123;
+        var exception = Assert.Throws<JsonStateMachineException>(() => JsonStateMachineDefinition.Parse(model.ToString(), Options()));
+        Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d => d.RuleId == "JSON-002" && d.ElementPath == "/formatVersion"));
+        Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d => d.RuleId == "JSON-002" && d.ElementPath == "/name"));
+    }
+
+    [TestMethod]
     public void AllClrBindingsAreValidatedBeforeAnyDefinitionRuns()
     {
         var (_, register, builder) = Host();

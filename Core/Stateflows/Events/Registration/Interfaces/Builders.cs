@@ -4,7 +4,7 @@ using Stateflows.Common;
 namespace Stateflows.Events
 {
     /// <summary>Configures registered structural events and requests.</summary>
-    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/events">events documentation</see>.</remarks>
+    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events">events documentation</see>.</remarks>
     /// <param name="builder">The structural-event registry builder.</param>
     public delegate void EventsBuildAction(IEventsBuilder builder);
     /// <summary>Configures the fields of an event or request definition.</summary>

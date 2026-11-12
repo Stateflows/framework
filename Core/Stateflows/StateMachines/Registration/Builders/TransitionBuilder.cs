@@ -68,7 +68,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                     );
                 }
 
-                Edge.Guards.Actions.Add(async c =>
+                Edge.Guards.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
                         if (transitiveVertexTypes.Contains(Edge.Source.Type))
                         {
@@ -90,7 +90,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                         }
 
                         return result;
-                    }
+                    })
                 );
             }
 
@@ -103,7 +103,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 effectAsync.ThrowIfNull(nameof(effectAsync));
 
-                Edge.Effects.Actions.Add(async c =>
+                Edge.Effects.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
                         if (transitiveVertexTypes.Contains(Edge.Source.Type))
                         {
@@ -122,7 +122,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                                 c.ClearEvent();
                             }
                         }
-                    }
+                    })
                 );
             }
 

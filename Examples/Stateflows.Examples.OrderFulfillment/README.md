@@ -238,10 +238,10 @@ durable retry scheduling, authentication and a deployment/storage design.
 ## Reference
 
 The design follows the framework wiki:
-[Behavioral Groups](https://github.com/Stateflows/framework/wiki/Behavioral-Groups),
-[Entities](https://github.com/Stateflows/framework/wiki/Entities),
-[Orleans Runtime](https://github.com/Stateflows/framework/wiki/Orleans-Runtime),
-[Minimal APIs](https://github.com/Stateflows/framework/wiki/Extension-Minimal-APIs),
-[FluentValidation](https://github.com/Stateflows/framework/wiki/Extension-FluentValidation),
-[OpenTelemetry](https://github.com/Stateflows/framework/wiki/Extension-OpenTelemetry)
-and [PlantUML](https://github.com/Stateflows/framework/wiki/Extension-PlantUML).
+[Behavioral Groups](https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups),
+[Entities](https://github.com/Stateflows/framework/wiki/5.7.-Entities),
+[Orleans Runtime](https://github.com/Stateflows/framework/wiki/3.1.-Orleans-Runtime),
+[Minimal APIs](https://github.com/Stateflows/framework/wiki/6.4.-Minimal-APIs),
+[FluentValidation](https://github.com/Stateflows/framework/wiki/6.2.-FluentValidation),
+[OpenTelemetry](https://github.com/Stateflows/framework/wiki/6.6.-OpenTelemetry)
+and [PlantUML](https://github.com/Stateflows/framework/wiki/6.7.-PlantUML).

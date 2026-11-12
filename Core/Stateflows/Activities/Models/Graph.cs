@@ -58,6 +58,16 @@ namespace Stateflows.Activities.Models
         public readonly List<ActivityObserverFactoryAsync> ObserverFactories = [];
 
         [DebuggerHidden]
+        internal static Node FindFlowOwner(Node sourceScope, Node targetScope)
+        {
+            for (var source = sourceScope; source != null; source = source.Parent)
+                for (var target = targetScope; target != null; target = target.Parent)
+                    if (source == target)
+                        return source;
+            return null;
+        }
+
+        [DebuggerHidden]
         public void Build()
         {
             if (Built)
@@ -66,7 +76,7 @@ namespace Stateflows.Activities.Models
             }
 
             ValidationReport = new Stateflows.Common.Validation.ModelValidationReport();
-            
+
             var resourceExists = StateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName);
             if (!resourceExists)
             {
@@ -93,10 +103,11 @@ namespace Stateflows.Activities.Models
             
             foreach (var edge in AllEdgesList)
             {
-                var nodes = edge.Source.Parent?.NamedNodes ?? NamedNodes;
+                var nodes = edge.IsCrossScope ? AllNamedNodes : edge.Source.Parent?.NamedNodes ?? NamedNodes;
                 if (nodes.TryGetValue(edge.TargetName, out var target))
                 {
                     edge.Target = target;
+                    edge.Owner = FindFlowOwner(edge.Source.Parent, target.Parent);
                     target.IncomingEdges.Add(edge);
 
                     var tokenName = edge.TokenType.GetTokenName();
@@ -135,12 +146,13 @@ namespace Stateflows.Activities.Models
             var autoNodeTypes = new NodeType[]
             {
                 NodeType.Initial,
-                NodeType.Input,
+                NodeType.InputPin,
                 NodeType.AcceptEventAction,
                 NodeType.TimeEventAction,
             };
 
-            var danglingNodes = AllNodes.Values.Where(node => !autoNodeTypes.Contains(node.Type) && !node.IncomingEdges.Any()).ToArray();
+            var danglingNodes = AllNodes.Values.Where(node => !autoNodeTypes.Contains(node.Type) &&
+                !node.IsOutputPin && !node.IncomingEdges.Any()).ToArray();
             var definitionErrors = new List<(Node Node, string Rule, string Message)>();
             foreach (var danglingNode in danglingNodes)
             {
@@ -184,12 +196,17 @@ namespace Stateflows.Activities.Models
                     // a supertype of or equal to t but only when t is a supertype (t.IsAssignableFrom(declared) —
                     // the edge carries a broader type whose actual runtime value may be of the declared subtype).
                     var undeclaredIncomingTokens = incomingTokens.Where(t =>
+                        !(ContainerNodeTypes.Contains(node.Type) && node.InputPins.Any(pin =>
+                            pin.PinTokenType.IsAssignableFrom(t))) &&
                         !node.InputTokenTypes.Any(declared => declared.IsAssignableFrom(t) || t.IsAssignableFrom(declared)) &&
                         !node.OptionalInputTokenTypes.Any(declared => declared.IsAssignableFrom(t) || t.IsAssignableFrom(declared)));
                     // An outgoing edge type 't' is acceptable if any declared output type is a subtype of t
                     // (declared.IsAssignableFrom(t) — standard exact/subtype match) OR a supertype of t
                     // (t.IsAssignableFrom(declared) — producer declares a subtype, edge carries the base type).
-                    var undeclaredOutgoingTokens = outgoingTokens.Where(t => !node.OutputTokenTypes.Any(declared => declared.IsAssignableFrom(t) || t.IsAssignableFrom(declared)));
+                    var undeclaredOutgoingTokens = outgoingTokens.Where(t =>
+                        !(ContainerNodeTypes.Contains(node.Type) && node.OutputPins.Any(pin =>
+                            t.IsAssignableFrom(pin.PinTokenType))) &&
+                        !node.OutputTokenTypes.Any(declared => declared.IsAssignableFrom(t) || t.IsAssignableFrom(declared)));
                     // For required inputs, also allow the edge type to be a supertype of the declared type.
                     var unsatisfiedIncomingTokens = node.InputTokenTypes.Where(t => !incomingTokens.Any(incoming => t.IsAssignableFrom(incoming)/* || incoming.IsAssignableFrom(t)*/));
 
@@ -212,6 +229,36 @@ namespace Stateflows.Activities.Models
                         var message = $"action '{node.Name}' requires '{requiredToken.GetTokenName()}' input tokens, but there is no incoming flow with them.";
                         ValidationReport.Add("ACT-029", $"Activity[{Name}]/Node[{node.Name}]", message);
                         definitionErrors.Add((node, "ACT-029", message));
+                    }
+                }
+
+                if (node.PinTokenType != null)
+                {
+                    if (node.IsOutputPin && node.IncomingEdges.Any(edge => edge.TargetTokenType == typeof(ControlToken)))
+                        ValidationReport.Add("ACT-056", $"Activity[{Name}]/Node[{node.Name}]",
+                            "Typed output pins accept object flows, not control flows.");
+                    var invalidTypes = node.Type == NodeType.InputPin
+                        ? node.GetOutgoingTokenTypes().Where(type => type != node.PinTokenType)
+                        : node.GetIncomingTokenTypes().Where(type => !node.PinTokenType.IsAssignableFrom(type));
+                    foreach (var type in invalidTypes)
+                        ValidationReport.Add("ACT-056", $"Activity[{Name}]/Node[{node.Name}]",
+                            $"Pin of type '{node.PinTokenType.GetTokenName()}' cannot carry '{type.GetTokenName()}'.");
+                }
+                if (ContainerNodeTypes.Contains(node.Type))
+                {
+                    if (node.GetIncomingTokenTypes().Any())
+                    {
+                        foreach (var type in node.GetIncomingTokenTypes().Where(type =>
+                            !node.InputPins.Any(pin => pin.PinTokenType.IsAssignableFrom(type))))
+                            ValidationReport.Add("ACT-057", $"Activity[{Name}]/Node[{node.Name}]",
+                                $"No input pin accepts incoming '{type.GetTokenName()}' tokens.");
+                    }
+                    if (node.GetOutgoingTokenTypes().Any())
+                    {
+                        foreach (var type in node.GetOutgoingTokenTypes().Where(type =>
+                            !node.OutputPins.Any(pin => type.IsAssignableFrom(pin.PinTokenType))))
+                            ValidationReport.Add("ACT-058", $"Activity[{Name}]/Node[{node.Name}]",
+                                $"No output pin produces outgoing '{type.GetTokenName()}' tokens.");
                     }
                 }
 
@@ -274,7 +321,7 @@ namespace Stateflows.Activities.Models
                 NodeType.IterativeActivity,
                 NodeType.ExceptionHandler,
                 NodeType.DataStore,
-                NodeType.Output,
+                NodeType.OutputPin,
                 NodeType.Final
         ];
 
@@ -351,10 +398,9 @@ namespace Stateflows.Activities.Models
                         {
                             Error("ACT-036", NodePath(node), "Parallel and iterative activity bodies cannot directly contain accept-event, time-event, or publish-event nodes.");
                         }
-                        if (node.OwnName == null ||
-                            node.Name != (parent.Type == NodeType.Activity ? node.OwnName : $"{parent.Name}.{node.OwnName}"))
+                        if (node.OwnName == null || node.Name != node.OwnName)
                         {
-                            Error("ACT-004", NodePath(node), "Effective node name must match its parent-qualified identity.");
+                            Error("ACT-004", NodePath(node), "Node name must match its registered name.");
                         }
 
                         if (node.Nodes == null)
@@ -472,20 +518,28 @@ namespace Stateflows.Activities.Models
                 foreach (var parent in new[] { this }.Concat(containedNodes.Where(node => ContainerNodeTypes.Contains(node.Type))))
                 {
                     var children = parent.Nodes?.Values.Where(node => node != null).ToArray() ?? [];
-                    foreach (var specialType in new[] { NodeType.Initial, NodeType.Input, NodeType.Output, NodeType.Final })
+                    foreach (var specialType in new[] { NodeType.Initial, NodeType.Final })
                     {
-                        if (children.Count(node => node.Type == specialType) > 1)
+                        if (children.Count(node => node.Type == specialType && node.PinTokenType == null) > 1)
                         {
                             Error("ACT-007", NodePath(parent), $"Scope may contain at most one {specialType} node.");
                         }
                     }
+                    foreach (var duplicate in children.Where(node => node.PinTokenType != null)
+                        .GroupBy(node => (node.Type, node.PinTokenType)).Where(group => group.Count() > 1))
+                        Error("ACT-007", NodePath(parent), "Each pin token type may be declared only once per direction.");
+                    foreach (var pin in children.Where(node => node.PinTokenType != null ||
+                        node.Type is NodeType.InputPin or NodeType.OutputPin))
+                        if (!(pin.Type == NodeType.InputPin || pin.IsOutputPin) ||
+                            !IsValidTokenType(pin.PinTokenType) || pin.PinTokenType == typeof(ControlToken))
+                            Error("ACT-056", NodePath(pin), "Pins must be input/output boundaries with a valid object token type.");
                     if (parent.NamedNodes == null)
                     {
                         Error("ACT-005", NodePath(parent), "Named-node collection must not be null.");
                     }
                 }
 
-                var namedNames = expectedNamedNodes.GroupBy(node => node.Name);
+                var namedNames = containedNodes.GroupBy(node => node.Name);
                 foreach (var duplicate in namedNames.Where(group => group.Count() > 1))
                 {
                     Error("ACT-004", rootPath, $"Effective node name '{duplicate.Key}' is not unique.");
@@ -531,15 +585,30 @@ namespace Stateflows.Activities.Models
                     {
                         Error("ACT-024", path, "Flow source and destination token types must be valid closed CLR types.");
                     }
-                    var localTargets = edge.Source?.Parent?.NamedNodes ?? NamedNodes;
-                    if (localTargets == null || string.IsNullOrEmpty(edge.TargetName) || !localTargets.ContainsKey(edge.TargetName))
+                    Node target = null;
+                    var targetExists = !string.IsNullOrEmpty(edge.TargetName) &&
+                        AllNamedNodes.TryGetValue(edge.TargetName, out target);
+                    edge.IsCrossScope = targetExists && target.Parent != edge.Source?.Parent;
+                    if (!targetExists)
                     {
-                        var rule = !string.IsNullOrEmpty(edge.TargetName) && AllNamedNodes.ContainsKey(edge.TargetName)
-                            ? "ACT-015"
-                            : "ACT-014";
-                        Error(rule, path, rule == "ACT-014"
-                            ? $"Flow target '{edge.TargetName}' is not registered."
-                            : $"Flow target '{edge.TargetName}' is not in the source's containing scope.");
+                        Error("ACT-014", path, $"Flow target '{edge.TargetName}' is not registered.");
+                    }
+                    else if (edge.IsCrossScope && edge.Source?.Parent != null)
+                    {
+                        var owner = FindFlowOwner(edge.Source.Parent, target.Parent);
+                        if (owner == null || edge.Source.Parent == target.Parent)
+                            Error("ACT-059", path, "A crossing flow must cross a structured scope boundary.");
+                        for (var scope = target.Parent; scope != null && scope != owner; scope = scope.Parent)
+                        {
+                            if (scope.Type != NodeType.StructuredActivity || scope.Options.HasFlag(NodeOptions.Reentrant))
+                                Error("ACT-059", path, "Incoming crossings require non-reentrant ordinary StructuredActivity scopes.");
+                        }
+                        for (var scope = edge.Source.Parent; scope != null && scope != owner; scope = scope.Parent)
+                        {
+                            if (scope.Type is NodeType.ParallelActivity or NodeType.IterativeActivity &&
+                                target.Parent != scope.Parent)
+                                Error("ACT-059", path, "ParallelActivity and IterativeActivity outgoing crossings must target their immediately enclosing scope.");
+                        }
                     }
                     if (edge.Weight < 0)
                     {
@@ -594,14 +663,25 @@ namespace Stateflows.Activities.Models
 
                     var configurableOptions = node.Type is NodeType.Action or NodeType.StructuredActivity
                         or NodeType.ParallelActivity or NodeType.IterativeActivity;
-                    var expectedOptions = node.Type switch
+                    var expectedOptions = node.IsOutputPin ? NodeOptions.None : node.Type switch
                     {
-                        NodeType.Final or NodeType.Output or NodeType.Merge => NodeOptions.None,
+                        NodeType.Final or NodeType.OutputPin or NodeType.Merge => NodeOptions.None,
                         NodeType.Decision => NodeOptions.DecisionDefault,
                         NodeType.DataStore => NodeOptions.DataStoreDefault,
                         _ => NodeOptions.ActionDefault
                     };
-                    if ((node.Options & ~(NodeOptions.ImplicitJoin | NodeOptions.ImplicitFork)) != 0 ||
+                    var allowedOptions = NodeOptions.ImplicitJoin | NodeOptions.ImplicitFork;
+                    if (node.Type == NodeType.Action)
+                    {
+                        allowedOptions |= NodeOptions.Reentrant;
+                    }
+                    if (node.Type is NodeType.StructuredActivity or NodeType.ParallelActivity or NodeType.IterativeActivity)
+                    {
+                        allowedOptions |= NodeOptions.Interleave;
+                        if (node.Options.HasFlag(NodeOptions.Reentrant) && node.Options.HasFlag(NodeOptions.Interleave))
+                            Error("ACT-061", node, "Interleave and Reentrant are mutually exclusive.");
+                    }
+                    if ((node.Options & ~allowedOptions) != 0 ||
                         (!configurableOptions && node.Options != expectedOptions))
                     {
                         Error("ACT-023", node, "Node options are unsupported for this node kind.");
@@ -620,6 +700,8 @@ namespace Stateflows.Activities.Models
                     {
                         Error("ACT-055", node, "Parallel and iterative node chunk size must be at least one.");
                     }
+                    if (node.Type == NodeType.ParallelActivity && (node.MaxConcurrency == 0 || node.MaxConcurrency < -1))
+                        Error("ACT-060", node, "Parallel maxConcurrency must be -1 (unlimited) or positive.");
 
                     if (InteractiveNodeTypes.Contains(node.Type))
                     {
@@ -737,9 +819,9 @@ namespace Stateflows.Activities.Models
                     {
                         ValidationReport.Add("ACT-020", path, "Initial nodes may only emit control flows.");
                     }
-                    if (edge.Source.Type == NodeType.Input && edge.TokenType == typeof(ControlToken))
+                    if (edge.Source.Type == NodeType.InputPin && edge.TokenType == typeof(ControlToken))
                     {
-                        ValidationReport.Add("ACT-019", path, "Input nodes may only emit object flows.");
+                        ValidationReport.Add("ACT-019", path, "Input pins may only emit object flows.");
                     }
                     if ((edge.Source.Type is NodeType.SendEventAction or NodeType.PublishEventAction) &&
                         edge.TokenType != typeof(ControlToken))
@@ -754,13 +836,13 @@ namespace Stateflows.Activities.Models
                     {
                         ValidationReport.Add("ACT-021", path, "Decision must declare a valid source token type.");
                     }
-                    if (edge.Source.Type is NodeType.Output or NodeType.Final or NodeType.ExceptionHandler)
+                    if (edge.Source.Type is NodeType.OutputPin or NodeType.Final or NodeType.ExceptionHandler)
                     {
                         ValidationReport.Add("ACT-019", path, "This node kind cannot have outgoing flows.");
                     }
-                    if (edge.Target.Type is NodeType.Initial or NodeType.Input)
+                    if (edge.Target.Type is NodeType.Initial or NodeType.InputPin)
                     {
-                        ValidationReport.Add("ACT-009", path, "Initial and input nodes cannot be flow targets.");
+                        ValidationReport.Add("ACT-009", path, "Initial nodes and input pins cannot be flow targets.");
                     }
                     if (edge.Source.Type == NodeType.ExceptionHandler)
                     {
@@ -780,7 +862,7 @@ namespace Stateflows.Activities.Models
                         var flowAllowed = edge.Source.Type switch
                         {
                             NodeType.Initial => edge.TokenType == typeof(ControlToken),
-                            NodeType.Input => edge.TokenType != typeof(ControlToken),
+                            NodeType.InputPin => edge.TokenType != typeof(ControlToken),
                             NodeType.SendEventAction or NodeType.PublishEventAction => edge.TokenType == typeof(ControlToken),
                             NodeType.DataStore => edge.TokenType != typeof(ControlToken),
                             NodeType.Decision => edge.TokenType == edge.Source.EventType,

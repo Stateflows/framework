@@ -18,14 +18,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// <summary>Registers callbacks awaited when a composite or orthogonal state's nested configuration is finalized.
     /// </summary>
     /// <typeparam name="TReturn">The fluent state builder returned after registration.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface ICompositeStateFinalization<out TReturn>
     {
         /// <summary>Registers handlers for the state's nested-state finalization operation.</summary>
         /// <param name="actionsAsync">Asynchronous handlers receiving the state action context during nested-state
         /// finalization. Each returned task is awaited.</param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         TReturn AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync);
         
         #region AddOnFinalizeActivity
@@ -34,7 +34,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TActivity">Embedded behavior implementation of <see cref="IActivity" />. Its definition is
         /// registered for this embedding site.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddOnFinalizeActivity<TActivity>()
             where TActivity : class, IActivity
@@ -50,7 +50,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="activityBuildAction">Callback configuring the embedded Activity's nodes, flows, and lifecycle.
         /// </param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddOnFinalizeActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
@@ -68,7 +68,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TAction">Embedded behavior implementation of <see cref="IAction" />. Its definition is
         /// registered for this embedding site.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddOnFinalizeAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
@@ -86,7 +86,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
         /// </param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddOnFinalizeAction(ActionDelegateAsync actionDelegateAsync, ActionBuildAction buildAction = null)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
@@ -100,7 +100,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="actions">Synchronous handlers receiving the state action context during nested-state finalization.
         /// </param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         public TReturn AddOnFinalize(params System.Action<IStateActionContext>[] actions)
             => AddOnFinalize(actions.Select(action => action.ToAsync()).ToArray());
@@ -111,7 +111,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the activated typed handler before its handler method is
         /// invoked.</param>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         TReturn AddOnFinalize<TStateFinalization>(ElementBuildAction<TStateFinalization> buildAction = null)
             where TStateFinalization : class, ICompositeStateFinalization
             => AddOnFinalize(async c => 
@@ -127,7 +127,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateFinalization2">Typed nested-state finalization handler implementing
         /// <see cref="ICompositeStateFinalization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         TReturn AddOnFinalize<TStateFinalization1, TStateFinalization2>()
             where TStateFinalization1 : class, ICompositeStateFinalization
             where TStateFinalization2 : class, ICompositeStateFinalization
@@ -144,7 +144,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateFinalization3">Typed nested-state finalization handler implementing
         /// <see cref="ICompositeStateFinalization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         TReturn AddOnFinalize<TStateFinalization1, TStateFinalization2, TStateFinalization3>()
             where TStateFinalization1 : class, ICompositeStateFinalization
             where TStateFinalization2 : class, ICompositeStateFinalization
@@ -164,7 +164,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateFinalization4">Typed nested-state finalization handler implementing
         /// <see cref="ICompositeStateFinalization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         TReturn AddOnFinalize<TStateFinalization1, TStateFinalization2, TStateFinalization3, TStateFinalization4>()
             where TStateFinalization1 : class, ICompositeStateFinalization
             where TStateFinalization2 : class, ICompositeStateFinalization
@@ -187,7 +187,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateFinalization5">Typed nested-state finalization handler implementing
         /// <see cref="ICompositeStateFinalization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         TReturn AddOnFinalize<TStateFinalization1, TStateFinalization2, TStateFinalization3, TStateFinalization4, TStateFinalization5>()
             where TStateFinalization1 : class, ICompositeStateFinalization
             where TStateFinalization2 : class, ICompositeStateFinalization

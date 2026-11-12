@@ -26,6 +26,11 @@ namespace Stateflows.Activities.Inspection.Classes
 
         public NodeType Type => Node.Type;
 
+        internal NodeOptions Options => Node.Options;
+        internal int MaxConcurrency => Node.MaxConcurrency;
+
+        public System.Type PinTokenType => Node.PinTokenType;
+
         public bool Active => Executor.NodesTree.Contains(Node);
 
         public NodeStatus Status => Executor.Context.ActiveNodes.Keys.Contains(Node.Identifier)

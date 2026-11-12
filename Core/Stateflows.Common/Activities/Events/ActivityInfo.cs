@@ -24,7 +24,7 @@ namespace Stateflows.Activities
 
         /// <summary>Determines whether an active-node root is available for conditional serialization.</summary>
         /// <returns><see langword="true"/> when the active-node tree has a root.</returns>
-        public bool ShouldSerializeCurrentStates()
+        public bool ShouldSerializeActiveNodes()
             => ActiveNodes is { Root: not null };
     }
 }

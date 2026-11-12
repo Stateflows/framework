@@ -17,22 +17,22 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     /// <summary>Registers effects awaited when an automatic completion path is taken.</summary>
     /// <typeparam name="TReturn">The fluent transition builder returned after registration.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
     public interface IDefaultEffect<out TReturn>
     {
         /// <summary>Registers effects to execute when the current transition is selected.</summary>
         /// <param name="effectsAsync">Asynchronous effects receiving the transition context; each returned task is awaited.
         /// </param>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddEffect(params Func<ITransitionContext<Completion>, Task>[] effectsAsync);
 
         /// <summary>Registers effects to execute when the current transition is selected.</summary>
         /// <param name="effectDelegate">Synchronous or asynchronous effect whose parameters are resolved from execution
         /// services and supported contexts.</param>
         /// <returns>The current fluent transition builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
-        TReturn AddEffect(Delegate effectDelegate)
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
+        private TReturn AddEffect(Delegate effectDelegate)
             => AddEffect(c => effectDelegate.InvokeDelegateActionAsync(
                 StateflowsActivator.ResolveParameterValueFactories(
                     c.Behavior.ServiceProvider,
@@ -48,7 +48,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the typed embedded Activity's utilities and middleware
         /// without redefining its graph.</param>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddEffectActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
@@ -70,7 +70,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="activityBuildAction">Callback configuring the embedded Activity's nodes, flows, and lifecycle.
         /// </param>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddEffectActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -92,7 +92,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
         /// </param>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddEffectAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
@@ -116,7 +116,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
         /// </param>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddEffectAction(Stateflows.Actions.Registration.ActionDelegateAsync actionDelegate, Stateflows.Actions.Registration.Interfaces.ActionBuildAction buildAction = null)
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -135,7 +135,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <summary>Registers effects to execute when the current transition is selected.</summary>
         /// <param name="effects">Synchronous effects receiving the transition context.</param>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         [DebuggerHidden]
         public TReturn AddEffect(params System.Action<ITransitionContext<Completion>>[] effects)
             => AddEffect(effects.Select(effect => effect.ToAsync()).ToArray());
@@ -146,7 +146,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the activated typed handler before its handler method is
         /// invoked.</param>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddEffect<TEffect>(ElementBuildAction<TEffect> buildAction = null)
             where TEffect : class, IDefaultTransitionEffect
             => AddEffect(async c => 
@@ -162,7 +162,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEffect2">Typed transition effect implementing <see cref="IDefaultTransitionEffect" />.
         /// </typeparam>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddEffects<TEffect1, TEffect2>()
             where TEffect1 : class, IDefaultTransitionEffect
             where TEffect2 : class, IDefaultTransitionEffect
@@ -179,7 +179,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEffect3">Typed transition effect implementing <see cref="IDefaultTransitionEffect" />.
         /// </typeparam>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddEffects<TEffect1, TEffect2, TEffect3>()
             where TEffect1 : class, IDefaultTransitionEffect
             where TEffect2 : class, IDefaultTransitionEffect
@@ -199,7 +199,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEffect4">Typed transition effect implementing <see cref="IDefaultTransitionEffect" />.
         /// </typeparam>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddEffects<TEffect1, TEffect2, TEffect3, TEffect4>()
             where TEffect1 : class, IDefaultTransitionEffect
             where TEffect2 : class, IDefaultTransitionEffect
@@ -222,7 +222,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEffect5">Typed transition effect implementing <see cref="IDefaultTransitionEffect" />.
         /// </typeparam>
         /// <returns>The current transition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transitions#logic" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddEffects<TEffect1, TEffect2, TEffect3, TEffect4, TEffect5>()
             where TEffect1 : class, IDefaultTransitionEffect
             where TEffect2 : class, IDefaultTransitionEffect

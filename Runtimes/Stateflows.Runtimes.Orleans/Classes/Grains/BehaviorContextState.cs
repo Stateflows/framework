@@ -37,4 +37,7 @@ internal sealed class OutboxPublication
 
     [Id(2)]
     public OrleansEventHolder[] Notifications { get; set; } = [];
+
+    [Id(3)]
+    public string? DestinationKey { get; set; }
 }

@@ -11,6 +11,10 @@ public interface IPublishes<TReturn>
     /// Use the <see cref="ImmediatePublish"/> header when a notification must be dispatched during execution
     /// and remain visible even if the turn later fails.
     /// </summary>
+    /// <remarks>
+    /// Without retention or a positive TTL, notifications have no history or subscription retries.
+    /// Retention keeps only the latest value; a positive TTL bounds its lifetime.
+    /// </remarks>
     /// <typeparam name="TNotification">The notification payload type.</typeparam>
     /// <param name="notification">The notification payload to publish.</param>
     /// <param name="headers">Optional event headers.</param>

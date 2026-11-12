@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines
 {
     /// <summary>Receives state-machine definition metadata while registrations are visited, rather than observing runtime state changes.</summary>
     /// <remarks>Implementations can build diagrams, catalogs, or integration metadata.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/observability">observability</see>.</remarks>
+    /// See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.</remarks>
     public interface IStateMachineVisitor
     {
         /// <summary>Visits a transition whose trigger is represented by an event definition, including named structural events.</summary>

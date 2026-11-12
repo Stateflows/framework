@@ -9,21 +9,21 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     /// <summary>Registers activity initialization and finalization callbacks.</summary>
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activities" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities" />
     public interface IActivityEvents<out TReturn>
     {
         /// <summary>Adds a default initializer that may accept or reject initialization.</summary>
         /// <param name="actionAsync">Asynchronous initialization predicate; return true to accept initialization or false
         /// to reject it.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activities" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities" />
         TReturn AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync);
         
         /// <summary>Adds a default initializer implementation type.</summary>
         /// <typeparam name="TInitializer">Typed Activity lifecycle handler implementing <see cref="IDefaultInitializer" />.
         /// </typeparam>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activities" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities" />
         [DebuggerHidden]
         public TReturn AddDefaultInitializer<TInitializer>()
             where TInitializer : class, IDefaultInitializer
@@ -37,7 +37,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="actionAsync">Asynchronous initialization predicate; return true to accept initialization or false
         /// to reject it.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activities" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities" />
         TReturn AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync);
 
         /// <summary>Adds a typed initializer implementation for an initialization request.</summary>
@@ -46,7 +46,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <typeparam name="TInitializer">Typed Activity lifecycle handler implementing
         /// <see cref="IInitializer&lt;TInitializationEvent&gt;" />.</typeparam>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activities" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities" />
         [DebuggerHidden]
         public TReturn AddInitializer<TInitializationEvent, TInitializer>()
             where TInitializer : class, IInitializer<TInitializationEvent>
@@ -57,14 +57,14 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <summary>Adds an asynchronous activity finalizer.</summary>
         /// <param name="actionAsync">Asynchronous callback invoked when the Activity finalizes.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activities" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities" />
         TReturn AddFinalizer(Func<IActivityActionContext, Task> actionAsync);
 
         /// <summary>Adds a finalizer implementation type.</summary>
         /// <typeparam name="TFinalizer">Typed Activity lifecycle handler implementing <see cref="IFinalizer" />.
         /// </typeparam>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activities" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities" />
         [DebuggerHidden]
         public TReturn AddFinalizer<TFinalizer>()
             where TFinalizer : class, IFinalizer

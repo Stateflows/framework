@@ -8,6 +8,7 @@ using Stateflows.Common.Utilities;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Exceptions;
+using Stateflows.Entities.Enums;
 
 namespace Stateflows.Activities.Models
 {
@@ -20,6 +21,21 @@ namespace Stateflows.Activities.Models
         public string OwnName { get; set; }
         public string Name { get; set; }
         public NodeType Type { get; set; }
+        public Type? PinTokenType { get; set; }
+        public bool IsOutputPin => PinTokenType != null &&
+            (Type == NodeType.OutputPin || Type == NodeType.PublishEventAction && Parent is Graph);
+        public PublishScope PublishScope { get; set; } = PublishScope.Self;
+        public int TimeToLive { get; set; }
+        public bool Retain { get; set; }
+        public bool ImmediatePublish { get; set; }
+        public IEnumerable<Node> InputPins => Nodes.Values.Where(node => node.Type == NodeType.InputPin);
+        public IEnumerable<Node> OutputPins => Nodes.Values.Where(node => node.IsOutputPin);
+
+        public bool AcceptsInput(IEnumerable<TokenHolder> tokens)
+        {
+            var types = InputPins.Select(pin => pin.PinTokenType!).ToArray();
+            return tokens.All(token => types.Any(type => type.IsAssignableFrom(token.ActualPayloadType)));
+        }
         public NodeOptions Options { get; set; } = NodeOptions.ActionDefault;
 
         public Type ExceptionType { get; set; }
@@ -30,6 +46,8 @@ namespace Stateflows.Activities.Models
         public IEnumerable<Type> ActualEventTypes { get; set; }
 
         public int ChunkSize { get; set; }
+
+        internal int MaxConcurrency { get; set; } = -1;
         public bool Anchored { get; set; } = true;
 
         internal Func<IActivityVisitor, Task>? VisitingTask { get; set; } = null;
@@ -153,38 +171,6 @@ namespace Stateflows.Activities.Models
             => initialNodes ??= Nodes.Values
                 .Where(n => n.Type == NodeType.Initial);
 
-        private Node inputNode;
-        private bool inputNodeSet;
-        public Node InputNode
-        {
-            get
-            {
-                if (!inputNodeSet)
-                {
-                    inputNode = Nodes.Values.FirstOrDefault(n => n.Type == NodeType.Input);
-                    inputNodeSet = true;
-                }
-
-                return inputNode;
-            }
-        }
-
-        private Node outputNode;
-        private bool outputNodeSet;
-        public Node OutputNode
-        {
-            get
-            {
-                if (!outputNodeSet)
-                {
-                    outputNode = Nodes.Values.FirstOrDefault(n => n.Type == NodeType.Output);
-                    outputNodeSet = true;
-                }
-
-                return outputNode;
-            }
-        }
-
         private Node finalNode;
         private bool finalNodeSet;
         public Node FinalNode
@@ -231,7 +217,7 @@ namespace Stateflows.Activities.Models
 
         public async Task<bool> HandleExceptionAsync(Exception exception, BaseContext context)
         {
-            context.Context.Context.ExecutionExceptions.Enqueue(exception);
+            context.Context.RecordException(exception);
             Node handler = null;
             var currentNode = this;
             while (currentNode != null)

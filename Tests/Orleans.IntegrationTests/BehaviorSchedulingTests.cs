@@ -258,7 +258,8 @@ public sealed class BehaviorSchedulingTests
         var machine = await cluster.InitializeMachineAsync(host, "register-failure");
 
         cluster.Reminders.FailUpserts(1);
-        Assert.AreEqual(EventStatus.Failed, (await machine.SendAsync(new StartWaiting())).Status);
+        await TransactionalStorageTestHelpers.AssertInfrastructureFailureAsync(
+            () => machine.SendAsync(new StartWaiting()), "Expected reminder registration failure.");
         Assert.AreEqual("idle", (await machine.GetStatusAsync()).Response.CurrentStates.Value);
         Assert.IsNull(cluster.Storage.GetContext(machine.Id)!.TriggerTime, "State must not be committed when the reminder cannot be registered.");
         Assert.IsNull(cluster.Reminders.Find(machine.Id));
@@ -749,9 +750,25 @@ public sealed class BehaviorSchedulingTests
             {
                 return states
                     .Where(s => s.Key.Item1 == "Stateflows.BehaviorContext")
-                    .Select(s => serializer.Deserialize<BehaviorContextState>(s.Value.Data)!.Payload)
-                    .Select(StateflowsJsonConverter.DeserializeObject<StateflowsContext>)
+                    .Select(s => serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(s.Value.Data))
+                    .Select(TransactionalStorageTestHelpers.GetCommittedContextState)
+                    // Transaction metadata can be persisted before any committed behavior payload exists.
+                    .Where(s => !string.IsNullOrEmpty(s?.Payload))
+                    .Select(s => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(s!.Payload))
                     .SingleOrDefault(c => c != null && c.Id == id);
+            }
+        }
+
+        public bool IsNewContextVersion<T>(GrainId grainId, T state)
+        {
+            if (state is not Orleans.Transactions.TransactionalStateRecord<BehaviorContextState> next)
+                return false;
+            lock (sync)
+            {
+                var previous = states.TryGetValue(("Stateflows.BehaviorContext", grainId), out var stored)
+                    ? serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(stored.Data)
+                    : null;
+                return TransactionalStorageTestHelpers.GetLatestSequenceId(next) > TransactionalStorageTestHelpers.GetLatestSequenceId(previous);
             }
         }
 

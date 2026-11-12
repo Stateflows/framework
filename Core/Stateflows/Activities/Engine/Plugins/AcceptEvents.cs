@@ -122,12 +122,15 @@ namespace Stateflows.Activities.Engine
 
         public override async Task OnActivityFinalizeAsync(IActivityFinalizationContext context, Func<Task> next)
         {
+            Context = ((IRootContext)context).Context;
             await next();
             UnregisterAcceptEventNodes(((IRootContext)context).Context.Executor.Graph.DanglingTimeEventActionNodes);
         }
 
         public override async Task OnNodeFinalizeAsync(IActivityNodeContext context, Func<Task> next)
         {
+            // A resumed checkpoint continuation can finalize nodes without first processing an event.
+            Context = ((IRootContext)context).Context;
             await next();
             UnregisterAcceptEventNodes(((ActionContext)context).Node.DanglingTimeEventActionNodes);
         }
@@ -198,6 +201,7 @@ namespace Stateflows.Activities.Engine
             if (!initialized) return;
 
             var rootContext = (IRootContext)context;
+            Context = rootContext.Context;
             var currentNode = rootContext.Context.Executor.Graph;
             foreach (var node in currentNode.DanglingAcceptEventActionNodes)
             {
@@ -212,6 +216,7 @@ namespace Stateflows.Activities.Engine
 
         public override async Task OnNodeInitializeAsync(IActivityNodeContext context, Func<Task> next)
         {
+            Context = ((IRootContext)context).Context;
             await next();
 
             var currentNode = ((ActionContext)context).Node;

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -47,13 +47,15 @@
   <ItemGroup>
     <InternalsVisibleTo Include="StateMachine.IntegrationTests" />
     <InternalsVisibleTo Include="Activity.IntegrationTests" />
+    <InternalsVisibleTo Include="Orleans.IntegrationTests" />
     <InternalsVisibleTo Include="Stateflows.Runtimes.Orleans" />
     <InternalsVisibleTo Include="Stateflows.Extensions.MinimalAPIs" />
     <InternalsVisibleTo Include="Stateflows.Extensions.Json" />
+    <InternalsVisibleTo Include="Stateflows.Extensions.PlantUml" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Threading.Channels" Version="10.0.13" />
+    <PackageReference Include="System.Threading.Channels" Version="[10.0.15,)" />
   </ItemGroup>
 
 </Project>

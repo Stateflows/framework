@@ -9,10 +9,10 @@
         Initial,
         /// <summary>A terminal node that completes activity execution.</summary>
         Final,
-        /// <summary>A node that introduces external input tokens.</summary>
-        Input,
-        /// <summary>A node that exposes tokens leaving the graph.</summary>
-        Output,
+        /// <summary>A typed pin that introduces external input tokens.</summary>
+        InputPin,
+        /// <summary>A typed pin that exposes tokens leaving a nested graph.</summary>
+        OutputPin,
         /// <summary>A node that executes an action.</summary>
         Action,
         /// <summary>A node that selects among guarded outgoing flows.</summary>

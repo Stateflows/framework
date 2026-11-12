@@ -31,7 +31,7 @@ public class Notification_v1
     /// <summary>Gets or sets the notification time-to-live in seconds.</summary>
     public int TimeToLive { get; set; }
         
-    /// <summary>Gets or sets whether the notification is retained after its time-to-live expires.</summary>
+    /// <summary>Gets or sets whether this is a latest-value notification; a positive time-to-live still expires it.</summary>
     public bool Retained { get; set; }
 
     /// <summary>Gets or sets the time the notification was sent.</summary>

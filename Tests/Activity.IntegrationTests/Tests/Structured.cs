@@ -8,6 +8,7 @@ namespace Activity.IntegrationTests.Tests
     public class Structured : StateflowsTestClass
     {
         private bool Executed = false;
+        private int FinalizedCounter = 0;
         private int Counter = 0;
         private readonly object LockHandle = new();
 
@@ -33,6 +34,7 @@ namespace Activity.IntegrationTests.Tests
                             b => b.AddFlow<int>("main")
                         )
                         .AddStructuredActivity("main", b => b
+                            .AddInputPin<int>(input => input.AddFlow("action1"))
                             .AddInitial(b => b
                                 .AddControlFlow("action1")
                             )
@@ -54,6 +56,7 @@ namespace Activity.IntegrationTests.Tests
                             b => b.AddFlow<int>("main")
                         )
                         .AddParallelActivity<int>("main", b => b
+                            .AddInputPin<int>(input => input.AddFlow("action1"))
                             .AddInitial(b => b
                                 .AddControlFlow("action1")
                             )
@@ -69,6 +72,7 @@ namespace Activity.IntegrationTests.Tests
                         .AddAction("final", async c =>
                         {
                             Executed = true;
+                            FinalizedCounter++;
                         })
                     )
                     .AddActivity("iterative", b => b
@@ -81,6 +85,7 @@ namespace Activity.IntegrationTests.Tests
                             b => b.AddFlow<int>("main")
                         )
                         .AddIterativeActivity<int>("main", b => b
+                            .AddInputPin<int>(input => input.AddFlow("action1"))
                             .AddInitial(b => b
                                 .AddControlFlow("action1")
                             )
@@ -90,6 +95,7 @@ namespace Activity.IntegrationTests.Tests
                         .AddAction("final", async c =>
                         {
                             Executed = true;
+                            FinalizedCounter++;
                         })
                     )
                 )
@@ -117,6 +123,7 @@ namespace Activity.IntegrationTests.Tests
 
             Assert.IsTrue(Executed);
             Assert.AreEqual(10, Counter);
+            // Assert.AreEqual(10, FinalizedCounter);
         }
 
         [TestMethod]
@@ -129,6 +136,7 @@ namespace Activity.IntegrationTests.Tests
 
             Assert.IsTrue(Executed);
             Assert.AreEqual(10, Counter);
+            // Assert.AreEqual(10, FinalizedCounter);
         }
     }
 }

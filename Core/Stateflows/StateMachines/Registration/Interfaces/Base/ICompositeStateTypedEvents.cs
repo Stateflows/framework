@@ -5,7 +5,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     /// <summary>Connects typed composite-state lifecycle implementations to the current definition.</summary>
     /// <typeparam name="TReturn">The fluent state builder returned after registration.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
     public interface ICompositeStateTypedEvents<out TReturn> : ICompositeStateEvents<TReturn>
     {
         #region AddOnInitialize
@@ -15,7 +15,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TCompositeStateInitialization2">Typed composite-state initialization handler implementing
         /// <see cref="ICompositeStateInitialization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         TReturn AddOnInitializes<TCompositeStateInitialization1, TCompositeStateInitialization2>()
             where TCompositeStateInitialization1 : class, ICompositeStateInitialization
@@ -33,7 +33,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TCompositeStateInitialization3">Typed composite-state initialization handler implementing
         /// <see cref="ICompositeStateInitialization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         TReturn AddOnInitializes<TCompositeStateInitialization1, TCompositeStateInitialization2, TCompositeStateInitialization3>()
             where TCompositeStateInitialization1 : class, ICompositeStateInitialization
@@ -54,7 +54,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TCompositeStateInitialization4">Typed composite-state initialization handler implementing
         /// <see cref="ICompositeStateInitialization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         TReturn AddOnInitializes<TCompositeStateInitialization1, TCompositeStateInitialization2, TCompositeStateInitialization3, TCompositeStateInitialization4>()
             where TCompositeStateInitialization1 : class, ICompositeStateInitialization
@@ -78,7 +78,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TCompositeStateInitialization5">Typed composite-state initialization handler implementing
         /// <see cref="ICompositeStateInitialization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         TReturn AddOnInitializes<TCompositeStateInitialization1, TCompositeStateInitialization2, TCompositeStateInitialization3, TCompositeStateInitialization4, TCompositeStateInitialization5>()
             where TCompositeStateInitialization1 : class, ICompositeStateInitialization
@@ -99,7 +99,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TCompositeStateFinalization2">Typed composite-state finalization handler implementing
         /// <see cref="ICompositeStateFinalization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         TReturn AddOnFinalizes<TCompositeStateFinalization1, TCompositeStateFinalization2>()
             where TCompositeStateFinalization1 : class, ICompositeStateFinalization
@@ -117,7 +117,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TCompositeStateFinalization3">Typed composite-state finalization handler implementing
         /// <see cref="ICompositeStateFinalization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         TReturn AddOnFinalizes<TCompositeStateFinalization1, TCompositeStateFinalization2, TCompositeStateFinalization3>()
             where TCompositeStateFinalization1 : class, ICompositeStateFinalization
@@ -138,7 +138,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TCompositeStateFinalization4">Typed composite-state finalization handler implementing
         /// <see cref="ICompositeStateFinalization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         TReturn AddOnFinalizes<TCompositeStateFinalization1, TCompositeStateFinalization2, TCompositeStateFinalization3, TCompositeStateFinalization4>()
             where TCompositeStateFinalization1 : class, ICompositeStateFinalization
@@ -162,7 +162,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TCompositeStateFinalization5">Typed composite-state finalization handler implementing
         /// <see cref="ICompositeStateFinalization" />.</typeparam>
         /// <returns>The current state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         TReturn AddOnFinalizes<TCompositeStateFinalization1, TCompositeStateFinalization2, TCompositeStateFinalization3, TCompositeStateFinalization4, TCompositeStateFinalization5>()
             where TCompositeStateFinalization1 : class, ICompositeStateFinalization

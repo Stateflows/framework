@@ -3,7 +3,7 @@
 namespace Stateflows.StateMachines.Inspection.Interfaces
 {
     /// <summary>Exposes a vertex's structural kind, outgoing transitions, actions, nested regions, and active status.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/state-machine-state-identity">state identity</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.4.1.1.-State-Identity">state identity</see>.</remarks>
     public interface IStateInspection
     {
         /// <summary>The registered vertex name.</summary>

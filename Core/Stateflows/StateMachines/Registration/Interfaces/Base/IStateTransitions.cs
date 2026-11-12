@@ -13,8 +13,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// Exception-triggered transitions enable polymorphic matching, so a transition for a base exception can accept a
     /// registered derived exception type. Exception events are processed separately from the failed operation; taking
     /// an exception transition does not resume or commit that failed execution. See
-    /// <see href="https://github.com/Stateflows/framework/wiki/state-machine-transition">transitions</see>.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
+    /// <see href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition">transitions</see>.</remarks>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
     public interface IStateTransitions<out TReturn>
     {
         /// <summary>Adds an event-triggered transition from the current state.</summary>
@@ -25,8 +25,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics. Callbacks receive the structural event payload.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
         TReturn AddTransition(string eventName, string targetStateName, TransitionBuildAction<StructuralEvent> transitionBuildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
@@ -42,8 +42,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards and effects. Callbacks
         /// receive the structural event payload.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
         TReturn AddInternalTransition(string eventName, InternalTransitionBuildAction<StructuralEvent> transitionBuildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
@@ -63,9 +63,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn AddElseTransition(string eventName, string targetStateName, ElseTransitionBuildAction<StructuralEvent> transitionBuildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
@@ -83,9 +83,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn AddElseInternalTransition(string eventName, ElseInternalTransitionBuildAction<StructuralEvent> transitionBuildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
@@ -104,7 +104,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
         TReturn AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null);
 
         /// <summary>Adds an event-triggered transition from the current state.</summary>
@@ -117,7 +117,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics. Runs after the typed transition's hooks have been registered.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
         [DebuggerHidden]
         public TReturn AddTransition<TEvent, TTransition, TTargetState>(TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
@@ -134,7 +134,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics. Runs after the typed transition's hooks have been registered.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
         [DebuggerHidden]
         public TReturn AddTransition<TEvent, TTransition>(string targetStateName,
             TransitionBuildAction<TEvent> transitionBuildAction = null)
@@ -165,7 +165,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
         [DebuggerHidden]
         public TReturn AddTransition<TEvent, TTargetState>(TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -180,7 +180,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
         TReturn AddDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>Adds a completion transition from the current state.</summary>
@@ -191,7 +191,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics. Runs after the typed transition's hooks have been registered.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
         [DebuggerHidden]
         public TReturn AddDefaultTransition<TTransition, TTargetState>(DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
@@ -206,7 +206,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics. Runs after the typed transition's hooks have been registered.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
         [DebuggerHidden]
         public TReturn AddDefaultTransition<TTransition>(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
@@ -234,7 +234,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
         [DebuggerHidden]
         public TReturn AddDefaultTransition<TTargetState>(DefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -247,7 +247,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// ordinary event triggers use exact matching.</typeparam>
         /// <param name="transitionBuildAction">Callback configuring the transition's guards and effects.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
         TReturn AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction);
 
         /// <summary>Adds an internal transition without exiting or re-entering the current state.</summary>
@@ -258,7 +258,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards and effects. Runs
         /// after the typed transition's hooks have been registered.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
         [DebuggerHidden]
         public TReturn AddInternalTransition<TEvent, TTransition>(InternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
@@ -287,8 +287,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null);
 
         /// <summary>Adds a fallback event-triggered transition from the current state.</summary>
@@ -303,8 +303,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public TReturn AddElseTransition<TEvent, TElseTransition, TTargetState>(ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
@@ -323,8 +323,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public TReturn AddElseTransition<TEvent, TElseTransition>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
@@ -356,8 +356,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public TReturn AddElseTransition<TEvent, TTargetState>(ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -373,8 +373,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn AddElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>Adds a fallback completion transition from the current state.</summary>
@@ -387,8 +387,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public TReturn AddElseDefaultTransition<TElseTransition, TTargetState>(ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
@@ -405,8 +405,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public TReturn AddElseDefaultTransition<TElseTransition>(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
@@ -436,8 +436,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public TReturn AddElseDefaultTransition<TTargetState>(ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -452,8 +452,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction);
 
         /// <summary>Adds a fallback internal transition without exiting or re-entering the current state.</summary>
@@ -466,8 +466,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public TReturn AddElseInternalTransition<TEvent, TElseTransition>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>

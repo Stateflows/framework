@@ -4,6 +4,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common;
+using Stream = Stateflows.Activities.Streams.Stream;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -37,7 +38,7 @@ namespace Stateflows.Activities.Context.Classes
         private readonly TokenPipelineContext context;
 
         private Stream stream;
-        protected Stream Stream => stream ??= Context.GetStream(Edge.Identifier, NodeScope.ThreadId);
+        protected Stream Stream => stream ??= Context.GetStream(Edge.Identifier, RootContext.GetStreamThreadId(Edge, NodeScope));
 
         public FlowContext(TokenPipelineContext context)
             : base(context)

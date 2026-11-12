@@ -23,13 +23,15 @@ namespace Stateflows.Activities.Engine
         public readonly CommonInterceptor GlobalInterceptor;
 
         private readonly ILogger Logger;
+        private readonly IServiceProvider serviceProvider;
 
         public Inspector(Executor executor, ILogger logger)
         {
             Executor = executor;
             Logger = logger;
+            serviceProvider = executor.NodeScope.ServiceProvider;
 
-            GlobalInterceptor = Executor.NodeScope.ServiceProvider.GetRequiredService<CommonInterceptor>();
+            GlobalInterceptor = serviceProvider.GetRequiredService<CommonInterceptor>();
 
             ExceptionHandlerFactories.AddRange(Executor.Graph.ExceptionHandlerFactories);
             ExceptionHandlerFactories.AddRange(Executor.Register.GlobalExceptionHandlerFactories);
@@ -43,11 +45,11 @@ namespace Stateflows.Activities.Engine
 
         public async Task BuildAsync()
         {
-            Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.NodeScope.ServiceProvider)));
+            Observers = await Task.WhenAll(ObserverFactories.Select(t => t(serviceProvider)));
             
-            Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.NodeScope.ServiceProvider)));
+            Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(serviceProvider)));
             
-            ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.NodeScope.ServiceProvider)));
+            ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(serviceProvider)));
         }
 
         public IDictionary<Node, NodeInspection> InspectionNodes { get; } = new Dictionary<Node, NodeInspection>();
@@ -67,11 +69,11 @@ namespace Stateflows.Activities.Engine
 
         private IEnumerable<IActivityPlugin>? plugins;
         public IEnumerable<IActivityPlugin> Plugins
-            => plugins ??= Executor.NodeScope.ServiceProvider.GetRequiredService<IEnumerable<IActivityPlugin>>();
+            => plugins ??= serviceProvider.GetRequiredService<IEnumerable<IActivityPlugin>>();
 
         private AcceptEvents? acceptEventsPlugin;
         public AcceptEvents AcceptEventsPlugin
-            => acceptEventsPlugin ??= Executor.NodeScope.ServiceProvider.GetRequiredService<AcceptEvents>();
+            => acceptEventsPlugin ??= serviceProvider.GetRequiredService<AcceptEvents>();
 
         public async Task<EventStatus> ProcessEventAsync<TEvent>(EventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
@@ -135,7 +137,7 @@ namespace Stateflows.Activities.Engine
             var context = Executor.Context.Context;
             var acknowledged = await ExecutionExceptionHandling.HandleAsync(context, ExceptionHandlers, handle, method, Logger);
             await ExecutionExceptionHandling.HandleAsync(context, Plugins, notify, method, Logger);
-            context.ExecutionExceptions.Enqueue(exception);
+            Executor.Context.RecordException(exception);
             return acknowledged;
         }
 

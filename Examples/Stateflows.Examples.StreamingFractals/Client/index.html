@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080d19" />
+    <title>Julia Live | Stateflows</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div><p class="eyebrow">STATEFLOWS / STREAMING ACTIVITY</p><h1>Julia<span>Live</span></h1></div>
+        <div class="connection"><i id="connection-light"></i><span id="connection">Connecting</span></div>
+      </header>
+      <section class="workspace" aria-label="Interactive Julia fractal">
+        <div class="canvas-wrap">
+          <canvas id="fractal" width="768" height="512" aria-label="Move your pointer to morph the Julia set. Use the real and imaginary controls below for keyboard input."></canvas>
+          <div class="canvas-caption"><span>z &larr; z&sup2; + c</span><span id="parameter">Waiting for first complete frame</span></div>
+        </div>
+        <aside>
+          <p class="eyebrow">EXPLORE THE COMPLEX PLANE</p>
+          <h2>Move. Morph. Stream.</h2>
+          <p class="hint">Move your pointer to set a destination. Each complete 768 × 512 server-rendered frame eases c toward your latest target. No local fractal calculation or image crossfade.</p>
+          <p id="target-parameter" class="hint small">Target c = -0.745 + 0.186i</p>
+          <label for="real">Real <output id="real-value">-0.745</output></label>
+          <input id="real" type="range" min="-1.5" max="1.5" step="0.001" value="-0.745" />
+          <label for="imaginary">Imaginary <output id="imaginary-value">0.186</output></label>
+          <input id="imaginary" type="range" min="-1.5" max="1.5" step="0.001" value="0.186" />
+          <label for="detail">Detail <output id="detail-value">256 iterations</output></label>
+          <input id="detail" type="range" min="32" max="1024" step="32" value="256" />
+          <label for="delay">Target input settle delay <output id="delay-value">250 ms</output></label>
+          <input id="delay" type="range" min="0" max="1000" step="10" value="250" />
+          <p class="hint small">Wait only for changed target input, not between animation frames. Zero responds after the current frame finishes.</p>
+          <label for="palette">Palette <span class="local-tag">instant / browser-side</span></label>
+          <select id="palette"><option value="aurora">Aurora</option><option value="ember">Ember</option><option value="ocean">Ocean</option></select>
+          <div class="buttons"><button id="pause" disabled>Pause input</button><button id="stop" disabled>Stop session</button></div>
+          <button id="restart" class="primary" hidden>Start new session</button>
+          <p id="status" role="status" aria-live="polite">Opening output stream before admitting work...</p>
+          <div class="progress"><div id="progress"></div></div>
+          <p class="hint small">Pause finishes the current frame, then holds animation. Resume uses the latest sliders. Stop finalizes the Activity and cancels work.</p>
+        </aside>
+      </section>
+      <section class="metrics" aria-label="Live streaming metrics">
+        <div><span id="in-flight">0 / 4</span><small>tiles in flight</small></div>
+        <div><span id="rate">0</span><small>tiles / second</small></div>
+        <div><span id="latency">--</span><small>first tile latency</small></div>
+        <div><span id="frame-time">--</span><small>last full-frame time</small></div>
+        <div><span id="generation">0</span><small>render generation</small></div>
+        <div><span id="mode">--</span><small>execution mode</small></div>
+        <div><span id="stale">0</span><small>obsolete tiles ignored</small></div>
+      </section>
+      <details>
+        <summary>What is streaming here?</summary>
+        <div class="explanation">
+          <div class="graph"><span>TileRequest input</span><b>&rarr;</b><span>RenderTiles<br /><small>interleaving parallel activity</small></span><b>&rarr;</b><span>TileResult output</span></div>
+          <p>The browser admits up to four tiles via <code>sendAsStream=true</code>. RenderTiles interleaves partitions with a concurrency limit of four. Each partition runs CalculateJuliaTile on the server and routes its result to a reentrant CompressJuliaTile action in the root scope, then to the output pin for SSE delivery. Tiles use gzip when it reduces their size; the browser decompresses them losslessly. All 24 tiles use one c; the browser assembles them offscreen and presents only a complete frame.</p>
+          <p>Each rendered frame moves 35% toward the latest settled target, snapping exactly within a complex-plane distance of 0.002. Slow frames do not cause wall-clock jumps. Reduced-motion preference skips easing. No future frames are queued. Detail changes are ordinary configuration events and discard unfinished images; palettes recolor only the displayed image locally. SSE is future-only: a lost connection requires a fresh session.</p>
+          <a id="diagram" target="_blank" rel="noopener">View this Activity's PlantUML source</a>
+        </div>
+      </details>
+      <footer>Built with Stateflows Activities + Orleans &middot; TypeScript + Canvas &middot; Local development demo</footer>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

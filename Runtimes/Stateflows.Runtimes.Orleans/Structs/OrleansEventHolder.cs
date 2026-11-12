@@ -31,14 +31,35 @@ public struct OrleansEventHolder
     [Id(7)]
     [Newtonsoft.Json.JsonProperty(TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None)]
     public OrleansBehaviorId? SenderId { get; set; }
+
+    [Id(8)]
+    public bool IsRequest { get; set; }
+
+    [Id(9)]
+    public string? PayloadType { get; set; }
     
     public static implicit operator EventHolder(OrleansEventHolder orleansEventHolder)
     {
-        var payload = StateflowsJsonConverter.DeserializeObject(orleansEventHolder.Payload);
-        var result = payload.ToTypedEventHolder(orleansEventHolder.Headers.ToDictionary(
+        var headers = orleansEventHolder.Headers.ToDictionary(
             p => p.Key,
             p => (EventHeader)StateflowsJsonConverter.DeserializeObject(p.Value)
-        ));
+        );
+        EventHolder result;
+        if (orleansEventHolder.PayloadType is { } typeName)
+        {
+            var payloadType = Type.GetType(typeName, throwOnError: true)!;
+            var holderType = typeof(EventHolder<>).MakeGenericType(payloadType);
+            result = (EventHolder)Activator.CreateInstance(holderType)!;
+            holderType.GetProperty(nameof(EventHolder<object>.Payload))!.SetValue(result,
+                StateflowsJsonConverter.DeserializeObject(orleansEventHolder.Payload, payloadType));
+            result.Headers = headers;
+        }
+        else
+        {
+            // Envelopes persisted before declared payload types were recorded use runtime-type reconstruction.
+            var payload = StateflowsJsonConverter.DeserializeObject(orleansEventHolder.Payload);
+            result = payload.ToTypedEventHolder(headers);
+        }
         result.Id = orleansEventHolder.Id;
         result.Retained = orleansEventHolder.Retained;
         result.SenderId = orleansEventHolder.SenderId;
@@ -58,6 +79,7 @@ public struct OrleansEventHolder
             ),
             Id = eventHolder.Id,
             Name = eventHolder.Name,
+            PayloadType = eventHolder.PayloadType.AssemblyQualifiedName,
             Retained = eventHolder.Retained,
             SenderId = eventHolder.SenderId,
             SentAt = eventHolder.SentAt,
@@ -90,7 +112,7 @@ public struct OrleansEventHolder<TEvent>
     
     public static implicit operator EventHolder<TEvent>(OrleansEventHolder<TEvent> orleansEventHolder)
     {
-        var payload = (TEvent)StateflowsJsonConverter.DeserializeObject(orleansEventHolder.Payload);
+        var payload = StateflowsJsonConverter.DeserializeObject<TEvent>(orleansEventHolder.Payload);
         var result = payload.ToEventHolder(orleansEventHolder.Headers.ToDictionary(
             p => p.Key,
             p => (EventHeader)StateflowsJsonConverter.DeserializeObject(p.Value)

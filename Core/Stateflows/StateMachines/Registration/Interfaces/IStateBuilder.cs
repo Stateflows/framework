@@ -4,7 +4,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 {
     /// <summary>Configures a regular state's actions, outgoing transitions, deferrals, and optional nested structure or
     /// do behavior.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
     public interface IStateBuilder :
         IStateEvents<IStateBuilder>,
         IStateUtils<IStateBuilder>,
@@ -14,8 +14,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateDoAction<IBehaviorStateBuilder>;
     
     /// <summary>Extends an inherited regular state, including existing transitions and deferrals.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IOverridenStateBuilder :
         IStateExtension<IOverridenStateBuilder>,
         IStateEvents<IOverridenStateBuilder>,
@@ -30,8 +30,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateDoAction<IBehaviorOverridenStateBuilder>;
     
     /// <summary>Continues configuring an inherited state after its region structure has been established.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-regions" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.1.-Regions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IOverridenRegionalizedStateBuilder :
         IStateExtension<IOverridenRegionalizedStateBuilder>,
         IStateEvents<IOverridenRegionalizedStateBuilder>,
@@ -44,15 +44,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateDoAction<IBehaviorOverridenRegionalizedStateBuilder>;
 
     /// <summary>Continues configuring a state after its single embedded do behavior has been assigned.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
     public interface IBehaviorStateBuilder :
         IStateEvents<IBehaviorStateBuilder>,
         IStateUtils<IBehaviorStateBuilder>,
         IStateTransitions<IBehaviorStateBuilder>;
 
     /// <summary>Extends an inherited regular state whose embedded do behavior is already assigned.</summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IBehaviorOverridenStateBuilder :
         IStateExtension<IBehaviorOverridenStateBuilder>,
         IStateEvents<IBehaviorOverridenStateBuilder>,
@@ -65,8 +65,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     /// <summary>Continues configuration of an inherited state with established regions and an assigned do behavior.
     /// </summary>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-regions" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.1.-Regions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     public interface IBehaviorOverridenRegionalizedStateBuilder :
         IStateExtension<IBehaviorOverridenRegionalizedStateBuilder>,
         IStateEvents<IBehaviorOverridenRegionalizedStateBuilder>,

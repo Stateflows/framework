@@ -10,7 +10,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     /// <summary>Locates and extends transitions inherited from a reused State Machine definition.</summary>
     /// <typeparam name="TReturn">The source-state builder returned after extending an inherited transition.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
     public interface IStateTransitionsOverrides<TReturn>
     {
         private Edge FindStructuralTransition(string eventName, string targetStateName, bool internalTransition, bool isElse)
@@ -35,9 +35,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <exception cref="StateMachineOverrideException">No matching inherited structural transition exists.</exception>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
         TReturn UseTransition(string eventName, string targetStateName, OverridenTransitionBuildAction<StructuralEvent> buildAction)
         {
             var edge = FindStructuralTransition(eventName, targetStateName, false, false);
@@ -54,9 +54,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <exception cref="StateMachineOverrideException">No matching inherited structural transition exists.</exception>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
         TReturn UseInternalTransition(string eventName, OverridenInternalTransitionBuildAction<StructuralEvent> buildAction)
         {
             var edge = FindStructuralTransition(eventName, null, true, false);
@@ -77,10 +77,10 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// guard of its own.</remarks>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn UseElseTransition(string eventName, string targetStateName, OverridenElseTransitionBuildAction<StructuralEvent> buildAction)
         {
             var edge = FindStructuralTransition(eventName, targetStateName, false, true);
@@ -100,10 +100,10 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// guard of its own.</remarks>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn UseElseInternalTransition(string eventName, OverridenElseInternalTransitionBuildAction<StructuralEvent> buildAction)
         {
             var edge = FindStructuralTransition(eventName, null, true, true);
@@ -121,8 +121,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseTransition<TEvent>(string targetStateName, OverridenTransitionBuildAction<TEvent> transitionBuildAction);
 
         /// <summary>Extends an inherited event-triggered transition from the current state.</summary>
@@ -135,8 +135,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseTransition<TEvent, TTargetState>(OverridenTransitionBuildAction<TEvent> transitionBuildAction)
             where TTargetState : class, IVertex
@@ -149,8 +149,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseDefaultTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction);
 
         /// <summary>Extends an inherited completion transition from the current state.</summary>
@@ -161,8 +161,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseDefaultTransition<TTargetState>(OverridenDefaultTransitionBuildAction transitionBuildAction)
             where TTargetState : class, IVertex
@@ -175,8 +175,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseInternalTransition<TEvent>(OverridenInternalTransitionBuildAction<TEvent> transitionBuildAction);
         #endregion
 
@@ -192,9 +192,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// guard of its own.</remarks>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn UseElseTransition<TEvent>(string targetStateName, OverridenElseTransitionBuildAction<TEvent> transitionBuildAction);
 
         /// <summary>Extends an inherited fallback event-triggered transition from the current state.</summary>
@@ -209,9 +209,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// guard of its own.</remarks>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public TReturn UseElseTransition<TEvent, TTargetState>(OverridenElseTransitionBuildAction<TEvent> transitionBuildAction)
             where TTargetState : class, IVertex
@@ -226,9 +226,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// guard of its own.</remarks>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn UseElseDefaultTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction);
 
         /// <summary>Extends an inherited fallback completion transition from the current state.</summary>
@@ -241,9 +241,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// guard of its own.</remarks>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.2.-Default-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public TReturn UseElseDefaultTransition<TTargetState>(OverridenElseDefaultTransitionBuildAction transitionBuildAction)
             where TTargetState : class, IVertex
@@ -258,9 +258,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// guard of its own.</remarks>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-internal-transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         TReturn UseElseInternalTransition<TEvent>(OverridenElseInternalTransitionBuildAction<TEvent> transitionBuildAction);
         #endregion
     }

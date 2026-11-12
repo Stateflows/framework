@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Common.Engine
 {
@@ -22,12 +23,14 @@ namespace Stateflows.Common.Engine
             IStateflowsStorage storage,
             BehaviorId id,
             List<Exception> exceptions,
-            Func<ContextExecution, Task<EventStatus>> executeAsync)
+            Func<ContextExecution, Task<EventStatus>> executeAsync,
+            bool nonTransactional = false)
         {
             var exceptionCount = exceptions.Count;
             ContextExecution? execution = null;
             using var pendingTasks = new PendingTasksScope();
             using var publications = PublicationScope.IsRuntimeOwned ? null : new PublicationScope();
+            using var staging = StagingBag.IsActive ? null : new StagingBag(() => nonTransactional);
             try
             {
                 var stored = await storage.HydrateAsync(id);
@@ -44,10 +47,17 @@ namespace Stateflows.Common.Engine
                 if (publications != null)
                     await publications.WaitForImmediateAsync();
 
-                if (result == EventStatus.Failed ||
+                var failed = result == EventStatus.Failed ||
                     exceptions.Count != exceptionCount ||
-                    !execution.Context.ExecutionExceptions.IsEmpty)
+                    !execution.Context.ExecutionExceptions.IsEmpty;
+
+                if (failed)
                 {
+                    if (nonTransactional)
+                    {
+                        execution.Context.LastExecutedAt = DateTime.Now;
+                        await storage.DehydrateAsync(execution.Context);
+                    }
                     return EventStatus.Failed;
                 }
 
@@ -57,6 +67,7 @@ namespace Stateflows.Common.Engine
                     await storage.DehydrateAsync(execution.Context);
                 }
 
+                staging?.DispatchAfterCommit();
                 if (publications != null)
                     await publications.FlushAsync();
 
@@ -65,6 +76,18 @@ namespace Stateflows.Common.Engine
             catch (Exception exception)
             {
                 exceptions.Add(exception);
+                if (nonTransactional && execution != null)
+                {
+                    try
+                    {
+                        execution.Context.LastExecutedAt = DateTime.Now;
+                        await storage.DehydrateAsync(execution.Context);
+                    }
+                    catch (Exception persistenceException)
+                    {
+                        exceptions.Add(persistenceException);
+                    }
+                }
                 return EventStatus.Failed;
             }
             finally

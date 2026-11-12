@@ -106,6 +106,98 @@ public sealed class JsonActivity : StateflowsTestClass
         }
         """;
 
+    private const string TypedPinsModel = """
+        {
+          "formatVersion": "1.0",
+          "name": "json-typed-pins-activity",
+          "nodes": [
+            { "kind": "initial", "flows": [{ "kind": "control", "target": "produce" }] },
+            {
+              "kind": "action",
+              "name": "produce",
+              "implementation": { "clrType": "node.pinProducer" },
+              "flows": [
+                { "kind": "object", "tokenType": "token.int", "target": "outer" },
+                { "kind": "object", "tokenType": "token.string", "target": "outer" }
+              ]
+            },
+            {
+              "kind": "structured",
+              "name": "outer",
+              "flows": [
+                { "kind": "object", "tokenType": "token.int", "target": "numberDone" },
+                { "kind": "object", "tokenType": "token.string", "target": "textDone" }
+              ],
+              "nodes": [
+                {
+                  "kind": "inputPin",
+                  "name": "outerNumber",
+                  "tokenType": "token.int",
+                  "flows": [{ "kind": "object", "tokenType": "token.int", "target": "inner" }]
+                },
+                {
+                  "kind": "inputPin",
+                  "name": "outerText",
+                  "tokenType": "token.string",
+                  "flows": [{ "kind": "object", "tokenType": "token.string", "target": "inner" }]
+                },
+                {
+                  "kind": "structured",
+                  "name": "inner",
+                  "flows": [
+                    { "kind": "object", "tokenType": "token.int", "target": "outerNumberResult" },
+                    { "kind": "object", "tokenType": "token.string", "target": "outerTextResult" }
+                  ],
+                  "nodes": [
+                    {
+                      "kind": "inputPin",
+                      "name": "innerNumber",
+                      "tokenType": "token.int",
+                      "flows": [{ "kind": "object", "tokenType": "token.int", "target": "forwardNumber" }]
+                    },
+                    {
+                      "kind": "inputPin",
+                      "name": "innerText",
+                      "tokenType": "token.string",
+                      "flows": [{ "kind": "object", "tokenType": "token.string", "target": "forwardText" }]
+                    },
+                    {
+                      "kind": "action",
+                      "name": "forwardNumber",
+                      "implementation": { "clrType": "node.forwardNumber" },
+                      "flows": [{ "kind": "object", "tokenType": "token.int", "target": "innerNumberResult" }]
+                    },
+                    {
+                      "kind": "action",
+                      "name": "forwardText",
+                      "implementation": { "clrType": "node.forwardText" },
+                      "flows": [{ "kind": "object", "tokenType": "token.string", "target": "innerTextResult" }]
+                    },
+                    { "kind": "outputPin", "name": "innerNumberResult", "tokenType": "token.int" },
+                    { "kind": "outputPin", "name": "innerTextResult", "tokenType": "token.string" }
+                  ]
+                },
+                { "kind": "outputPin", "name": "outerNumberResult", "tokenType": "token.int" },
+                { "kind": "outputPin", "name": "outerTextResult", "tokenType": "token.string" }
+              ]
+            },
+            {
+              "kind": "action",
+              "name": "numberDone",
+              "implementation": { "clrType": "node.pinNumberConsumer" },
+              "flows": [{ "kind": "control", "target": "complete" }]
+            },
+            {
+              "kind": "action",
+              "name": "textDone",
+              "implementation": { "clrType": "node.pinTextConsumer" },
+              "flows": [{ "kind": "control", "target": "complete" }]
+            },
+            { "kind": "final", "name": "complete" }
+          ]
+        }
+        """;
+
     private const string Model = """
         {
           "$schema": "urn:stateflows:activity:1.0",
@@ -162,7 +254,12 @@ public sealed class JsonActivity : StateflowsTestClass
         .AddType<DecisionResult>("node.decisionResult")
         .AddType<RejectControlGuard>("flow.controlGuard")
         .AddType<AcceptedControlResult>("node.controlAccepted")
-        .AddType<RejectedControlResult>("node.controlRejected");
+        .AddType<RejectedControlResult>("node.controlRejected")
+        .AddType<PinProducer>("node.pinProducer")
+        .AddType<ForwardNumber>("node.forwardNumber")
+        .AddType<ForwardText>("node.forwardText")
+        .AddType<NumberConsumer>("node.pinNumberConsumer")
+        .AddType<TextConsumer>("node.pinTextConsumer");
 
     [TestInitialize]
     public override void Initialize() => base.Initialize();
@@ -179,7 +276,8 @@ public sealed class JsonActivity : StateflowsTestClass
             .AddActivityJson(Model, Options())
             .AddActivityJson(EventModel, Options())
             .AddActivityJson(DecisionModel, Options())
-            .AddActivityJson(ControlDecisionModel, Options()));
+            .AddActivityJson(ControlDecisionModel, Options())
+            .AddActivityJson(TypedPinsModel, Options()));
     }
 
     [TestMethod]
@@ -240,6 +338,18 @@ public sealed class JsonActivity : StateflowsTestClass
         Assert.AreEqual(EventStatus.Initialized, (await activity.SendAsync(new Initialize())).Status);
         Assert.AreEqual(0, AcceptedControlResult.Executions);
         Assert.AreEqual(1, RejectedControlResult.Executions);
+        Assert.AreEqual(BehaviorStatus.Finalized, (await activity.GetStatusAsync()).Response.BehaviorStatus);
+    }
+
+    [TestMethod]
+    public async Task JsonTypedPinsSupportMultipleTypesAndNestedScopeAliases()
+    {
+        NumberConsumer.Received = null;
+        TextConsumer.Received = null;
+        Assert.IsTrue(ActivityLocator.TryLocateActivity(new ActivityId("json-typed-pins-activity", "pins-instance"), out var activity));
+        Assert.AreEqual(EventStatus.Initialized, (await activity.SendAsync(new Initialize())).Status);
+        Assert.AreEqual(4, NumberConsumer.Received);
+        Assert.AreEqual("typed", TextConsumer.Received);
         Assert.AreEqual(BehaviorStatus.Finalized, (await activity.GetStatusAsync()).Response.BehaviorStatus);
     }
 
@@ -346,6 +456,56 @@ public sealed class JsonActivity : StateflowsTestClass
         public Task ExecuteAsync(CancellationToken cancellationToken)
         {
             Executions++;
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class PinProducer(IOutputTokens<int> numbers, IOutputTokens<string> text) : IActionNode
+    {
+        public Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            numbers.Add(4);
+            text.Add("typed");
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class ForwardNumber(IInputTokens<int> input, IOutputTokens<int> output) : IActionNode
+    {
+        public Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            output.Add(input.Single());
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class ForwardText(IInputTokens<string> input, IOutputTokens<string> output) : IActionNode
+    {
+        public Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            output.Add(input.Single());
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class NumberConsumer(IInputTokens<int> input) : IActionNode
+    {
+        public static int? Received { get; set; }
+
+        public Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            Received = input.Single();
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class TextConsumer(IInputTokens<string> input) : IActionNode
+    {
+        public static string? Received { get; set; }
+
+        public Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            Received = input.Single();
             return Task.CompletedTask;
         }
     }

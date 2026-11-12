@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     /// <summary>Assigns an embedded activity whose lifetime is bound to the current state's activation.</summary>
     /// <typeparam name="TReturn">The state builder stage after assigning its do behavior.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
     public interface IStateDoActivity<out TReturn>
     {
         /// <summary>Embeds an Activity whose lifetime is bound to the current state's activation.</summary>
@@ -17,7 +17,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The state builder stage with its do behavior assigned.</returns>
         /// <remarks>The embedded behavior is initialized on state entry and finalized on state exit. Events accepted by it
         /// are offered to it first; rejected events are retransmitted to the embedding State Machine.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity;
 
@@ -27,7 +27,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The state builder stage with its do behavior assigned.</returns>
         /// <remarks>The embedded behavior is initialized on state entry and finalized on state exit. Events accepted by it
         /// are offered to it first; rejected events are retransmitted to the embedding State Machine.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddDoActivity(ReactiveActivityBuildAction activityBuildAction);
     }
 }

@@ -3,7 +3,7 @@
 namespace Stateflows.StateMachines
 {
     /// <summary>Provides behavior services, execution data, and state configuration to state-machine callbacks.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/behavior-values">behavior and state values</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.1.-Behavior-Values">behavior and state values</see>.</remarks>
     public interface IStateMachineActionContext : IExecutionContext, IBehaviorActionContext
     {
         /// <summary>

@@ -45,12 +45,7 @@ namespace Stateflows.Common.Subscription
                     Retained = retainAttribute != null || headersArray.OfType<Retain>().FirstOrDefault() != null
                 };
 
-                var context = new BehaviorActionContext(senderContext, serviceProvider)
-                {
-                    Headers = senderContext.ExecutionTriggerHolder!.Headers,
-                    ExecutionTrigger = senderContext.ExecutionTriggerHolder!.BoxedPayload,
-                    ExecutionTriggerId = senderContext.ExecutionTriggerHolder!.Id
-                };
+                using var context = new BehaviorActionContext(senderContext, serviceProvider);
 
                 await commonInterceptor.NotificationPublishedAsync(context, notificationEvent, notificationHeaders);
 

@@ -2,7 +2,7 @@
 {
     /// <summary>Adds a history entrypoint so a remembered nested configuration can be restored on re-entry.</summary>
     /// <typeparam name="TReturn">The enclosing builder returned after history registration.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-history" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.5.-History" />
     public interface IStateHistory<out TReturn>
     {
         /// <summary>Adds a history entrypoint for restoring a remembered nested state configuration.</summary>
@@ -11,14 +11,14 @@
         /// <param name="buildAction">Optional callback configuring the fallback path used when no remembered state
         /// configuration exists.</param>
         /// <returns>The enclosing region or state builder after adding the history entrypoint.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-history" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.5.-History" />
         TReturn AddHistory(string historyEntrypointName, HistoryBuildAction buildAction = null);
         
         /// <summary>Adds a history entrypoint for restoring a remembered nested state configuration.</summary>
         /// <param name="buildAction">Optional callback configuring the fallback path used when no remembered state
         /// configuration exists.</param>
         /// <returns>The enclosing region or state builder after adding the history entrypoint.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-history" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.5.-History" />
         TReturn AddHistory(HistoryBuildAction buildAction = null)
             => AddHistory(State<History>.Name, buildAction);
     }

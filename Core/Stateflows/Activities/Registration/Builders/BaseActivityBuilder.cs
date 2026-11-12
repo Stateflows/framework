@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,6 +15,8 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Internal;
+using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Entities.Enums;
 
 namespace Stateflows.Activities.Registration
 {
@@ -32,10 +35,6 @@ namespace Stateflows.Activities.Registration
         internal BaseActivityBuilder AddNode(NodeType type, string nodeName, Func<IActionContext, Task> actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null, int chunkSize = 1)
         {
             var ownName = nodeName;
-            if (Node.Type != NodeType.Activity)
-            {
-                nodeName = $"{Node.Name}.{nodeName}";
-            }
 
             var namedNodeTypes = new NodeType[]
             {
@@ -52,7 +51,7 @@ namespace Stateflows.Activities.Registration
                 NodeType.TimeEventAction,
                 NodeType.SendEventAction,
                 NodeType.PublishEventAction,
-                NodeType.Output,
+                NodeType.OutputPin,
                 NodeType.Final,
                 NodeType.DataStore
             };
@@ -63,16 +62,16 @@ namespace Stateflows.Activities.Registration
                 NodeType.TimeEventAction
             };
 
+            if (Graph.AllNodes.Values.Any(existing => existing.Name == nodeName))
+            {
+                throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered", Graph.Class);
+            }
+
             if (namedNodeTypes.Contains(type))
             {
                 if (string.IsNullOrEmpty(nodeName))
                 {
                     throw new NodeDefinitionException(nodeName, $"Node name cannot be empty", Graph.Class);
-                }
-
-                if (Graph.AllNamedNodes.ContainsKey(nodeName))
-                {
-                    throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered", Graph.Class);
                 }
             }
 
@@ -133,6 +132,12 @@ namespace Stateflows.Activities.Registration
                 {
                     var inspector = c.Behavior.GetExecutor().Inspector;
                     await inspector.OnNodeExecuteAsync(context, () => actionAsync(c));
+                }
+                catch (Stateflows.Activities.Streams.ActivityCheckpointPauseException)
+                {
+                    // A suspended structural invocation is not a failure; its continuation is recorded by the engine.
+                    faulty = true;
+                    throw;
                 }
                 catch (Exception e)
                 {
@@ -216,21 +221,48 @@ namespace Stateflows.Activities.Registration
             PublishEventActionDelegateAsync<TEvent> actionAsync,
             PublishEventActionBuildAction buildAction = null
         )
+            => AddPublishEventAction<TEvent>(actionNodeName,
+                async c => new[] { await actionAsync(c) }.AsEnumerable(), buildAction);
+
+        internal BaseActivityBuilder AddPublishEventAction<TEvent>(
+            string actionNodeName,
+            Func<IActionContext, Task<IEnumerable<TEvent>>> actionAsync,
+            PublishEventActionBuildAction buildAction = null)
         {
+            Node publicationNode = null;
             var result = AddNode(
                 NodeType.PublishEventAction,
                 actionNodeName,
                 async c =>
                 {
-                    var @event = await actionAsync(c);
-                    c.Behavior.Publish(@event);
+                    var events = (await actionAsync(c)).ToArray();
+                    var headers = new Dictionary<string, EventHeader>
+                    {
+                        [nameof(TimeToLive)] = new TimeToLive(publicationNode.TimeToLive)
+                    };
+                    if (publicationNode.Retain)
+                        headers[nameof(Retain)] = new Retain();
+                    if (publicationNode.ImmediatePublish)
+                        headers[nameof(ImmediatePublish)] = new ImmediatePublish();
+                    if (publicationNode.PublishScope.HasFlag(PublishScope.Self))
+                        c.Behavior.PublishRange(events, headers);
+                    if (publicationNode.PublishScope.HasFlag(PublishScope.Parent) &&
+                        c.TryGetParentBehaviorContext(out var parent))
+                        parent.PublishRange(events, headers);
+                    if (publicationNode.PublishScope.HasFlag(PublishScope.Owner) &&
+                        c.TryGetOwnerBehaviorContext(out var owner))
+                        owner.PublishRange(events, headers);
                 },
-                b => buildAction?.Invoke(b),
+                b =>
+                {
+                    publicationNode = b.Node;
+                    buildAction?.Invoke(b);
+                },
                 typeof(TEvent)
             );
 
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.SendEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName));
+            graph.VisitingTasks.Add(visitor => visitor.PublishEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName));
 
             return result;
         }
@@ -285,15 +317,15 @@ namespace Stateflows.Activities.Registration
         internal BaseActivityBuilder AddInitial(InitialBuildAction buildAction)
             => AddNode(
                 NodeType.Initial,
-                $"{nameof(NodeType.Initial)}Node",
+                $"{Node.Name}.initial",
                 c => Task.CompletedTask,
                 b => buildAction(b)
             );
 
-        internal BaseActivityBuilder AddFinal()
+        internal BaseActivityBuilder AddFinal(string name = null)
             => AddNode(
                 NodeType.Final,
-                FinalNode.Name,
+                name ?? FinalNode.Name,
                 c =>
                 {
                     (c as ActionContext).NodeScope.Terminate();
@@ -302,81 +334,88 @@ namespace Stateflows.Activities.Registration
                 b => b.SetOptions(NodeOptions.ControlNodeDefault)
             );
 
-        internal BaseActivityBuilder AddInput(InputBuildAction buildAction)
-            => AddNode(
-                NodeType.Input,
-                $"{nameof(NodeType.Input)}Node",
-                c =>
-                {
-                    c.PassAllTokensOn();
-                    return Task.CompletedTask;
-                },
-                b => buildAction(b)
-            );
+        internal BaseActivityBuilder AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
+        {
+            ArgumentNullException.ThrowIfNull(buildAction);
+            AddNode(NodeType.InputPin, $"{Node.Name}.{InputPin<TToken>.Name}", c =>
+            {
+                c.PassTokensOfTypeOn<TToken>();
+                return Task.CompletedTask;
+            }, builder =>
+            {
+                builder.Node.PinTokenType = typeof(TToken);
+                buildAction(new InputPinBuilder<TToken>(builder.Node, this));
+            });
+            var pin = Node.Nodes.Values.Single(n => n.Type == NodeType.InputPin && n.PinTokenType == typeof(TToken));
+            Graph.VisitingTasks.Add(visitor => visitor.InputPinAddedAsync<TToken>(
+                Graph.Name, Graph.Version, pin.Name, Node is Graph ? null : Node.Name));
+            return this;
+        }
 
-        internal BaseActivityBuilder AddOutput()
-            => AddNode(
-                NodeType.Output,
-                OutputNode.Name,
-                c =>
+        internal BaseActivityBuilder AddOutputPin<TToken>(string name = null)
+        {
+            AddNode(NodeType.OutputPin, name ?? OutputPin<TToken>.Name, c =>
+            {
+                c.PassTokensOfTypeOn<TToken>();
+                return Task.CompletedTask;
+            }, builder =>
+            {
+                builder.Node.PinTokenType = typeof(TToken);
+                builder.SetOptions(NodeOptions.None);
+            });
+            var pin = Node.Nodes.Values.Single(n => n.Type == NodeType.OutputPin && n.PinTokenType == typeof(TToken));
+            Graph.VisitingTasks.Add(visitor => visitor.OutputPinAddedAsync<TToken>(
+                Graph.Name, Graph.Version, pin.Name, Node is Graph ? null : Node.Name));
+            return this;
+        }
+
+        internal BaseActivityBuilder AddRootOutputPin<TToken>(string name, PublishEventActionBuildAction buildAction)
+        {
+            ((IPublishEventBase<IActivityBuilder>)this)
+                .AddPublishEventAction<TToken, OutputPinNode<TToken>>(name ?? OutputPin<TToken>.Name, builder =>
                 {
-                    c.PassAllTokensOn();
+                    var node = ((NodeBuilder)builder).Node;
+                    node.PinTokenType = typeof(TToken);
+                    node.Options = NodeOptions.None;
+                    buildAction?.Invoke(builder);
+                });
+            var pin = Node.OutputPins.Single(n => n.PinTokenType == typeof(TToken));
+            if (typeof(TToken) == typeof(bool))
+                pin.Action.Actions.Add(c =>
+                {
+                    var context = (ActionContext)c;
+                    if (context.Context.EventHolder?.Headers.Values.OfType<TransitionGuardRequest>().Any() == true)
+                    {
+                        // Embedded guard results also return through the delegation protocol.
+                        var output = context.Context.GetOutputTokens(pin.Identifier, context.NodeScope.ThreadId);
+                        lock (output)
+                            output.AddRange(context.InputTokens.Where(token => token.PayloadType == typeof(bool)));
+                    }
                     return Task.CompletedTask;
-                },
-                b => b.SetOptions(NodeOptions.None)
-            );
+                });
+            Graph.VisitingTasks.Add(visitor => visitor.OutputPinAddedAsync<TToken>(
+                Graph.Name, Graph.Version, pin.Name, null));
+            return this;
+        }
 
         internal BaseActivityBuilder AddStructuredActivity(string structuredActivityNodeName, ReactiveStructuredActivityBuildAction buildAction = null)
             => AddNode(
                 NodeType.StructuredActivity,
                 structuredActivityNodeName,
-                async c =>
-                {
-                    var executor = c.Behavior.GetContext().Executor;
-                    var node = c.GetNode();
-                    var contextObj = c as ActionContext;
-
-                    if (!contextObj.Context.NodesToExecute.Contains(node))
-                    {
-                        await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    }
-
-                    (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Behavior.GetNodeScope(), contextObj.InputTokens);
-
-                    contextObj.OutputTokens.AddRange(output);
-
-                    if (finalized)
-                    {
-                        await executor.DoFinalizeNodeAsync(node, c as ActionContext);
-                    }
-                },
+                c => c.Behavior.GetContext().Executor.ExecuteStructuredActivityAsync((ActionContext)c),
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this))
             );
 
-        internal BaseActivityBuilder AddParallelActivity<TToken>(string parallelActivityNodeName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1)
+        internal BaseActivityBuilder AddParallelActivity<TToken>(string parallelActivityNodeName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1, int maxConcurrency = -1)
             => AddNode(
                 NodeType.ParallelActivity,
                 parallelActivityNodeName,
-                async c =>
+                c => c.Behavior.GetContext().Executor.ExecuteParallelActivityAsync<TToken>((ActionContext)c),
+                b =>
                 {
-                    var executor = c.Behavior.GetContext().Executor;
-                    var node = c.GetNode();
-
-                    await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    var edge = c.Node.TryGetCurrentFlow(out var currentFlow)
-                        ? ((FlowContext)currentFlow).Edge
-                        : null;
-
-                    var outputTokenHolders = await executor.DoExecuteParallelNodeAsync<TToken>(
-                        node,
-                        edge,
-                        c.Behavior.GetNodeScope(),
-                        ((ActionContext)c).InputTokens
-                    );
-                    ((ActionContext)c).OutputTokens.AddRange(outputTokenHolders);
-                    await executor.DoFinalizeNodeAsync(node, c as ActionContext);
+                    b.Node.MaxConcurrency = maxConcurrency;
+                    buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this));
                 },
-                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this)),
                 typeof(TToken),
                 chunkSize
             );
@@ -385,16 +424,7 @@ namespace Stateflows.Activities.Registration
             => AddNode(
                 NodeType.IterativeActivity,
                 parallelActivityNodeName,
-                async c =>
-                {
-                    var executor = c.Behavior.GetContext().Executor;
-                    var node = c.GetNode();
-
-                    await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    var outputTokenHolders = await executor.DoExecuteIterativeNodeAsync<TToken>(c as ActionContext);
-                    ((ActionContext)c).OutputTokens.AddRange(outputTokenHolders);
-                    await executor.DoFinalizeNodeAsync(node, c as ActionContext);
-                },
+                c => c.Behavior.GetContext().Executor.ExecuteIterativeActivityAsync<TToken>((ActionContext)c),
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this)),
                 typeof(TToken),
                 chunkSize
@@ -463,12 +493,8 @@ namespace Stateflows.Activities.Registration
         }
         public BaseActivityBuilder UseAction(string actionNodeName, OverridenActionBuildAction buildAction = null)
         {
-            var fullActionNodeName = Node.Type != NodeType.Activity
-                ? $"{Node.Name}.{actionNodeName}"
-                : actionNodeName;
-            
             if (
-                !Node.Nodes.TryGetValue($"{NodeType.Action}:{Node.Name}:{fullActionNodeName}", out var node) ||
+                !Node.Nodes.TryGetValue($"{NodeType.Action}:{Node.Name}:{actionNodeName}", out var node) ||
                 node.Type != NodeType.Action || 
                 node.OriginActivityName == null
             )
@@ -545,15 +571,15 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        internal BaseActivityBuilder UseInput(OverridenInputBuildAction buildAction)
+        internal BaseActivityBuilder UseInputPin<TToken>(System.Action<IOverridenInputPinBuilder<TToken>> buildAction)
         {
-            var node = Node.Nodes.Values.FirstOrDefault(node => node.Type == NodeType.Input);
+            var node = Node.InputPins.FirstOrDefault(pin => pin.PinTokenType == typeof(TToken));
             if (node?.OriginActivityName == null)
             {
-                throw new ActivityOverrideException($"Input not found in overriden activity", Graph.Class);
+                throw new ActivityOverrideException($"Input pin '{InputPin<TToken>.Name}' not found in overriden activity", Graph.Class);
             }
             
-            buildAction?.Invoke(new NodeBuilder(node, this));
+            buildAction?.Invoke(new InputPinBuilder<TToken>(node, this));
 
             return this;
         }

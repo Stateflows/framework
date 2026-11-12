@@ -27,7 +27,7 @@ using IExecutionContext = Stateflows.Common.IExecutionContext;
 namespace Stateflows
 {
     /// <summary>Provides dependency-injection registration for Stateflows hosts and clients.</summary>
-    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/behaviors">behavior hosting guide</see>.</remarks>
+    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/5.-Behaviors">behavior hosting guide</see>.</remarks>
     public static class StateflowsDependencyInjection
     {
         /// <summary>Enables the legacy hosted runtime, including startup and scheduling services.</summary>

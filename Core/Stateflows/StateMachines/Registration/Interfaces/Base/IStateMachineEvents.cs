@@ -11,21 +11,21 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// <remarks>Initializers return true to accept initialization; false prevents entry into the initial configuration.
     /// Default initializers support initialization without a typed request. Finalizers run when the machine finalizes.
     /// </remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
     public interface IStateMachineEvents<out TReturn>
     {
         /// <summary>Registers a predicate that accepts or rejects default State Machine initialization.</summary>
         /// <param name="actionAsync">Asynchronous predicate receiving the initialization context. Return true to accept
         /// initialization and enter the initial configuration, or false to reject it.</param>
         /// <returns>The current machine builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
         TReturn AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync);
 
         /// <summary>Registers a predicate that accepts or rejects default State Machine initialization.</summary>
         /// <typeparam name="TDefaultInitializer">Typed default-initialization predicate implementing
         /// <see cref="IDefaultInitializer" />.</typeparam>
         /// <returns>The current machine builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
         [DebuggerHidden]
         public TReturn AddDefaultInitializer<TDefaultInitializer>()
             where TDefaultInitializer : class, IDefaultInitializer
@@ -37,7 +37,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="actionAsync">Asynchronous predicate receiving the initialization context. Return true to accept
         /// initialization and enter the initial configuration, or false to reject it.</param>
         /// <returns>The current machine builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
         TReturn AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync);
 
         /// <summary>Registers a predicate that accepts or rejects initialization by a specific event type.</summary>
@@ -46,7 +46,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TInitializer">Typed initialization predicate implementing
         /// <see cref="IInitializer&lt;TInitializationEvent&gt;" />.</typeparam>
         /// <returns>The current machine builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
         [DebuggerHidden]
         public TReturn AddInitializer<TInitializationEvent, TInitializer>()
             where TInitializer : class, IInitializer<TInitializationEvent>
@@ -55,14 +55,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <summary>Registers a handler executed when the State Machine finalizes.</summary>
         /// <param name="actionAsync">Asynchronous handler receiving the machine action context during finalization.</param>
         /// <returns>The current machine builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
         TReturn AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync);
 
         /// <summary>Registers a handler executed when the State Machine finalizes.</summary>
         /// <typeparam name="TFinalizer">Typed machine-finalization handler implementing <see cref="IFinalizer" />.
         /// </typeparam>
         /// <returns>The current machine builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
         [DebuggerHidden]
         public TReturn AddFinalizer<TFinalizer>()
             where TFinalizer : class, IFinalizer

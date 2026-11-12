@@ -60,9 +60,20 @@ public class GrainBehavior :
     private sealed record Registration(string[] Names, Func<EventHolder, Task> Handler, DateTime ReplaySince)
     {
         public bool Active { get; set; } = true;
+        public Task Tail { get; set; } = Task.CompletedTask;
     }
     private readonly Dictionary<string, List<Registration>> handlers = new();
     private readonly Dictionary<IWatcher, Registration> handlersByWatcher = new();
+    private async Task WaitForDeliveryAsync(Registration registration)
+    {
+        var observer = observerReference;
+        if (observer != null)
+            await SubscriptionsGrain.WaitForWatchDeliveryAsync(observer);
+        Task pending;
+        lock (handlers)
+            pending = registration.Tail;
+        await pending;
+    }
 
     public void Dispose()
     {
@@ -184,29 +195,61 @@ public class GrainBehavior :
 
     public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
     {
-        // TODO: handle immediate delivery
-        // if (@event is Finalize { Mode: FinalizationMode.Immediate })
-        // {
-        //     await SignalsGrain.EnableSignalAsync(Signals.Cancel);
-        // }
-        
         var eventHolder = @event.ToTypedEventHolder(headers);
-        var result = await BehaviorGrain.ProcessEventAsync(eventHolder, CancellationToken.None);
+        if (eventHolder.Headers.Values.Any(header => header is JoinTransaction))
+            Stateflows.Storage.BehaviorTransactionScope.Joining();
+        OrleansEventHolder envelope = eventHolder;
+        envelope.IsRequest = false;
+        var result = await ProcessAsync(envelope,
+            eventHolder.Headers.Values.Any(header => header is JoinTransaction),
+            envelope.Headers.ContainsKey(nameof(Stateflows.Common.Stream)));
         return new SendResult(result.Status, result.Validation);
     }
 
     public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IDictionary<string, EventHeader>? headers = null)
     {
-        var h = (OrleansEventHolder)request.ToEventHolder(headers);
+        var h = (OrleansEventHolder)request.ToTypedEventHolder(headers);
+        if (((EventHolder)h).Headers.Values.Any(header => header is JoinTransaction))
+            Stateflows.Storage.BehaviorTransactionScope.Joining();
+        h.IsRequest = true;
         try
         {
-            var result = await BehaviorGrain.ProcessEventAsync(h, CancellationToken.None);
+            var result = await ProcessAsync(h, ((EventHolder)h).Headers.Values.Any(header => header is JoinTransaction));
             return new RequestResult<TResponseEvent>((RequestResult)result);
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
             throw;
+        }
+    }
+
+    private async Task<OrleansRequestResult> ProcessAsync(OrleansEventHolder envelope, bool join, bool stream = false)
+    {
+        try
+        {
+            return stream
+                ? await BehaviorGrain.StreamEventAsync(envelope, CancellationToken.None)
+                : join
+                    ? await BehaviorGrain.ProcessJoinedEventAsync(envelope, CancellationToken.None)
+                    : await BehaviorGrain.ProcessEventAsync(envelope, CancellationToken.None);
+        }
+        catch (Orleans.Transactions.OrleansTransactionAbortedException exception)
+            when (StateflowsInfrastructureException.GetFailure(exception) is { } failure)
+        {
+            if (join)
+                Stateflows.Storage.BehaviorTransactionScope.RecordInfrastructureFailure(failure);
+            logger.LogError(failure, "Infrastructure failure calling {BehaviorId}.", Id);
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+            throw;
+        }
+        catch (Orleans.Runtime.SiloUnavailableException exception)
+        {
+            logger.LogError(exception, "Orleans dispatch failed for {BehaviorId}.", Id);
+            var failure = new StateflowsInfrastructureException("Failed to dispatch the behavior event.", exception);
+            if (join)
+                Stateflows.Storage.BehaviorTransactionScope.RecordInfrastructureFailure(failure);
+            throw failure;
         }
     }
 
@@ -239,8 +282,8 @@ public class GrainBehavior :
             throw new ArgumentException("At least one nonempty notification name is required.", nameof(notificationNames));
 
         await watchGate.WaitAsync();
-        var watcher = new Watcher(this);
         var registration = new Registration(notificationNames.Distinct().ToArray(), asyncHandler, replayNotificationsSince ?? DateTime.Now);
+        var watcher = new Watcher(this, () => WaitForDeliveryAsync(registration));
         try
         {
             lock (handlers)
@@ -318,7 +361,12 @@ public class GrainBehavior :
                 {
                     foreach (var registration in notificationHandlers)
                     {
-                        _ = Task.Run(() => InvokeHandlerAsync(registration, eventHolder));
+                        var previous = registration.Tail;
+                        registration.Tail = Task.Run(async () =>
+                        {
+                            await previous;
+                            await InvokeHandlerAsync(registration, eventHolder);
+                        });
                     }
                 }
             }

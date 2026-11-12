@@ -46,11 +46,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Graph.DefaultInitializer ??= new Logic<StateMachinePredicateAsync>(Constants.Initialize);
 
-            Graph.DefaultInitializer.Actions.Add(c =>
+            Graph.DefaultInitializer.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
             {
                 var context = new StateMachineInitializationContext(c);
-                return actionAsync(context);
-            });
+                return await actionAsync(context);
+            }));
             
             Graph.VisitingTasks.Add(v => v.DefaultInitializerAddedAsync(Graph.Name, Graph.Version));
 
@@ -92,7 +92,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 Graph.InitializerTypes.Add(typeof(TInitializationEvent));
             }
 
-            initializer.Actions.Add(async c =>
+            initializer.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
             {
                 var result = false;
                 var context = new StateMachineInitializationContext<TInitializationEvent>(c, c.EventHolder as EventHolder<TInitializationEvent>);
@@ -100,7 +100,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 result = await actionAsync(context);
 
                 return result;
-            });
+            }));
             
             Graph.VisitingTasks.Add(v => v.InitializerAddedAsync<TInitializationEvent>(Graph.Name, Graph.Version));
 
@@ -111,12 +111,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
 
-            Graph.Finalize.Actions.Add(async c =>
+            Graph.Finalize.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
             {
                 var context = new StateMachineActionContext(c);
 
                 await actionAsync(context);
-            });
+            }));
             
             Graph.VisitingTasks.Add(v => v.FinalizerAddedAsync(Graph.Name, Graph.Version));
 

@@ -12,7 +12,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
     /// <remarks>Nested activities execute a child graph; parallel and iterative nodes split token work into chunks.
     /// </remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
     public interface IActivityBase<out TReturn> : IActivityActionBase<TReturn>
     {
         #region AddStructuredActivity
@@ -21,7 +21,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the nested Activity's graph. Its builder is scoped to the node or
         /// flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
         TReturn AddStructuredActivity(string actionNodeName, StructuredActivityBuildAction buildAction);
         
         /// <summary>Adds a nested Activity node with its own graph and boundary nodes.</summary>
@@ -30,7 +30,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
         [DebuggerHidden]
         public TReturn AddStructuredActivity<TStructuredActivity>(StructuredActivityBuildAction buildAction = null)
             where TStructuredActivity : class, IStructuredActivityNode
@@ -43,7 +43,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
         [DebuggerHidden]
         public TReturn AddStructuredActivity<TStructuredActivity>(string structuredActivityName, StructuredActivityBuildAction buildAction = null)
             where TStructuredActivity : class, IStructuredActivityNode
@@ -62,7 +62,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the nested Activity's graph. Its builder is scoped to the node or
         /// flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
         [DebuggerHidden]
         public TReturn AddStructuredActivity(StructuredActivityBuildAction buildAction)
             => AddStructuredActivity(StructuredActivityNode.Name, buildAction);
@@ -76,8 +76,9 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// scoped to the node or flow, not the enclosing Activity.</param>
         /// <param name="chunkSize">Maximum number of parallelization tokens processed in one chunk.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
-        TReturn AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize = 1);
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <param name="maxConcurrency">Maximum active partitions per invocation; -1 means unlimited.</param>
+        TReturn AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize = 1, int maxConcurrency = -1);
         
         /// <summary>Adds a nested Activity node that processes token work items in chunks.</summary>
         /// <typeparam name="TParallelizationToken">Token type identifying each unit of parallel work.</typeparam>
@@ -87,11 +88,12 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// </param>
         /// <param name="chunkSize">Maximum number of parallelization tokens processed in one chunk.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <param name="maxConcurrency">Maximum active partitions per invocation; -1 means unlimited.</param>
         [DebuggerHidden]
-        public TReturn AddParallelActivity<TParallelizationToken, TStructuredActivity>(ParallelActivityBuildAction buildAction = null, int chunkSize = 1)
+        public TReturn AddParallelActivity<TParallelizationToken, TStructuredActivity>(ParallelActivityBuildAction buildAction = null, int chunkSize = 1, int maxConcurrency = -1)
             where TStructuredActivity : class, IStructuredActivityNode
-            => AddParallelActivity<TParallelizationToken, TStructuredActivity>(ActivityNode<TStructuredActivity>.Name, buildAction, chunkSize);
+            => AddParallelActivity<TParallelizationToken, TStructuredActivity>(ActivityNode<TStructuredActivity>.Name, buildAction, chunkSize, maxConcurrency);
 
         /// <summary>Adds a nested Activity node that processes token work items in chunks.</summary>
         /// <typeparam name="TParallelizationToken">Token type identifying each unit of parallel work.</typeparam>
@@ -102,9 +104,10 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// </param>
         /// <param name="chunkSize">Maximum number of parallelization tokens processed in one chunk.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <param name="maxConcurrency">Maximum active partitions per invocation; -1 means unlimited.</param>
         [DebuggerHidden]
-        public TReturn AddParallelActivity<TParallelizationToken, TStructuredActivity>(string structuredActivityName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1)
+        public TReturn AddParallelActivity<TParallelizationToken, TStructuredActivity>(string structuredActivityName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1, int maxConcurrency = -1)
             where TStructuredActivity : class, IStructuredActivityNode
             => AddParallelActivity<TParallelizationToken>(
                 structuredActivityName,
@@ -115,7 +118,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                     builder.Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 },
-                chunkSize
+                chunkSize, maxConcurrency
             );
 
         /// <summary>Adds a nested Activity node that processes token work items in chunks.</summary>
@@ -124,10 +127,11 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// scoped to the node or flow, not the enclosing Activity.</param>
         /// <param name="chunkSize">Maximum number of parallelization tokens processed in one chunk.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
+        /// <param name="maxConcurrency">Maximum active partitions per invocation; -1 means unlimited.</param>
         [DebuggerHidden]
-        public TReturn AddParallelActivity<TParallelizationToken>(ParallelActivityBuildAction buildAction, int chunkSize = 1)
-            => AddParallelActivity<TParallelizationToken>(ParallelActivityNode<TParallelizationToken>.Name, buildAction, chunkSize);
+        public TReturn AddParallelActivity<TParallelizationToken>(ParallelActivityBuildAction buildAction, int chunkSize = 1, int maxConcurrency = -1)
+            => AddParallelActivity<TParallelizationToken>(ParallelActivityNode<TParallelizationToken>.Name, buildAction, chunkSize, maxConcurrency);
         #endregion
         
         #region AddIterativeActivity
@@ -138,7 +142,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// is scoped to the node or flow, not the enclosing Activity.</param>
         /// <param name="chunkSize">Maximum number of iteration tokens processed in one chunk.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
         TReturn AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuildAction buildAction, int chunkSize = 1);
         
         /// <summary>Adds a nested Activity node that repeatedly processes token work items in chunks.</summary>
@@ -149,7 +153,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// </param>
         /// <param name="chunkSize">Maximum number of iteration tokens processed in one chunk.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
         [DebuggerHidden]
         public TReturn AddIterativeActivity<TIterationToken, TIterativeActivity>(IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
             where TIterativeActivity : class, IStructuredActivityNode
@@ -164,7 +168,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// </param>
         /// <param name="chunkSize">Maximum number of iteration tokens processed in one chunk.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
         [DebuggerHidden]
         public TReturn AddIterativeActivity<TIterationToken, TIterativeActivity>(string structuredActivityName, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
             where TIterativeActivity : class, IStructuredActivityNode
@@ -186,7 +190,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// is scoped to the node or flow, not the enclosing Activity.</param>
         /// <param name="chunkSize">Maximum number of iteration tokens processed in one chunk.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.15.-Structured-Activity-Node" />
         [DebuggerHidden]
         public TReturn AddIterativeActivity<TIterationToken>(IterativeActivityBuildAction buildAction, int chunkSize = 1)
             => AddIterativeActivity<TIterationToken>(IterativeActivityNode<TIterationToken>.Name, buildAction, chunkSize);

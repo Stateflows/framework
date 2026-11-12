@@ -15,6 +15,10 @@ namespace Stateflows.Activities.Context.Classes
         public string Name => Node.Name;
 
         public NodeType NodeType => Node.Type;
+        public IEnumerable<IPinContext> InputPins
+            => Node.InputPins.Select(pin => new PinContext(pin, Context, NodeScope)).ToArray();
+        public IEnumerable<IPinContext> OutputPins
+            => Node.OutputPins.Select(pin => new PinContext(pin, Context, NodeScope)).ToArray();
 
         internal RootContext Context { get; }
 

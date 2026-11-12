@@ -7,8 +7,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// <summary>Adds states and pseudostates to the current machine or nested region.</summary>
     /// <typeparam name="TReturn">The enclosing definition builder returned after adding an element.</typeparam>
     /// <remarks>Element callbacks configure their own scoped builders; the returned chain remains at the enclosing
-    /// level. See <see href="https://github.com/Stateflows/framework/wiki/state-machine-state">states</see>.</remarks>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machines" />
+    /// level. See <see href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State">states</see>.</remarks>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.-State-Machines" />
     public interface IStateMachineElements<out TReturn>
     {
         #region AddState
@@ -17,7 +17,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="stateBuildAction">Optional callback configuring the state's lifecycle handlers and outgoing
         /// transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder, not the state-scoped callback builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddState(string stateName, StateBuildAction stateBuildAction = null);
 
         /// <summary>Adds a state to the current machine or region.</summary>
@@ -26,7 +26,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="stateBuildAction">Optional callback configuring the state's lifecycle handlers and outgoing
         /// transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         [DebuggerHidden]
         public TReturn AddState<TState>(StateBuildAction stateBuildAction = null)
             where TState : class, IState
@@ -38,7 +38,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="stateBuildAction">Optional callback configuring the state's lifecycle handlers and outgoing
         /// transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         [DebuggerHidden]
         public TReturn AddState<TState>(string stateName, StateBuildAction stateBuildAction = null)
             where TState : class, IState
@@ -66,7 +66,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="compositeStateBuildAction">Callback configuring the composite state's lifecycle, nested states, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder, not the composite-state callback builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         TReturn AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction);
 
         /// <summary>Adds a composite state to the current machine or region.</summary>
@@ -75,7 +75,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="compositeStateBuildAction">Callback configuring the composite state's lifecycle, nested states, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         public TReturn AddCompositeState<TCompositeState>(CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
@@ -87,7 +87,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="compositeStateBuildAction">Callback configuring the composite state's lifecycle, nested states, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         [DebuggerHidden]
         public TReturn AddCompositeState<TCompositeState>(string compositeStateName,
             CompositeStateBuildAction compositeStateBuildAction)
@@ -116,7 +116,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="orthogonalStateBuildAction">Callback configuring the orthogonal state's lifecycle, regions, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder, not the orthogonal-state callback builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.3.-Orthogonal-State" />
         TReturn AddOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction);
 
         /// <summary>Adds an orthogonal state to the current machine or region.</summary>
@@ -125,7 +125,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="orthogonalStateBuildAction">Callback configuring the orthogonal state's lifecycle, regions, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.3.-Orthogonal-State" />
         [DebuggerHidden]
         public TReturn AddOrthogonalState<TOrthogonalState>(OrthogonalStateBuildAction orthogonalStateBuildAction)
             where TOrthogonalState : class, IOrthogonalState
@@ -137,7 +137,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="orthogonalStateBuildAction">Callback configuring the orthogonal state's lifecycle, regions, and
         /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.3.-Orthogonal-State" />
         [DebuggerHidden]
         public TReturn AddOrthogonalState<TOrthogonalState>(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
             where TOrthogonalState : class, IOrthogonalState
@@ -165,14 +165,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="junctionBuildAction">Callback configuring the junction's guarded branches and fallback branch. Its
         /// builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-junction" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.2.-Junction" />
         TReturn AddJunction(string junctionName, JunctionBuildAction junctionBuildAction);
 
         /// <summary>Adds a junction pseudostate to the current machine or region.</summary>
         /// <param name="junctionBuildAction">Callback configuring the junction's guarded branches and fallback branch. Its
         /// builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-junction" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.2.-Junction" />
         TReturn AddJunction(JunctionBuildAction junctionBuildAction)
             => AddJunction(State<Junction>.Name, junctionBuildAction);
         #endregion
@@ -183,14 +183,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="choiceBuildAction">Callback configuring the choice's guarded branches and fallback branch. Its
         /// builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-choice" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.1.-Choice" />
         TReturn AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction);
 
         /// <summary>Adds a choice pseudostate to the current machine or region.</summary>
         /// <param name="choiceBuildAction">Callback configuring the choice's guarded branches and fallback branch. Its
         /// builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-choice" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.1.-Choice" />
         TReturn AddChoice(ChoiceBuildAction choiceBuildAction)
             => AddChoice(State<Choice>.Name, choiceBuildAction);
         #endregion
@@ -201,14 +201,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="forkBuildAction">Callback configuring the fork's outgoing paths into separate orthogonal regions.
         /// Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-fork" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.3.-Fork" />
         TReturn AddFork(string forkName, ForkBuildAction forkBuildAction);
 
         /// <summary>Adds a fork pseudostate to the current machine or region.</summary>
         /// <param name="forkBuildAction">Callback configuring the fork's outgoing paths into separate orthogonal regions.
         /// Its builder is scoped to the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-fork" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.3.-Fork" />
         TReturn AddFork(ForkBuildAction forkBuildAction)
             => AddFork(State<Fork>.Name, forkBuildAction);
         #endregion
@@ -219,14 +219,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="joinBuildAction">Callback configuring the join's outgoing continuation. Its builder is scoped to
         /// the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-join" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.4.-Join" />
         TReturn AddJoin(string joinName, JoinBuildAction joinBuildAction);
 
         /// <summary>Adds a join pseudostate to the current machine or region.</summary>
         /// <param name="joinBuildAction">Callback configuring the join's outgoing continuation. Its builder is scoped to
         /// the element, not the enclosing machine or region.</param>
         /// <returns>The enclosing definition builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-join" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.4.-Join" />
         TReturn AddJoin(JoinBuildAction joinBuildAction)
             => AddJoin(State<Join>.Name, joinBuildAction);
         #endregion

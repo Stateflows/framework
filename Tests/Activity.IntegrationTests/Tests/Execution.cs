@@ -44,10 +44,10 @@ namespace Activity.IntegrationTests.Tests
                                 c.Output(42);
                             },
                             b => b
-                                .AddFlow<int, OutputNode>()
+                                .AddFlow<int, OutputPin<int>>()
                                 .AddControlFlow<FinalNode>()
                         )
-                        .AddOutput()
+                        .AddOutputPin<int>()
                         .AddFinal()
                     )
                     .AddActivity("initialized", b => b
@@ -133,7 +133,7 @@ namespace Activity.IntegrationTests.Tests
                 await a.WatchOutputAsync<int>(t =>
                 {
                     outputAvailable = true;
-                    output = t.FirstOrDefault();
+                    output = t;
                 });
                 var result = await a.SendAsync(new Initialize());
                 initialized = result.Status == EventStatus.Initialized;

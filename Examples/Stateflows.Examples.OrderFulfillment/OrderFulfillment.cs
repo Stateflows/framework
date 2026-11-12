@@ -63,11 +63,11 @@ public sealed class OrderFulfillment : IStateMachine
             .AddTransition<RetryDelivery, InTransit>())
         .AddState<Compensating>(state => state
             .AddDoAction<CompensateOrderAction>()
-            .AddTransition<CompensationFinished, CompensationOutcome>()
+            .AddTransition<CompensationFinished, Choice>()
             .AddTransition<CompensationFailed, AppendReason, CompensationNeedsAttention>())
         .AddState<CompensationNeedsAttention>(state => state
             .AddTransition<RetryCompensation, Compensating>())
-        .AddChoice(State<CompensationOutcome>.Name, choice => choice
+        .AddChoice(choice => choice
             .AddTransition<CancellationRequested, Cancelled>()
             .AddElseTransition<Failed>())
         .AddState<Completed>()

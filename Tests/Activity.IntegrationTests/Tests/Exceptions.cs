@@ -72,6 +72,7 @@ namespace Activity.IntegrationTests.Tests
                                     Executed2 = true;
                                 }
                             )
+                            .AddOutputPin<string>()
                             .AddFlow<string>("final")
                         )
                         .AddAction("final", async c =>
@@ -110,6 +111,7 @@ namespace Activity.IntegrationTests.Tests
                                     Executed2 = true;
                                 }
                             )
+                            .AddOutputPin<string>()
                             .AddFlow<string>("final")
                         )
                         .AddAction("final", async c =>
@@ -273,6 +275,7 @@ namespace Activity.IntegrationTests.Tests
                                 throw new Exception("test");
                             })
 
+                            .AddOutputPin<string>()
                             .AddFlow<string>("final")
                         )
                         .AddAction("final", async c =>
@@ -297,9 +300,9 @@ namespace Activity.IntegrationTests.Tests
                                 c.Output("test");
                                 throw new Exception("test");
                             }, b => b
-                                .AddFlow<string, OutputNode>()
+                                .AddFlow<string, OutputPin<string>>()
                             )
-                            .AddOutput()
+                            .AddOutputPin<string>()
 
                             .AddFlow<string>("final")
                         )
@@ -370,7 +373,7 @@ namespace Activity.IntegrationTests.Tests
 
             Assert.IsTrue(Executed1);
             Assert.IsTrue(Executed2);
-            Assert.AreEqual("main.faulty", Value1);
+            Assert.AreEqual("faulty", Value1);
             Assert.AreEqual("main", Value2);
         }
 
@@ -384,7 +387,7 @@ namespace Activity.IntegrationTests.Tests
 
             Assert.IsTrue(Executed1);
             Assert.IsTrue(Executed2);
-            Assert.AreEqual("Main.faulty", Value1);
+            Assert.AreEqual("faulty", Value1);
             Assert.AreEqual("Main", Value2);
         }
 
@@ -398,7 +401,7 @@ namespace Activity.IntegrationTests.Tests
 
             Assert.IsTrue(Executed1);
             Assert.IsTrue(Executed2);
-            Assert.AreEqual("main.action1", Value1);
+            Assert.AreEqual("action1", Value1);
             Assert.AreEqual("main", Value2);
             Assert.AreEqual("foo", Value3);
         }

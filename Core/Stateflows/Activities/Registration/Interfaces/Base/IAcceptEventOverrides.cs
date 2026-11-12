@@ -6,7 +6,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     /// <summary>Overrides event-accepting and time-event nodes in an inherited activity.</summary>
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
     public interface IAcceptEventOverrides<out TReturn>
     {
         /// <summary>Selects and replaces the matching inherited node.</summary>
@@ -15,8 +15,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseAcceptEventAction(string eventName, string actionNodeName,
             OverridenAcceptEventActionBuildAction<StructuralEvent> buildAction)
             => UseAcceptEventAction<StructuralEvent>(actionNodeName, b =>
@@ -33,8 +33,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseAcceptEventAction<TEvent>(string actionNodeName, OverridenAcceptEventActionBuildAction<TEvent> buildAction);
 
         /// <summary>Selects and replaces the matching inherited node.</summary>
@@ -42,8 +42,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         TReturn UseAcceptEventAction<TEvent>(OverridenAcceptEventActionBuildAction<TEvent> buildAction)
             => UseAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, buildAction);
@@ -55,8 +55,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         TReturn UseAcceptEventAction<TEvent, TAcceptEventAction>(OverridenAcceptEventActionBuildAction<TEvent, TAcceptEventAction> buildAction)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
@@ -74,8 +74,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseTimeEventAction<TTimeEvent>(string actionNodeName, OverridenTimeEventNodeBuildAction buildAction)
             where TTimeEvent : TimeEvent, new();
         
@@ -85,8 +85,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         TReturn UseTimeEventAction<TTimeEvent>(OverridenTimeEventNodeBuildAction buildAction)
             where TTimeEvent : TimeEvent, new()
@@ -100,8 +100,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         TReturn UseTimeEventAction<TTimeEvent, TTimeEventAction>(OverridenTimeEventNodeBuildAction<TTimeEventAction> buildAction)
             where TTimeEvent : TimeEvent, new()

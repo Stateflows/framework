@@ -9,12 +9,15 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common.Classes
 {
-    internal class ContextValuesCollection(Dictionary<string, string> values) : IContextValues
+    internal class ContextValuesCollection(Dictionary<string, string> values, Func<bool>? canWrite = null) : IContextValues
     {
         private Dictionary<string, string> Values { get; } = values;
 
         private T InternalSet<T>(string key, T value)
         {
+            if (canWrite?.Invoke() == false)
+                return value;
+
             Values[key] = typeof(T) == typeof(Guid) && value is not null
                 ? ((Guid)(object)value).ToString()
                 : StateflowsJsonConverter.SerializePolymorphicObject(value);
@@ -135,6 +138,9 @@ namespace Stateflows.Common.Classes
             {
                 var value = InternalGetOrDefault(key, defaultValue);
 
+                if (canWrite?.Invoke() == false)
+                    return Task.FromResult(value);
+
                 value = valueUpdater(value);
 
                 return Task.FromResult(InternalSet(key, value));
@@ -145,7 +151,8 @@ namespace Stateflows.Common.Classes
         {
             lock (Values)
             {
-                Values.Remove(key);
+                if (canWrite?.Invoke() != false)
+                    Values.Remove(key);
             }
 
             return Task.CompletedTask;
@@ -155,6 +162,9 @@ namespace Stateflows.Common.Classes
         {
             lock (Values)
             {
+                if (canWrite?.Invoke() == false)
+                    return Task.CompletedTask;
+
                 var matchingKeys = Values.Keys.Where(key => key.StartsWith(prefix));
                 foreach (var key in matchingKeys)
                 {
@@ -177,7 +187,8 @@ namespace Stateflows.Common.Classes
         {
             lock (Values)
             {
-                Values.Clear();
+                if (canWrite?.Invoke() != false)
+                    Values.Clear();
             }
 
             return Task.CompletedTask;

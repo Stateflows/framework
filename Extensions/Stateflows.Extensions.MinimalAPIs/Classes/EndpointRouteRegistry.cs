@@ -5,7 +5,7 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 /// <summary>
 /// Detects event endpoints whose shortened route segments collide although their full event names differ.
-/// Collisions involving a structural event fail fast; CLR-only collisions keep their previous behavior.
+/// Collisions involving a structural event or typed Activity pin fail fast; CLR-only collisions keep their previous behavior.
 /// </summary>
 internal static class EndpointRouteRegistry
 {

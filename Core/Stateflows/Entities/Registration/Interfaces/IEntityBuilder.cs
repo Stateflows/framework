@@ -9,9 +9,9 @@ namespace Stateflows.Entities
 {
     /// <summary>Configures initialization, fields, mutations, projections, and execution hooks for an entity type.</summary>
     /// <typeparam name="TTemplate">The entity template whose fields and values are exposed to operations.</typeparam>
-    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/entity-fields">entity fields</see>,
-    /// <see href="https://github.com/Stateflows/framework/wiki/entity-mutations">mutations</see>, and
-    /// <see href="https://github.com/Stateflows/framework/wiki/entity-projections">projections</see> guides.</remarks>
+    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/5.7.1.-Fields">entity fields</see>,
+    /// <see href="https://github.com/Stateflows/framework/wiki/5.7.2.-Mutations">mutations</see>, and
+    /// <see href="https://github.com/Stateflows/framework/wiki/5.7.3.-Projections">projections</see> guides.</remarks>
     public interface IEntityBuilder<TTemplate>
     {
         /// <summary>Registers initialization to run when a default entity instance is created.</summary>

@@ -180,14 +180,14 @@ public class DefinitionRules
                 ),
             graph =>
             {
-                var node = GetNode(graph, "parallel.child");
+                var node = GetNode(graph, "child");
                 var nodes = (IDictionary)GetProperty(graph, "AllNodes");
                 var scopeNodes = (IDictionary)GetProperty(GetNode(graph, "parallel"), "Nodes");
                 var oldIdentifier = GetProperty(node, "Identifier").ToString();
                 SetProperty(node, "Type", Enum.Parse(GetProperty(node, "Type").GetType(), "AcceptEventAction"));
                 SetProperty(node, "EventType", typeof(TestEvent));
                 SetProperty(node, "ActualEventTypes", new[] { typeof(TestEvent) });
-                SetProperty(node, "Identifier", $"AcceptEventAction:{GetProperty(GetNode(graph, "parallel"), "Name")}:parallel.child");
+                SetProperty(node, "Identifier", $"AcceptEventAction:{GetProperty(GetNode(graph, "parallel"), "Name")}:child");
                 nodes.Remove(oldIdentifier);
                 scopeNodes.Remove(oldIdentifier);
                 nodes.Add(GetProperty(node, "Identifier"), node);
@@ -732,9 +732,9 @@ public class DefinitionRules
     }
 
     [TestMethod]
-    public void LocalNamesMayRepeatInDistinctStructuredScopes()
+    public void DuplicateNodeNamesAreRejectedAcrossStructuredScopes()
     {
-        BuildActivities(activities => activities.AddActivity("repeated-local-names", activity => activity
+        Assert.Throws<NodeDefinitionException>(() => BuildActivities(activities => activities.AddActivity("repeated-local-names", activity => activity
             .AddInitial(initial => initial
                 .AddControlFlow("first")
                 .AddControlFlow("second")
@@ -747,7 +747,87 @@ public class DefinitionRules
                 .AddInitial(initial => initial.AddControlFlow("child"))
                 .AddAction("child", async _ => { })
             )
-        ));
+        )));
+    }
+
+    [TestMethod]
+    public void NodeNamesAreGlobalInitialNamesUseTheirParentAndFinalNamesCanBeSelected()
+    {
+        BuildActivities(activities => activities.AddActivity("node-names", activity =>
+        {
+            activity
+                .AddInitial(initial => initial.AddControlFlow("scope").AddControlFlow("root-work"))
+                .AddStructuredActivity("scope", scope => scope
+                    .AddInitial(initial => initial.AddControlFlow("nested-work"))
+                    .AddAction("nested-work", _ => Task.CompletedTask, action => action.AddControlFlow("scope-complete"))
+                    .AddFinal("scope-complete"))
+                .AddAction("root-work", _ => Task.CompletedTask, action => action.AddControlFlow(FinalNode.Name))
+                .AddFinal();
+
+            var graph = GetProperty(activity, "Graph");
+            var nodes = ((IDictionary)GetProperty(graph, "AllNodes")).Values.Cast<object>()
+                .Select(node => GetProperty(node, "Name").ToString())
+                .ToHashSet(StringComparer.Ordinal);
+            CollectionAssert.IsSubsetOf(
+                new[] { "node-names.initial", "scope.initial", "scope", "nested-work", "root-work", "scope-complete", FinalNode.Name },
+                nodes.ToArray());
+        }));
+    }
+
+    [TestMethod]
+    public void TypedInputPinNamesIncludeTheirContainingScope()
+    {
+        object? graph = null;
+        BuildActivities(activities => activities.AddActivity("scoped-pin-name", activity =>
+        {
+            activity.AddInitial(initial => initial.AddControlFlow("nested"))
+                .AddInputPin<int>(_ => { })
+                .AddStructuredActivity("nested", scope => scope.AddInputPin<int>(_ => { }));
+            graph = GetProperty(activity, "Graph");
+        }));
+
+        var names = ((IDictionary)GetProperty(graph!, "AllNodes")).Values.Cast<object>()
+            .Select(node => GetProperty(node, "Name").ToString())
+            .ToArray();
+        CollectionAssert.IsSubsetOf(
+            new[]
+            {
+                "scoped-pin-name.Stateflows.Activities.InputPin<System.Int32>",
+                "nested.Stateflows.Activities.InputPin<System.Int32>"
+            },
+            names,
+            $"Registered node names: {string.Join(", ", names)}");
+    }
+
+    [TestMethod]
+    public void TypedOutputPinsCanBeNamedAcrossScopes()
+    {
+        object? graph = null;
+        BuildActivities(activities => activities.AddActivity("legacy-output-names", activity =>
+        {
+            activity.AddInitial(initial => initial.AddControlFlow("nested").AddControlFlow("root-source"))
+                .AddStructuredActivity("nested", scope => scope
+                    .AddInitial(initial => initial.AddControlFlow("nested-source"))
+                    .AddAction("nested-source", context =>
+                    {
+                        context.Output(1);
+                        return Task.CompletedTask;
+                    }, node => node.AddFlow<int>("nested-output"))
+                    .AddOutputPin<int>("nested-output"))
+                .AddAction("root-source", context =>
+                {
+                    context.Output(1);
+                    return Task.CompletedTask;
+                }, node => node.AddFlow<int>("root-output"))
+                .AddOutputPin<int>("root-output");
+            graph = GetProperty(activity, "Graph");
+        }));
+
+        var names = ((IDictionary)GetProperty(graph!, "AllNamedNodes")).Keys.Cast<string>().ToHashSet(StringComparer.Ordinal);
+        Assert.IsTrue(names.Contains("nested-output"));
+        Assert.IsTrue(names.Contains("root-output"));
+        Assert.IsFalse(names.Contains(OutputPin<int>.Name));
+        Assert.IsFalse(names.Contains("Stateflows.Activities.OutputNode"));
     }
 
     [TestMethod]

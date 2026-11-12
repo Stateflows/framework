@@ -1,0 +1,114 @@
+@host = http://localhost:5156
+@instance = demo
+@activity = {{host}}/stateflows/activities/Telemetry/{{instance}}
+
+### Discover the API (Scalar: http://localhost:5156/scalar/v1)
+GET {{host}}/openapi/v1.json
+
+### Open SSE in a separate terminal before sending inputs (this request stays open).
+GET {{activity}}/output/processedReading?stream=true
+Accept: text/event-stream
+
+### Optional second SSE connection for alerts.
+GET {{activity}}/output/telemetryAlert?stream=true
+Accept: text/event-stream
+
+### Optional third SSE connection for rejected samples.
+GET {{activity}}/output/rejectedSample?stream=true
+Accept: text/event-stream
+
+### Admit work without waiting for the default 1500ms processing delay: 202 Accepted.
+POST {{activity}}/input/sensorSample?sendAsStream=true
+Content-Type: application/json
+
+{
+  "tokens": [
+    { "sampleId": "sample-1", "sensorId": "oven", "value": 40, "observedAt": "2026-11-01T20:00:00Z" },
+    { "sampleId": "sample-2", "sensorId": "oven", "value": 60, "observedAt": "2026-11-01T20:00:01Z" },
+    { "sampleId": "bad-sample", "sensorId": "oven", "value": 20000, "observedAt": "2026-11-01T20:00:02Z" }
+  ]
+}
+
+### Send within the delay window to steer already admitted work: 40 -> 85, 60 -> 125.
+### Otherwise, applies to subsequent batches. This is an ordinary serialized event.
+POST {{activity}}/configureTelemetry
+Content-Type: application/json
+
+{
+  "event": {
+    "gain": 2,
+    "offset": 5,
+    "alertThreshold": 80,
+    "processingDelayMilliseconds": 1500
+  }
+}
+
+### Ordinary input waits for processing and publishes Transactional output.
+POST {{activity}}/input/sensorSample?sendAsStream=false
+Content-Type: application/json
+
+{
+  "tokens": [
+    { "sampleId": "ordinary-1", "sensorId": "oven", "value": 40, "observedAt": "2026-11-01T20:00:03Z" }
+  ]
+}
+
+### A one-shot output watch waits for a FUTURE batch; send input from another connection.
+GET {{activity}}/output/processedReading
+
+### Checkpoint waits for active firing bodies to reach the barrier; 200 means committed in memory.
+POST {{activity}}/checkpoint
+
+### Status query (may wait behind ordinary processing; not a live progress poll).
+GET {{activity}}/status
+
+### Configuration validation: 400, previous configuration is unchanged.
+POST {{activity}}/configureTelemetry
+Content-Type: application/json
+
+{
+  "event": {
+    "gain": 0,
+    "offset": 5,
+    "alertThreshold": 80,
+    "processingDelayMilliseconds": 1500
+  }
+}
+
+### Empty batches fail admission validation: 400.
+POST {{activity}}/input/sensorSample?sendAsStream=true
+Content-Type: application/json
+
+{ "tokens": [] }
+
+### Lengthen the simulated I/O delay to make cancellation easy to observe.
+POST {{activity}}/configureTelemetry
+Content-Type: application/json
+
+{
+  "event": {
+    "gain": 2,
+    "offset": 5,
+    "alertThreshold": 80,
+    "processingDelayMilliseconds": 5000
+  }
+}
+
+### Admit this, then immediately run the following finalization request.
+POST {{activity}}/input/sensorSample?sendAsStream=true
+Content-Type: application/json
+
+{
+  "tokens": [
+    { "sampleId": "cancel-me", "sensorId": "oven", "value": 40, "observedAt": "2026-11-01T20:00:04Z" }
+  ]
+}
+
+### Cancel executing work. Closing an SSE connection does NOT do this.
+POST {{activity}}/finalize?mode=Immediate
+
+### Alternative: ordinary queued finalization (use on a separate live instance).
+POST {{activity}}/finalize?mode=Queued
+
+### Reset the instance before reusing it; subsequent initialization restores defaults.
+DELETE {{activity}}

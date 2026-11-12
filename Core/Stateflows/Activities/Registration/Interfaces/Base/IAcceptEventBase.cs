@@ -9,7 +9,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     /// <summary>Adds event-accepting and time-event action nodes to an activity.</summary>
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
     public interface IAcceptEventBase<out TReturn>
     {
         /// <summary>Adds an action node that activates for the specified event while the node is active.</summary>
@@ -19,7 +19,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         TReturn AddAcceptEventAction(string eventName, string actionNodeName,
             AcceptEventActionDelegateAsync<StructuralEvent> eventActionAsync,
             AcceptEventActionBuildAction<StructuralEvent> buildAction = null)
@@ -36,7 +36,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         TReturn AddAcceptEventAction(string eventName, string actionNodeName,
             AcceptEventActionBuildAction<StructuralEvent> buildAction = null)
             => AddAcceptEventAction(eventName, actionNodeName, _ => Task.CompletedTask, buildAction);
@@ -49,7 +49,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         TReturn AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction<TEvent> buildAction = null);
         
         /// <summary>Adds an action node that activates for the specified event while the node is active.</summary>
@@ -58,7 +58,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the event-accepting node's options, flows, and exception
         /// handlers. Its builder is scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionBuildAction<TEvent> buildAction)
             => AddAcceptEventAction<TEvent>(actionNodeName, c => Task.CompletedTask, buildAction);
@@ -68,7 +68,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the event-accepting node's options, flows, and exception
         /// handlers. Its builder is scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddAcceptEventAction<TEvent>(AcceptEventActionBuildAction<TEvent> buildAction)
             => AddAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, c => Task.CompletedTask, buildAction);
@@ -79,7 +79,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddAcceptEventAction<TEvent>(AcceptEventActionDelegateAsync<TEvent> actionAsync, AcceptEventActionBuildAction<TEvent> buildAction = null)
             => AddAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, actionAsync, buildAction);
@@ -91,7 +91,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddAcceptEventAction<TEvent, TAcceptEventAction>(AcceptEventActionBuildAction<TEvent, TAcceptEventAction> buildAction = null)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
@@ -105,7 +105,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddAcceptEventAction<TEvent, TAcceptEventAction>(string actionNodeName, AcceptEventActionBuildAction<TEvent, TAcceptEventAction> buildAction = null)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
@@ -147,7 +147,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         TReturn AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventActionDelegateAsync eventActionAsync, TimeEventNodeBuildAction buildAction = null)
             where TTimeEvent : TimeEvent, new();
         
@@ -158,7 +158,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the time-event node's options, flows, and exception handlers. Its
         /// builder is scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventNodeBuildAction buildAction)
             where TTimeEvent : TimeEvent, new()
@@ -172,7 +172,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddTimeEventAction<TTimeEvent>(ActionDelegateAsync actionAsync, TimeEventNodeBuildAction buildAction = null)
             where TTimeEvent : TimeEvent, new()
@@ -184,7 +184,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the time-event node's options, flows, and exception handlers. Its
         /// builder is scoped to the node or flow, not the enclosing Activity.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddTimeEventAction<TTimeEvent>(TimeEventNodeBuildAction buildAction)
             where TTimeEvent : TimeEvent, new()
@@ -198,7 +198,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddTimeEventAction<TTimeEvent, TTimeEventAction>(TimeEventNodeBuildAction<TTimeEventAction> buildAction = null)
             where TTimeEvent : TimeEvent, new()
@@ -214,7 +214,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-accept-event-action-node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         [DebuggerHidden]
         public TReturn AddTimeEventAction<TTimeEvent, TTimeEventAction>(string actionNodeName, TimeEventNodeBuildAction<TTimeEventAction> buildAction = null)
             where TTimeEvent : TimeEvent, new()

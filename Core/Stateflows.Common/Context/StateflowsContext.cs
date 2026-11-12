@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Stateflows.Common.Context
 {
@@ -10,6 +11,44 @@ namespace Stateflows.Common.Context
     /// <remarks>Storage providers hydrate and dehydrate this object to preserve behavior state and scheduled work.</remarks>
     public class StateflowsContext
     {
+        private sealed record ExecutionTriggerFrame(StateflowsContext Context, EventHolder Holder, ExecutionTriggerFrame? Previous);
+        private static readonly AsyncLocal<ExecutionTriggerFrame?> executionTrigger = new();
+        private EventHolder? executionTriggerHolder;
+        private sealed record ExecutionModeFrame(StateflowsContext Context, ExecutionMode Mode, ExecutionModeFrame? Previous);
+        private static readonly AsyncLocal<ExecutionModeFrame?> executionMode = new();
+
+        /// <summary>Gets the ownership of the current asynchronous invocation.</summary>
+        [Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
+        public ExecutionMode ExecutionMode
+        {
+            get
+            {
+                for (var frame = executionMode.Value; frame != null; frame = frame.Previous)
+                    if (ReferenceEquals(frame.Context, this))
+                        return frame.Mode;
+                return ExecutionMode.Transactional;
+            }
+        }
+
+        /// <summary>Scopes invocation ownership without changing event delivery metadata.</summary>
+        public IDisposable PushExecutionMode(ExecutionMode mode)
+        {
+            var previous = executionMode.Value;
+            executionMode.Value = new ExecutionModeFrame(this, mode, previous);
+            return new ExecutionModeScope(previous);
+        }
+
+        private sealed class ExecutionModeScope(ExecutionModeFrame? previous) : IDisposable
+        {
+            private int disposed;
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref disposed, 1) == 0)
+                    executionMode.Value = previous;
+            }
+        }
+
         /// <summary>Creates a context without assigning a behavior identifier.</summary>
         public StateflowsContext()
         {
@@ -198,7 +237,40 @@ namespace Stateflows.Common.Context
         /// <summary>Gets or sets the event envelope that triggered the current execution.</summary>
         [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
-        public EventHolder? ExecutionTriggerHolder { get; set; } = null;
+        public EventHolder? ExecutionTriggerHolder
+        {
+            get
+            {
+                for (var frame = executionTrigger.Value; frame != null; frame = frame.Previous)
+                {
+                    if (ReferenceEquals(frame.Context, this))
+                        return frame.Holder;
+                }
+
+                return executionTriggerHolder;
+            }
+            set => executionTriggerHolder = value;
+        }
+
+        /// <summary>Scopes the triggering event to the current asynchronous execution.</summary>
+        public IDisposable PushExecutionTriggerHolder(EventHolder holder)
+        {
+            ArgumentNullException.ThrowIfNull(holder);
+            var previous = executionTrigger.Value;
+            executionTrigger.Value = new ExecutionTriggerFrame(this, holder, previous);
+            return new ExecutionTriggerScope(previous);
+        }
+
+        private sealed class ExecutionTriggerScope(ExecutionTriggerFrame? previous) : IDisposable
+        {
+            private int disposed;
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref disposed, 1) == 0)
+                    executionTrigger.Value = previous;
+            }
+        }
 
         /// <summary>Gets exceptions collected during the current execution.</summary>
         [Newtonsoft.Json.JsonIgnore]

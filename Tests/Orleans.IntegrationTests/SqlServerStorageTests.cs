@@ -131,8 +131,10 @@ public sealed class SqlServerStorageTests
                     $"{r.GrainType} [{r.Extension}] v{r.Version} {r.PayloadLength}B " +
                     (r.Payload == null ? "" : System.Text.Encoding.UTF8.GetString(r.Payload, 0, (int)Math.Min(120, r.Payload.Length))))));
 
-        var rejected = await cluster.SendAsync(host, machineId, new StorePayload { Payload = new SqlPayload { Text = "lost" } });
-        Assert.AreEqual(EventStatus.Failed, rejected.Status, "A stale ETag must make the commit, and so the event, fail.");
+        var rejected = await Assert.ThrowsAsync<Orleans.Transactions.OrleansTransactionException>(() =>
+            cluster.SendAsync(host, machineId, new StorePayload { Payload = new SqlPayload { Text = "lost" } }));
+        Assert.IsTrue(rejected.ToString().Contains(nameof(Orleans.Storage.InconsistentStateException), StringComparison.Ordinal),
+            "The transaction failure must preserve the SQL storage version-conflict cause.");
 
         Assert.AreEqual("idle", await cluster.CurrentStateAsync(host, machineId),
             "The failed execution must not leak into the reloaded state.");
@@ -308,6 +310,7 @@ public sealed class SqlServerStorageTests
         public int Value { get; set; }
     }
 
+    [Retain]
     public sealed class ValueNotification
     {
         public int Value { get; set; }

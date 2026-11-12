@@ -21,17 +21,15 @@ public static class HttpContextExtensions
         {
             var jsonString = StructuralJson.SerializeObject(eventHolder);
         
-            await httpContext.Response.WriteAsync($"event: {eventHolder.Name}\n");
-            await httpContext.Response.WriteAsync($"data: ");
-            await httpContext.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(jsonString));
-            await httpContext.Response.WriteAsync($"\n\n");
-            await httpContext.Response.Body.FlushAsync();
+            var frame = Encoding.UTF8.GetBytes($"event: {eventHolder.Name}\ndata: {jsonString}\n\n");
+            await httpContext.Response.Body.WriteAsync(frame, httpContext.RequestAborted);
+            await httpContext.Response.Body.FlushAsync(httpContext.RequestAborted);
         }
         catch (Exception e)
         {
             Trace.WriteLine(behaviorId is not null
-                ? $"⦗→s⦘ Notification {eventHolder.Name} published by {behaviorId.Value.Type} '{behaviorId.Value.Name}:{behaviorId.Value.Instance}' failed to serialize: {e}"
-                : $"⦗→s⦘ Notification {eventHolder.Name} failed to serialize: {e}"
+                ? $"⦗→s⦘ Notification {eventHolder.Name} published by {behaviorId.Value.Type} '{behaviorId.Value.Name}:{behaviorId.Value.Instance}' failed to serialize or write: {e}"
+                : $"⦗→s⦘ Notification {eventHolder.Name} failed to serialize or write: {e}"
             );
         }
     }

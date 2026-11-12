@@ -63,6 +63,10 @@ internal class StateflowsSubscriptions(
             Normalize(notificationsState.State);
         }
 
+        var cleaned = State.Clone(NotificationsState.Collections.History | NotificationsState.Collections.Pending);
+        if (PruneHistory(cleaned, DateTime.UtcNow))
+            await CommitAsync(cleaned);
+
         if (State.LegacyMigrated && (retainedNotificationsState.RecordExists || subscriptionsState.RecordExists))
         {
             await ClearLegacyStateAsync();
@@ -188,9 +192,20 @@ internal class StateflowsSubscriptions(
         }
 
         var nowUtc = DateTime.UtcNow;
-        var next = State.Clone();
+        var keepHistory = notifications.Any(n => n.Retained || n.TimeToLive > 0);
+        var collections = keepHistory
+            ? NotificationsState.Collections.History | NotificationsState.Collections.Pending
+            : NotificationsState.Collections.None;
+        if (notifications.Any(n => n.Retained))
+            collections |= NotificationsState.Collections.LatestRetained;
+        if (sourceKey != null)
+            collections |= NotificationsState.Collections.PublicationWatermarks;
+        var next = collections != NotificationsState.Collections.None
+            ? State.Clone(collections)
+            : null;
         var published = new List<StoredNotification>(notifications.Length);
         var subscribersToKick = new HashSet<string>();
+        var transient = new Dictionary<string, List<OrleansEventHolder>>();
 
         foreach (var notification in notifications)
         {
@@ -202,13 +217,15 @@ internal class StateflowsSubscriptions(
 
             var stored = new StoredNotification
             {
-                Sequence = ++next.LastSequence,
+                Sequence = next != null ? ++next.LastSequence : 0,
                 Notification = notification
             };
-            next.History.Add(stored);
-            if (notification.Retained)
+            var keep = notification.Retained || notification.TimeToLive > 0;
+            if (keep)
             {
-                next.LatestRetained[notification.Name] = stored.Sequence;
+                next!.History.Add(stored);
+                if (notification.Retained)
+                    next.LatestRetained[notification.Name] = stored.Sequence;
             }
 
             if (stored.IsExpired(nowUtc))
@@ -217,30 +234,40 @@ internal class StateflowsSubscriptions(
             }
 
             published.Add(stored);
-            foreach (var (subscriberKey, names) in next.Subscriptions)
+            foreach (var (subscriberKey, names) in (next ?? State).Subscriptions)
             {
                 if (names.Contains(notification.Name))
                 {
-                    AddPending(next, subscriberKey, stored, nowUtc);
-                    subscribersToKick.Add(subscriberKey);
+                    if (keep)
+                    {
+                        AddPending(next!, subscriberKey, stored, nowUtc);
+                        subscribersToKick.Add(subscriberKey);
+                    }
+                    else
+                    {
+                        if (!transient.TryGetValue(subscriberKey, out var batch))
+                            transient[subscriberKey] = batch = [];
+                        batch.Add(notification);
+                    }
                 }
             }
         }
 
-        if (next.LastSequence == State.LastSequence)
+        if (next != null)
         {
-            return;
+            if (keepHistory)
+                PruneHistory(next, nowUtc);
+            if (sourceKey != null)
+                next.PublicationWatermarks[sourceKey] = sequence;
+
+            // Register first: an orphan reminder is harmless, committed deliveries without a reminder are not
+            await EnsureReminderAsync(next);
+            await CommitAsync(next);
         }
 
-        PruneExpired(next, nowUtc);
-        if (sourceKey != null)
-            next.PublicationWatermarks[sourceKey] = sequence;
-
-        // Register first: an orphan reminder is harmless, committed deliveries without a reminder are not
-        await EnsureReminderAsync(next);
-        await CommitAsync(next);
-
         NotifyWatchers(published, nowUtc);
+        foreach (var (subscriberKey, batch) in transient)
+            QueueTransientDelivery(subscriberKey, batch);
         foreach (var subscriberKey in subscribersToKick)
         {
             KickDelivery(subscriberKey);
@@ -346,9 +373,12 @@ internal class StateflowsSubscriptions(
         });
     }
 
-    private static bool PruneExpired(NotificationsState state, DateTime nowUtc)
+    private static bool PruneHistory(NotificationsState state, DateTime nowUtc)
     {
-        var removed = state.History.RemoveAll(s => s.IsExpired(nowUtc)) > 0;
+        var removed = state.History.RemoveAll(s => s.IsExpired(nowUtc) ||
+            (!s.Notification.Retained && s.Notification.TimeToLive <= 0) ||
+            (s.Notification.Retained &&
+                state.LatestRetained.GetValueOrDefault(s.Notification.Name) != s.Sequence)) > 0;
         if (!removed && state.Pending.Count == 0)
         {
             return false;
@@ -421,8 +451,8 @@ internal class StateflowsSubscriptions(
 
         reminderRegistered = true;
         var nowUtc = DateTime.UtcNow;
-        var next = State.Clone();
-        if (PruneExpired(next, nowUtc))
+        var next = State.Clone(NotificationsState.Collections.History | NotificationsState.Collections.Pending);
+        if (PruneHistory(next, nowUtc))
         {
             try
             {
@@ -466,7 +496,8 @@ internal class StateflowsSubscriptions(
         var names = ValidateNames(notificationNames);
         var subscriberKey = GetBehaviorGrainKey(behaviorId);
         var nowUtc = DateTime.UtcNow;
-        var next = State.Clone();
+        var next = State.Clone(
+            NotificationsState.Collections.Subscriptions | NotificationsState.Collections.Pending, subscriberKey);
 
         if (!next.Subscriptions.TryGetValue(subscriberKey, out var subscribedNames))
         {
@@ -499,7 +530,8 @@ internal class StateflowsSubscriptions(
     public async Task RemoveSubscriptionAsync(OrleansBehaviorId behaviorId, string[]? notificationNames = null)
     {
         var subscriberKey = GetBehaviorGrainKey(behaviorId);
-        var next = State.Clone();
+        var next = State.Clone(
+            NotificationsState.Collections.Subscriptions | NotificationsState.Collections.Pending, subscriberKey);
         var changed = false;
 
         if (next.Subscriptions.TryGetValue(subscriberKey, out var subscribedNames))
@@ -623,7 +655,7 @@ internal class StateflowsSubscriptions(
             return;
         }
 
-        var next = State.Clone();
+        var next = State.Clone(NotificationsState.Collections.Pending, subscriberGrainKey);
         var pending = next.Pending[subscriberGrainKey];
         pending.RemoveAll(p => deliveryIds.Contains(p.DeliveryId));
         if (pending.Count == 0)
@@ -647,6 +679,53 @@ internal class StateflowsSubscriptions(
     /// At most one outstanding signal per worker; further kicks are coalesced into a single follow-up.
     /// </summary>
     private readonly Dictionary<string, bool> kicksInFlight = new();
+
+    private readonly Dictionary<string, Task> transientDeliveries = new();
+
+    private void QueueTransientDelivery(string subscriberKey, List<OrleansEventHolder> notifications)
+    {
+        var previous = transientDeliveries.GetValueOrDefault(subscriberKey) ?? Task.CompletedTask;
+        var delivery = DeliverTransientAsync(previous, subscriberKey, notifications);
+        transientDeliveries[subscriberKey] = delivery;
+        _ = RemoveTransientDeliveryAsync(subscriberKey, delivery);
+    }
+
+    private async Task RemoveTransientDeliveryAsync(string subscriberKey, Task delivery)
+    {
+        await delivery;
+        if (transientDeliveries.GetValueOrDefault(subscriberKey) == delivery)
+            transientDeliveries.Remove(subscriberKey);
+    }
+
+    private async Task DeliverTransientAsync(Task previous, string subscriberKey, List<OrleansEventHolder> notifications)
+    {
+        await Task.Yield();
+        await previous;
+        foreach (var notification in notifications)
+        {
+            if (!State.Subscriptions.TryGetValue(subscriberKey, out var names) || !names.Contains(notification.Name))
+                continue;
+            try
+            {
+                var subscriber = grainFactory.GetGrain<IBehaviorGrain>(subscriberKey);
+                var result = await subscriber.ProcessEventAsync(notification, CancellationToken.None);
+                if (!NotificationDeliveryStatuses.IsAcknowledged(result.Status))
+                {
+                    StateflowsOrleansDiagnostics.PublicationFailed("delivery.transient.status");
+                    logger.LogWarning(
+                        "Transient notification {NotificationName} ({NotificationId}) to {Subscriber} returned {Status}; it will not be retried.",
+                        notification.Name, notification.Id, subscriberKey, result.Status);
+                }
+            }
+            catch (Exception exception)
+            {
+                StateflowsOrleansDiagnostics.PublicationFailed("delivery.transient.exception");
+                logger.LogWarning(exception,
+                    "Transient notification {NotificationName} ({NotificationId}) to {Subscriber} failed; it will not be retried.",
+                    notification.Name, notification.Id, subscriberKey);
+            }
+        }
+    }
 
     private void KickDelivery(string subscriberKey)
     {
@@ -786,6 +865,9 @@ internal class StateflowsSubscriptions(
 
     private void EnqueueObserverNotification(IBehaviorGrainObserver observer, WatchEntry entry, OrleansEventHolder[] notifications)
         => entry.Tail = NotifyObserverAsync(entry.Tail, observer, entry, notifications);
+
+    public Task WaitForWatchDeliveryAsync(IBehaviorGrainObserver observer)
+        => watches.TryGetValue(observer, out var entry) ? entry.Tail : Task.CompletedTask;
 
     private async Task NotifyObserverAsync(Task previous, IBehaviorGrainObserver observer, WatchEntry entry, OrleansEventHolder[] notifications)
     {

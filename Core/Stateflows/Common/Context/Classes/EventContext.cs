@@ -31,7 +31,8 @@ namespace Stateflows.Common.Context.Classes
         public TEvent Event { get; } = eventHolder.Payload;
         public Guid EventId { get; } = eventHolder.Id;
         public IDictionary<string, EventHeader> Headers { get; } = eventHolder.Headers;
-        public object ExecutionTrigger => Event;
-        public Guid ExecutionTriggerId => EventId; 
+        public ExecutionMode ExecutionMode => ExecutionMode.Transactional;
+        public object? ExecutionTrigger => Event;
+        public Guid? ExecutionTriggerId => EventId;
     }
 }

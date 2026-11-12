@@ -37,12 +37,13 @@ namespace Stateflows.Entities.Context.Classes
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
             => BehaviorContext.TryLocateBehavior(id, out behavior);
 
-        public object ExecutionTrigger => BehaviorContext.Context.ExecutionTriggerHolder?.BoxedPayload!;
+        public ExecutionMode ExecutionMode => ExecutionMode.Transactional;
+        public object? ExecutionTrigger => BehaviorContext.Context.ExecutionTriggerHolder?.BoxedPayload;
 
-        public Guid ExecutionTriggerId => BehaviorContext.Context.ExecutionTriggerHolder?.Id ?? Guid.Empty;
+        public Guid? ExecutionTriggerId => BehaviorContext.Context.ExecutionTriggerHolder?.Id;
 
-        public IDictionary<string, EventHeader> Headers
-            => BehaviorContext.Context.ExecutionTriggerHolder?.Headers ?? new Dictionary<string, EventHeader>();
+        public IDictionary<string, EventHeader>? Headers
+            => BehaviorContext.Context.ExecutionTriggerHolder?.Headers;
 
         public CancellationToken CancellationToken => BehaviorContext.CancellationToken;
     }

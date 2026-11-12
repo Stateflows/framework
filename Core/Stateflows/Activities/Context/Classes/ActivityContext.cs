@@ -34,7 +34,8 @@ namespace Stateflows.Activities.Context.Classes
             //     Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsLock>(),
             //     Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
             // );
-            Values = new ContextValuesCollection(context.Context.GlobalValues);
+            Values = new ContextValuesCollection(context.Context.GlobalValues,
+                () => !nodeScope.CancellationTokenSource.IsCancellationRequested);
         }
 
         public IContextValues Values { get; }
@@ -233,6 +234,15 @@ namespace Stateflows.Activities.Context.Classes
 
         Task ISubscriptions<IOwnerBehaviorContext>.UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             => UnsubscribeAsync<TNotification>(Context.Context.ContextOwnerId!.Value, behaviorId);
+
+        void ISends<IBehaviorContext>.StageSending<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers)
+            => StagedOperations.StageSending<IBehaviorContext, TEvent>(this, @event, headers);
+
+        void ISends<IParentBehaviorContext>.StageSending<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers)
+            => StagedOperations.StageSending<IParentBehaviorContext, TEvent>(this, @event, headers);
+
+        void ISends<IOwnerBehaviorContext>.StageSending<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers)
+            => StagedOperations.StageSending<IOwnerBehaviorContext, TEvent>(this, @event, headers);
 
         private void Send<TEvent>(BehaviorId behaviorId, TEvent @event, IDictionary<string, EventHeader> headers = null)
         {

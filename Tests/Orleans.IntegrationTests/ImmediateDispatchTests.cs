@@ -12,10 +12,13 @@ namespace Orleans.IntegrationTests;
 public sealed partial class BehaviorNotificationTests
 {
     public sealed record DispatchTurn(bool Fail);
+    [TimeToLive(300)]
     public sealed record DeferredNotice(int Value);
+    [TimeToLive(300)]
     public sealed record HeaderProgress(int Value);
 
     [ImmediatePublish]
+    [TimeToLive(300)]
     public sealed record AttributeProgress(int Value);
 
     private sealed class DispatchProbe
@@ -143,7 +146,8 @@ public sealed partial class BehaviorNotificationTests
             await probe.Entered.Task.WaitAsync(WatchTimeout);
             storage.FailNextContextWrite(false);
             probe.Release.TrySetResult();
-            Assert.AreEqual(EventStatus.Failed, (await send.WaitAsync(WatchTimeout)).Status);
+            await TransactionalStorageTestHelpers.AssertTransactionCommitFailureAsync(
+                () => send.WaitAsync(WatchTimeout), "Injected notifications storage write failure.");
             Assert.IsFalse(storage.HasContext(behavior.Id));
             Assert.IsFalse((await behavior.GetNotificationsAsync<DeferredNotice>(DateTime.MinValue)).Any());
             Assert.AreEqual(1, (await behavior.GetNotificationsAsync<HeaderProgress>(DateTime.MinValue)).Count());

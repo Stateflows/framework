@@ -4,24 +4,24 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     /// <summary>Overrides initial, input, join, fork, merge, decision, and data-store elements.</summary>
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
     public interface IActivitySpecialsOverrides<out TReturn>
     {
         /// <summary>Overrides the inherited initial node and its outgoing flow.</summary>
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseInitial(OverridenInitialBuildAction buildAction);
         
-        /// <summary>Overrides the inherited input node and its outgoing flows.</summary>
+        /// <summary>Overrides the inherited input pin for the specified token type and its outgoing flows.</summary>
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        TReturn UseInput(OverridenInputBuildAction buildAction);
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        TReturn UseInputPin<TToken>(System.Action<IOverridenInputPinBuilder<TToken>> buildAction);
 
         #region AddJoin
         /// <summary>Overrides a named join node and its outgoing flows.</summary>
@@ -29,8 +29,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseJoin(string joinNodeName, OverridenJoinBuildAction buildAction);
 
@@ -38,8 +38,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseJoin(OverridenJoinBuildAction buildAction)
             => UseJoin(JoinNode.Name, buildAction);
@@ -50,16 +50,16 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         public TReturn UseFork(string forkNodeName, OverridenForkBuildAction buildAction);
 
         /// <summary>Overrides the default-named fork node.</summary>
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseFork(OverridenForkBuildAction buildAction)
             => UseFork(ForkNode.Name, buildAction);
@@ -70,8 +70,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseMerge(string mergeNodeName, OverridenMergeBuildAction buildAction);
 
@@ -79,8 +79,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseMerge(OverridenMergeBuildAction buildAction)
             => UseMerge(MergeNode.Name, buildAction);
@@ -92,8 +92,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseControlDecision(string decisionNodeName, OverridenDecisionBuildAction buildAction);
 
@@ -101,8 +101,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseControlDecision(OverridenDecisionBuildAction buildAction)
             => UseControlDecision(ControlDecisionNode.Name, buildAction);
@@ -115,8 +115,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="decisionBuildAction">Callback configuring the selected inherited element's replacement behavior.
         /// Its builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseDecision<TToken>(string decisionNodeName, OverridenDecisionBuildAction<TToken> decisionBuildAction);
 
@@ -125,8 +125,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseDecision<TToken>(OverridenDecisionBuildAction<TToken> buildAction)
             => UseDecision(DecisionNode<TToken>.Name, buildAction);
@@ -138,8 +138,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseDataStore(string dataStoreNodeName, OverridenDataStoreBuildAction buildAction);
 
@@ -147,8 +147,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-nodes" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseDataStore(OverridenDataStoreBuildAction buildAction)
             => UseDataStore(DataStoreNode.Name, buildAction);

@@ -5,7 +5,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     /// <summary>Adds guarded completion paths from a choice or junction pseudostate.</summary>
     /// <typeparam name="TReturn">The pseudostate builder returned after adding a path.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
     public interface IPseudostateTransitions<out TReturn>
     {
         /// <summary>Adds a completion transition from the current pseudostate.</summary>
@@ -14,7 +14,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics.</param>
         /// <returns>The source pseudostate builder for continued branch configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
         TReturn AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>Adds a completion transition from the current pseudostate.</summary>
@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics. Runs after the typed transition's hooks have been registered.</param>
         /// <returns>The source pseudostate builder for continued branch configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
         [DebuggerHidden]
         public TReturn AddTransition<TTransition, TTargetState>(DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
@@ -40,7 +40,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics. Runs after the typed transition's hooks have been registered.</param>
         /// <returns>The source pseudostate builder for continued branch configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
         [DebuggerHidden]
         public TReturn AddTransition<TTransition>(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
@@ -59,7 +59,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
         /// local/external target semantics.</param>
         /// <returns>The source pseudostate builder for continued branch configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
         [DebuggerHidden]
         public TReturn AddTransition<TTargetState>(DefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -68,8 +68,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     
     /// <summary>Adds ordinary and fallback completion paths from a choice or junction.</summary>
     /// <typeparam name="TReturn">The pseudostate builder returned after adding a path.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
     public interface IPseudostateElseTransitions<out TReturn> : IPseudostateTransitions<TReturn>
     {
         /// <summary>Adds a fallback completion transition from the current pseudostate.</summary>
@@ -79,8 +79,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// target semantics.</param>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         void AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>Adds a fallback completion transition from the current pseudostate.</summary>
@@ -92,8 +92,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// target semantics. Runs after the typed transition's hooks have been registered.</param>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public void AddElseTransition<TElseTransition, TTargetState>(ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
@@ -109,8 +109,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// target semantics. Runs after the typed transition's hooks have been registered.</param>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public void AddElseTransition<TElseTransition>(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
@@ -130,8 +130,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// target semantics.</param>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public void AddElseTransition<TTargetState>(ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex

@@ -4,15 +4,15 @@ using Stateflows.Common.Interfaces;
 namespace Stateflows.Activities.Registration.Interfaces;
 
 /// <summary>Configures a time-event node and its outgoing control flow.</summary>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-time-event-action-node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.13.-Time-Event-Action-Node" />
 public interface ITimeEventActionBuilder :
     IObjectFlowBase<ITimeEventActionBuilder>,
     IControlFlowBase<ITimeEventActionBuilder>,
     IExceptionHandlerBase<ITimeEventActionBuilder>;
 
 /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-time-event-action-node" />
-/// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.13.-Time-Event-Action-Node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
 public interface IOverridenTimeEventActionBuilder :
     IObjectFlowBase<IOverridenTimeEventActionBuilder>,
     IOverridenObjectFlowBase<IOverridenTimeEventActionBuilder>,
@@ -23,7 +23,7 @@ public interface IOverridenTimeEventActionBuilder :
 /// <summary>Configures a typed time-event node and its outgoing control flow.</summary>
 /// <typeparam name="TTimeEventAction">Typed node implementation implementing <see cref="ITimeEventActionNode" />.
 /// </typeparam>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-time-event-action-node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.13.-Time-Event-Action-Node" />
 public interface ITimeEventActionBuilder<out TTimeEventAction> :
     IObjectFlowBase<ITimeEventActionBuilder<TTimeEventAction>>,
     IControlFlowBase<ITimeEventActionBuilder<TTimeEventAction>>,
@@ -34,8 +34,8 @@ public interface ITimeEventActionBuilder<out TTimeEventAction> :
 /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
 /// <typeparam name="TTimeEventAction">Typed node implementation implementing <see cref="ITimeEventActionNode" />.
 /// </typeparam>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-time-event-action-node" />
-/// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.13.-Time-Event-Action-Node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
 public interface IOverridenTimeEventActionBuilder<out TTimeEventAction> :
     IObjectFlowBase<IOverridenTimeEventActionBuilder<TTimeEventAction>>,
     IOverridenObjectFlowBase<IOverridenTimeEventActionBuilder<TTimeEventAction>>,

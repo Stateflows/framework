@@ -2,7 +2,7 @@ namespace Stateflows.Extensions.MinimalAPIs.Interfaces;
 
 /// <summary>Configures discovery, event, and custom endpoint mapping for Stateflows behaviors.</summary>
 /// <remarks>Rules are collected during mapping, not during request processing.
-/// See <see href="https://github.com/Stateflows/framework/wiki/extension-minimal-apis"/>.</remarks>
+/// See <see href="https://github.com/Stateflows/framework/wiki/6.4.-Minimal-APIs"/>.</remarks>
 public interface IMinimalAPIsBuilder : IEventsConfiguration<IMinimalAPIsBuilder>
 {
     /// <summary>

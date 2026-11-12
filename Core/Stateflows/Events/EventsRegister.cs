@@ -65,7 +65,7 @@ namespace Stateflows.Events
             foreach (var type in new[] { typeof(Initialize), typeof(Finalize), typeof(Reset),
                 typeof(Startup), typeof(Subscribe), typeof(Unsubscribe),
                 typeof(NotificationsRequest), typeof(NotificationsResponse),
-                typeof(TokensInput), typeof(TokensOutput), typeof(TokensOutputRequest),
+                typeof(TokensInput), typeof(TokensOutput),
                 typeof(BehaviorInfoRequest), typeof(BehaviorInfo), typeof(StateMachineInfoRequest),
                 typeof(StateMachineInfo), typeof(ActivityInfoRequest), typeof(ActivityInfo) })
                 RegisterClr(type);

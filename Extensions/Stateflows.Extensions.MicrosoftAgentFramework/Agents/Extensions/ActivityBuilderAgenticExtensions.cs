@@ -83,9 +83,11 @@ public static class ActivityBuilderAgenticExtensions
                 .AddInitial(b => b
                     .AddControlFlow<AIAgentActionNode<TAIAgent>>()
                 )
-                .AddInput(b => b
-                    .AddFlow<string, AIAgentActionNode<TAIAgent>>(b => b.SetWeight(0))
-                    .AddFlow<AgenticMessage, AIAgentActionNode<TAIAgent>>(b => b.SetWeight(0))
+                .AddInputPin<string>(b => b
+                    .AddFlow<AIAgentActionNode<TAIAgent>>(b => b.SetWeight(0))
+                )
+                .AddInputPin<AgenticMessage>(b => b
+                    .AddFlow<AIAgentActionNode<TAIAgent>>(b => b.SetWeight(0))
                 )
                 .AddAcceptEventAction<string>(c =>
                     {

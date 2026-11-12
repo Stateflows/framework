@@ -9,10 +9,16 @@ namespace Stateflows.Common.Context.Classes
     {
         public static Dictionary<BehaviorId, List<BaseContext>> Instances = [];
 
-        public BaseContext(StateflowsContext context, IServiceProvider serviceProvider)
+        private readonly bool ownsCancellationTokenSource;
+        private int disposed;
+
+        public BaseContext(StateflowsContext context, IServiceProvider serviceProvider,
+            CancellationTokenSource cancellationTokenSource = null)
         {
             Context = context;
             ServiceProvider = serviceProvider;
+            ownsCancellationTokenSource = cancellationTokenSource == null;
+            CancellationTokenSource = cancellationTokenSource ?? new CancellationTokenSource();
             
             lock (Instances)
             {
@@ -45,24 +51,33 @@ namespace Stateflows.Common.Context.Classes
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
             => BehaviorLocator.TryLocateBehavior(id, out behavior);
         
-        public CancellationTokenSource CancellationTokenSource = new();
+        public CancellationTokenSource CancellationTokenSource;
         public CancellationToken CancellationToken => CancellationTokenSource.Token;
 
         public void Dispose()
         {
+            if (Interlocked.Exchange(ref disposed, 1) != 0)
+            {
+                return;
+            }
+
             lock (Instances)
             {
-                if (!Instances.TryGetValue(Context.Id, out var contextList))
+                if (Instances.TryGetValue(Context.Id, out var contextList))
                 {
-                    contextList = [];
-                    Instances.Add(Context.Id, contextList);
+                    contextList.Remove(this);
+                    if (contextList.Count == 0)
+                    {
+                        Instances.Remove(Context.Id);
+                    }
                 }
-                
-                contextList.Remove(this);
             }
             
             behavior?.Dispose();
-            CancellationTokenSource?.Dispose();
+            if (ownsCancellationTokenSource)
+            {
+                CancellationTokenSource?.Dispose();
+            }
         }
     }
 }

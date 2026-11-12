@@ -65,10 +65,12 @@ namespace Activity.IntegrationTests.Tests
                                 .AddFlow<string>("main")
                         )
                         .AddStructuredActivity("main", b => b
-                            .AddInput(b => b
-                                .AddFlow<int, DecisionNode<int>>()
-                                .AddFlow<string>("final1")
-                                .AddFlow<string>("final2")
+                            .AddInputPin<int>(b => b
+                                .AddFlow<DecisionNode<int>>()
+                            )
+                            .AddInputPin<string>(b => b
+                                .AddFlow("final1")
+                                .AddFlow("final2")
                             )
                             .AddDecision<int>(b => b
                                 .AddFlow("final1", b => b.AddGuard(async c => c.Token % 2 == 0))
@@ -82,7 +84,7 @@ namespace Activity.IntegrationTests.Tests
                                     TokenCount1 += c.GetTokensOfType<int>().Count();
                                     await Task.Delay(1);
                                 },
-                                b => b.AddFlow<int, OutputNode>()
+                                b => b.AddFlow<int, OutputPin<int>>()
                             )
                             .AddAction(
                                 "final2",
@@ -91,9 +93,9 @@ namespace Activity.IntegrationTests.Tests
                                     ExecutionCount2++;
                                     TokenCount2 += c.GetTokensOfType<int>().Count();
                                 },
-                                b => b.AddFlow<int, OutputNode>()
+                                b => b.AddFlow<int, OutputPin<int>>()
                             )
-                            .AddOutput()
+                            .AddOutputPin<int>()
                         )
                     )
                     .AddActivity("controlDecision", b => b

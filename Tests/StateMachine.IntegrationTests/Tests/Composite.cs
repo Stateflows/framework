@@ -96,8 +96,8 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddDefaultInitializer(async c => true)
 
                         .AddInitialState<StateA>(b => b
-                            .AddTransition<OtherEvent>(State<StateB>.Name, b => b
-                                .AddGuard(async () => true)
+                            .AddTransition<OtherEvent>(State<StateB>.Name/*, b => b
+                                .AddGuard(async () => true)*/
                             )
                         )
                         .AddState<StateB>()

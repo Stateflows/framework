@@ -32,6 +32,10 @@ public class BehaviorContext : IBehaviorContext
     /// <inheritdoc/>
     public IServiceProvider ServiceProvider { get; }
 
+    /// <inheritdoc/>
+    public void StageSending<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
+        => throw new InvalidOperationException("Staging requires behavior execution; HTTP endpoints do not own a behavior transaction.");
+
     /// <summary>Queues a message to the addressed behavior for completion by the endpoint filter.</summary>
     /// <typeparam name="TEvent">Event payload type.</typeparam>
     /// <param name="event">Event to send.</param>

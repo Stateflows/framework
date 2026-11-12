@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Context;
@@ -11,6 +13,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
+using Stream = Stateflows.Activities.Streams.Stream;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -22,9 +25,281 @@ namespace Stateflows.Activities.Context.Classes
 
         internal Executor Executor { get; set; }
 
+        [JsonIgnore]
+        private readonly AsyncLocal<bool> isStreamingExecution = new();
+        [JsonIgnore]
+        private readonly AsyncLocal<InvocationProvenance?> invocationProvenance = new();
+        [JsonIgnore]
+        private int outstandingTransactions;
+        private int streamingBusyPeriod;
+        [JsonIgnore]
+        private int pauseAfterFiring;
+        [JsonIgnore]
+        private Guid rootThreadId;
+
+        private const string ReadyFiringsKey = "Activity.ReadyFirings";
+        private const string ContinuationFramesKey = "Activity.ContinuationFrames";
+        private const string InterleavedIdleFramesKey = "Activity.InterleavedIdleFrames";
+
+        internal ActivityContinuationFrame GetInterleavedIdleFrame(string node, Guid threadId)
+        {
+            lock (Context.Values)
+                return Context.Values.TryGetValue(InterleavedIdleFramesKey, out var value) &&
+                    value is List<ActivityContinuationFrame> frames
+                        ? frames.FirstOrDefault(frame => frame.NodeIdentifier == node &&
+                            frame.OuterThreadId == threadId)
+                        : null;
+        }
+
+        internal void SetInterleavedIdleFrame(ActivityContinuationFrame frame, bool idle)
+        {
+            lock (Context.Values)
+            {
+                if (!Context.Values.TryGetValue(InterleavedIdleFramesKey, out var value) ||
+                    value is not List<ActivityContinuationFrame> frames)
+                    Context.Values[InterleavedIdleFramesKey] = frames = [];
+                frames.RemoveAll(candidate => candidate.Id == frame.Id);
+                if (idle)
+                    frames.Add(frame);
+            }
+        }
+
+        internal bool PauseAfterFiring
+        {
+            get => System.Threading.Volatile.Read(ref pauseAfterFiring) != 0;
+            set => Interlocked.Exchange(ref pauseAfterFiring, value ? 1 : 0);
+        }
+
+        internal Guid RootThreadId
+        {
+            get
+            {
+                lock (Context.Values)
+                    return rootThreadId == Guid.Empty ? rootThreadId = Guid.NewGuid() : rootThreadId;
+            }
+        }
+
+        internal bool HasReadyFirings
+        {
+            get
+            {
+                lock (Context.Values)
+                    return (Context.Values.TryGetValue(ReadyFiringsKey, out var value) &&
+                        value is List<ReadyActivityFiring> { Count: > 0 }) ||
+                        (Context.Values.TryGetValue(ContinuationFramesKey, out var frames) &&
+                        frames is List<ActivityContinuationFrame> { Count: > 0 });
+            }
+        }
+
+        internal bool HasReadyFiringsInFrame(Guid frameId, Guid threadId)
+        {
+            lock (Context.Values)
+                return Context.Values.TryGetValue(ReadyFiringsKey, out var value) &&
+                    value is List<ReadyActivityFiring> ready &&
+                    ready.Any(firing => firing.FrameId == frameId && firing.ThreadId == threadId);
+        }
+
+        internal (ReadyActivityFiring[] Firings, ActivityContinuationFrame[] Frames) TakeCheckpointContinuation()
+        {
+            lock (Context.Values)
+            {
+                var firings = Context.Values.TryGetValue(ReadyFiringsKey, out var value) &&
+                    value is List<ReadyActivityFiring> ready
+                        ? ready.ToArray()
+                        : [];
+                var frames = Context.Values.TryGetValue(ContinuationFramesKey, out var framesValue) &&
+                    framesValue is List<ActivityContinuationFrame> suspended
+                        ? suspended.ToArray()
+                        : [];
+                Context.Values.Remove(ReadyFiringsKey);
+                Context.Values.Remove(ContinuationFramesKey);
+                return (firings, frames);
+            }
+        }
+
+        internal void RestoreCheckpointContinuation(IEnumerable<ReadyActivityFiring> ready, IEnumerable<ActivityContinuationFrame> frames)
+        {
+            AddReadyFirings(ready);
+            foreach (var frame in frames)
+                AddContinuationFrame(frame);
+        }
+
+        internal void AddReadyFirings(IEnumerable<ReadyActivityFiring> ready)
+        {
+            lock (Context.Values)
+            {
+                if (!Context.Values.TryGetValue(ReadyFiringsKey, out var value) ||
+                    value is not List<ReadyActivityFiring> existing)
+                    Context.Values[ReadyFiringsKey] = existing = [];
+                existing.AddRange(ready);
+            }
+        }
+
+        internal void AddContinuationFrame(ActivityContinuationFrame frame)
+        {
+            lock (Context.Values)
+            {
+                if (!Context.Values.TryGetValue(ContinuationFramesKey, out var value) ||
+                    value is not List<ActivityContinuationFrame> existing)
+                    Context.Values[ContinuationFramesKey] = existing = [];
+                if (!existing.Any(candidate => candidate.Id == frame.Id))
+                    existing.Add(frame);
+            }
+        }
+
+        [JsonIgnore]
+        internal bool IsStreamingExecution
+        {
+            get => isStreamingExecution.Value || IsCurrentInvocationStreamed;
+            set => isStreamingExecution.Value = value;
+        }
+
+        [JsonIgnore]
+        internal bool IsCurrentInvocationStreamed
+        {
+            get
+            {
+                for (var provenance = invocationProvenance.Value; provenance != null; provenance = provenance.Parent)
+                    if (provenance.IsStreamed)
+                        return true;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Opens an invocation provenance frame. A tracked transactional frame represents a regular transaction
+        /// admitted into a live session; while any such transaction is outstanding its idle tokens keep their
+        /// transactional color, and the marking is recolored as streamed once the last transaction closes.
+        /// </summary>
+        internal InvocationProvenanceScope BeginInvocationProvenance(bool streamed, bool trackTransaction = false, bool callRoot = false)
+        {
+            var previous = invocationProvenance.Value;
+            var current = new InvocationProvenance(streamed, previous, callRoot);
+            invocationProvenance.Value = current;
+            var tracked = trackTransaction && !streamed;
+            if (tracked)
+                Interlocked.Increment(ref outstandingTransactions);
+            var modeScope = Context.PushExecutionMode(IsCurrentInvocationStreamed
+                ? ExecutionMode.Streamed : ExecutionMode.Transactional);
+            return new InvocationProvenanceScope(this, current, previous, tracked, modeScope);
+        }
+
+        /// <summary>
+        /// Whether the runtime call (regular transaction, streamed admission or handed-off streamed work) that owns
+        /// the current asynchronous flow is streamed; <c>null</c> outside of a session call.
+        /// </summary>
+        [JsonIgnore]
+        internal bool? IsCurrentCallStreamed
+        {
+            get
+            {
+                for (var provenance = invocationProvenance.Value; provenance != null; provenance = provenance.Parent)
+                    if (provenance.IsCallRoot)
+                        return provenance.IsStreamed;
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Records an execution exception for the Activity and for the runtime call owning the current flow, so a
+        /// live session reports failures of a call without attributing failures of concurrent invocations to it.
+        /// </summary>
+        internal void RecordException(Exception exception)
+        {
+            Context.ExecutionExceptions.Enqueue(exception);
+            for (var provenance = invocationProvenance.Value; provenance != null; provenance = provenance.Parent)
+            {
+                if (provenance.IsCallRoot)
+                {
+                    provenance.Exceptions.Enqueue(exception);
+                    break;
+                }
+            }
+        }
+
+        [JsonIgnore]
+        internal int OutstandingTransactions => System.Threading.Volatile.Read(ref outstandingTransactions);
+
+        [JsonIgnore]
+        internal bool IsStreamingBusyPeriod => System.Threading.Volatile.Read(ref streamingBusyPeriod) != 0;
+
+        /// <summary>
+        /// Marks the start of a streaming busy period. Work owned by an outstanding regular transaction keeps its
+        /// transactional color; idle marking is recolored immediately only when no transaction is outstanding.
+        /// </summary>
+        internal void BeginStreamingBusyPeriod()
+        {
+            if (Interlocked.Exchange(ref streamingBusyPeriod, 1) == 0 && OutstandingTransactions == 0)
+                RecolorMarkingAsStreamed();
+        }
+
+        /// <summary>Ends the streaming busy period; the persisted marking returns to ordinary transactional semantics.</summary>
+        internal void EndStreamingBusyPeriod()
+        {
+            Interlocked.Exchange(ref streamingBusyPeriod, 0);
+            RecolorMarking(false);
+        }
+
+        private void CloseTransaction()
+        {
+            if (Interlocked.Decrement(ref outstandingTransactions) == 0 && IsStreamingBusyPeriod)
+                RecolorMarkingAsStreamed();
+        }
+
+        internal sealed class InvocationProvenance(bool streamed, InvocationProvenance? parent, bool callRoot)
+        {
+            public InvocationProvenance? Parent { get; } = parent;
+            public bool IsStreamed { get; } = streamed;
+            public bool IsCallRoot { get; } = callRoot;
+            public System.Collections.Concurrent.ConcurrentQueue<Exception> Exceptions { get; } = new();
+        }
+
+        internal sealed class InvocationProvenanceScope(
+            RootContext context,
+            InvocationProvenance invocation,
+            InvocationProvenance? previous,
+            bool tracked, IDisposable modeScope) : IDisposable
+        {
+            private int disposed;
+
+            /// <summary>Exceptions recorded by the call opened with this scope.</summary>
+            public IEnumerable<Exception> Exceptions => invocation.Exceptions;
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref disposed, 1) != 0)
+                    return;
+                context.invocationProvenance.Value = previous;
+                modeScope.Dispose();
+                if (tracked)
+                    context.CloseTransaction();
+            }
+        }
+
+        internal void RecolorMarkingAsStreamed() => RecolorMarking(true);
+
+        private void RecolorMarking(bool streamed)
+        {
+            lock (Streams)
+            {
+                foreach (var stream in Streams.Values.SelectMany(edges => edges.Values))
+                {
+                    stream.IsStreamed = streamed;
+                    foreach (var token in stream.Tokens)
+                        token.IsStreamed = streamed;
+                }
+            }
+
+            foreach (var token in OutputTokens.Values.SelectMany(nodes => nodes.Values).SelectMany(tokens => tokens))
+                token.IsStreamed = streamed;
+
+        }
+
         public RootContext(StateflowsContext context)
         {
             Context = context;
+            // Discard output history from snapshots created before output became notification-based.
+            Context.Values.Remove("ActivityOutputTokens");
             Id = new ActivityId(Context.Id);
         }
 
@@ -100,6 +375,27 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
+        internal static Guid GetStreamThreadId(Edge edge, NodeScope scope)
+        {
+            if (edge.IsCrossScope)
+            {
+                for (var owner = scope; owner != null; owner = owner.BaseNodeScope)
+                    if (owner.Node == edge.Owner)
+                        return owner.ThreadId;
+                throw new InvalidOperationException($"Owning execution scope is unavailable for crossing flow '{edge.Identifier}'.");
+            }
+            return scope.ThreadId;
+        }
+
+        internal IEnumerable<Stream> GetNodeStreams(Node node, NodeScope scope, bool activatedOnly)
+        {
+            lock (Streams)
+                return node.IncomingEdges
+                    .Select(edge => GetStream(edge.Identifier, GetStreamThreadId(edge, scope)))
+                    .Where(stream => stream.IsActivated || !activatedOnly)
+                    .ToArray();
+        }
+
         public void ClearStream(string edgeIdentifier, Guid threadId)
         {
             lock (Streams)
@@ -163,28 +459,14 @@ namespace Stateflows.Activities.Context.Classes
             return tokens;
         }
 
-        private List<TokenHolder> activityOutputTokens = null;
-        public List<TokenHolder> ActivityOutputTokens
+        internal List<TokenHolder> TakeOutputTokens(string nodeName, Guid threadId)
         {
-            get
+            var tokens = GetOutputTokens(nodeName, threadId);
+            lock (tokens)
             {
-                lock (Context.Values)
-                {
-                    if (activityOutputTokens == null)
-                    {
-                        if (!Context.Values.TryGetValue(Constants.ActivityOutputTokens, out var activityOutputTokensObj))
-                        {
-                            activityOutputTokens = new List<TokenHolder>();
-                            Context.Values[Constants.ActivityOutputTokens] = activityOutputTokens;
-                        }
-                        else
-                        {
-                            activityOutputTokens = activityOutputTokensObj as List<TokenHolder>;
-                        }
-                    }
-                }
-
-                return activityOutputTokens;
+                var result = tokens.ToList();
+                tokens.Clear();
+                return result;
             }
         }
 
@@ -328,7 +610,28 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         [JsonIgnore]
-        internal LockedList<Node> NodesToExecute { get; set; } = [];
+        private readonly AsyncLocal<LockedList<Node>?> nodesToExecute = new();
+
+        [JsonIgnore]
+        private readonly LockedList<Node> defaultNodesToExecute = [];
+
+        [JsonIgnore]
+        internal LockedList<Node> NodesToExecute => nodesToExecute.Value ?? defaultNodesToExecute;
+
+        internal IDisposable BeginEventExecution()
+        {
+            var previous = nodesToExecute.Value;
+            nodesToExecute.Value = [];
+            return new ExecutionScope(() => nodesToExecute.Value = previous);
+        }
+
+        private sealed class ExecutionScope(System.Action dispose) : IDisposable
+        {
+            private System.Action? dispose = dispose;
+
+            public void Dispose()
+                => Interlocked.Exchange(ref dispose, null)?.Invoke();
+        }
 
         [JsonIgnore]
         private Dictionary<Guid, List<Node>> TerminatedNodes { get; set; } = [];
@@ -387,25 +690,38 @@ namespace Stateflows.Activities.Context.Classes
             set => Context.Values[Constants.ForceConsumed] = value;
         }
 
-        private readonly Stack<EventHolder> EventsStack = [];
+        private sealed record EventFrame(EventHolder Holder, EventFrame Previous);
+
+        private readonly AsyncLocal<EventFrame> currentEvent = new();
 
         public void SetEvent(EventHolder eventHolder)
         {
-            EventsStack.Push(eventHolder);
+            ArgumentNullException.ThrowIfNull(eventHolder);
+            currentEvent.Value = new EventFrame(eventHolder, currentEvent.Value);
         }
 
         public void ClearEvent()
         {
-            EventsStack.Pop();
+            var frame = currentEvent.Value
+                ?? throw new InvalidOperationException("No Activity event scope is active.");
+            currentEvent.Value = frame.Previous;
         }
 
-        public EventHolder EventHolder => EventsStack.Any()
-            ? EventsStack.Peek()
-            : null;
+        public EventHolder EventHolder => currentEvent.Value?.Holder;
 
-        public EventHolder ExecutionTriggerHolder => EventsStack.Any()
-            ? EventsStack.Last()
-            : null;
+        public EventHolder ExecutionTriggerHolder
+        {
+            get
+            {
+                var frame = currentEvent.Value;
+                while (frame?.Previous != null)
+                {
+                    frame = frame.Previous;
+                }
+
+                return frame?.Holder;
+            }
+        }
 
         public readonly List<Exception> Exceptions = [];
 
@@ -413,7 +729,7 @@ namespace Stateflows.Activities.Context.Classes
 
         internal bool IsNodeCompleted(Node node, NodeScope nodeScope)
             => nodeScope is { IsTerminated: true } ||
-                nodeScope is { ChildScope: { IsTerminated: true } } ||
+                (nodeScope?.ChildScopes.Any(child => child.IsTerminated) ?? false) ||
                 (
                     !(
                         node.Type == NodeType.IterativeActivity &&
@@ -442,11 +758,11 @@ namespace Stateflows.Activities.Context.Classes
                     // active event accepting nodes
                     !node.Nodes.Values.Any(node => ActiveNodes.Keys.Contains(node.Identifier)) &&
                     
-                    // input node on topmost level
+                    // input pins on topmost level
                     (
                         (
                             node is Graph &&
-                            node.InputNode == null
+                            !node.InputPins.Any()
                         ) ||
                         !(node is Graph)
                     )

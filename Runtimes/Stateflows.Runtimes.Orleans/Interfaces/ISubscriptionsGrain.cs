@@ -6,7 +6,8 @@ namespace Stateflows.Interfaces;
 internal interface ISubscriptionsGrain : IGrainWithStringKey, IRemindable
 {
     /// <summary>
-    /// Durably stores notifications and schedules deliveries; returns after state commit and reminder registration.
+    /// Stores retryable notifications and schedules deliveries. Non-retained notifications with zero TTL
+    /// are delivered once without history or subscription retries.
     /// </summary>
     [Alias("PublishAsync")]
     Task PublishAsync(OrleansEventHolder[] notifications);
@@ -34,6 +35,11 @@ internal interface ISubscriptionsGrain : IGrainWithStringKey, IRemindable
     Task<OrleansEventHolder[]> AddWatchAsync(IBehaviorGrainObserver observer, string[] notificationNames, DateTime? replayNotificationsSince = null, bool renewal = false);
     [Alias("RemoveWatchAsync")]
     Task RemoveWatchAsync(IBehaviorGrainObserver observer, string[]? notificationNames = null);
+
+    /// <summary>Waits for the observer dispatches queued before this call, without blocking publications or subscriptions.</summary>
+    [AlwaysInterleave]
+    [Alias("WaitForWatchDeliveryAsync")]
+    Task WaitForWatchDeliveryAsync(IBehaviorGrainObserver observer);
 
     [Alias("GetPendingDeliveriesAsync")]
     Task<NotificationDelivery[]> GetPendingDeliveriesAsync(string subscriberGrainKey, int maxCount);

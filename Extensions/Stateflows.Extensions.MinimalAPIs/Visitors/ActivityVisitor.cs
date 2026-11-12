@@ -24,6 +24,38 @@ internal class ActivityVisitor(
     private string CurrentActivityName = string.Empty;
     private BehaviorClass? OwnerClass = null;
 
+    private readonly Dictionary<(string Name, int Version), Dictionary<(bool Input, Type Type), System.Action>> pinEndpoints = new();
+    private readonly Dictionary<string, int> latestPinVersions = new();
+
+    public Task InputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+    {
+        if (OwnerClass == null && parentNodeName == null && ActivityPinEndpoints.IsMappable<TToken>())
+        {
+            var hasDefaultInstance = HasDefaultInstance;
+            pinEndpoints[(activityName, activityVersion)][(true, typeof(TToken))] = () =>
+                routeBuilder.RegisterInputPinEndpoint<TToken>(interceptor, activityName, hasDefaultInstance, HateoasLinks);
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task OutputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+    {
+        if (OwnerClass == null && parentNodeName == null && ActivityPinEndpoints.IsMappable<TToken>())
+        {
+            var hasDefaultInstance = HasDefaultInstance;
+            pinEndpoints[(activityName, activityVersion)][(false, typeof(TToken))] = () =>
+                routeBuilder.RegisterOutputPinEndpoint<TToken>(interceptor, activityName, hasDefaultInstance, HateoasLinks);
+        }
+        return Task.CompletedTask;
+    }
+
+    internal void RegisterPinEndpoints()
+    {
+        foreach (var (name, version) in latestPinVersions)
+            foreach (var register in pinEndpoints[(name, version)].Values)
+                register();
+    }
+
     public bool HasDefaultInstance { get; private set; } = false;
 
     public void Visit<T>()
@@ -156,6 +188,11 @@ internal class ActivityVisitor(
     {
         HasDefaultInstance = hasDefaultInstance;
         OwnerClass = ownerClass;
+        if (ownerClass == null)
+        {
+            pinEndpoints[(activityName, activityVersion)] = new();
+            latestPinVersions[activityName] = Math.Max(latestPinVersions.GetValueOrDefault(activityName), activityVersion);
+        }
 
         return Task.CompletedTask;
     }

@@ -1,0 +1,25 @@
+<figure class="chart">
+    <figcaption><strong>@Title</strong><span>@Legend</span></figcaption>
+    <svg viewBox="0 0 600 150" role="img" aria-label="@($"{Title}: {Legend}")" preserveAspectRatio="none">
+        <line x1="0" y1="135" x2="600" y2="135" class="grid" />
+        <line x1="0" y1="70" x2="600" y2="70" class="grid" />
+        <polyline points="@Points(Primary)" class="primary" />
+        @if (Secondary != null) { <polyline points="@Points(Secondary)" class="secondary" /> }
+    </svg>
+    <small>Last @History.Length samples (~1 second apart). Scale: 0-@Scale.ToString("N1") @Unit</small>
+</figure>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Legend { get; set; } = "";
+    [Parameter] public string Unit { get; set; } = "";
+    [Parameter, EditorRequired] public HistoryPoint[] History { get; set; } = [];
+    [Parameter, EditorRequired] public Func<HistoryPoint, double> Primary { get; set; } = _ => 0;
+    [Parameter] public Func<HistoryPoint, double>? Secondary { get; set; }
+    [Parameter] public double? FixedScale { get; set; }
+    private double Scale => FixedScale ?? Math.Max(1, History.Select(point =>
+        Math.Max(Primary(point), Secondary?.Invoke(point) ?? 0)).DefaultIfEmpty(1).Max() * 1.1);
+    private string Points(Func<HistoryPoint, double> selector) => string.Join(" ",
+        History.Select((point, index) => FormattableString.Invariant(
+            $"{index * 600d / Math.Max(1, History.Length - 1):F1},{135 - Math.Clamp(selector(point) / Scale, 0, 1) * 125:F1}")));
+}

@@ -9,7 +9,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base;
 
 /// <summary>Provides methods for adding executable action nodes to an activity.</summary>
 /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-action-node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.1.-Action-Node" />
 public interface IActivityActionBase<out TReturn>
 {
     #region AddAction
@@ -20,7 +20,7 @@ public interface IActivityActionBase<out TReturn>
     /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
     /// </param>
     /// <returns>The current builder.</returns>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-action-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.1.-Action-Node" />
     TReturn AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction = null);
         
     /// <summary>Adds an executable action node to the Activity graph.</summary>
@@ -28,7 +28,7 @@ public interface IActivityActionBase<out TReturn>
     /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
     /// </param>
     /// <returns>The current builder.</returns>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-action-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.1.-Action-Node" />
     [DebuggerHidden]
     public TReturn AddAction<TAction>(TypedActionBuildAction<TAction> buildAction = null)
         where TAction : class, IActionNode
@@ -40,7 +40,7 @@ public interface IActivityActionBase<out TReturn>
     /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
     /// </param>
     /// <returns>The current builder.</returns>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-action-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.1.-Action-Node" />
     [DebuggerHidden]
     public TReturn AddAction<TAction>(string actionNodeName, TypedActionBuildAction<TAction> buildAction = null)
         where TAction : class, IActionNode

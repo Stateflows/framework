@@ -283,7 +283,8 @@ public sealed partial class BehaviorNotificationTests
             var grain = host.Services.GetRequiredService<IGrainFactory>().GetGrain<IBehaviorGrain>(GetBehaviorGrainKey(id));
             var notification = CreateNotification(new RetainedCustomNotification { Value = 7 }, CreatePublisherId("source"));
             storage.FailNextContextWrite(committedBeforeFailure);
-            Assert.AreEqual(EventStatus.Failed, (await grain.ProcessEventAsync(notification, default)).Status);
+            await TransactionalStorageTestHelpers.AssertTransactionCommitFailureAsync(
+                () => grain.ProcessEventAsync(notification, default), "Injected notifications storage");
             Assert.AreEqual(7, await values.Reader.ReadAsync().AsTask().WaitAsync(DeliveryTimeout));
             Assert.AreEqual(committedBeforeFailure ? EventStatus.Duplicated : EventStatus.Consumed,
                 (await grain.ProcessEventAsync(notification, default)).Status);
@@ -305,7 +306,8 @@ public sealed partial class BehaviorNotificationTests
         {
             var id = new BehaviorId(BehaviorType.StateMachine, "self-subscribing-machine", "expiry");
             var grain = host.Services.GetRequiredService<IGrainFactory>().GetGrain<IBehaviorGrain>(GetBehaviorGrainKey(id));
-            var zero = CreateNotification(new RetainedCustomNotification { Value = 1 }, CreatePublisherId("source"));
+            var zero = CreateNotification(new RetainedCustomNotification { Value = 1 }, CreatePublisherId("source"),
+                timeToLive: 0);
             var before = DateTime.UtcNow;
             Assert.AreEqual(EventStatus.Consumed, (await grain.ProcessEventAsync(zero, default)).Status);
             var expiry = storage.GetContext(id).EventReceipts[zero.Id];
@@ -484,7 +486,8 @@ public sealed partial class BehaviorNotificationTests
             var grain = host.Services.GetRequiredService<IGrainFactory>().GetGrain<IBehaviorGrain>(GetBehaviorGrainKey(id));
             var notification = CreateNotification(new RetainedCustomNotification { Value = 10 }, CreatePublisherId("source"));
             storage.FailNextContextWrite(false);
-            Assert.AreEqual(EventStatus.Failed, (await grain.ProcessEventAsync(notification, default)).Status);
+            await TransactionalStorageTestHelpers.AssertTransactionCommitFailureAsync(
+                () => grain.ProcessEventAsync(notification, default), "Injected notifications storage write failure.");
             var result = await grain.ProcessEventAsync(notification, default);
             Assert.AreEqual(EventStatus.Invalid, result.Status);
             Assert.IsFalse(result.Validation.IsValid);

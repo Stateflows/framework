@@ -217,6 +217,7 @@ public sealed class PrepareShipmentActivity : IActivity
 public sealed class IssueInvoiceActivity : IActivity
 {
     public static void Build(IActivityBuilder activity) => activity
+        .AddInputPin<StepSucceeded>(_ => { })
         .AddInitial(node => node.AddControlFlow<CalculateInvoice>())
         .AddAction<CalculateInvoice>(node => node.AddFlow<Invoice, StoreInvoice>())
         .AddAction<StoreInvoice>(node => node.AddControlFlow<FinalNode>())

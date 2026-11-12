@@ -34,10 +34,10 @@ namespace Stateflows.Common.Subscription
         
         public Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, string[] notificationNames,
             DateTime? lastNotificationCheck = null)
-            => Storage.GetNotificationsAsync(behaviorId, notificationNames, lastNotificationCheck ?? DateTime.Now);
+            => Storage.GetNotificationsAsync(behaviorId, notificationNames, lastNotificationCheck ?? DateTime.MaxValue);
 
         public async Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(BehaviorId behaviorId, DateTime? lastNotificationCheck = null)
-            => (await Storage.GetNotificationsAsync(behaviorId, new string[] { Event<TNotification>.Name }, lastNotificationCheck ?? DateTime.Now))
+            => (await Storage.GetNotificationsAsync(behaviorId, new string[] { Event<TNotification>.Name }, lastNotificationCheck ?? DateTime.MaxValue))
                 .Select(n => ((EventHolder<TNotification>)n).Payload);
 
         public void RegisterHandler(INotificationHandler notificationHandler)

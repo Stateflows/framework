@@ -7,8 +7,8 @@ namespace Stateflows.Activities;
 /// <summary>Fluent builder for defining an activity and its graph.</summary>
 /// <remarks>Use the reactive registration APIs to construct nodes and flows. Activity overrides can replace
 /// elements from an inherited definition.</remarks>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activities">Activities documentation</seealso>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups">Behavioral groups documentation
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities">Activities documentation</seealso>
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups">Behavioral groups documentation
 /// </seealso>
 public interface IActivityBuilder :
     IActivityUtils<IActivityBuilder>,
@@ -18,7 +18,7 @@ public interface IActivityBuilder :
     IInitialBase<IActivityBuilder>,
     IFinalBase<IActivityBuilder>,
     IInputBase<IActivityBuilder>,
-    IOutputBase<IActivityBuilder>,
+    IActivityOutputBase<IActivityBuilder>,
     IAcceptEventBase<IActivityBuilder>,
     ISendEventBase<IActivityBuilder>,
     IPublishEventBase<IActivityBuilder>,
@@ -28,8 +28,8 @@ public interface IActivityBuilder :
 /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
 /// <remarks>Only elements explicitly selected through the override APIs are replaced; the remaining inherited
 /// definition is retained.</remarks>
-/// <seealso href="https://github.com/Stateflows/framework/wiki/activities" />
-/// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.-Activities" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
 public interface IOverridenActivityBuilder :
     IActivityUtils<IOverridenActivityBuilder>,
     IReactiveActivityBase<IOverridenActivityBuilder>,
@@ -39,7 +39,7 @@ public interface IOverridenActivityBuilder :
     IInitialBase<IOverridenActivityBuilder>,
     IFinalBase<IOverridenActivityBuilder>,
     IInputBase<IOverridenActivityBuilder>,
-    IOutputBase<IOverridenActivityBuilder>,
+    IActivityOutputBase<IOverridenActivityBuilder>,
     IAcceptEventBase<IOverridenActivityBuilder>,
     IAcceptEventOverrides<IOverridenActivityBuilder>,
     ISendEventBase<IOverridenActivityBuilder>,

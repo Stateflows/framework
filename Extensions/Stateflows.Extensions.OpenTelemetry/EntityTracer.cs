@@ -36,7 +36,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (activity != null)
                 {
                     activity.DisplayName += $": {status}";
-                    if (status == EventStatus.Failed)
+                    if (status is EventStatus.Failed or EventStatus.Aborted)
                     {
                         activity.SetStatus(ActivityStatusCode.Error);
                     }
@@ -157,9 +157,9 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             var eventName = Event.GetName(typeof(TEvent)).ToShortName();
             var name = $"Entity '{GetEntityId(context)}' processing '{eventName}'";
-            var parent = context.Headers.Values.OfType<ActivityHeader>()
+            var parent = context.Headers?.Values.OfType<ActivityHeader>()
                 .Select(header => header.ActivityContext)
-                .FirstOrDefault(value => value != default);
+                .FirstOrDefault(value => value != default) ?? default;
             var activity = parent != default
                 ? StateMachineTracer.Source.StartActivity(name, ActivityKind.Internal, parent)
                 : StateMachineTracer.Source.StartActivity(name);
@@ -169,8 +169,8 @@ namespace Stateflows.Extensions.OpenTelemetry
         }
 
         private static bool ShouldTrace(IBehaviorActionContext context)
-            => !context.ExecutionTrigger.GetType().IsDefined(typeof(NoTracingAttribute), inherit: true) &&
-                !context.Headers.Values.Any(header => header is NoTracing);
+            => context.ExecutionTrigger?.GetType().IsDefined(typeof(NoTracingAttribute), inherit: true) != true &&
+                context.Headers?.Values.Any(header => header is NoTracing) != true;
 
         private static string GetEntityId(IBehaviorActionContext context)
             => $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}";

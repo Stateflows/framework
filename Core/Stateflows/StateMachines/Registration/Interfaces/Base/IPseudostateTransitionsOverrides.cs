@@ -4,7 +4,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     /// <summary>Locates and extends inherited completion paths from a pseudostate.</summary>
     /// <typeparam name="TReturn">The pseudostate builder returned after extension.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
     public interface IPseudostateTransitionsOverrides<out TReturn>
     {
         /// <summary>Extends an inherited completion transition from the current pseudostate.</summary>
@@ -14,8 +14,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source pseudostate builder after extending its inherited branch.</returns>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>Extends an inherited completion transition from the current pseudostate.</summary>
@@ -26,8 +26,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source pseudostate builder after extending its inherited branch.</returns>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseTransition<TTargetState>(OverridenDefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -36,8 +36,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     
     /// <summary>Locates and extends inherited ordinary or fallback pseudostate paths.</summary>
     /// <typeparam name="TReturn">The pseudostate builder returned after extension.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
     public interface IPseudostateElseTransitionsOverrides<out TReturn> : IPseudostateTransitionsOverrides<TReturn>
     {
         /// <summary>Extends an inherited fallback completion transition from the current pseudostate.</summary>
@@ -48,9 +48,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// guard of its own.</remarks>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         void UseElseTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>Extends an inherited fallback completion transition from the current pseudostate.</summary>
@@ -62,9 +62,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// guard of its own.</remarks>
         /// <remarks>Extends an existing inherited edge selected by transition kind, trigger (when present), and target
         /// (when present); it does not add a new transition.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-pseudostates" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-evaluation-of-transitions#else-transitions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.3.-Pseudostates" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
         [DebuggerHidden]
         public void UseElseTransition<TTargetState>(OverridenElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex

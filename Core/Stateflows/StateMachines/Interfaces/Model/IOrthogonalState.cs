@@ -26,7 +26,7 @@ namespace Stateflows.StateMachines
         IOrthogonalStateFinalization;
 
     /// <summary>Supplies an orthogonal state's lifecycle, outgoing transitions, and region definitions.</summary>
-    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state">orthogonal states</see>.</remarks>
+    /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.4.2.2.3.-Orthogonal-State">orthogonal states</see>.</remarks>
     public interface IOrthogonalStateDefinition : IOrthogonalState
     {
         /// <summary>Configures this orthogonal state during registration.</summary>

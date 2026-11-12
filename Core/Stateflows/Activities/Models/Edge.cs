@@ -18,5 +18,7 @@ namespace Stateflows.Activities.Models
         public Node Target { get; set; }
         public int Weight { get; set; } = 1;
         public bool IsElse { get; set; }
+        public bool IsCrossScope { get; set; }
+        public Node Owner { get; set; }
     }
 }

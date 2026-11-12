@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// <summary>Registers events whose processing is postponed while the state is active and its deferral guard
     /// accepts.</summary>
     /// <typeparam name="TReturn">The fluent state builder returned after registration.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
     public interface IStateUtils<out TReturn>
     {
         /// <summary>Defers a matching event while the current state is active and its deferral guard accepts.</summary>
@@ -16,8 +16,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring deferral guard. Without a guard, matching events are
         /// deferred unconditionally while the state is active.</param>
         /// <returns>The current state builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
         TReturn AddDeferredEvent(string eventName, DeferralBuildAction<StructuralEvent> buildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
@@ -35,7 +35,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring deferral guard. Without a guard, matching events are
         /// deferred unconditionally while the state is active.</param>
         /// <returns>The current state builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction = null);
 
         /// <summary>Defers a matching event while the current state is active and its deferral guard accepts.</summary>
@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TDeferralGuard">Type of the deferral guard.</typeparam>
         /// <param name="buildAction">Optional callback configuring additional deferral guard.</param>
         /// <returns>The current state builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddDeferredEvent<TEvent, TDeferralGuard>(DeferralBuildAction<TEvent> buildAction = null)
             where TDeferralGuard : class, IDeferralGuard<TEvent>
             => AddDeferredEvent<TEvent>(b =>

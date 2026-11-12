@@ -21,14 +21,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// <summary>Registers predicates that decide whether an active state defers a candidate event.</summary>
     /// <typeparam name="TEvent">Deferred event payload type.</typeparam>
     /// <typeparam name="TReturn">The fluent deferral builder returned after configuration.</typeparam>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
     public interface IBaseDeferralGuard<TEvent, out TReturn>
     {
         /// <summary>Registers predicates for the current deferral rule.</summary>
         /// <param name="guardAsync">Asynchronous predicate receiving the deferral context. Must return true to permit
         /// deferral.</param>
         /// <returns>The current deferral builder with the predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddGuard(Func<IDeferralContext<TEvent>, Task<bool>> guardAsync)
             => AddGuards(guardAsync);
         
@@ -36,15 +36,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guardsAsync">Asynchronous predicates receiving the deferral context. Each must return true to
         /// permit deferral.</param>
         /// <returns>The current fluent deferral builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddGuards(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync);
 
         /// <summary>Registers predicates for the current deferral rule.</summary>
         /// <param name="guardDelegate">Predicate returning <c>bool</c> or <c>Task&lt;bool&gt;</c>; parameters are resolved
         /// from execution services and supported contexts.</param>
         /// <returns>The current fluent deferral builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
-        TReturn AddGuard(Delegate guardDelegate)
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
+        private TReturn AddGuard(Delegate guardDelegate)
             => AddGuard(c => guardDelegate.InvokeDelegatePredicateAsync(
                 StateflowsActivator.ResolveParameterValueFactories(
                     c.Behavior.ServiceProvider,
@@ -66,7 +66,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TActivity">Embedded behavior implementation of <see cref="IActivity" />. Its definition is
         /// registered for this embedding site.</typeparam>
         /// <returns>The current deferral builder with the activity guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddGuardActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
@@ -83,7 +83,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="activityBuildAction">Callback configuring the embedded Activity's nodes, flows, and lifecycle.
         /// </param>
         /// <returns>The current deferral builder with the activity guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddGuardActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var deferral = (IDeferralBuilder)this;
@@ -100,7 +100,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
         /// </param>
         /// <returns>The current deferral builder with the action guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         [DebuggerHidden]
         public TReturn AddGuardAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
@@ -119,7 +119,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
         /// </param>
         /// <returns>The current deferral builder with the action guard registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups" />
         public TReturn AddGuardAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
             var deferral = (IDeferralBuilder)this;
@@ -134,7 +134,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guard">Synchronous predicate receiving the deferral context. Must return true to permit deferral.
         /// </param>
         /// <returns>The current deferral builder with the predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         [DebuggerHidden]
         public TReturn AddGuard(Func<IDeferralContext<TEvent>, bool> guard)
             => AddGuards(guard);
@@ -143,7 +143,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guards">Synchronous predicates receiving the deferral context. Each must return true to permit
         /// deferral.</param>
         /// <returns>The current fluent deferral builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         public TReturn AddGuards(params Func<IDeferralContext<TEvent>, bool>[] guards)
             => AddGuards(guards.Select(guard => guard.ToAsync()).ToArray());
 
@@ -153,7 +153,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the activated typed handler before its handler method is
         /// invoked.</param>
         /// <returns>The current deferral builder with the typed predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         [DebuggerHidden]
         TReturn AddGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, IDeferralGuard<TEvent>
@@ -168,7 +168,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guardAsync">Asynchronous predicate receiving the deferral context. Must return false for the
         /// negated guard to permit deferral.</param>
         /// <returns>The current deferral builder with the inverted predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         [DebuggerHidden]
         TReturn AddNegatedGuard(Func<IDeferralContext<TEvent>, Task<bool>> guardAsync)
             => AddNegatedGuards(guardAsync);
@@ -177,7 +177,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guardsAsync">Asynchronous predicates receiving the deferral context. Each must return false for the
         /// negated guard to permit deferral.</param>
         /// <returns>The current fluent deferral builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         TReturn AddNegatedGuards(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
             => AddGuards(guardsAsync.Select<Func<IDeferralContext<TEvent>, Task<bool>>, Func<IDeferralContext<TEvent>, Task<bool>>>(guardAsync => async c => !await guardAsync.Invoke(c)).ToArray());
 
@@ -185,7 +185,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guard">Synchronous predicate receiving the deferral context. Must return false for the negated
         /// guard to permit deferral.</param>
         /// <returns>The current deferral builder with the inverted predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         [DebuggerHidden]
         public TReturn AddNegatedGuard(Func<IDeferralContext<TEvent>, bool> guard)
             => AddNegatedGuards(guard);
@@ -194,7 +194,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guards">Synchronous predicates receiving the deferral context. Each must return false for the
         /// negated guard to permit deferral.</param>
         /// <returns>The current fluent deferral builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         public TReturn AddNegatedGuards(params Func<IDeferralContext<TEvent>, bool>[] guards)
             => AddNegatedGuards(guards.Select(guard => guard.ToAsync()).ToArray());
         
@@ -204,7 +204,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Optional callback configuring the activated typed handler before its handler method is
         /// invoked.</param>
         /// <returns>The current deferral builder with the inverted typed predicate registered.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
         [DebuggerHidden]
         TReturn AddNegatedGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, IDeferralGuard<TEvent>
