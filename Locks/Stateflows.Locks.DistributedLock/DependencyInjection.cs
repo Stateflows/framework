@@ -17,7 +17,13 @@ namespace Stateflows
         /// <param name="builder">The Stateflows builder whose services receive the lock registration.</param>
         /// <param name="distributedLockFactory">Creates a lock from the current service provider and behavior lock identifier.</param>
         /// <returns>The same builder, for further Stateflows configuration.</returns>
-        /// <remarks>Only one <see cref="IStateflowsLock"/> implementation may be registered in the container.</remarks>
+        /// <remarks>
+        /// Only one <see cref="IStateflowsLock"/> implementation may be registered in the container.
+        /// A local asynchronous gate serializes each behavior and scope within this service provider before
+        /// invoking the factory. The gate remains held until the distributed handle is disposed.
+        /// Acquisition timeouts cover local waiting and the remaining distributed acquisition budget.
+        /// Different keys and separate service providers remain independent; distributed locking is still required.
+        /// </remarks>
         public static IStateflowsBuilder AddDistributedLock(this IStateflowsBuilder builder, Func<IServiceProvider, string, Task<IDistributedLock>> distributedLockFactory)
         {
             if (builder.ServiceCollection.IsServiceRegistered<IStateflowsLock>())
@@ -27,7 +33,10 @@ namespace Stateflows
 
             builder
                 .ServiceCollection
-                .AddScoped<IStateflowsLock>(serviceProvider => new DistributedLockService(async id => await distributedLockFactory(serviceProvider, id)));
+                .AddSingleton<LocalLockGate>()
+                .AddScoped<IStateflowsLock>(serviceProvider => new DistributedLockService(
+                    id => distributedLockFactory(serviceProvider, id),
+                    serviceProvider.GetRequiredService<LocalLockGate>()));
 
             return builder;
         }
