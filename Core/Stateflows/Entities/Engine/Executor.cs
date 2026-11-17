@@ -466,7 +466,18 @@ namespace Stateflows.Entities.Engine
                 // Coerce the stored value to the declared field type (e.g. Int64→Int32 after JSON round-trip)
                 if (fieldValue != null && fieldValue.GetType() != fieldValueType)
                 {
-                    try { fieldValue = Convert.ChangeType(fieldValue, fieldValueType); }
+                    try
+                    {
+                        var targetType = Nullable.GetUnderlyingType(fieldValueType) ?? fieldValueType;
+                        if (!targetType.IsInstanceOfType(fieldValue))
+                        {
+                            fieldValue = targetType.IsEnum
+                                ? fieldValue is string enumName
+                                    ? Enum.Parse(targetType, enumName, ignoreCase: true)
+                                    : Enum.ToObject(targetType, fieldValue)
+                                : Convert.ChangeType(fieldValue, targetType);
+                        }
+                    }
                     catch { /* leave as-is; SetValue will surface a clear error if incompatible */ }
                 }
 
