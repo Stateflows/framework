@@ -78,6 +78,18 @@ internal partial class Graph
                     await DispatchAsync(visitor, nameof(IActivityVisitor.InitializerTypeAddedAsync), [type, implementation], id, Name, Version);
             }
         }
+        foreach (var pair in PayloadInitializerNames)
+        {
+            var names = pair.Value.Order(StringComparer.Ordinal).ToArray();
+            for (var i = 0; i < Initializers[pair.Key].Actions.Count; i++)
+            {
+                var id = OperationRegistrations[Initializers[pair.Key]][i].Identifier;
+                await DispatchAsync(visitor, nameof(IActivityVisitor.InitializerAddedAsync), [typeof(Payload)],
+                    id, Name, Version, names, i);
+                if (InitializerImplementations.TryGetValue((pair.Key, i), out var implementation))
+                    await DispatchAsync(visitor, nameof(IActivityVisitor.InitializerTypeAddedAsync), [typeof(Payload), implementation], id, Name, Version);
+            }
+        }
         for (var i = 0; i < Finalize.Actions.Count; i++)
         {
             var id = OperationRegistrations[Finalize][i].Identifier;

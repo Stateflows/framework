@@ -53,6 +53,8 @@ namespace Stateflows.Activities.Models
         internal Dictionary<(string Binding, int Order), Type> InitializerImplementations { get; } = [];
         internal Type DefaultInitializerImplementation { get; set; }
         internal Dictionary<Type, string[]> InitializerEventNames { get; } = [];
+        internal Dictionary<string, IReadOnlyList<string>> PayloadInitializerNames { get; } = new(StringComparer.Ordinal);
+        internal Dictionary<string, List<Logic<ActivityPredicateAsync>>> InitializerBindings { get; } = new(StringComparer.Ordinal);
 
         public readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = [];
         public readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = [];
@@ -85,9 +87,26 @@ namespace Stateflows.Activities.Models
             }
 
             AllEdges.Clear();
+            InitializerBindings.Clear();
+            void Bind(string eventName, Logic<ActivityPredicateAsync> initializer)
+            {
+                if (!InitializerBindings.TryGetValue(eventName, out var list))
+                    InitializerBindings.Add(eventName, list = []);
+                if (!list.Contains(initializer)) list.Add(initializer);
+            }
             foreach (var type in InitializerTypes)
+            {
                 InitializerEventNames[type] = StateflowsBuilder.TypeMapper.GetMappedTypes(type)
                     .Select(mapped => mapped.GetEventName()).Distinct().ToArray();
+                foreach (var eventName in InitializerEventNames[type])
+                    Bind(eventName, Initializers[type.GetEventName()]);
+            }
+            foreach (var pair in PayloadInitializerNames)
+                foreach (var eventName in pair.Value)
+                {
+                    StateflowsBuilder.Payloads.GetPayload(eventName);
+                    Bind(eventName, Initializers[pair.Key]);
+                }
             foreach (var node in AllNodes.Values.Where(node => node != null))
             {
                 node.IncomingEdges?.Clear();

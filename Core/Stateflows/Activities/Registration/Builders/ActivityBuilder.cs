@@ -18,6 +18,9 @@ using Stateflows.Activities.Registration.Interfaces.Internal;
 using Stateflows.Entities.Registration.Interfaces;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Entities;
+using Stateflows.Payloads;
+using Stateflows.Common.Exceptions;
+using Stateflows.Activities.Exceptions;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -71,6 +74,8 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
+            if (PayloadNameSet.IsPayloadType(typeof(TInitializationEvent)))
+                throw new ActivityDefinitionException($"Initializer of '{typeof(TInitializationEvent).Name}' requires event names; use the overload taking event names.", Graph.Class);
 
             var initializerName = typeof(TInitializationEvent).GetEventName();
             
@@ -83,24 +88,51 @@ namespace Stateflows.Activities.Registration.Builders
                 Graph.StateflowsBuilder.Payloads.RegisterClr(typeof(TInitializationEvent));
             }
 
-            initializer.Actions.Add(async c =>
-            {
-                var result = false;
-                var context = new ActivityInitializationContext<TInitializationEvent>(
-                    c.Context,
-                    c.NodeScope,
-                    c.Context.EventHolder as EventHolder<TInitializationEvent>,
-                    (c as ActivityInitializationContext)?.InputTokens
-                );
-
-                result = await actionAsync(context);
-
-                return result;
-            });
-            
+            AddInitializerAction(initializer, actionAsync);
 
             return this;
         }
+
+        internal void AddPayloadInitializer(IReadOnlyList<string> eventNames, Func<IActivityInitializationContext<Payload>, Task<bool>> actionAsync)
+        {
+            actionAsync.ThrowIfNull(nameof(actionAsync));
+            eventNames = PayloadNameSet.Validate(eventNames, nameof(eventNames));
+            var key = PayloadNameSet.Key(eventNames);
+            if (!Graph.Initializers.TryGetValue(key, out var initializer))
+            {
+                initializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
+                Graph.Initializers.Add(key, initializer);
+                Graph.PayloadInitializerNames.Add(key, eventNames);
+            }
+
+            AddInitializerAction(initializer, actionAsync);
+        }
+
+        private static void AddInitializerAction<TInitializationEvent>(Logic<ActivityPredicateAsync> initializer, Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
+            => initializer.Actions.Add(c =>
+            {
+                var source = c.Context.EventHolder;
+                var holder = source as EventHolder<TInitializationEvent>;
+                if (holder == null)
+                {
+                    TInitializationEvent payload;
+                    if (source.BoxedPayload is TInitializationEvent typed)
+                        payload = typed;
+                    else if (!ImplicitConverter.TryConvert(source.BoxedPayload, out payload))
+                        throw new StateflowsRuntimeException(
+                            $"Failed to convert event of type {source.BoxedPayload.GetType()} to {typeof(TInitializationEvent)}");
+                    holder = new EventHolder<TInitializationEvent> { Payload = payload, Id = source.Id, Headers = source.Headers };
+                }
+
+                var context = new ActivityInitializationContext<TInitializationEvent>(
+                    c.Context,
+                    c.NodeScope,
+                    holder,
+                    (c as ActivityInitializationContext)?.InputTokens
+                );
+
+                return actionAsync(context);
+            });
 
         #region IActivityBuilder
         IActivityBuilder IActivityActionBase<IActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)

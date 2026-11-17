@@ -383,8 +383,8 @@ namespace Stateflows.Activities.Engine
                         .Distinct()
                         .ToArray(),
                     
-                    BehaviorStatus.NotInitialized => Graph.InitializerTypes.Any()
-                        ? Graph.InitializerTypes.ToArray()
+                    BehaviorStatus.NotInitialized => Graph.Initializers.Any()
+                        ? Graph.InitializerTypes.SelectMany(Graph.StateflowsBuilder.TypeMapper.GetMappedTypes).Distinct().ToArray()
                         : [ typeof(Initialize) ],
                     
                     _ => []
@@ -398,6 +398,9 @@ namespace Stateflows.Activities.Engine
                 .Select(type => type.GetEventName())
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
                     ? GetActiveNodes().Where(node => node.PayloadName != null).Select(node => node.PayloadName)
+                    : [])
+                .Concat(BehaviorStatus == BehaviorStatus.NotInitialized
+                    ? Graph.PayloadInitializerNames.Values.SelectMany(names => names)
                     : [])
                 .Distinct()
                 .ToArray();
@@ -1308,9 +1311,10 @@ namespace Stateflows.Activities.Engine
         {
             InitializationStatus result = InitializationStatus.NotInitialized;
 
-            var initializer = Graph.Initializers.ContainsKey(context.InitializationEvent.GetType().GetEventName())
-                ? Graph.Initializers[context.InitializationEvent.GetType().GetEventName()]
-                : Graph.DefaultInitializer;
+            var initializers = Graph.InitializerBindings.TryGetValue(context.InitializationEventHolder.Name, out var bound)
+                ? bound
+                : null;
+            var initializer = initializers?[0] ?? Graph.DefaultInitializer;
 
             var implicitInitialization = (initializer == null || initializer == Graph.DefaultInitializer) && !(context.InitializationEvent is Initialize);
 
@@ -1320,7 +1324,14 @@ namespace Stateflows.Activities.Engine
                 {
                     try
                     {
-                        result = await initializer.IterateOverAsync(context)
+                        var accepted = true;
+                        foreach (var logic in initializers ?? [initializer])
+                            if (!await logic.IterateOverAsync(context))
+                            {
+                                accepted = false;
+                                break;
+                            }
+                        result = accepted
                             ? initializer == Graph.DefaultInitializer
                                 ? InitializationStatus.InitializedImplicitly
                                 : InitializationStatus.InitializedExplicitly
