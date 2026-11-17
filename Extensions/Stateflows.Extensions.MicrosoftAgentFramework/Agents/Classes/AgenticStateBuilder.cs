@@ -1,6 +1,8 @@
 using Stateflows.MAF.AIAgents;
 using Stateflows.StateMachines;
+using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.Extensions.MicrosoftAgentFramework.Agents.Classes;
 
@@ -14,6 +16,12 @@ internal class AgenticStateBuilder(IBehaviorStateBuilder behaviorStateBuilder) :
 
     public IBehaviorStateBuilder AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction = null)
         => behaviorStateBuilder.AddDeferredEvent<TEvent>(buildAction);
+
+    IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent(string eventName, DeferralBuildAction<Payload> buildAction)
+        => behaviorStateBuilder.AddDeferredEvent(eventName, buildAction);
+
+    IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent(IReadOnlyList<string> eventNames, DeferralBuildAction<Payload> buildAction)
+        => behaviorStateBuilder.AddDeferredEvent(eventNames, buildAction);
 
     public IBehaviorStateBuilder AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
         => behaviorStateBuilder.AddTransition<TEvent>(targetStateName, transitionBuildAction);

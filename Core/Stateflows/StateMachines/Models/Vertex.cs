@@ -69,6 +69,22 @@ namespace Stateflows.StateMachines.Models
             }
         }
         public HashSet<string> PayloadDeferrals { get; } = new(StringComparer.Ordinal);
+        internal Dictionary<string, Logic<StateMachinePredicateAsync>> PayloadDeferralDeclarations { get; } = new(StringComparer.Ordinal);
+        internal void AddPayloadDeferral(IReadOnlyList<string> names, Logic<StateMachinePredicateAsync> logic)
+        {
+            foreach (var name in names)
+                if (Deferrals.ContainsKey(name))
+                    throw new DeferralDefinitionException(name, $"Event '{name}' is already deferred by '{Name}'.", Graph.Class);
+            foreach (var name in names)
+            {
+                Deferrals.Add(name, logic);
+                DeferralTypes[name] = typeof(Payload);
+                PayloadDeferrals.Add(name);
+            }
+            PayloadDeferralDeclarations[Stateflows.Payloads.PayloadNameSet.Key(names)] = logic;
+        }
+        internal bool TryGetInheritedPayloadDeferral(IReadOnlyList<string> names, out Logic<StateMachinePredicateAsync> logic)
+            => PayloadDeferralDeclarations.TryGetValue(Stateflows.Payloads.PayloadNameSet.Key(names), out logic) && logic.OriginStateMachineName != null;
         public List<Region> Regions { get; set; } = [];
         public Region DefaultRegion
         {

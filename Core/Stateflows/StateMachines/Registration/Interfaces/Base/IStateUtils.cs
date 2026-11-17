@@ -1,4 +1,6 @@
-﻿using Stateflows.Common;
+﻿using System.Collections.Generic;
+using Stateflows.Common;
+using Stateflows.Payloads;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
@@ -21,13 +23,53 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddDeferredEvent(string eventName, DeferralBuildAction<Payload> buildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+            return AddDeferredEvent(new[] { eventName }, buildAction);
+        }
+
+        /// <summary>Defers events matching any of the given payload names while the current state is active and its
+        /// deferral guard accepts.</summary>
+        /// <param name="eventNames">Registered payload names to match. Must contain at least one name; names must be
+        /// distinct and must not be null, empty, or whitespace.</param>
+        /// <param name="buildAction">Optional callback configuring deferral guard. Without a guard, matching events are
+        /// deferred unconditionally while the state is active.</param>
+        /// <returns>The current state builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+        TReturn AddDeferredEvent(IReadOnlyList<string> eventNames, DeferralBuildAction<Payload> buildAction = null)
+        {
+            var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));
             var vertex = ((IVertexBuilder)this).Vertex;
             var builder = new EventDeferralBuilder<Payload>(vertex);
             buildAction?.Invoke(builder);
-            vertex.Deferrals.Add(eventName, builder.Logic);
-            vertex.DeferralTypes.Add(eventName, typeof(Payload));
-            vertex.PayloadDeferrals.Add(eventName);
+            vertex.AddPayloadDeferral(names, builder.Logic);
             return (TReturn)this;
+        }
+
+        /// <summary>Defers events matching any of the given payload names, guarded by a deferral guard class.</summary>
+        /// <typeparam name="TDeferralGuard">Type of the deferral guard; receives the deferred payload.</typeparam>
+        /// <param name="eventNames">Registered payload names to match.</param>
+        /// <param name="buildAction">Optional callback configuring additional deferral guard.</param>
+        /// <returns>The current state builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
+        TReturn AddDeferredEvent<TDeferralGuard>(IReadOnlyList<string> eventNames, DeferralBuildAction<Payload> buildAction = null)
+            where TDeferralGuard : class, IDeferralGuard<Payload>
+            => AddDeferredEvent(eventNames, b =>
+            {
+                b.AddGuard<TDeferralGuard>();
+                buildAction?.Invoke(b);
+            });
+
+        /// <summary>Defers events matching the given payload name, guarded by a deferral guard class.</summary>
+        /// <typeparam name="TDeferralGuard">Type of the deferral guard; receives the deferred payload.</typeparam>
+        /// <param name="eventName">Registered payload name to match.</param>
+        /// <param name="buildAction">Optional callback configuring additional deferral guard.</param>
+        /// <returns>The current state builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
+        TReturn AddDeferredEvent<TDeferralGuard>(string eventName, DeferralBuildAction<Payload> buildAction = null)
+            where TDeferralGuard : class, IDeferralGuard<Payload>
+        {
+            System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+            return AddDeferredEvent<TDeferralGuard>(new[] { eventName }, buildAction);
         }
 
         /// <summary>Defers a matching event while the current state is active and its deferral guard accepts.</summary>

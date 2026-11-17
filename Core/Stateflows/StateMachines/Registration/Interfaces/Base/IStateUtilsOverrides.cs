@@ -1,4 +1,11 @@
-﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base;
+﻿using System.Collections.Generic;
+using Stateflows.Common;
+using Stateflows.Payloads;
+using Stateflows.StateMachines.Exceptions;
+using Stateflows.StateMachines.Registration.Builders;
+using Stateflows.StateMachines.Registration.Interfaces.Internal;
+
+namespace Stateflows.StateMachines.Registration.Interfaces.Base;
 
 /// <summary>Locates and extends event deferral rules inherited from a reused state definition.</summary>
 /// <typeparam name="TReturn">The fluent state builder returned after extension.</typeparam>
@@ -13,4 +20,30 @@ public interface IStateUtilsOverrides<out TReturn>
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
     TReturn UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction = null);
+
+    /// <summary>Extends an inherited payload deferral rule whose name set equals the given set (order-insensitive).</summary>
+    /// <param name="eventNames">Payload names of the inherited deferral.</param>
+    /// <param name="buildAction">Optional callback configuring the inherited deferral guard.</param>
+    /// <returns>The current state builder after extending the inherited deferral rule.</returns>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
+    TReturn UseDeferredEvent(IReadOnlyList<string> eventNames, OverridenDeferralBuildAction<Payload> buildAction = null)
+    {
+        var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));
+        var vertex = ((IVertexBuilder)this).Vertex;
+        if (!vertex.TryGetInheritedPayloadDeferral(names, out var logic))
+            throw new StateMachineOverrideException($"Deferral of events '{PayloadNameSet.Key(names)}' not found in overriden state '{vertex.Name}'", vertex.Graph.Class);
+        buildAction?.Invoke(new EventDeferralBuilder<Payload>(vertex, logic));
+        return (TReturn)this;
+    }
+
+    /// <summary>Extends an inherited payload deferral rule declared for exactly the given payload name.</summary>
+    /// <param name="eventName">Payload name of the inherited deferral.</param>
+    /// <param name="buildAction">Optional callback configuring the inherited deferral guard.</param>
+    /// <returns>The current state builder after extending the inherited deferral rule.</returns>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
+    TReturn UseDeferredEvent(string eventName, OverridenDeferralBuildAction<Payload> buildAction = null)
+    {
+        System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+        return UseDeferredEvent(new[] { eventName }, buildAction);
+    }
 }
