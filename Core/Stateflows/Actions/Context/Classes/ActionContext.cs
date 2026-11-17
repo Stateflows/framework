@@ -65,12 +65,12 @@ namespace Stateflows.Actions.Context.Classes
             => BehaviorLocator.TryLocateBehavior(id, out behavior);
 
         public IEnumerable<TToken> GetTokensOfType<TToken>()
-            => typeof(StructuralEvent).IsAssignableFrom(typeof(TToken))
+            => typeof(Payload).IsAssignableFrom(typeof(TToken))
                 ? InputTokens.Select(tokenHolder => tokenHolder.BoxedPayload).OfType<TToken>()
                 : InputTokens.OfType<TokenHolder<TToken>>().Select(tokenHolder => tokenHolder.Payload);
         
         public bool HasTokensOfType<TToken>()
-            => typeof(StructuralEvent).IsAssignableFrom(typeof(TToken))
+            => typeof(Payload).IsAssignableFrom(typeof(TToken))
                 ? InputTokens.Any(tokenHolder => tokenHolder.BoxedPayload is TToken)
                 : InputTokens.OfType<TokenHolder<TToken>>().Any();
 

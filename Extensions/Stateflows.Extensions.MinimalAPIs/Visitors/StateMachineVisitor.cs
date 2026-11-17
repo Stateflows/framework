@@ -23,7 +23,7 @@ internal class StateMachineVisitor(
     public Interceptor Interceptor => interceptor;
     private readonly Dictionary<string, bool> Initializers = new();
     private readonly Dictionary<string, List<Type>> Triggers = new();
-    private readonly HashSet<(string BehaviorName, string EventName)> StructuralTriggers = new();
+    private readonly HashSet<(string BehaviorName, string EventName)> PayloadTriggers = new();
     private readonly Dictionary<string, string> VertexNames = new();
     private static readonly MethodInfo RegisterRequestMethod = typeof(StateMachineVisitor).GetMethod(
         nameof(RegisterRequestEndpoint),
@@ -72,16 +72,16 @@ internal class StateMachineVisitor(
 
     private void RegisterEvents<TEvent>(string stateMachineName, IReadOnlyList<string> eventNames)
     {
-        if (typeof(TEvent) != typeof(StructuralEvent))
+        if (typeof(TEvent) != typeof(Payload))
         {
             typeMapper.VisitMappedTypes<TEvent>(this);
             return;
         }
-        var events = routeBuilder.ServiceProvider.GetRequiredService<IEventsRegister>();
+        var events = routeBuilder.ServiceProvider.GetRequiredService<IPayloadsRegister>();
         foreach (var name in eventNames)
-            if (StructuralTriggers.Add((stateMachineName, name)))
-                routeBuilder.RegisterStructuralEventEndpoint(interceptor, BehaviorType.StateMachine, stateMachineName,
-                    events.GetEvent(name), HateoasLinks, HasDefaultInstance, SupportedStatuses);
+            if (PayloadTriggers.Add((stateMachineName, name)))
+                routeBuilder.RegisterPayloadEndpoint(interceptor, BehaviorType.StateMachine, stateMachineName,
+                    events.GetPayload(name), HateoasLinks, HasDefaultInstance, SupportedStatuses);
     }
 
     public override Task HostedBehaviorEventAddedAsync<TEvent>(string id, string stateMachineName, int stateMachineVersion,
@@ -114,7 +114,7 @@ internal class StateMachineVisitor(
         if (
             eventType.GetCustomAttributes<NoApiMappingAttribute>().Any() ||
             eventType.IsAssignableTo(typeof(SystemEvent)) ||
-            eventType.IsAssignableTo(typeof(StructuralEvent)) ||
+            eventType.IsAssignableTo(typeof(Payload)) ||
             eventType.IsAssignableTo(typeof(Exception))
         )
         {

@@ -65,7 +65,7 @@ Entities are **in scope** since the owner's second and third rounds of decisions
 | D22 | `PayloadRequest` is a legal token; events sent to an activity may flow down the network as tokens. |
 | D23 | **Superseded by D29.** (Was: `PayloadConsumer` / `PayloadProducer` class attributes.) |
 | D24 | **Superseded by D29.** (Was: optional call-site names defaulting to the attribute's names.) |
-| D25 | Wiki: payloads get a **new separate page** `4.6.-Payloads`; `4.1.-Events-and-Structural-Events` becomes `4.1.-Events` describes typed events and only mentions dynamically defined events, linking to the payloads page (D34). |
+| D25 | Wiki: payloads get a **new separate page** `4.6.-Payloads`; `4.1.-Events` becomes `4.1.-Events` describes typed events and only mentions dynamically defined events, linking to the payloads page (D34). |
 | D26 | Entities gain `ITypeMapper` support (OneOf / UnionTypes) for initializers and mutations: builder forms, `[Mutation]` / `[Initializer]` template methods and class forms fan out over `TypeMapper.GetMappedTypes`, converting with `ImplicitConverter.TryConvert<TEvent>` as state-machine `EventContext<TEvent>` does. |
 | D27 | Flow checks **match the typed checks** (ACT-026…029), translated from "assignable" to name-set relations: original names play `TokenType`, transformed names play `TargetTokenType` (D30). Supersedes D18 and R13's strict-subset rule. Stages declare no names, so there is no stage-to-stage check. Nodes with no token declarations stay unconstrained, as in the typed checks. |
 | D28 | `params string[]` for attribute constructors (`[TokenName]`, `[Mutation]`, `[Initializer]`) and both a single-name sugar and an `IReadOnlyList<string>` form for every name-taking member are confirmed; exceptions: the members whose single-name form collides with an existing typed member are list-only (D33). |
@@ -255,7 +255,7 @@ relative.
 
 One branch, no behavior change, `git mv` so history follows files.
 
-- Core types: [Structural](Core/Stateflows.Common/Structural) folder (value, event,
+- Core types: [Payloads](Core/Stateflows.Common/Payloads) folder (value, event,
   request, converter, definition, factory, register, extensions) and
   [Events registration](Core/Stateflows/Events) (`EventsRegister`, builders,
   DI) → `Payloads` folders and names per the API report. `StateflowsBuilder.Events`
@@ -277,7 +277,7 @@ One branch, no behavior change, `git mv` so history follows files.
 - Tests and examples: about a dozen `Structural*` test files
   (StateMachine, Activity, Action, Entity, Orleans, AIAgent, Json, ClearScript),
   Examples.
-- XML doc `seealso` links to the wiki page `4.1.-Events-and-Structural-Events`
+- XML doc `seealso` links to the wiki page `4.1.-Events`
   (wiki page rename and new payloads page listed in WP9, D25).
 - Exit: solution builds; all tests pass; a repo grep for `Structural` returns only
   intentional leftovers (documented list); release note states the persistence
@@ -536,7 +536,7 @@ initializers and deferrals.
 ### WP9 — Documentation (medium)
 
 Wiki repo `W:\Source\Stateflows-wiki\framework.wiki` (82 numbered pages, no
-`_Sidebar`): `4.1.-Events-and-Structural-Events` (rename the page to `4.1.-Events`,
+`_Sidebar`): `4.1.-Events` (rename the page to `4.1.-Events`,
 keep typed events, replace the dynamic-event content with a brief mention linking to
 `4.6.-Payloads`; D34), a **new page
 `4.6.-Payloads`** (payload definition, names in transitions, initializers, deferrals,
@@ -624,10 +624,10 @@ closest to the typed behavior, and recorded here.
 | --- | --- | --- | --- |
 | I1 | WP0 | `IInputOutputTokens<T>` and the optional variants are both an input `IEnumerable<T>` and an output `ICollection<T>`; LINQ (`Any`, `Count()`, `ToList`) takes the `ICollection<T>` fast path and therefore sees the **output** side. | Left unchanged (existing typed behavior); payload variants mirror it. Tests enumerate with `foreach`. Worth a separate look later. |
 | I2 | WP0 | `OutputTokens<T>.Contains/Remove/CopyTo/Clear` compared envelopes by fresh `Guid`/holder type, so they never matched. | Compare payload values with `EqualityComparer<T>.Default` over tokens of type `T`; `Remove` removes the first match; `Clear` removes only tokens of `T`. |
-
+| I3 | WP1 | MinimalAPIs `StructuralJson` and Json-extension `EventJson` both map to `PayloadJson`; `StructuralRequestPayload` would become `PayloadRequestPayload`. | Both `PayloadJson` classes are `internal` in different assemblies, so both keep the name. The request DTO is named `PayloadRequestBody`. The namespace of `CronEvent` (Scheduling) stays `Stateflows.Events` because it is a typed event, not a payload. Remaining "structural" wording refers to structured nodes or state-machine structure and is intentional. |
 ## Source landmarks
 
-- Payload model: [Structural](Core/Stateflows.Common/Structural),
+- Payload model: [Payloads](Core/Stateflows.Common/Payloads),
   [Events registration](Core/Stateflows/Events),
   [StateflowsJsonConverter.cs](Core/Stateflows.Common/Utilities/StateflowsJsonConverter.cs).
 - Tokens: [TokenHolder.cs](Core/Stateflows.Common/Classes/TokenHolder.cs),

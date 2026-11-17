@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -302,14 +302,14 @@ namespace Stateflows.StateMachines.Engine
             => GetExpectedEvents()
                 .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
                 .Where(type => !typeof(Exception).IsAssignableFrom(type))
-                .Where(type => !typeof(StructuralEvent).IsAssignableFrom(type))
+                .Where(type => !typeof(Payload).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
                     ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.Edges.Values)
-                        .Where(edge => edge.StructuralEventNames != null).SelectMany(edge => edge.StructuralEventNames!)
+                        .Where(edge => edge.PayloadNames != null).SelectMany(edge => edge.PayloadNames!)
                     : [])
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
-                    ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.BehaviorStructuralEvents)
+                    ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.BehaviorPayloads)
                     : [])
                 .Distinct()
                 .ToArray();
@@ -463,7 +463,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     if (
                         (vertex.BehaviorEventTypes.Contains(eventHolder.PayloadType) ||
-                         vertex.BehaviorStructuralEvents.Contains(eventHolder.Name)) &&
+                         vertex.BehaviorPayloads.Contains(eventHolder.Name)) &&
                         !eventHolder.Headers.Values.Any(h => h is NoForwarding) &&
                         !eventHolder.PayloadType.GetCustomAttributes<NoForwardingAttribute>().Any()
                     )

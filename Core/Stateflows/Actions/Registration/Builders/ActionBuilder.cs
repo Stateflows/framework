@@ -112,8 +112,8 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
         if (!Model.ConsumedEventNames.Contains(eventName))
         {
             Model.ConsumedEventNames.Add(eventName);
-            if (!Model.ConsumedBindingOrder.Contains(typeof(Stateflows.Common.StructuralEvent)))
-                Model.ConsumedBindingOrder.Add(typeof(Stateflows.Common.StructuralEvent));
+            if (!Model.ConsumedBindingOrder.Contains(typeof(Stateflows.Common.Payload)))
+                Model.ConsumedBindingOrder.Add(typeof(Stateflows.Common.Payload));
         }
 
         return this;

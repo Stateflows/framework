@@ -15,7 +15,7 @@ internal class ActivityVisitor(
     IEndpointRouteBuilder routeBuilder,
     Interceptor interceptor,
     ITypeMapper typeMapper,
-    IEventsRegister eventsRegister
+    IPayloadsRegister eventsRegister
 ) : BehaviorVisitor(routeBuilder, typeMapper), IActivityVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
@@ -82,11 +82,11 @@ internal class ActivityVisitor(
 
         Initializers[activityName] = true;
 
-        if (typeof(TInitializationEvent) == typeof(StructuralEvent))
+        if (typeof(TInitializationEvent) == typeof(Payload))
         {
             foreach (var eventName in eventNames)
-                if (StructuralTriggers.Add((activityName, eventName)))
-                    RouteBuilder.RegisterStructuralEventEndpoint(Interceptor, BehaviorType.Activity, activityName, eventsRegister.GetEvent(eventName), HateoasLinks, HasDefaultInstance);
+                if (PayloadTriggers.Add((activityName, eventName)))
+                    RouteBuilder.RegisterPayloadEndpoint(Interceptor, BehaviorType.Activity, activityName, eventsRegister.GetPayload(eventName), HateoasLinks, HasDefaultInstance);
             return Task.CompletedTask;
         }
 
@@ -127,11 +127,11 @@ internal class ActivityVisitor(
             return Task.CompletedTask;
         }
 
-        if (typeof(TEvent) == typeof(StructuralEvent))
+        if (typeof(TEvent) == typeof(Payload))
         {
             foreach (var eventName in eventNames)
-                if (StructuralTriggers.Add((activityName, eventName)))
-                    RouteBuilder.RegisterStructuralEventEndpoint(Interceptor, BehaviorType.Activity, activityName, eventsRegister.GetEvent(eventName), HateoasLinks, HasDefaultInstance);
+                if (PayloadTriggers.Add((activityName, eventName)))
+                    RouteBuilder.RegisterPayloadEndpoint(Interceptor, BehaviorType.Activity, activityName, eventsRegister.GetPayload(eventName), HateoasLinks, HasDefaultInstance);
             return Task.CompletedTask;
         }
 

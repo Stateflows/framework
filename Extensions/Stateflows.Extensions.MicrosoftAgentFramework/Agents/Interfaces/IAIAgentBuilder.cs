@@ -23,11 +23,11 @@ public interface IAIAgentBuilder
     /// <param name="eventFormatterAsync">Asynchronously converts the event and agent context to a chat message.</param>
     /// <returns>This builder for chaining.</returns>
     IAIAgentBuilder AddConsumedEvent<TEvent>(Func<IAIAgentContext, TEvent, Task<ChatMessage>> eventFormatterAsync);
-    /// <summary>Registers a formatter for a consumed structural event name.</summary>
-    /// <param name="eventName">The structural event name.</param>
-    /// <param name="eventFormatterAsync">Asynchronously converts the structural event and agent context to a chat message.</param>
+    /// <summary>Registers a formatter for a consumed payload name.</summary>
+    /// <param name="eventName">The payload name.</param>
+    /// <param name="eventFormatterAsync">Asynchronously converts the payload and agent context to a chat message.</param>
     /// <returns>This builder for chaining.</returns>
-    IAIAgentBuilder AddConsumedEvent(string eventName, Func<IAIAgentContext, StructuralEvent, Task<ChatMessage>> eventFormatterAsync);
+    IAIAgentBuilder AddConsumedEvent(string eventName, Func<IAIAgentContext, Payload, Task<ChatMessage>> eventFormatterAsync);
     /// <summary>Registers a formatter for consumed tokens of a CLR token type.</summary>
     /// <typeparam name="TToken">The token type consumed by the agent.</typeparam>
     /// <param name="tokenFormatterAsync">Asynchronously converts the token and agent context to a chat message.</param>

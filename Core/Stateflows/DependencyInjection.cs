@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
@@ -159,7 +159,7 @@ namespace Stateflows
             ActivitiesDependencyInjection.Build(builder);
             EntitiesDependencyInjection.Build(builder);
             StateMachinesDependencyInjection.Build(builder);
-            builder.Events.Build();
+            builder.Payloads.Build();
 
             return services;
         }

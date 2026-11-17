@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using Stateflows;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
-using Stateflows.Events;
+using Stateflows.Payloads;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.StateMachines;
 
@@ -148,7 +148,7 @@ public sealed class NotificationWatchDeliveryTests
     [DataRow(true, false, true)]
     [DataRow(true, true, true)]
     [Timeout(60_000)]
-    public async Task JsonResponseContainsEveryNotificationFromSendOrRequest(bool orleans, bool request, bool structural)
+    public async Task JsonResponseContainsEveryNotificationFromSendOrRequest(bool orleans, bool request, bool payload)
     {
         await using var app = CreateApp(orleans);
         await app.StartAsync();
@@ -157,7 +157,7 @@ public sealed class NotificationWatchDeliveryTests
             using var http = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
             for (var iteration = 0; iteration < 3; iteration++)
             {
-                var endpoint = structural
+                var endpoint = payload
                     ? request ? "watchedQuery" : "watchedEvent"
                     : request ? "requestWatchedNotifications" : "publishWatchedNotifications";
                 using var response = await http.PostAsJsonAsync(
@@ -190,7 +190,7 @@ public sealed class NotificationWatchDeliveryTests
     [DataRow(true, false, true)]
     [DataRow(true, true, true)]
     [Timeout(60_000)]
-    public async Task SseFramesContainEveryNotificationInOrderForSendOrRequest(bool orleans, bool request, bool structural)
+    public async Task SseFramesContainEveryNotificationInOrderForSendOrRequest(bool orleans, bool request, bool payload)
     {
         await using var app = CreateApp(orleans);
         await app.StartAsync();
@@ -198,7 +198,7 @@ public sealed class NotificationWatchDeliveryTests
         {
             using var http = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
             using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            var endpoint = structural
+            var endpoint = payload
                 ? request ? "watchedQuery" : "watchedEvent"
                 : request ? "requestWatchedNotifications" : "publishWatchedNotifications";
             using var message = new HttpRequestMessage(HttpMethod.Post,
@@ -256,8 +256,8 @@ public sealed class NotificationWatchDeliveryTests
             if (!orleans)
                 sf.AddLegacyRuntime();
             sf.UseFullNamesFor(TypedElements.None)
-            .AddEvents(events => events
-                .AddEvent("watchedEvent", ev => ev.AddField("count", FieldType.Int32))
+            .AddPayloads(events => events
+                .AddPayload("watchedEvent", ev => ev.AddField("count", FieldType.Int32))
                 .AddRequest<WatchedNotificationsReply>("watchedQuery", ev => ev.AddField("count", FieldType.Int32)))
             .AddStateMachines(machines => machines.AddStateMachine("watch-delivery", machine => machine
                 .AddInitialState("ready", state => state

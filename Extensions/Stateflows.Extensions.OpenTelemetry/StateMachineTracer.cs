@@ -159,8 +159,8 @@ namespace Stateflows.Extensions.OpenTelemetry
                     if (Skip && !ImplicitInitialization) return;
 
                     var eventName = Event.GetName(context.Event!).ToShortName();
-                    var triggerEventName = context.Event is StructuralEvent structural
-                        ? structural.Name.ToShortName()
+                    var triggerEventName = context.Event is Payload payload
+                        ? payload.Name.ToShortName()
                         : context.TriggerType.GetEventName().ToShortName();
                     if (eventName != Event<Completion>.Name.ToShortName())
                     {

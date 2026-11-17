@@ -52,7 +52,7 @@ public class JsonDefinitions
     [DataRow("parallel", -1)]
     [DataRow("parallel", 2)]
     [DataRow("iterative", -1)]
-    public void StructuralOptionsAndParallelConcurrencyRegisterFromJson(string kind, int limit)
+    public void PayloadOptionsAndParallelConcurrencyRegisterFromJson(string kind, int limit)
     {
         var node = new JObject
         {

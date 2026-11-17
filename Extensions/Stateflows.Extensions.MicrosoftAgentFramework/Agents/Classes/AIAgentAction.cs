@@ -32,7 +32,7 @@ internal class AIAgentAction(
 {
     public Dictionary<Type, ChatMessageConverterHolder> EventFormatters { get; } = new();
     public Dictionary<Type, ChatMessageConverterHolder> TokenFormatters { get; } = new();
-    public Dictionary<string, ChatMessageConverterHolder> StructuralEventFormatters { get; } = new(StringComparer.Ordinal);
+    public Dictionary<string, ChatMessageConverterHolder> PayloadFormatters { get; } = new(StringComparer.Ordinal);
     public string? Name { get; set; }
     public string? Description { get; set; }
     public string? InitialPrompt { get; set; }
@@ -161,10 +161,10 @@ internal class AIAgentAction(
             .Select(t => t.ToChatMessage())
         );
 
-        if (StructuralEventFormatters.Count != 0)
+        if (PayloadFormatters.Count != 0)
         {
             var agentContext = new AIAgentContext(actionContext, actionContext, actionContext);
-            foreach (var formatter in StructuralEventFormatters.Values)
+            foreach (var formatter in PayloadFormatters.Values)
             {
                 chatMessages.AddRange(await formatter.ConvertAsync(agentContext, cancellationToken));
             }

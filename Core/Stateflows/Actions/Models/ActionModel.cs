@@ -46,7 +46,7 @@ namespace Stateflows.Actions.Models
         internal void FinalizeBindings()
         {
             foreach (var type in ConsumedBindingOrder)
-                BindingNames[type] = type == typeof(StructuralEvent) && ConsumedEventNames.Count != 0
+                BindingNames[type] = type == typeof(Payload) && ConsumedEventNames.Count != 0
                     ? ConsumedEventNames.ToArray()
                     : TypeMapper.GetMappedTypes(type).Select(mapped => mapped.GetEventName()).Distinct().ToArray();
             foreach (var type in ProducedEventTypes.Distinct())
@@ -69,14 +69,14 @@ namespace Stateflows.Actions.Models
 
             foreach (var eventType in ConsumedEventTypes.Concat(ProducedEventTypes))
             {
-                stateflowsBuilder.Events.RegisterClr(eventType);
+                stateflowsBuilder.Payloads.RegisterClr(eventType);
             }
 
             foreach (var eventName in ConsumedEventNames)
             {
                 try
                 {
-                    stateflowsBuilder.Events.GetEvent(eventName);
+                    stateflowsBuilder.Payloads.GetPayload(eventName);
                 }
                 catch (ArgumentException e)
                 {

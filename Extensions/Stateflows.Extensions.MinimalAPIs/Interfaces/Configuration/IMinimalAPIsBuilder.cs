@@ -81,7 +81,7 @@ public interface IMinimalAPIsBuilder : IEventsConfiguration<IMinimalAPIsBuilder>
     IMinimalAPIsBuilder ConfigureEntities(Action<IEntitiesEndpointsConfiguration> configureEntitiesAction);
 
     /// <summary>
-    /// Registers a mapping of validation attribute onto OpenAPI schema of structural event fields (applies to
+    /// Registers a mapping of validation attribute onto OpenAPI schema of payload fields (applies to
     /// <typeparamref name="TAttribute"/> and attributes derived from it, and takes precedence over built-in mappings).
     /// Built-in DataAnnotations attributes (Required, Range, StringLength, MinLength, MaxLength, Length,
     /// RegularExpression, EmailAddress, Url, Base64String, AllowedValues, DeniedValues) are mapped automatically

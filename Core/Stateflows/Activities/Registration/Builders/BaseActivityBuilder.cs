@@ -167,7 +167,7 @@ namespace Stateflows.Activities.Registration
                 }
                 finally
                 {
-                    if (!faulty && !context.Context.Executor.StructuralTypes.Contains(node.Type))
+                    if (!faulty && !context.Context.Executor.PayloadTypes.Contains(node.Type))
                     {
                         c.Output(new ControlToken());
                     }
@@ -272,7 +272,7 @@ namespace Stateflows.Activities.Registration
             string actionNodeName,
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
             AcceptEventActionBuildAction<TEvent> buildAction = null,
-            string structuralEventName = null
+            string payloadName = null
         )
         {
             var result = AddNode(
@@ -281,7 +281,7 @@ namespace Stateflows.Activities.Registration
                 c => actionAsync(new AcceptEventActionContext<TEvent>(c as ActionContext)),
                 b =>
                 {
-                    b.Node.StructuralEventName = structuralEventName;
+                    b.Node.PayloadName = payloadName;
                     buildAction?.Invoke(new AcceptEventNodeBuilder<TEvent>(b.Node, b.ActivityBuilder));
                 },
                 typeof(TEvent)

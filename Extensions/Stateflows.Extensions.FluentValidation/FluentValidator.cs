@@ -25,15 +25,15 @@ namespace Stateflows.Extensions.FluentValidation
         /// <param name="event">The event instance to validate.</param>
         /// <param name="validationResults">Receives validation failures converted to data-annotation results.</param>
         /// <returns><see langword="true"/> when no validator is registered or validation succeeds; otherwise, <see langword="false"/>.</returns>
-        /// <remarks>When the event is a structural event and no validator for its declared type exists, the adapter also checks for an <see cref="IValidator{T}"/> registered for <see cref="StructuralEvent"/>.</remarks>
+        /// <remarks>When the event is a payload and no validator for its declared type exists, the adapter also checks for an <see cref="IValidator{T}"/> registered for <see cref="Payload"/>.</remarks>
         public async Task<bool> ValidateAsync<TEvent>(TEvent @event, List<ValidationResult> validationResults)
         {
             var validator = serviceProvider.GetService<IValidator<TEvent>>();
             if (validator == null)
             {
-                if (@event is StructuralEvent structuralEvent && typeof(TEvent) != typeof(StructuralEvent))
+                if (@event is Payload payload && typeof(TEvent) != typeof(Payload))
                 {
-                    return await ValidateAsync(structuralEvent, validationResults);
+                    return await ValidateAsync(payload, validationResults);
                 }
                 return true;
             }

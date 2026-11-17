@@ -1,4 +1,4 @@
-﻿using Stateflows.Common;
+using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
@@ -11,22 +11,22 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     public interface IStateUtils<out TReturn>
     {
         /// <summary>Defers a matching event while the current state is active and its deferral guard accepts.</summary>
-        /// <param name="eventName">Registered structural-event name to match, not the CLR wrapper type name. Must not be
+        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
         /// null, empty, or whitespace.</param>
         /// <param name="buildAction">Optional callback configuring deferral guard. Without a guard, matching events are
         /// deferred unconditionally while the state is active.</param>
         /// <returns>The current state builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
-        TReturn AddDeferredEvent(string eventName, DeferralBuildAction<StructuralEvent> buildAction = null)
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
+        TReturn AddDeferredEvent(string eventName, DeferralBuildAction<Payload> buildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
             var vertex = ((IVertexBuilder)this).Vertex;
-            var builder = new EventDeferralBuilder<StructuralEvent>(vertex);
+            var builder = new EventDeferralBuilder<Payload>(vertex);
             buildAction?.Invoke(builder);
             vertex.Deferrals.Add(eventName, builder.Logic);
-            vertex.DeferralTypes.Add(eventName, typeof(StructuralEvent));
-            vertex.StructuralDeferrals.Add(eventName);
+            vertex.DeferralTypes.Add(eventName, typeof(Payload));
+            vertex.PayloadDeferrals.Add(eventName);
             return (TReturn)this;
         }
 

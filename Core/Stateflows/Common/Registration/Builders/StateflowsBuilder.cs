@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
@@ -12,7 +12,7 @@ namespace Stateflows.Common.Registration.Builders
         private readonly List<IStateflowsTypeMapper> TypeMappers = [];
 
         internal readonly ITypeMapper TypeMapper;
-        internal readonly Stateflows.Events.EventsRegister Events = new();
+        internal readonly Stateflows.Payloads.PayloadsRegister Payloads = new();
         
         internal readonly Dictionary<string, Resource> ResourceNames = [];
         
@@ -23,10 +23,10 @@ namespace Stateflows.Common.Registration.Builders
         public StateflowsBuilder(IServiceCollection services)
         {
             ServiceCollection = services;
-            TypeMapper = new TypeMapper(TypeMappers, Events.RegisterClr);
-            services.AddSingleton<Stateflows.Common.IEventsRegister>(Events);
-            services.AddSingleton<Stateflows.Common.IEventFactory>(Events);
-            services.AddSingleton<Stateflows.Common.IStateflowsValidator>(Events);
+            TypeMapper = new TypeMapper(TypeMappers, Payloads.RegisterClr);
+            services.AddSingleton<Stateflows.Common.IPayloadsRegister>(Payloads);
+            services.AddSingleton<Stateflows.Common.IPayloadFactory>(Payloads);
+            services.AddSingleton<Stateflows.Common.IStateflowsValidator>(Payloads);
             AddResource("", b => { });
         }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
@@ -114,9 +114,9 @@ namespace Stateflows.Common
     {
         private string name;
 
-        /// <summary>Gets the structural event's declared name, or the standard event name for the payload type.</summary>
-        public override string Name => Payload is StructuralEvent structuralEvent
-            ? structuralEvent.Name
+        /// <summary>Gets the payload's declared name, or the standard event name for the payload type.</summary>
+        public override string Name => Payload is Payload payload
+            ? payload.Name
             : name ??= Event<TEvent>.Name;
 
         /// <summary>Gets or sets the event payload.</summary>

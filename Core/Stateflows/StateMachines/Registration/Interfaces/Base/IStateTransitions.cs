@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Extensions;
@@ -8,8 +8,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     /// <summary>Adds triggered, internal, fallback, and completion transitions from the current state.</summary>
     /// <typeparam name="TReturn">The source-state builder returned after configuring each transition.</typeparam>
-    /// <remarks>Named overloads match structural events by their registered event name and supply a
-    /// <see cref="StructuralEvent" /> payload to callbacks. Typed overloads use CLR trigger metadata.
+    /// <remarks>Named overloads match payloads by their registered event name and supply a
+    /// <see cref="Payload" /> payload to callbacks. Typed overloads use CLR trigger metadata.
     /// Exception-triggered transitions enable polymorphic matching, so a transition for a base exception can accept a
     /// registered derived exception type. Exception events are processed separately from the failed operation; taking
     /// an exception transition does not resume or commit that failed execution. See
@@ -18,16 +18,16 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     public interface IStateTransitions<out TReturn>
     {
         /// <summary>Adds an event-triggered transition from the current state.</summary>
-        /// <param name="eventName">Registered structural-event name to match, not the CLR wrapper type name. Must not be
+        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
         /// null, empty, or whitespace.</param>
         /// <param name="targetStateName">Registered name of the target vertex. The target must be defined in the machine;
         /// this method does not create it.</param>
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
-        /// local/external target semantics. Callbacks receive the structural event payload.</param>
+        /// local/external target semantics. Callbacks receive the payload payload.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
-        TReturn AddTransition(string eventName, string targetStateName, TransitionBuildAction<StructuralEvent> transitionBuildAction = null)
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
+        TReturn AddTransition(string eventName, string targetStateName, TransitionBuildAction<Payload> transitionBuildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
             System.ArgumentException.ThrowIfNullOrWhiteSpace(targetStateName);
@@ -37,61 +37,61 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         }
 
         /// <summary>Adds an internal transition without exiting or re-entering the current state.</summary>
-        /// <param name="eventName">Registered structural-event name to match, not the CLR wrapper type name. Must not be
+        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
         /// null, empty, or whitespace.</param>
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards and effects. Callbacks
-        /// receive the structural event payload.</param>
+        /// receive the payload payload.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
-        TReturn AddInternalTransition(string eventName, InternalTransitionBuildAction<StructuralEvent> transitionBuildAction = null)
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
+        TReturn AddInternalTransition(string eventName, InternalTransitionBuildAction<Payload> transitionBuildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            new StateBuilder(((IVertexBuilder)this).Vertex).AddTransitionInternal<StructuralEvent>(
+            new StateBuilder(((IVertexBuilder)this).Vertex).AddTransitionInternal<Payload>(
                 Constants.DefaultTransitionTarget, false,
-                b => transitionBuildAction?.Invoke((IInternalTransitionBuilder<StructuralEvent>)b), eventName);
+                b => transitionBuildAction?.Invoke((IInternalTransitionBuilder<Payload>)b), eventName);
             return (TReturn)this;
         }
 
         /// <summary>Adds a fallback event-triggered transition from the current state.</summary>
-        /// <param name="eventName">Registered structural-event name to match, not the CLR wrapper type name. Must not be
+        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
         /// null, empty, or whitespace.</param>
         /// <param name="targetStateName">Registered name of the target vertex. The target must be defined in the machine;
         /// this method does not create it.</param>
         /// <param name="transitionBuildAction">Optional callback configuring the transition's effects and local/external
-        /// target semantics. Callbacks receive the structural event payload.</param>
+        /// target semantics. Callbacks receive the payload payload.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
-        TReturn AddElseTransition(string eventName, string targetStateName, ElseTransitionBuildAction<StructuralEvent> transitionBuildAction = null)
+        TReturn AddElseTransition(string eventName, string targetStateName, ElseTransitionBuildAction<Payload> transitionBuildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
             System.ArgumentException.ThrowIfNullOrWhiteSpace(targetStateName);
-            new StateBuilder(((IVertexBuilder)this).Vertex).AddTransitionInternal<StructuralEvent>(
-                targetStateName, true, b => transitionBuildAction?.Invoke((IElseTransitionBuilder<StructuralEvent>)b), eventName);
+            new StateBuilder(((IVertexBuilder)this).Vertex).AddTransitionInternal<Payload>(
+                targetStateName, true, b => transitionBuildAction?.Invoke((IElseTransitionBuilder<Payload>)b), eventName);
             return (TReturn)this;
         }
 
         /// <summary>Adds a fallback internal transition without exiting or re-entering the current state.</summary>
-        /// <param name="eventName">Registered structural-event name to match, not the CLR wrapper type name. Must not be
+        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
         /// null, empty, or whitespace.</param>
         /// <param name="transitionBuildAction">Optional callback configuring the transition's effects. Callbacks receive
-        /// the structural event payload.</param>
+        /// the payload payload.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
         /// guard of its own.</remarks>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
-        TReturn AddElseInternalTransition(string eventName, ElseInternalTransitionBuildAction<StructuralEvent> transitionBuildAction = null)
+        TReturn AddElseInternalTransition(string eventName, ElseInternalTransitionBuildAction<Payload> transitionBuildAction = null)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            new StateBuilder(((IVertexBuilder)this).Vertex).AddTransitionInternal<StructuralEvent>(
+            new StateBuilder(((IVertexBuilder)this).Vertex).AddTransitionInternal<Payload>(
                 Constants.DefaultTransitionTarget, true,
-                b => transitionBuildAction?.Invoke((IElseInternalTransitionBuilder<StructuralEvent>)b), eventName);
+                b => transitionBuildAction?.Invoke((IElseInternalTransitionBuilder<Payload>)b), eventName);
             return (TReturn)this;
         }
 

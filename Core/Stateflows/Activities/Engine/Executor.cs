@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Diagnostics;
@@ -270,7 +270,7 @@ namespace Stateflows.Activities.Engine
             NodeType.DataStore
         ];
 
-        public readonly NodeType[] StructuralTypes =
+        public readonly NodeType[] PayloadTypes =
         [
             NodeType.StructuredActivity,
             NodeType.ParallelActivity,
@@ -394,10 +394,10 @@ namespace Stateflows.Activities.Engine
             => GetExpectedEvents()
                 .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
                 .Where(type => !typeof(Exception).IsAssignableFrom(type))
-                .Where(type => !typeof(StructuralEvent).IsAssignableFrom(type))
+                .Where(type => !typeof(Payload).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
-                    ? GetActiveNodes().Where(node => node.StructuralEventName != null).Select(node => node.StructuralEventName)
+                    ? GetActiveNodes().Where(node => node.PayloadName != null).Select(node => node.PayloadName)
                     : [])
                 .Distinct()
                 .ToArray();
@@ -1559,7 +1559,7 @@ namespace Stateflows.Activities.Engine
             }
             else
                 nodeScope = activeScope ?? nodeScope.CreateChildScope(node, upstreamEdge,
-                    StructuralTypes.Contains(node.Type) && node.Options.HasFlag(NodeOptions.Reentrant) ? Guid.NewGuid() : null);
+                    PayloadTypes.Contains(node.Type) && node.Options.HasFlag(NodeOptions.Reentrant) ? Guid.NewGuid() : null);
             invocationScope.Value = nodeScope;
 
             var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens)
@@ -1680,7 +1680,7 @@ namespace Stateflows.Activities.Engine
                     }
 
                     if (nodeScope.CancellationToken.IsCancellationRequested && CancellableTypes.Contains(node.Type) &&
-                        !StructuralTypes.Contains(node.Type))
+                        !PayloadTypes.Contains(node.Type))
                         return;
 
                     if (node.Type is NodeType.OutputPin or NodeType.ExceptionHandler)
@@ -1690,7 +1690,7 @@ namespace Stateflows.Activities.Engine
                     else
                     {
                         if (
-                            StructuralTypes.Contains(node.Type) &&
+                            PayloadTypes.Contains(node.Type) &&
                             (interleaving?.Finalized ?? Context.IsNodeCompleted(node, nodeScope)) &&
                             !actionContext.OutputTokens.Any()
                         )

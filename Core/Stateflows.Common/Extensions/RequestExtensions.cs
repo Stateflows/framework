@@ -1,4 +1,4 @@
-﻿using Stateflows.Common.Utilities;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common
 {
@@ -10,13 +10,13 @@ namespace Stateflows.Common
         /// <typeparam name="TResponse">The response payload type declared by the request.</typeparam>
         /// <param name="request">The request instance whose response is recorded.</param>
         /// <param name="response">The response payload.</param>
-        /// <remarks>Ordinary requests use the current execution's response map. Structural requests delegate to their structural response handling and validation.</remarks>
+        /// <remarks>Ordinary requests use the current execution's response map. Payload requests delegate to their payload response handling and validation.</remarks>
         public static void Respond<TResponse>(this IRequest<TResponse> request, TResponse response)
         {
-            if (request is StructuralRequest structuralRequest)
+            if (request is PayloadRequest payloadRequest)
             {
-                if (response is StructuralEvent structuralResponse) structuralRequest.Respond(structuralResponse);
-                else structuralRequest.Respond(response);
+                if (response is Payload payloadResponse) payloadRequest.Respond(payloadResponse);
+                else payloadRequest.Respond(response);
                 return;
             }
             ResponseHolder.Respond(request, response.ToEventHolder());

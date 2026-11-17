@@ -124,9 +124,9 @@ internal sealed partial class BoundActivityDocument(
         Type? eventType;
         if (kind == "acceptEvent" && node.Value<string>("eventName") is { } eventName)
         {
-            try { services.Events.GetEvent(eventName); }
+            try { services.Payloads.GetPayload(eventName); }
             catch (ArgumentException exception) { Error(path + "/eventName", exception.Message); }
-            resolvedTypes[path + "/eventType"] = eventType = typeof(StructuralEvent);
+            resolvedTypes[path + "/eventType"] = eventType = typeof(Payload);
         }
         else eventType = BindType(node.Value<string>("eventType")!, path + "/eventType");
         if (eventType == null) return null;

@@ -116,7 +116,7 @@ Identifiers that contain "Structural" are renamed (D7); identifiers that say onl
 | `event.schema.json` | `payload.schema.json` |
 | MinimalAPIs interceptor hooks `Before/AfterStructuralEventEndpointDefinition` | `Before/AfterPayloadEndpointDefinition` |
 | MinimalAPIs `Structural*` helper types | `Payload*` equivalents |
-| wiki page `4.1.-Events-and-Structural-Events` | `4.1.-Events` keeps typed events; payloads move to a **new, separate page** `4.6.-Payloads` (decision D25) (names and numbering) |
+| wiki page `4.1.-Events` | `4.1.-Events` keeps typed events; payloads move to a **new, separate page** `4.6.-Payloads` (decision D25) (names and numbering) |
 
 Identifiers that stay as they are: `AddAcceptEventAction`,
 `AddTransition(string eventName, …)`, `AddDeferredEvent`, `AddInitializer`,
@@ -1202,7 +1202,7 @@ Each of these was a decision I made provisionally. **All are confirmed**; items 
 12. `[TokenName]` with several names on a single-token interface (`IInputToken`)
     yields the first available matching token.
 13. **Revised.** Wiki: payloads get a new page `4.6.-Payloads` (appended, so existing
-    `4.2`–`4.5` links stay valid); `4.1.-Events-and-Structural-Events` becomes
+    `4.2`–`4.5` links stay valid); `4.1.-Events` becomes
     `4.1.-Events`, describes typed events and only **mentions** that events can also
     be defined dynamically, linking to `4.6.-Payloads` for the details.
 14. **Confirmed.** Required call-site names (D29) apply to every class-based handler closed over

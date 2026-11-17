@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -91,14 +91,14 @@ namespace Stateflows.Activities.Models
             foreach (var node in AllNodes.Values.Where(node => node != null))
             {
                 node.IncomingEdges?.Clear();
-                if (node.StructuralEventName != null)
+                if (node.PayloadName != null)
                 {
-                    StateflowsBuilder.Events.GetEvent(node.StructuralEventName);
-                    node.EffectiveEventNames = [node.StructuralEventName];
+                    StateflowsBuilder.Payloads.GetPayload(node.PayloadName);
+                    node.EffectiveEventNames = [node.PayloadName];
                 }
                 else if (node.EventType != null && node.Type is NodeType.AcceptEventAction or NodeType.TimeEventAction or NodeType.SendEventAction or NodeType.PublishEventAction)
                 {
-                    StateflowsBuilder.Events.RegisterClr(node.EventType);
+                    StateflowsBuilder.Payloads.RegisterClr(node.EventType);
                     node.EffectiveEventNames = StateflowsBuilder.TypeMapper.GetMappedTypes(node.EventType)
                         .Select(mapped => mapped.GetEventName()).Distinct().ToArray();
                 }

@@ -7,8 +7,8 @@ using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Json;
 using Stateflows.Common.Registration.Builders;
-using Stateflows.Events;
-using Stateflows.Events.Json;
+using Stateflows.Payloads;
+using Stateflows.Payloads.Json;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Json;
 using Stateflows.StateMachines.Registration.Interfaces;
@@ -24,49 +24,49 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     public sealed class Trace { public ConcurrentQueue<string> Entries { get; } = new(); }
     public sealed class Ping;
 
-    public sealed class Guard : ITransitionGuard<Ping>, ITransitionGuard<StructuralEvent>
+    public sealed class Guard : ITransitionGuard<Ping>, ITransitionGuard<Payload>
     {
         public Task<bool> GuardAsync(Ping @event) => Task.FromResult(true);
-        public Task<bool> GuardAsync(StructuralEvent @event) => Task.FromResult(@event.Get<int>("quantity") > 0);
+        public Task<bool> GuardAsync(Payload @event) => Task.FromResult(@event.Get<int>("quantity") > 0);
     }
 
-    public sealed class Effect(Trace trace) : ITransitionEffect<Ping>, ITransitionEffect<StructuralEvent>
+    public sealed class Effect(Trace trace) : ITransitionEffect<Ping>, ITransitionEffect<Payload>
     {
         public Task EffectAsync(Ping @event) { trace.Entries.Enqueue("ping"); return Task.CompletedTask; }
-        public Task EffectAsync(StructuralEvent @event) { trace.Entries.Enqueue(@event.Name); return Task.CompletedTask; }
+        public Task EffectAsync(Payload @event) { trace.Entries.Enqueue(@event.Name); return Task.CompletedTask; }
     }
 
-    public sealed class Receive(Trace trace) : IAcceptEventActionNode<StructuralEvent>, IConfigurable<string>
+    public sealed class Receive(Trace trace) : IAcceptEventActionNode<Payload>, IConfigurable<string>
     {
         public string Configuration { private get; set; } = "";
-        public Task ExecuteAsync(StructuralEvent @event, CancellationToken cancellationToken)
+        public Task ExecuteAsync(Payload @event, CancellationToken cancellationToken)
         {
             trace.Entries.Enqueue($"{Configuration}:{@event.Name}:{@event.Get<int>("quantity")}");
             return Task.CompletedTask;
         }
     }
 
-    private sealed class MachineVisitor(IEventsRegister events) : StateMachineVisitor
+    private sealed class MachineVisitor(IPayloadsRegister events) : StateMachineVisitor
     {
-        public List<EventDefinition> Named { get; } = [];
+        public List<PayloadDefinition> Named { get; } = [];
         public List<Type> Clr { get; } = [];
         public override Task TransitionAddedAsync<TEvent>(string id, string stateMachineName, int stateMachineVersion,
             string sourceVertexName, string? targetVertexName, bool isElse, bool isLocal, bool polymorphic, IReadOnlyList<string> eventNames)
         {
-            if (typeof(TEvent) == typeof(StructuralEvent)) Named.AddRange(eventNames.Select(events.GetEvent));
+            if (typeof(TEvent) == typeof(Payload)) Named.AddRange(eventNames.Select(events.GetPayload));
             else Clr.Add(typeof(TEvent));
             return Task.CompletedTask;
         }
     }
 
-    private sealed class AcceptVisitor(IEventsRegister events) : ActivityVisitor
+    private sealed class AcceptVisitor(IPayloadsRegister events) : ActivityVisitor
     {
-        public List<EventDefinition> Named { get; } = [];
+        public List<PayloadDefinition> Named { get; } = [];
         public override Task AcceptEventNodeAddedAsync<TEvent>(string nodeId, string activityName,
             int activityVersion, IReadOnlyList<string> eventNames)
         {
-            if (typeof(TEvent) == typeof(StructuralEvent))
-                Named.AddRange(eventNames.Select(events.GetEvent));
+            if (typeof(TEvent) == typeof(Payload))
+                Named.AddRange(eventNames.Select(events.GetPayload));
             return Task.CompletedTask;
         }
     }
@@ -101,10 +101,10 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
         }
         """);
 
-    private static void Events(IStateflowsBuilder builder) => builder.AddEvents(events =>
+    private static void Events(IStateflowsBuilder builder) => builder.AddPayloads(events =>
     {
         foreach (var name in new[] { "orderSubmitted", "orderCancelled", "other" })
-            JsonEventDefinition.Parse($$"""
+            JsonPayloadDefinition.Parse($$"""
                 {"formatVersion":"1.0","name":"{{name}}","fields":[{"name":"quantity","type":"Int32"}]}
                 """, new()).Register(events);
     });
@@ -151,7 +151,7 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     {
         Assert.IsTrue(StateMachineLocator.TryLocateStateMachine(new StateMachineId("json-named", name), out var machine));
         await machine.SendAsync(new Initialize());
-        var factory = ServiceProvider.GetRequiredService<IEventFactory>();
+        var factory = ServiceProvider.GetRequiredService<IPayloadFactory>();
         var expected = (await machine.GetStatusAsync()).Response.ExpectedEvents.ToArray();
         CollectionAssert.Contains(expected, "orderSubmitted");
         CollectionAssert.Contains(expected, "orderCancelled");
@@ -173,7 +173,7 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     {
         Assert.IsTrue(StateMachineLocator.TryLocateStateMachine(new StateMachineId("json-only-named", name), out var machine));
         await machine.SendAsync(new Initialize());
-        var factory = ServiceProvider.GetRequiredService<IEventFactory>();
+        var factory = ServiceProvider.GetRequiredService<IPayloadFactory>();
         Assert.AreEqual(EventStatus.Consumed,
             (await machine.SendAsync(factory.CreateFromJson(name, """{"quantity":1}"""))).Status);
         Assert.AreEqual("done", (await machine.GetStatusAsync()).Response.CurrentStates.Value);
@@ -187,7 +187,7 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     {
         Assert.IsTrue(StateMachineLocator.TryLocateStateMachine(new StateMachineId("json-named-else", "one"), out var machine));
         await machine.SendAsync(new Initialize());
-        var factory = ServiceProvider.GetRequiredService<IEventFactory>();
+        var factory = ServiceProvider.GetRequiredService<IPayloadFactory>();
         Assert.AreEqual(EventStatus.NotConsumed, (await machine.SendAsync(factory.CreateFromJson("other", "{}"))).Status);
         Assert.AreEqual(EventStatus.Consumed,
             (await machine.SendAsync(factory.CreateFromJson(name, """{"quantity":0}"""))).Status);
@@ -200,7 +200,7 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     {
         Assert.IsTrue(StateMachineLocator.TryLocateStateMachine(new StateMachineId("json-named-internal", "one"), out var machine));
         await machine.SendAsync(new Initialize());
-        var factory = ServiceProvider.GetRequiredService<IEventFactory>();
+        var factory = ServiceProvider.GetRequiredService<IPayloadFactory>();
         foreach (var name in new[] { "orderSubmitted", "orderCancelled" })
             Assert.AreEqual(EventStatus.Consumed,
                 (await machine.SendAsync(factory.CreateFromJson(name, """{"quantity":2}"""))).Status);
@@ -210,11 +210,11 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     }
 
     [TestMethod]
-    public async Task NamedAcceptNodeExecutesConfiguredStructuralImplementation()
+    public async Task NamedAcceptNodeExecutesConfiguredPayloadImplementation()
     {
         Assert.IsTrue(ActivityLocator.TryLocateActivity(new ActivityId("json-named-activity", "one"), out var activity));
         await activity.SendAsync(new Initialize());
-        var factory = ServiceProvider.GetRequiredService<IEventFactory>();
+        var factory = ServiceProvider.GetRequiredService<IPayloadFactory>();
         Assert.AreEqual(EventStatus.NotConsumed,
             (await activity.SendAsync(factory.CreateFromJson("orderCancelled", """{"quantity":2}"""))).Status);
         Assert.AreEqual(EventStatus.Consumed,
@@ -226,12 +226,12 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     [TestMethod]
     public async Task NamedDescriptorsReachBehaviorVisitorsWithoutWildcardSubstitution()
     {
-        var machine = new MachineVisitor(ServiceProvider.GetRequiredService<IEventsRegister>());
+        var machine = new MachineVisitor(ServiceProvider.GetRequiredService<IPayloadsRegister>());
         await ServiceProvider.GetRequiredService<IStateMachinesRegister>().VisitStateMachineAsync("json-named", 1, machine);
         CollectionAssert.AreEquivalent(new[] { "orderSubmitted", "orderCancelled" }, machine.Named.Select(e => e.Name).ToArray());
         CollectionAssert.AreEqual(new[] { typeof(Ping) }, machine.Clr.ToArray());
         Assert.IsTrue(machine.Named.All(e => e.Fields["quantity"].Type == FieldType.Int32));
-        var activity = new AcceptVisitor(ServiceProvider.GetRequiredService<IEventsRegister>());
+        var activity = new AcceptVisitor(ServiceProvider.GetRequiredService<IPayloadsRegister>());
         await ((Stateflows.Activities.Registration.ActivitiesRegister)ServiceProvider.GetRequiredService<IActivitiesRegister>())
             .VisitActivityAsync("json-named-activity", 1, activity);
         Assert.AreEqual("orderSubmitted", activity.Named.Single().Name);
@@ -283,7 +283,7 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     }
 
     [TestMethod]
-    public void DuplicateStructuralTriggersFailSchema()
+    public void DuplicatePayloadTriggersFailSchema()
     {
         var builder = new StateflowsBuilder(new ServiceCollection());
         Events(builder);
@@ -311,7 +311,7 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     }
 
     [TestMethod]
-    public void NamedAcceptRequiresStructuralHandlerContract()
+    public void NamedAcceptRequiresPayloadHandlerContract()
     {
         var builder = new StateflowsBuilder(new ServiceCollection());
         Events(builder);

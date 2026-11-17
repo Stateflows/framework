@@ -32,11 +32,11 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         }
     }
 
-    public override bool BeforeStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
+    public override bool BeforePayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
-            if (!interceptor.BeforeStructuralEventEndpointDefinition(behaviorClass, eventDefinition, isDefaultInstance, ref method, ref route))
+            if (!interceptor.BeforePayloadEndpointDefinition(behaviorClass, eventDefinition, isDefaultInstance, ref method, ref route))
             {
                 return false;
             }
@@ -45,11 +45,11 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public override void AfterStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
+    public override void AfterPayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition, bool isDefaultInstance, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())
         {
-            interceptor.AfterStructuralEventEndpointDefinition(behaviorClass, eventDefinition, isDefaultInstance, method, route, routeHandlerBuilder);
+            interceptor.AfterPayloadEndpointDefinition(behaviorClass, eventDefinition, isDefaultInstance, method, route, routeHandlerBuilder);
         }
     }
 

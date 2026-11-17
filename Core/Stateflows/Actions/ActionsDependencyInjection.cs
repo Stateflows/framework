@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
@@ -72,7 +72,7 @@ namespace Stateflows.Actions
                 {
                     register = new ActionsRegister()
                     {
-                        EventsRegister = (stateflowsBuilder as StateflowsBuilder)?.Events,
+                        PayloadsRegister = (stateflowsBuilder as StateflowsBuilder)?.Payloads,
                         TypeMapper = (stateflowsBuilder as StateflowsBuilder)?.TypeMapper
                     };
                     Registers.Add(stateflowsBuilder, register);

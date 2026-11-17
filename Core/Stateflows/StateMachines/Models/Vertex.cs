@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Stateflows.Common;
@@ -68,7 +68,7 @@ namespace Stateflows.StateMachines.Models
                 }
             }
         }
-        public HashSet<string> StructuralDeferrals { get; } = new(StringComparer.Ordinal);
+        public HashSet<string> PayloadDeferrals { get; } = new(StringComparer.Ordinal);
         public List<Region> Regions { get; set; } = [];
         public Region DefaultRegion
         {
@@ -96,7 +96,7 @@ namespace Stateflows.StateMachines.Models
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
         public List<Type> BehaviorEventTypes { get; set; } = [];
-        public HashSet<string> BehaviorStructuralEvents { get; } = new(StringComparer.Ordinal);
+        public HashSet<string> BehaviorPayloads { get; } = new(StringComparer.Ordinal);
         internal Dictionary<Type, HashSet<string>> BehaviorEventBindings { get; } = [];
 
         public Dictionary<string, object> Metadata { get; } = [];

@@ -21,11 +21,11 @@ public abstract class EndpointDefinitionInterceptor : IEndpointDefinitionInterce
     { }
 
     /// <inheritdoc/>
-    public virtual bool BeforeStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
+    public virtual bool BeforePayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
         => true;
 
     /// <inheritdoc/>
-    public virtual void AfterStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, string method, string route,
+    public virtual void AfterPayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition, bool isDefaultInstance, string method, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     { }
 

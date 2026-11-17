@@ -1,4 +1,4 @@
-﻿using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common;
 
@@ -23,11 +23,11 @@ public interface IOverridenAcceptEventActionBuilder<in TEvent> :
     IOverridenControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent>>,
     IExceptionHandlerBase<IOverridenAcceptEventActionBuilder<TEvent>>
 {
-    /// <summary>Changes this node to accept a structural event with the specified name.</summary>
-    /// <param name="eventName">Registered structural-event name accepted or published by this node.</param>
-    /// <returns>A builder typed for the structural event.</returns>
+    /// <summary>Changes this node to accept a payload with the specified name.</summary>
+    /// <param name="eventName">Registered payload name accepted or published by this node.</param>
+    /// <returns>A builder typed for the payload.</returns>
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-    IOverridenAcceptEventActionBuilder<StructuralEvent> ChangeAcceptedEvent(string eventName);
+    IOverridenAcceptEventActionBuilder<Payload> ChangeAcceptedEvent(string eventName);
 
     /// <summary>Changes this node to accept a narrower event type compatible with the inherited event type.</summary>
     /// <typeparam name="TAcceptedEvent">Event payload type accepted, created, or sent by this node.</typeparam>
@@ -64,11 +64,11 @@ public interface IOverridenAcceptEventActionBuilder<in TEvent, out TAcceptEventA
     IElementBuilderBase<TAcceptEventAction, IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>>
     where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
 {
-    /// <summary>Changes this node to accept a structural event with the specified name.</summary>
-    /// <param name="eventName">Registered structural-event name accepted or published by this node.</param>
-    /// <returns>A builder typed for the structural event.</returns>
+    /// <summary>Changes this node to accept a payload with the specified name.</summary>
+    /// <param name="eventName">Registered payload name accepted or published by this node.</param>
+    /// <returns>A builder typed for the payload.</returns>
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-    IOverridenAcceptEventActionBuilder<StructuralEvent> ChangeAcceptedEvent(string eventName);
+    IOverridenAcceptEventActionBuilder<Payload> ChangeAcceptedEvent(string eventName);
 
     /// <summary>Changes this node to accept a narrower event type compatible with the inherited event type.</summary>
     /// <typeparam name="TAcceptedEvent">Event payload type accepted, created, or sent by this node.</typeparam>

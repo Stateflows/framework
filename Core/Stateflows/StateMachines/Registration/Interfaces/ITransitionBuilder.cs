@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Registration.Builders;
@@ -41,7 +41,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         {
             var builder = (TransitionBuilder<TEvent>)this;
             builder.Edge.TriggerType = typeof(TTrigger);
-            builder.Edge.StructuralEventNames = null;
+            builder.Edge.PayloadNames = null;
             builder.Edge.Trigger = typeof(TTrigger).GetEventName();
 
             var result = new TransitionBuilder<TTrigger>(builder.Edge);
@@ -49,25 +49,25 @@ namespace Stateflows.StateMachines.Registration.Interfaces
             return result;
         }
 
-        /// <summary>Changes a compatible inherited transition to match an explicitly named structural event.</summary>
-        /// <param name="eventName">Registered structural-event name to match, not the CLR wrapper type name. Must not be
+        /// <summary>Changes a compatible inherited transition to match an explicitly named payload.</summary>
+        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
         /// null, empty, or whitespace.</param>
-        /// <returns>A builder for the same transition whose callbacks receive the structural payload.</returns>
+        /// <returns>A builder for the same transition whose callbacks receive the payload.</returns>
         /// <exception cref="System.ArgumentException">The event name is null, empty, or whitespace.</exception>
         /// <exception cref="System.InvalidOperationException">The original trigger cannot accept a
-        /// <see cref="StructuralEvent" /> payload.</exception>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events-and-Structural-Events#define-structural-events" />
-        IOverridenTransitionBuilder<StructuralEvent> ChangeTrigger(string eventName)
+        /// <see cref="Payload" /> payload.</exception>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
+        IOverridenTransitionBuilder<Payload> ChangeTrigger(string eventName)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            if (!typeof(TEvent).IsAssignableFrom(typeof(StructuralEvent)))
-                throw new System.InvalidOperationException("A CLR-typed transition cannot be changed to an incompatible structural trigger.");
+            if (!typeof(TEvent).IsAssignableFrom(typeof(Payload)))
+                throw new System.InvalidOperationException("A CLR-typed transition cannot be changed to an incompatible payload trigger.");
             var builder = (TransitionBuilder<TEvent>)this;
             var edge = builder.Edge;
-            edge.StructuralEventNames = [eventName];
-            edge.TriggerType = typeof(StructuralEvent);
+            edge.PayloadNames = [eventName];
+            edge.TriggerType = typeof(Payload);
             edge.Trigger = eventName;
-            return new TransitionBuilder<StructuralEvent>(edge);
+            return new TransitionBuilder<Payload>(edge);
         }
     }
 }

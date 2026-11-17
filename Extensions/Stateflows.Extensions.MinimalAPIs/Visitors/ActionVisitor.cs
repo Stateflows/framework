@@ -15,7 +15,7 @@ internal class ActionVisitor(
     IEndpointRouteBuilder routeBuilder,
     Interceptor interceptor,
     ITypeMapper typeMapper,
-    IEventsRegister eventsRegister
+    IPayloadsRegister eventsRegister
 )
     : BehaviorVisitor(routeBuilder, typeMapper), IActionVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
@@ -500,11 +500,11 @@ internal class ActionVisitor(
             return Task.CompletedTask;
         }
 
-        if (typeof(TEvent) == typeof(StructuralEvent))
+        if (typeof(TEvent) == typeof(Payload))
         {
             foreach (var eventName in eventNames)
-                if (StructuralTriggers.Add((actionName, eventName)))
-                    routeBuilder.RegisterStructuralEventEndpoint(interceptor, BehaviorType.Action, actionName, eventsRegister.GetEvent(eventName), HateoasLinks, HasDefaultInstance, supportedStatuses);
+                if (PayloadTriggers.Add((actionName, eventName)))
+                    routeBuilder.RegisterPayloadEndpoint(interceptor, BehaviorType.Action, actionName, eventsRegister.GetPayload(eventName), HateoasLinks, HasDefaultInstance, supportedStatuses);
             return Task.CompletedTask;
         }
 

@@ -31,7 +31,7 @@ internal static class ActivityPinEndpoints
             if (!interceptor.BeforeEventEndpointDefinition<TokensInput<TToken>>(behaviorClass, isDefault, ref method, ref route))
                 continue;
 
-            EndpointRouteRegistry.EnsureUnique(routes, method, route, Event<TokensInput<TToken>>.Name, isStructural: true);
+            EndpointRouteRegistry.EnsureUnique(routes, method, route, Event<TokensInput<TToken>>.Name, isPayload: true);
             var endpointMethod = method;
             var endpointRoute = route;
             var endpoint = isDefault
@@ -74,7 +74,7 @@ internal static class ActivityPinEndpoints
             var result = await behavior.SendAsync(new TokensInput<TToken>().AddRange(payload.Tokens), headers);
             // Admission must not be followed by a status request that queues behind executing transactional work.
             if (sendAsStream)
-                return StructuralJson.SerializeObject(new ResponseBody(result, [], [], new Dictionary<string, object>
+                return PayloadJson.SerializeObject(new ResponseBody(result, [], [], new Dictionary<string, object>
                 {
                     ["id"] = behavior.Id
                 })).ToResult(result.Status);
@@ -94,7 +94,7 @@ internal static class ActivityPinEndpoints
             if (!interceptor.BeforeEventEndpointDefinition<TToken>(behaviorClass, isDefault, ref method, ref route))
                 continue;
 
-            EndpointRouteRegistry.EnsureUnique(routes, method, route, Event<TToken>.Name, isStructural: true);
+            EndpointRouteRegistry.EnsureUnique(routes, method, route, Event<TToken>.Name, isPayload: true);
             var endpoint = isDefault
                 ? routes.MapMethods(route, [method], (
                     HttpContext context, IBehaviorLocator locator, [FromQuery] bool stream = false)
@@ -158,7 +158,7 @@ internal static class ActivityPinEndpoints
             {
                 await foreach (var notification in queue.Reader.ReadAllAsync(context.RequestAborted))
                 {
-                    await context.Response.WriteAsync($"event: {notification.Name}\ndata: {StructuralJson.SerializeObject(notification)}\n\n",
+                    await context.Response.WriteAsync($"event: {notification.Name}\ndata: {PayloadJson.SerializeObject(notification)}\n\n",
                         context.RequestAborted);
                     await context.Response.Body.FlushAsync(context.RequestAborted);
                 }

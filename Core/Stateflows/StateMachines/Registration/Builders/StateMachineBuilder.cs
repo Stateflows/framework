@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -78,7 +78,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
-            Graph.StateflowsBuilder.Events.RegisterClr(typeof(TInitializationEvent));
+            Graph.StateflowsBuilder.Payloads.RegisterClr(typeof(TInitializationEvent));
             
             if (!Graph.InitializerDeclarations.TryGetValue(typeof(TInitializationEvent), out var initializer))
             {

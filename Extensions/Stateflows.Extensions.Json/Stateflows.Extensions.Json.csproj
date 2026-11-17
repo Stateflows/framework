@@ -41,10 +41,10 @@
   <ItemGroup>
     <EmbeddedResource Include="state-machine.schema.json" />
     <EmbeddedResource Include="activity.schema.json" />
-    <EmbeddedResource Include="event.schema.json" />
+    <EmbeddedResource Include="payload.schema.json" />
     <None Update="state-machine.schema.json" Pack="true" PackagePath="schemas" CopyToOutputDirectory="PreserveNewest" />
     <None Update="activity.schema.json" Pack="true" PackagePath="schemas" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="event.schema.json" Pack="true" PackagePath="schemas" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="payload.schema.json" Pack="true" PackagePath="schemas" CopyToOutputDirectory="PreserveNewest" />
     <None Update="README.md" Pack="true" PackagePath="\" />
     <InternalsVisibleTo Include="StateMachine.IntegrationTests" />
   </ItemGroup>

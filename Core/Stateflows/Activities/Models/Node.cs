@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -44,7 +44,7 @@ namespace Stateflows.Activities.Models
         public Type ExceptionType { get; set; }
 
         public Type EventType { get; set; }
-        public string StructuralEventName { get; set; }
+        public string PayloadName { get; set; }
         internal string[] EffectiveEventNames { get; set; } = [];
 
         public IEnumerable<Type> ActualEventTypes { get; set; }

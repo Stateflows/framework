@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Common;
 
@@ -10,7 +10,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
     public interface IAcceptEventOverrides<out TReturn>
     {
         /// <summary>Selects and replaces the matching inherited node.</summary>
-        /// <param name="eventName">Registered structural-event name accepted or published by this node.</param>
+        /// <param name="eventName">Registered payload name accepted or published by this node.</param>
         /// <param name="actionNodeName">Registered name of this node in its containing Activity scope.</param>
         /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
         /// builder is scoped to that element.</param>
@@ -18,11 +18,11 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
         TReturn UseAcceptEventAction(string eventName, string actionNodeName,
-            OverridenAcceptEventActionBuildAction<StructuralEvent> buildAction)
-            => UseAcceptEventAction<StructuralEvent>(actionNodeName, b =>
+            OverridenAcceptEventActionBuildAction<Payload> buildAction)
+            => UseAcceptEventAction<Payload>(actionNodeName, b =>
             {
                 var node = ((NodeBuilder)b).Node;
-                if (node.StructuralEventName != eventName)
+                if (node.PayloadName != eventName)
                     throw new System.InvalidOperationException($"Accept-event node '{actionNodeName}' does not accept '{eventName}'.");
                 buildAction?.Invoke(b);
             });

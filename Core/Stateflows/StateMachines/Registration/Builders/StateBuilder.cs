@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -168,7 +168,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Transitions
         [DebuggerHidden]
-        internal IStateBuilder AddTransitionInternal<TEvent>(string targetStateName, bool isElse, TransitionBuildAction<TEvent> transitionBuildAction = null, string structuralEventName = null)
+        internal IStateBuilder AddTransitionInternal<TEvent>(string targetStateName, bool isElse, TransitionBuildAction<TEvent> transitionBuildAction = null, string payloadName = null)
         {
             var targetEdgeType = targetStateName == Constants.DefaultTransitionTarget
                 ? EdgeType.InternalTransition
@@ -176,8 +176,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             var triggerType = typeof(TEvent);
 
-            var trigger = structuralEventName ?? Event.GetName(triggerType);
-            if (structuralEventName == null) Graph.StateflowsBuilder.Events.RegisterClr(triggerType);
+            var trigger = payloadName ?? Event.GetName(triggerType);
+            if (payloadName == null) Graph.StateflowsBuilder.Payloads.RegisterClr(triggerType);
 
             var triggerDescriptor = isElse
                 ? $"{trigger}|else"
@@ -187,7 +187,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 Trigger = trigger,
                 TriggerType = typeof(TEvent),
-                StructuralEventNames = structuralEventName == null ? null : [structuralEventName],
+                PayloadNames = payloadName == null ? null : [payloadName],
                 IsElse = isElse,
                 Graph = Vertex.Graph,
                 SourceName = Vertex.Name,

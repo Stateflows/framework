@@ -18,7 +18,7 @@ namespace Stateflows.MAF.AIAgents
             => Task.CompletedTask;
 
         /// <inheritdoc/>
-        public virtual Task CustomEventAddedAsync(EventDefinition definition, string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
+        public virtual Task CustomEventAddedAsync(PayloadDefinition definition, string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
             => Task.CompletedTask;
     }
 }

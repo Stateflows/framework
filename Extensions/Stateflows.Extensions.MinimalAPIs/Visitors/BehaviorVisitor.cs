@@ -17,8 +17,8 @@ public abstract class BehaviorVisitor(
 {
     /// <summary>Records CLR event types already mapped for each behavior name.</summary>
     protected readonly Dictionary<string, List<Type>> Triggers = new();
-    /// <summary>Records structural event names already mapped for each behavior name.</summary>
-    protected readonly HashSet<(string BehaviorName, string EventName)> StructuralTriggers = new();
+    /// <summary>Records payload names already mapped for each behavior name.</summary>
+    protected readonly HashSet<(string BehaviorName, string EventName)> PayloadTriggers = new();
     
     private static readonly MethodInfo RegisterRequestMethod = typeof(ActivityVisitor).GetMethod(
         nameof(RegisterRequestEndpoint),
@@ -45,7 +45,7 @@ public abstract class BehaviorVisitor(
     /// <typeparam name="TEvent">Event or request payload type.</typeparam>
     /// <param name="activityName">Registered behavior name.</param>
     /// <param name="supportedStatuses">Optional lifecycle statuses in which to advertise the endpoint.</param>
-    /// <remarks>System events, exceptions, structural envelopes, and events marked with
+    /// <remarks>System events, exceptions, payload envelopes, and events marked with
     /// <see cref="NoApiMappingAttribute"/> are excluded.</remarks>
     protected void RegisterEventEndpoint<TEvent>(string activityName, BehaviorStatus[]? supportedStatuses = null)
     {
@@ -53,7 +53,7 @@ public abstract class BehaviorVisitor(
         if (
             eventType.GetCustomAttributes<NoApiMappingAttribute>().Any() ||
             eventType.IsAssignableTo(typeof(SystemEvent)) ||
-            eventType.IsAssignableTo(typeof(StructuralEvent)) ||
+            eventType.IsAssignableTo(typeof(Payload)) ||
             eventType.IsAssignableTo(typeof(Exception))
         )
         {

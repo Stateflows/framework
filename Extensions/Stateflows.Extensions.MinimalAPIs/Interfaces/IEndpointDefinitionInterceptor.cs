@@ -31,23 +31,23 @@ public interface IEndpointDefinitionInterceptor
     /// <param name="route">Mapped route pattern.</param>
     /// <param name="routeHandlerBuilder">Endpoint convention builder.</param>
     void AfterEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, bool isDefaultInstance, string method, string route, IEndpointConventionBuilder routeHandlerBuilder);
-    /// <summary>Customizes mapping of an endpoint delivering a runtime-defined structural event.</summary>
+    /// <summary>Customizes mapping of an endpoint delivering a runtime-defined payload.</summary>
     /// <param name="behaviorClass">Target behavior class.</param>
     /// <param name="eventDefinition">Registered event schema.</param>
     /// <param name="isDefaultInstance">Whether this route addresses the default instance.</param>
     /// <param name="method">HTTP method, replaceable by the interceptor.</param>
     /// <param name="route">Route pattern, replaceable by the interceptor.</param>
     /// <returns>True to map the endpoint; false to disable it. The default implementation returns true.</returns>
-    bool BeforeStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
+    bool BeforePayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
         => true;
-    /// <summary>Applies conventions after a structural event endpoint is mapped.</summary>
+    /// <summary>Applies conventions after a payload endpoint is mapped.</summary>
     /// <param name="behaviorClass">Target behavior class.</param>
     /// <param name="eventDefinition">Registered event schema.</param>
     /// <param name="isDefaultInstance">Whether this route addresses the default instance.</param>
     /// <param name="method">Mapped HTTP method.</param>
     /// <param name="route">Mapped route pattern.</param>
     /// <param name="routeHandlerBuilder">Endpoint convention builder.</param>
-    void AfterStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
+    void AfterPayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition, bool isDefaultInstance, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     { }
     /// <summary>Customizes the class-list endpoint for one behavior family.</summary>
     /// <param name="behaviorType">Behavior family identifier.</param>

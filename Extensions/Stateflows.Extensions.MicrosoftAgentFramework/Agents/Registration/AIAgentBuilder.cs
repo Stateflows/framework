@@ -33,11 +33,11 @@ internal class AIAgentBuilder(IActionBuilder<AIAgentAction> actionBuilder) : IAI
         return this;
     }
 
-    public IAIAgentBuilder AddConsumedEvent(string eventName, Func<IAIAgentContext, StructuralEvent, Task<ChatMessage>> eventFormatterAsync)
+    public IAIAgentBuilder AddConsumedEvent(string eventName, Func<IAIAgentContext, Payload, Task<ChatMessage>> eventFormatterAsync)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
         ArgumentNullException.ThrowIfNull(eventFormatterAsync);
-        actionBuilder.Configure(f => f.StructuralEventFormatters[eventName] = new StructuralChatMessageConverterHolder(eventName, new DelegateChatMessageConverter<StructuralEvent>(eventFormatterAsync)));
+        actionBuilder.Configure(f => f.PayloadFormatters[eventName] = new PayloadChatMessageConverterHolder(eventName, new DelegateChatMessageConverter<Payload>(eventFormatterAsync)));
         actionBuilder.AddConsumedEvent(eventName);
         return this;
     }

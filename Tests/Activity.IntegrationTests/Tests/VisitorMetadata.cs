@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration;
 using Stateflows.Common;
-using Stateflows.Events;
+using Stateflows.Payloads;
 using Stateflows.Actions;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Registration;
@@ -196,8 +196,8 @@ public sealed class VisitorMetadata
     {
         var collection = new ServiceCollection();
         collection.AddStateflows(stateflows => stateflows
-            .AddEvents(events => events.AddEvent("structural-one", _ => { })
-                .AddEvent("structural-two", _ => { }).AddEvent("embedded", _ => { }))
+            .AddPayloads(events => events.AddPayload("structural-one", _ => { })
+                .AddPayload("structural-two", _ => { }).AddPayload("embedded", _ => { }))
             .AddStateMachines(machines => machines
             .AddStateMachine("deferral-visitor", 1, machine => machine
                 .AddInitialState("waiting", state => state

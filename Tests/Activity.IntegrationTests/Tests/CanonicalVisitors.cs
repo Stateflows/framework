@@ -5,7 +5,7 @@ using Stateflows.Activities.Registration;
 using Stateflows.Common;
 using Stateflows.Common.Json;
 using Stateflows.Common.Interfaces;
-using Stateflows.Events;
+using Stateflows.Payloads;
 using Stateflows.StateMachines.Registration.Builders;
 using OneOf;
 
@@ -339,12 +339,12 @@ public sealed class CanonicalVisitors
     }
 
     [TestMethod]
-    public async Task EmbeddedDiscoveryPreservesDeclaredUnionTypeAndStructuralNames()
+    public async Task EmbeddedDiscoveryPreservesDeclaredUnionTypeAndPayloadNames()
     {
         var services = new ServiceCollection();
         services.AddStateflows(builder => builder
             .AddOneOf()
-            .AddEvents(events => events.AddEvent("named", _ => { }))
+            .AddPayloads(events => events.AddPayload("named", _ => { }))
             .AddActivities(activities => activities.AddActivity("event-bindings", 1, activity => activity
                 .AddAcceptEventAction<OneOf<First, Second>>("union", _ => Task.CompletedTask)
                 .AddAcceptEventAction("named", "structural", _ => Task.CompletedTask))));
@@ -353,8 +353,8 @@ public sealed class CanonicalVisitors
         await ((ActivitiesRegister)provider.GetRequiredService<IActivitiesRegister>()).VisitActivityAsync("event-bindings", 1, visitor);
         CollectionAssert.AreEqual(new[] { typeof(First).GetEventName(), typeof(Second).GetEventName() },
             visitor.EventBindings[typeof(OneOf<First, Second>)].ToArray());
-        CollectionAssert.AreEqual(new[] { "named" }, visitor.EventBindings[typeof(StructuralEvent)].ToArray());
-        CollectionAssert.AreEquivalent(new[] { typeof(First), typeof(Second), typeof(StructuralEvent) }, visitor.EventTypes);
+        CollectionAssert.AreEqual(new[] { "named" }, visitor.EventBindings[typeof(Payload)].ToArray());
+        CollectionAssert.AreEquivalent(new[] { typeof(First), typeof(Second), typeof(Payload) }, visitor.EventTypes);
         Assert.AreEqual(3, visitor.EventNames.Count);
     }
 

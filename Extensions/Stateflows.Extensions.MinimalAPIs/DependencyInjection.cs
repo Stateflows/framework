@@ -275,7 +275,7 @@ public static class DependencyInjection
                 root,
                 interceptor,
                 builder.ServiceProvider.GetRequiredService<ITypeMapper>(),
-                builder.ServiceProvider.GetRequiredService<IEventsRegister>()
+                builder.ServiceProvider.GetRequiredService<IPayloadsRegister>()
             );
 
             activitiesRegister.VisitActivitiesAsync(visitor).GetAwaiter().GetResult();
@@ -337,7 +337,7 @@ public static class DependencyInjection
             }
 
             var visitor = new ActionVisitor(root, interceptor, builder.ServiceProvider.GetRequiredService<ITypeMapper>(),
-                builder.ServiceProvider.GetRequiredService<IEventsRegister>());
+                builder.ServiceProvider.GetRequiredService<IPayloadsRegister>());
 
             actionsRegister.VisitActionsAsync(visitor).GetAwaiter().GetResult();
         }

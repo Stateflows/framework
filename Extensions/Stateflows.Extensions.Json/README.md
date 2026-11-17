@@ -1,12 +1,12 @@
-# JSON state machines, activities and structural events
+# JSON state machines, activities and payloads
 
-## Structural events and requests
+## Payloads and requests
 
-Use `Stateflows.Events.Json.JsonEventDefinition.Parse(json, options).Register(eventsBuilder)`
-inside `stateflows.AddEvents(...)`. Registration uses the core event builders, not a separate
+Use `Stateflows.Payloads.Json.JsonPayloadDefinition.Parse(json, options).Register(eventsBuilder)`
+inside `stateflows.AddPayloads(...)`. Registration uses the core event builders, not a separate
 JSON-specific event registry. `Parse` binds the complete definition before registration;
 invalid definitions throw `System.Text.Json.JsonException`. Core registration errors remain
-core exceptions. The standalone Draft 2020-12 [event schema](event.schema.json),
+core exceptions. The standalone Draft 2020-12 [event schema](payload.schema.json),
 `urn:stateflows:event:1.0`, describes this format and is embedded, copied to the output
 directory, and included in the package's `schemas` directory alongside the behavior schemas.
 Associate it with event definition files through your editor's schema configuration.
@@ -20,8 +20,8 @@ and custom validator options. Duplicate JSON properties are checked during parsi
 
 ```csharp
 using Stateflows.Common.Json;
-using Stateflows.Events;
-using Stateflows.Events.Json;
+using Stateflows.Payloads;
+using Stateflows.Payloads.Json;
 
 var options = new JsonOptions()
     .AddType<Receipt>("responses.receipt")
@@ -29,10 +29,10 @@ var options = new JsonOptions()
         new System.ComponentModel.DataAnnotations.RangeAttribute(
             configuration.GetProperty("minimum").GetInt32(), int.MaxValue));
 
-services.AddStateflows(stateflows => stateflows.AddEvents(events =>
-    JsonEventDefinition.Parse(File.ReadAllText("order-event.json"), options).Register(events)));
+services.AddStateflows(stateflows => stateflows.AddPayloads(events =>
+    JsonPayloadDefinition.Parse(File.ReadAllText("order-event.json"), options).Register(events)));
 
-// Resolve IEventFactory from DI. The default factory also implements IEventsRegister.
+// Resolve IPayloadFactory from DI. The default factory also implements IPayloadsRegister.
 var payload = eventFactory.CreateFromJson("OrderSubmitted",
     """{"quantity":2,"address":{"city":"Paris","ignored":true},"tags":["new"]}""");
 ```
@@ -74,8 +74,8 @@ var payload = eventFactory.CreateFromJson("OrderSubmitted",
 
 The root requires `formatVersion: "1.0"`, a nonblank `name` and a `fields` array (possibly
 empty). Omit `response` for an event; use exactly one of `response.eventName` for a
-structural response or `response.clrType` for a host-registered `JsonOptions.AddType` alias.
-Structural response names are resolved by the core when configuration completes.
+payload response or `response.clrType` for a host-registered `JsonOptions.AddType` alias.
+Payload response names are resolved by the core when configuration completes.
 CLR names, assembly names and arbitrary type loading are never accepted in place of aliases.
 
 Every field requires a distinct, nonblank `name`. A missing or null `type` denotes an object
@@ -116,7 +116,7 @@ instances are used during registration. Custom validators do not imply any gener
 OpenAPI constraint support.
 
 `CreateFromJson` performs shape/type decoding and delegates construction to
-`IEventFactory.Create(name, fields)`. It does **not** run DataAnnotations: the normal core
+`IPayloadFactory.Create(name, fields)`. It does **not** run DataAnnotations: the normal core
 event validation pipeline does that. Missing fields stay missing; explicit null is accepted
 for every field and collection item, leaving `Required` to enforce presence/non-null.
 
@@ -124,7 +124,7 @@ for every field and collection item, leaving `Required` to enforce presence/non-
 
 Only declared fields are decoded; unknown fields are discarded recursively, including inside
 object arrays. Duplicate JSON properties are still rejected even in discarded data.
-Objects become core `StructuralValue` instances, and arrays become core collections.
+Objects become core `PayloadValue` instances, and arrays become core collections.
 There is no `$type` or other CLR metadata interpretation.
 
 | Field types | JSON representation |
@@ -143,19 +143,19 @@ There is no `$type` or other CLR metadata interpretation.
 
 Strings never coerce to numbers or booleans. Invalid payloads throw
 `System.Text.Json.JsonException` with the field path for conversion failures.
-The three-argument extension requires the factory to implement `IEventsRegister`, as the
+The three-argument extension requires the factory to implement `IPayloadsRegister`, as the
 default core implementation does. A custom factory with a separate registry can use
 `factory.CreateFromJson(name, json, register)`.
 
-### Referencing structural events from JSON behaviors
+### Referencing payloads from JSON behaviors
 
-Register structural event definitions with `AddEvents` **before** registering behaviors that
+Register payload definitions with `AddPayloads` **before** registering behaviors that
 reference them. Names are resolved against the host's event registry during behavior
 registration; missing names produce `JSON-003` diagnostics at the `eventName` reference.
 Documents cannot implicitly declare events by referring to them.
 
 State-machine event/internal transitions accept exactly one CLR alias, or one or more
-structural event names. CLR and structural references cannot be mixed:
+payload names. CLR and payload references cannot be mixed:
 
 ```json
 {
@@ -170,20 +170,20 @@ structural event names. CLR and structural references cannot be mixed:
 }
 ```
 
-Every declaration constructs one transition, including a collection of structural names.
-Other structural names do not match it. Multiple CLR references, mixed CLR/structural
-references, and duplicate structural names are rejected. An else transition may contain
-multiple structural names while remaining one fallback edge.
+Every declaration constructs one transition, including a collection of payload names.
+Other payload names do not match it. Multiple CLR references, mixed CLR/payload
+references, and duplicate payload names are rejected. An else transition may contain
+multiple payload names while remaining one fallback edge.
 
-Guards/effects for named triggers implement `ITransitionGuard<StructuralEvent>` /
-`ITransitionEffect<StructuralEvent>`. Transition definitions must expose one contract
+Guards/effects for named triggers implement `ITransitionGuard<Payload>` /
+`ITransitionEffect<Payload>`. Transition definitions must expose one contract
 covering the complete trigger set. Visitors receive the declared CLR type and all effective
-event names; structural schema details can be resolved through the event registry.
+event names; payload schema details can be resolved through the event registry.
 This named JSON syntax applies to
 transitions only: initializer and deferral trigger declarations still use `clrType`.
 
 Activity accept-event nodes use exactly one of `eventType` (the existing CLR alias) or
-`eventName` (the registered structural name), keeping the existing implementation binding:
+`eventName` (the registered payload name), keeping the existing implementation binding:
 
 ```json
 {
@@ -195,8 +195,8 @@ Activity accept-event nodes use exactly one of `eventType` (the existing CLR ali
 }
 ```
 
-`handlers.receiveOrder` must implement `IAcceptEventActionNode<StructuralEvent>`. Its
-`ExecuteAsync(StructuralEvent, CancellationToken)` receives the decoded structural payload;
+`handlers.receiveOrder` must implement `IAcceptEventActionNode<Payload>`. Its
+`ExecuteAsync(Payload, CancellationToken)` receives the decoded payload;
 normal host DI and `IConfigurable<T>` binding still apply. The loader calls the core named
 accept-event builder overload, so routing and visitor descriptors use the registered
 event's name and definition. Time/send/publish nodes and activity initializers retain
@@ -489,7 +489,7 @@ that do not exist in the current model.
 
 Structured, parallel and iterative nodes accept `"interleave"` in their existing
 `options` array, mapping to `NodeOptions.Interleave` and parameterless
-`.Interleave()` on the structural builder. Options arrays replace the default
+`.Interleave()` on the structured node builder. Options arrays replace the default
 flags, so include `"implicitJoin"` and `"implicitFork"` when wanted.
 `"reentrant"` and `"interleave"` together fail registration, and actions reject
 `"interleave"`. Existing action-only reentrancy remains unchanged.

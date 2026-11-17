@@ -216,7 +216,7 @@ public sealed class ActivityStreamingContractTests
     [Timeout(120_000)]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task RegularSendHandsOffMixedAcceptanceInsideStructuralScopes(bool interleave)
+    public async Task RegularSendHandsOffMixedAcceptanceInsidePayloadScopes(bool interleave)
     {
         var probe = new ContractProbe();
         await using var cluster = await ContractCluster.StartAsync(probe, activities => activities
