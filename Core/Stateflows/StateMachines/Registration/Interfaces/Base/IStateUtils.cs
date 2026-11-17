@@ -1,4 +1,4 @@
-using Stateflows.Common;
+﻿using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 

@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Common;
 

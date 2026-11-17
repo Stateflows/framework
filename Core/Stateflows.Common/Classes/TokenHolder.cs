@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO.Pipes;
 using Newtonsoft.Json;
 using Stateflows.Common;

@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Routing;
 
 namespace Stateflows.Extensions.MinimalAPIs;

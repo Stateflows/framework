@@ -1,4 +1,4 @@
-using Microsoft.ClearScript;
+﻿using Microsoft.ClearScript;
 using Microsoft.ClearScript.V8;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;

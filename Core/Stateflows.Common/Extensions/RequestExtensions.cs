@@ -1,4 +1,4 @@
-using Stateflows.Common.Utilities;
+﻿using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common
 {

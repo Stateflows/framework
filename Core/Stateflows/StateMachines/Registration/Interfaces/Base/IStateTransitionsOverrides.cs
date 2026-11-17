@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq;
 using Stateflows.Common;
 using Stateflows.StateMachines.Models;
