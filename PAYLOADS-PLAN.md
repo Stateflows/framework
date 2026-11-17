@@ -622,6 +622,8 @@ closest to the typed behavior, and recorded here.
 
 | # | Work package | Question | Decision |
 | --- | --- | --- | --- |
+| I1 | WP0 | `IInputOutputTokens<T>` and the optional variants are both an input `IEnumerable<T>` and an output `ICollection<T>`; LINQ (`Any`, `Count()`, `ToList`) takes the `ICollection<T>` fast path and therefore sees the **output** side. | Left unchanged (existing typed behavior); payload variants mirror it. Tests enumerate with `foreach`. Worth a separate look later. |
+| I2 | WP0 | `OutputTokens<T>.Contains/Remove/CopyTo/Clear` compared envelopes by fresh `Guid`/holder type, so they never matched. | Compare payload values with `EqualityComparer<T>.Default` over tokens of type `T`; `Remove` removes the first match; `Clear` removes only tokens of `T`. |
 
 ## Source landmarks
 

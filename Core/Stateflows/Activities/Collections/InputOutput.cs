@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -52,13 +52,13 @@ namespace Stateflows.Activities
             => OutputTokens.Add(Token);
     }
 
-    internal class OptionalInputOutputTokens<TToken> : BaseInputOutputTokens<TToken>, IOptionalInputTokens<TToken>
+    internal class OptionalInputOutputTokens<TToken> : BaseInputOutputTokens<TToken>, IOptionalInputOutputTokens<TToken>
     {
         public void PassAllOn()
-            => new OutputTokens<TToken>().AddRange(InputTokens.Tokens);
+            => OutputTokens.AddRange(InputTokens.Tokens);
     }
 
-    internal class OptionalInputOutputToken<TToken> : BaseInputOutputTokens<TToken>, IOptionalInputToken<TToken>
+    internal class OptionalInputOutputToken<TToken> : BaseInputOutputTokens<TToken>, IOptionalInputOutputToken<TToken>
     {
         public bool IsAvailable
             => InputTokens.Tokens.Any();

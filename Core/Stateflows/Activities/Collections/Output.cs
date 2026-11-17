@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
@@ -57,16 +57,26 @@ namespace Stateflows.Activities
             => OutputTokens.Tokens.AddRange(items.Select(item => item.ToTokenHolder()));
 
         public void Clear()
-        => OutputTokens.Tokens.RemoveAll(token => token is TToken);
+            => OutputTokens.Tokens.RemoveAll(token => token.IsOfTokenType<TToken>());
 
         public bool Contains(TToken item)
-            => OutputTokens.Tokens.Contains(item.ToTokenHolder());
+            => GetTokens().Contains(item);
 
         public void CopyTo(TToken[] array, int arrayIndex)
-            => OutputTokens.Tokens.CopyTo(array.ToTokenHolders().ToArray(), arrayIndex);
+            => GetTokens().CopyTo(array, arrayIndex);
 
         public bool Remove(TToken item)
-            => OutputTokens.Tokens.Remove(item.ToTokenHolder());
+        {
+            var comparer = EqualityComparer<TToken>.Default;
+            var index = OutputTokens.Tokens.FindIndex(token => token.IsOfTokenType<TToken>() && comparer.Equals((TToken)token.BoxedPayload, item));
+            if (index < 0)
+            {
+                return false;
+            }
+
+            OutputTokens.Tokens.RemoveAt(index);
+            return true;
+        }
 
         public IEnumerator<TToken> GetEnumerator()
             => GetTokens().GetEnumerator();
