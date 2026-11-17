@@ -11,6 +11,7 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
 using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
@@ -91,15 +92,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var edge = ((IEdgeBuilder)this).Edge;
             var vertex = edge.Source;
-            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
-            if (edge.Target != null)
-            {
-                activityName += $".{edge.Target}";
-            }
-            activityName += $".guard.{edge.Guards.Actions.Count}";
-            
+            var guardIndex = vertex.NextGuardDelegationIndex++;
+            var guardAddress = this is GuardBuilder<Completion> expression ? expression.RegistrationAddress : edge.Guards.Actions.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var activityName = $"{vertex.Graph.Name}.{edge.Name}.guard.{guardAddress}";
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
-            return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+            var behaviorClass = new BehaviorClass(BehaviorType.Activity, activityName);
+            if (this is GuardBuilder<Completion> guardExpression) guardExpression.RecordBehavior(typeof(TActivity), behaviorClass);
+            else edge.Graph.RecordTransitionActionType(edge, Constants.Guard, edge.Guards.Actions.Count, typeof(TActivity), behavior: behaviorClass);
+            return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(guardIndex, c, activityName));
         }
 
         /// <summary>Runs a new embedded Activity whenever this guard is evaluated.</summary>
@@ -111,15 +111,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var edge = ((IEdgeBuilder)this).Edge;
             var vertex = edge.Source;
-            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
-            if (edge.Target != null)
-            {
-                activityName += $".{edge.Target}";
-            }
-            activityName += $".guard.{edge.Guards.Actions.Count}";
-            
+            var guardIndex = vertex.NextGuardDelegationIndex++;
+            var guardAddress = this is GuardBuilder<Completion> expression ? expression.RegistrationAddress : edge.Guards.Actions.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var activityName = $"{vertex.Graph.Name}.{edge.Name}.guard.{guardAddress}";
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
-            return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+            var behaviorClass = new BehaviorClass(BehaviorType.Activity, activityName);
+            if (this is GuardBuilder<Completion> guardExpression) guardExpression.RecordBehavior(null, behaviorClass);
+            else edge.Graph.RecordTransitionActionType(edge, Constants.Guard, edge.Guards.Actions.Count, null, behavior: behaviorClass);
+            return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(guardIndex, c, activityName));
         }
 
         /// <summary>Runs a new embedded Action whenever this guard is evaluated.</summary>
@@ -135,15 +134,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var edge = ((IEdgeBuilder)this).Edge;
             var vertex = edge.Source;
-            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
-            if (edge.Target != null)
-            {
-                actionName += $".{edge.Target}";
-            }
-            actionName += $".guard.{edge.Guards.Actions.Count}";
-            
+            var guardIndex = vertex.NextGuardDelegationIndex++;
+            var guardAddress = this is GuardBuilder<Completion> expression ? expression.RegistrationAddress : edge.Guards.Actions.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var actionName = $"{vertex.Graph.Name}.{edge.Name}.guard.{guardAddress}";
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction, version: 1), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
-            return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+            var behaviorClass = new BehaviorClass(BehaviorType.Action, actionName);
+            if (this is GuardBuilder<Completion> guardExpression) guardExpression.RecordBehavior(typeof(TAction), behaviorClass);
+            else edge.Graph.RecordTransitionActionType(edge, Constants.Guard, edge.Guards.Actions.Count, typeof(TAction), behavior: behaviorClass);
+            return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(guardIndex, c, actionName));
         }
 
         /// <summary>Runs a new embedded Action whenever this guard is evaluated.</summary>
@@ -157,15 +155,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var edge = ((IEdgeBuilder)this).Edge;
             var vertex = edge.Source;
-            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
-            if (edge.Target != null)
-            {
-                actionName += $".{edge.Target}";
-            }
-            actionName += $".guard.{edge.Guards.Actions.Count}";
-            
+            var guardIndex = vertex.NextGuardDelegationIndex++;
+            var guardAddress = this is GuardBuilder<Completion> expression ? expression.RegistrationAddress : edge.Guards.Actions.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var actionName = $"{vertex.Graph.Name}.{edge.Name}.guard.{guardAddress}";
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
-            return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+            var behaviorClass = new BehaviorClass(BehaviorType.Action, actionName);
+            if (this is GuardBuilder<Completion> guardExpression) guardExpression.RecordBehavior(null, behaviorClass);
+            else edge.Graph.RecordTransitionActionType(edge, Constants.Guard, edge.Guards.Actions.Count, null, behavior: behaviorClass);
+            return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(guardIndex, c, actionName));
         }
 
         /// <summary>Registers negated predicates for the current transition.</summary>
@@ -183,7 +180,19 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The current fluent transition builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddNegatedGuards(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
-            => AddGuards(guardsAsync.Select<Func<ITransitionContext<Completion>, Task<bool>>, Func<ITransitionContext<Completion>, Task<bool>>>(guardAsync => async c => !await guardAsync.Invoke(c)).ToArray());
+        {
+            foreach (var guard in guardsAsync)
+            {
+                if (this is GuardBuilder<Completion> expression) expression.RecordType(null, true);
+                else
+                {
+                    var edge = ((IEdgeBuilder)this).Edge;
+                    edge.Graph.RecordTransitionActionType(edge, Constants.Guard, edge.Guards.Actions.Count, null, true);
+                }
+                AddGuard(async context => !await guard(context));
+            }
+            return (TReturn)this;
+        }
 
         /// <summary>Registers negated predicates for the current transition.</summary>
         /// <param name="guard">Synchronous predicate receiving the transition context. Must return false for the negated
@@ -212,12 +221,20 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         TReturn AddGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, IDefaultTransitionGuard
-            => AddGuard(async c => 
+        {
+            if (this is GuardBuilder<Completion> expression) expression.RecordType(typeof(TGuard));
+            else
+            {
+                var edge = ((IEdgeBuilder)this).Edge;
+                edge.Graph.RecordTransitionActionType(edge, Constants.Guard, edge.Guards.Actions.Count, typeof(TGuard));
+            }
+            return AddGuard(async c =>
             {
                 var transition = await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c);
                 buildAction?.Invoke(new ElementBuilder<TGuard>(transition));
                 return await transition.GuardAsync();
             });
+        }
 
         /// <summary>Registers negated typed predicates for the current transition.</summary>
         /// <typeparam name="TGuard">Typed guard implementing <see cref="IDefaultTransitionGuard" />. Its result must be
@@ -229,11 +246,19 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         TReturn AddNegatedGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, IDefaultTransitionGuard
-            => AddGuard(async c =>  
+        {
+            if (this is GuardBuilder<Completion> expression) expression.RecordType(typeof(TGuard), true);
+            else
+            {
+                var edge = ((IEdgeBuilder)this).Edge;
+                edge.Graph.RecordTransitionActionType(edge, Constants.Guard, edge.Guards.Actions.Count, typeof(TGuard), true);
+            }
+            return AddGuard(async c =>
             {
                 var transition = await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c);
                 buildAction?.Invoke(new ElementBuilder<TGuard>(transition));
                 return !await transition.GuardAsync();
             });
+        }
     }
 }

@@ -16,9 +16,12 @@ namespace Stateflows.Common.Engine
         IEnumerable<IStateflowsTenantInterceptor> tenantInterceptors,
         ILogger<CommonInterceptor> logger) : IStateflowsInterceptor
     {
-        public Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
-            => InterceptorPipeline.RunAsync(interceptors.ToArray(), next,
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+        {
+            using var observation = BehaviorObservation.Enter(context.Behavior.Id, context.Behavior.ServiceProvider);
+            return await InterceptorPipeline.RunAsync(interceptors.ToArray(), next,
                 (interceptor, inner) => interceptor.ProcessEventAsync(context, inner));
+        }
         
         public bool BeforeExecute(BehaviorId id, EventHolder eventHolder)
         {

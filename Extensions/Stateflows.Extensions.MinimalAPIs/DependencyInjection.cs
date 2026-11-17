@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
+using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration;
 using Stateflows.Entities;
@@ -273,7 +274,8 @@ public static class DependencyInjection
             var visitor = new ActivityVisitor(
                 root,
                 interceptor,
-                builder.ServiceProvider.GetRequiredService<ITypeMapper>()
+                builder.ServiceProvider.GetRequiredService<ITypeMapper>(),
+                builder.ServiceProvider.GetRequiredService<IEventsRegister>()
             );
 
             activitiesRegister.VisitActivitiesAsync(visitor).GetAwaiter().GetResult();
@@ -334,7 +336,8 @@ public static class DependencyInjection
                 interceptor.AfterGetInstancesEndpointDefinition(ActionClass.Type, method, route, endpointRouteBuilder);
             }
 
-            var visitor = new ActionVisitor(root, interceptor, builder.ServiceProvider.GetRequiredService<ITypeMapper>());
+            var visitor = new ActionVisitor(root, interceptor, builder.ServiceProvider.GetRequiredService<ITypeMapper>(),
+                builder.ServiceProvider.GetRequiredService<IEventsRegister>());
 
             actionsRegister.VisitActionsAsync(visitor).GetAwaiter().GetResult();
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Registration.Interfaces;
@@ -46,12 +46,6 @@ namespace Stateflows.Activities.Registration.Builders
             Node.EventType = typeof(StructuralEvent);
             Node.StructuralEventName = eventName;
             Node.ActualEventTypes = [typeof(StructuralEvent)];
-            if (Node.VisitingTask != null)
-            {
-                var index = Graph.VisitingTasks.IndexOf(Node.VisitingTask);
-                Node.VisitingTask = visitor => visitor.AcceptEventNodeAddedAsync(definition, Graph.Name, Graph.Version, Node.OwnName);
-                Graph.VisitingTasks[index] = Node.VisitingTask;
-            }
             return new AcceptEventNodeBuilder<StructuralEvent>(Node, activityBuilder);
         }
 
@@ -64,13 +58,6 @@ namespace Stateflows.Activities.Registration.Builders
 
             var result = new AcceptEventNodeBuilder<TAcceptedEvent>(Node, activityBuilder);
             
-            if (Node.VisitingTask is not null)
-            {
-                var graph = Node.Graph;
-                var index = graph.VisitingTasks.IndexOf(Node.VisitingTask);
-                Node.VisitingTask = visitor => visitor.AcceptEventNodeAddedAsync<TAcceptedEvent>(graph.Name, graph.Version, Node.Name);
-                graph.VisitingTasks[index] = Node.VisitingTask;
-            }
 
             return result;
         }
@@ -131,13 +118,6 @@ namespace Stateflows.Activities.Registration.Builders
 
             var result = new AcceptEventNodeBuilder<TAcceptedEvent>(Node, activityBuilder);
             
-            if (Node.VisitingTask is not null)
-            {
-                var graph = Node.Graph;
-                var index = graph.VisitingTasks.IndexOf(Node.VisitingTask);
-                Node.VisitingTask = visitor => visitor.AcceptEventNodeAddedAsync<TAcceptedEvent>(graph.Name, graph.Version, Node.Name);
-                graph.VisitingTasks[index] = Node.VisitingTask;
-            }
 
             return result;
         }

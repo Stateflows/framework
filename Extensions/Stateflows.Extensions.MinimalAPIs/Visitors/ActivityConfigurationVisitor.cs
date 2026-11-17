@@ -7,7 +7,14 @@ internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilde
 {
     private BehaviorClass? OwnerClass = null;
     
-    public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
+    public override Task ActivityAddingAsync(string activityId, string activityName, int activityVersion,
+        BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    {
+        OwnerClass = ownerClass;
+        return Task.CompletedTask;
+    }
+
+    public override Task ActivityTypeAddedAsync<TActivity>(string activityId, string activityName, int activityVersion)
     {
         if (OwnerClass != null)
         {
@@ -25,7 +32,7 @@ internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilde
         return Task.CompletedTask;
     }
 
-    public override Task ActivityAddedAsync(string activityName, int activityVersion)
+    public override Task ActivityAddedAsync(string activityId, string activityName, int activityVersion)
     {
         if (OwnerClass != null)
         {
@@ -37,6 +44,6 @@ internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilde
             );
         }
 
-        return base.ActivityAddedAsync(activityName, activityVersion);
+        return base.ActivityAddedAsync(activityId, activityName, activityVersion);
     }
 }

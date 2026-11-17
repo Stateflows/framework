@@ -13,15 +13,12 @@ namespace Action.IntegrationTests.Tests
         public readonly List<(string ActionName, string EventName)> NamedEvents = [];
         public readonly List<(string ActionName, Type EventType)> TypedEvents = [];
 
-        public override Task CustomEventAddedAsync(EventDefinition definition, string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
+        public override Task CustomEventAddedAsync<TEvent>(string bindingId, string actionName, int actionVersion, IReadOnlyList<string> eventNames, BehaviorStatus[] supportedStatuses)
         {
-            NamedEvents.Add((actionName, definition.Name));
-            return Task.CompletedTask;
-        }
-
-        public override Task CustomEventAddedAsync<TEvent>(string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
-        {
-            TypedEvents.Add((actionName, typeof(TEvent)));
+            if (typeof(TEvent) == typeof(StructuralEvent))
+                NamedEvents.AddRange(eventNames.Select(name => (actionName, name)));
+            else
+                TypedEvents.Add((actionName, typeof(TEvent)));
             return Task.CompletedTask;
         }
     }

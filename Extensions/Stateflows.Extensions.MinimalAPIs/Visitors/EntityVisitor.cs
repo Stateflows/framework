@@ -44,8 +44,8 @@ internal class EntityVisitor(
     // Runs after all configured interceptors, so it observes the final method and route of every entity endpoint.
     private readonly Interceptor entityInterceptor = new([interceptor, new RouteConflictDetector()]);
 
-    public override Task EntityAddingAsync<TTemplate>(string entityName, int entityVersion,
-        BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    public override Task EntityAddingAsync<TTemplate>(string id, string entityName, int entityVersion,
+        BehaviorClass? ownerClass, BehaviorClass? parentClass, bool hasDefaultInstance)
     {
         current = ownerClass == null
             ? new EntityDefinition(entityName, entityVersion)
@@ -54,7 +54,7 @@ internal class EntityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task EntityAddedAsync<TTemplate>(string entityName, int entityVersion)
+    public override Task EntityAddedAsync<TTemplate>(string id, string entityName, int entityVersion)
     {
         if (IsCurrent(entityName, entityVersion))
         {
@@ -69,7 +69,7 @@ internal class EntityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task InitializerAddedAsync<TTemplate, TInitializationEvent>(string entityName, int entityVersion)
+    public override Task InitializerAddedAsync<TTemplate, TInitializationEvent>(string id, string entityName, int entityVersion, IReadOnlyList<string> eventNames)
     {
         if (IsCurrent(entityName, entityVersion))
         {
@@ -80,7 +80,7 @@ internal class EntityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task MutationAddedAsync<TTemplate, TMutationEvent>(string entityName, int entityVersion)
+    public override Task MutationAddedAsync<TTemplate, TMutationEvent>(string id, string entityName, int entityVersion, IReadOnlyList<string> eventNames)
     {
         if (IsCurrent(entityName, entityVersion))
         {
@@ -97,7 +97,7 @@ internal class EntityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task ProjectionAddedAsync<TTemplate, TProjectionTemplate>(string entityName, int entityVersion, PublishScope publishScope)
+    public override Task ProjectionAddedAsync<TTemplate, TProjectionTemplate>(string id, string entityName, int entityVersion, PublishScope publishScope)
     {
         if (IsCurrent(entityName, entityVersion))
         {
@@ -115,8 +115,8 @@ internal class EntityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task FieldAddedAsync<TTemplate, TField>(string entityName, int entityVersion, string fieldName,
-        TField defaultValue, bool computed, FieldAccess access)
+    public override Task FieldAddedAsync<TTemplate, TField>(string id, string entityName, int entityVersion, string fieldName,
+        bool hasDefaultValue, TField defaultValue, bool computed, FieldAccess access)
     {
         if (IsCurrent(entityName, entityVersion))
         {

@@ -1,10 +1,13 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Interfaces;
 
 namespace Stateflows;
 
 internal sealed class StateflowsBehaviorOutbox(
-    IGrainFactory grains, TransactionWorkTracker transactions, ILogger<StateflowsBehaviorOutbox> logger)
+    IGrainFactory grains, TransactionWorkTracker transactions, ILogger<StateflowsBehaviorOutbox> logger,
+    IServiceProvider services)
     : Grain, IBehaviorOutboxGrain
 {
     private Task? draining;
@@ -39,8 +42,18 @@ internal sealed class StateflowsBehaviorOutbox(
                         var envelope = publication.Notifications.Single();
                         if (!new StoredNotification { Notification = envelope }.IsExpired(DateTime.UtcNow))
                         {
-                            var result = await grains.GetGrain<IBehaviorGrain>(destination)
+                            var observer = services.GetService<IBehaviorDispatchObserver>();
+                            Task<OrleansRequestResult>? dispatch = null;
+                            void Send() => dispatch = grains.GetGrain<IBehaviorGrain>(destination)
                                 .ProcessEventAsync(envelope, CancellationToken.None);
+                            if (observer == null)
+                                Send();
+                            else
+                                observer.DispatchCommitted(
+                                    StateflowsGrainKeys.ParseBehavior(sourceKey).BehaviorId,
+                                    StateflowsGrainKeys.ParseBehavior(destination).BehaviorId,
+                                    envelope, services, Send);
+                            var result = await dispatch!;
                             if (!NotificationDeliveryStatuses.IsAcknowledged(result.Status))
                             {
                                 logger.LogWarning("Staged send {EventId} from {Source} to {Destination} returned {Status}; it remains pending.",

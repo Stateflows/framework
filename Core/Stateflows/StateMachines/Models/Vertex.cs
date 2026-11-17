@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Interfaces;
+using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
 
@@ -19,6 +21,9 @@ namespace Stateflows.StateMachines.Models
         public string? OriginStateMachineName { get; set; }
         public VertexType Type { get; set; }
         public string Identifier => Name;
+        internal string DefinitionIdentifier => $"vertex:{Name.Length}:{Name}";
+        internal Type? ImplementationType { get; set; }
+        internal Type? HostedImplementationType { get; set; }
 
         private Logic<StateMachineActionAsync> initialize = null;
         public Logic<StateMachineActionAsync> Initialize => initialize ??= new Logic<StateMachineActionAsync>(Constants.Initialize);
@@ -36,7 +41,33 @@ namespace Stateflows.StateMachines.Models
         public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElse);
         public IEnumerable<Edge> IncomingEdges => Graph.AllEdges.Where(edge => edge.Target == this);
         public Dictionary<string, Logic<StateMachinePredicateAsync>> Deferrals { get; set; } = new();
+        internal int NextGuardDelegationIndex { get; set; }
         public Dictionary<string, Type> DeferralTypes { get; } = new();
+        internal Dictionary<Type, Logic<StateMachinePredicateAsync>> DeferralDeclarations { get; } = [];
+        internal bool TryGetInheritedDeferral(Type eventType, out Logic<StateMachinePredicateAsync> logic)
+        {
+            return DeferralDeclarations.TryGetValue(eventType, out logic) && logic.OriginStateMachineName != null;
+        }
+        internal void PrepareDeferrals()
+        {
+            foreach (var name in DeferralTypes.Where(pair => DeferralDeclarations.ContainsKey(pair.Value)).Select(pair => pair.Key).ToArray())
+            {
+                Deferrals.Remove(name);
+                DeferralTypes.Remove(name);
+            }
+            foreach (var declaration in DeferralDeclarations)
+            {
+                var names = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(declaration.Key).Select(Event.GetName).Distinct().ToArray();
+                if (names.Length == 0)
+                    throw new DeferralDefinitionException(Event.GetName(declaration.Key), "Deferred event must have at least one effective name.", Graph.Class);
+                foreach (var name in names)
+                {
+                    if (!Deferrals.TryAdd(name, declaration.Value))
+                        throw new DeferralDefinitionException(name, $"Event '{name}' is already deferred by '{Name}'.", Graph.Class);
+                    DeferralTypes.Add(name, declaration.Key);
+                }
+            }
+        }
         public HashSet<string> StructuralDeferrals { get; } = new(StringComparer.Ordinal);
         public List<Region> Regions { get; set; } = [];
         public Region DefaultRegion
@@ -66,6 +97,7 @@ namespace Stateflows.StateMachines.Models
         public string BehaviorType { get; set; }
         public List<Type> BehaviorEventTypes { get; set; } = [];
         public HashSet<string> BehaviorStructuralEvents { get; } = new(StringComparer.Ordinal);
+        internal Dictionary<Type, HashSet<string>> BehaviorEventBindings { get; } = [];
 
         public Dictionary<string, object> Metadata { get; } = [];
 

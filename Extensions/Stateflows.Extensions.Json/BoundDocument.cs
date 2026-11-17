@@ -164,8 +164,8 @@ internal sealed partial class BoundDocument(
             Error(path + "/triggers", "Different trigger types resolve to the same event name.");
         if (covered.Contains(typeof(Completion)) && (covered.Count != 1 || structural.Count != 0))
             Error(path + "/triggers", "Completion cannot be combined with other triggers.");
-        if (parent.Value<bool?>("else") == true && structural.Count != 0 && structural.Count + covered.Count > 1)
-            Error(path + "/triggers", "A named else transition must declare exactly one trigger; the core permits only one else edge per vertex.");
+        if (declared.Count > 1 || (declared.Count != 0 && structural.Count != 0))
+            Error(path + "/triggers", "Declare exactly one CLR trigger type or a collection of structural event names, never both.");
         structuralTriggers[path] = structural.ToArray();
         if (structural.Count != 0)
         {
@@ -261,7 +261,6 @@ internal sealed partial class BoundDocument(
     private void BindContainer(JToken container, string path)
     {
         if (container["initial"] is { } initial) BindName(initial, path + "/initial", typeof(IVertex));
-        if (container["history"] is { } history) BindName(history, path + "/history", typeof(IHistory));
         foreach (var (node, vertexPath) in Items(container, path, "vertices"))
         {
             var kind = node.Value<string>("kind")!;

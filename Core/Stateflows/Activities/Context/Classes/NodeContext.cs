@@ -13,6 +13,7 @@ namespace Stateflows.Activities.Context.Classes
         private readonly Edge Edge;
 
         public string Name => Node.Name;
+        public string Identifier => Node.DefinitionIdentifier;
 
         public NodeType NodeType => Node.Type;
         public IEnumerable<IPinContext> InputPins

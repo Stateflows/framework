@@ -42,6 +42,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.RecordStateActionType(vertex, Constants.Finalization, vertex.Finalize.Actions.Count, typeof(TActivity));
+            vertex.Graph.RecordStateActionBehavior(vertex, Constants.Finalization, vertex.Finalize.Actions.Count, new BehaviorClass(BehaviorType.Activity, activityName));
             return AddOnFinalize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Finalization, c, activityName));
         }
 
@@ -56,6 +58,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.RecordStateActionBehavior(vertex, Constants.Finalization, vertex.Finalize.Actions.Count, new BehaviorClass(BehaviorType.Activity, activityName));
             return AddOnFinalize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Finalization, c, activityName));
         }
         #endregion
@@ -76,6 +79,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.RecordStateActionType(vertex, Constants.Finalization, vertex.Finalize.Actions.Count, typeof(TAction));
+            vertex.Graph.RecordStateActionBehavior(vertex, Constants.Finalization, vertex.Finalize.Actions.Count, new BehaviorClass(BehaviorType.Action, actionName));
             return AddOnFinalize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Finalization, c, actionName));
         }
         
@@ -92,6 +97,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.RecordStateActionBehavior(vertex, Constants.Finalization, vertex.Finalize.Actions.Count, new BehaviorClass(BehaviorType.Action, actionName));
             return AddOnFinalize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Finalization, c, actionName));
         }
         #endregion
@@ -114,12 +120,16 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.2.-Composite-State" />
         TReturn AddOnFinalize<TStateFinalization>(ElementBuildAction<TStateFinalization> buildAction = null)
             where TStateFinalization : class, ICompositeStateFinalization
-            => AddOnFinalize(async c => 
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            vertex.Graph.RecordStateActionType(vertex, Constants.Finalization, vertex.Finalize.Actions.Count, typeof(TStateFinalization));
+            return AddOnFinalize(async c =>
             {
                 var state = await ((BaseContext)c).Context.Executor.GetStateAsync<TStateFinalization>(c);
                 buildAction?.Invoke(new ElementBuilder<TStateFinalization>(state));
                 await state.OnFinalizeAsync();
             });
+        }
 
         /// <summary>Registers typed handlers for the state's nested-state finalization operation.</summary>
         /// <typeparam name="TStateFinalization1">Typed nested-state finalization handler implementing

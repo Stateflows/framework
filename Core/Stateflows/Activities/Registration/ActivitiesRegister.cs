@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -31,9 +31,6 @@ namespace Stateflows.Activities.Registration
         public readonly Dictionary<string, Graph> Activities = [];
 
         public readonly Dictionary<string, int> CurrentVersions = [];
-
-        private readonly MethodInfo ActivityTypeAddedAsyncMethod =
-            typeof(IActivityVisitor).GetMethod(nameof(IActivityVisitor.ActivityTypeAddedAsync));
 
         private bool IsNewestVersion(string activityName, int version)
         {
@@ -82,21 +79,9 @@ namespace Stateflows.Activities.Registration
 
             var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, OwnerClass, ParentClass);
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
-
-            activityBuilder.Graph.VisitingTasks.Add(v =>
-            {
-                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                    .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
-                return v.ActivityAddingAsync(activityName, version, ownerClass, parentClass, hasDefaultInstance);
-            });
-
             buildAction(activityBuilder);
             activityBuilder.Graph.Build();
 
-            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version));
 
             Activities.Add(key, activityBuilder.Graph);
 
@@ -125,28 +110,10 @@ namespace Stateflows.Activities.Registration
                 }
             };
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
-
-            activityBuilder.Graph.VisitingTasks.Add(v =>
-            {
-                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                    .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
-                return v.ActivityAddingAsync(activityName, version, ownerClass, parentClass, hasDefaultInstance);
-            });
-
             RegisterActivity(activityType, activityBuilder);
             activityBuilder.Graph.Build();
             buildAction?.Invoke(new ActivityUtilsBuilder(activityBuilder.Graph));
 
-            var method = ActivityTypeAddedAsyncMethod.MakeGenericMethod(activityType);
-
-            activityBuilder.Graph.VisitingTasks.AddRange(
-            [
-                v => v.ActivityAddedAsync(activityName, version),
-                v => (Task)method.Invoke(v, [ activityName, version ])
-            ]);
 
             Activities.Add(key, activityBuilder.Graph);
 
@@ -165,12 +132,11 @@ namespace Stateflows.Activities.Registration
         {
             var tasks = Activities
                 .Where((item, index) => !item.Key.EndsWith(".current"))
-                .Select(item => item.Value)
-                .SelectMany(graph => graph.VisitingTasks);
+                 .Select(item => item.Value);
 
             foreach (var task in tasks)
             {
-                await task(visitor);
+                await task.VisitAsync(visitor);
             }
         }
 
@@ -178,12 +144,11 @@ namespace Stateflows.Activities.Registration
         {
             var tasks = Activities
                 .Where(item => item.Key == $"{activityName}.{version}")
-                .Select(item => item.Value)
-                .SelectMany(graph => graph.VisitingTasks);
+                 .Select(item => item.Value);
 
             foreach (var task in tasks)
             {
-                await task(visitor);
+                await task.VisitAsync(visitor);
             }
         }
 

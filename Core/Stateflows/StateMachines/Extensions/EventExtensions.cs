@@ -17,16 +17,15 @@ namespace Stateflows.StateMachines.Extensions
             {
                 return false;
             }
-            if (edge.StructuralEventName != null)
-                return eventHolder.BoxedPayload is StructuralEvent && eventHolder.Name == edge.StructuralEventName;
+            if (edge.StructuralEventNames != null)
+                return eventHolder.BoxedPayload is StructuralEvent && edge.StructuralEventNames.Contains(eventHolder.Name);
             
             return edge.PolymorphicTriggers
                 ? eventHolder.BoxedPayload is TimeEvent timeEvent1
                     ? timeEvent1.ConsumerSignature == edge.Signature
                     : edge.ActualTriggerTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType))
                 : (edge.ActualTriggerTypes.Contains(eventHolder.PayloadType) ||
-                   edge.DeclaredTriggerTypes?.Any(type => typeof(Exception).IsAssignableFrom(type) &&
-                       type.IsAssignableFrom(eventHolder.PayloadType)) == true) &&
+                   edge.ActualTriggerTypes.Any(type => typeof(Exception).IsAssignableFrom(type) && type.IsAssignableFrom(eventHolder.PayloadType))) &&
                   (
                       !(eventHolder.BoxedPayload is TimeEvent timeEvent2) ||
                       timeEvent2.ConsumerSignature == edge.Signature

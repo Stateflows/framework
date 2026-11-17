@@ -2,48 +2,36 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common;
 
 namespace Stateflows.StateMachines.Registration.Builders;
 
-/// <summary>Collects event metadata accepted by transitions and do behaviors in an embedded machine.</summary>
-/// <param name="typeMapper">Resolves the mapped CLR types of transition triggers.</param>
+/// <summary>Collects accepted events from an embedded machine's finalized definition.</summary>
 public class SubmachineVisitor(ITypeMapper typeMapper) : StateMachineVisitor
 {
-    /// <summary>The distinct event definitions collected by registered event name.</summary>
-    public List<EventDefinition> EventDefinitions { get; } = [];
-    /// <inheritdoc/>
-    public override Task DoBehaviorAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
-        string stateName, string behaviorName, string behaviorType)
-    {
-        if (!EventDefinitions.Exists(e => e.Name == definition.Name)) EventDefinitions.Add(definition);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc/>
-    public override Task TransitionAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
-        string sourceVertexName, string targetVertexName = null, bool isElse = false)
-    {
-        if (!EventDefinitions.Exists(e => e.Name == definition.Name)) EventDefinitions.Add(definition);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc/>
-    public override Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
-        string targetVertexName = null, bool isElse = false)
-    {
-        var eventTypes = typeMapper.GetMappedTypes(typeof(TEvent));
-        foreach (var eventType in eventTypes)
-        {
-            if (!EventTypes.Contains(eventType))
-            {
-                EventTypes.Add(eventType);
-            }
-        }
-
-        return Task.CompletedTask;
-    }
-
-    /// <summary>The distinct mapped CLR payload types collected from visited transitions.</summary>
+    /// <summary>Distinct effective CLR payload types.</summary>
     public List<Type> EventTypes { get; } = [];
+    /// <summary>Distinct accepted event names, including structural events.</summary>
+    public HashSet<string> EventNames { get; } = [];
+    /// <summary>Declared CLR event types with their effective names.</summary>
+    public Dictionary<Type, HashSet<string>> EventBindings { get; } = [];
+
+    private Task Collect<TEvent>(IReadOnlyList<string> names)
+    {
+        EventNames.UnionWith(names);
+        if (!EventBindings.TryGetValue(typeof(TEvent), out var binding)) EventBindings[typeof(TEvent)] = binding = [];
+        binding.UnionWith(names);
+        if (typeof(TEvent) != typeof(Stateflows.Common.StructuralEvent))
+            foreach (var type in typeMapper.GetMappedTypes(typeof(TEvent)))
+                if (!EventTypes.Contains(type)) EventTypes.Add(type);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public override Task TransitionAddedAsync<TEvent>(string id, string name, int version, string sourceId,
+        string? targetId, bool isElse, bool isLocal, bool polymorphic, IReadOnlyList<string> triggerNames)
+        => Collect<TEvent>(triggerNames);
+
+    /// <inheritdoc/>
+    public override Task HostedBehaviorEventAddedAsync<TEvent>(string id, string name, int version,
+        string hostedBehaviorId, IReadOnlyList<string> eventNames) => Collect<TEvent>(eventNames);
 }

@@ -140,7 +140,7 @@ public class JsonExecutionTests : StateflowsTestClass
                          "onEntry":[{"clrType":"trace","configuration":"entry"}],
                          "onExit":[{"clrType":"trace","configuration":"exit"}],
                          "transitions":[
-                           {"kind":"event","triggers":[{"clrType":"ping"},{"clrType":"pong"}],"target":"finish",
+                           {"kind":"event","triggers":[{"clrType":"union"}],"target":"finish",
                             "guard":{"all":[
                               {"clrType":"predicate","configuration":true},
                               {"any":[{"clrType":"predicate","configuration":false},{"clrType":"predicate","configuration":true}]}
@@ -185,7 +185,7 @@ public class JsonExecutionTests : StateflowsTestClass
                     state["do"] = JObject.Parse("""{"behaviorClass":{"type":"Action","name":"hosted"}}""");
                 if (name == "initializers")
                     model["initializers"] = JArray.Parse("""
-                        [{"triggers":[{"clrType":"ping"},{"clrType":"pong"}],
+                        [{"triggers":[{"clrType":"union"}],
                           "handlers":[{"clrType":"initializer","configuration":"configured"}]}]
                         """);
                 if (name == "deferral")

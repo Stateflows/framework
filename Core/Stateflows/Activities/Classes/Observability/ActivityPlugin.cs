@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
@@ -7,6 +7,9 @@ namespace Stateflows.Activities
 {
     internal abstract class ActivityPlugin : IActivityPlugin
     {
+        public virtual Task OnActionAsync(IActivityActionObservationContext context, Func<Task> next) => next();
+        public virtual Task OnPredicateAsync(IActivityPredicateObservationContext predicateContext, Func<Task<bool>> next) => next();
+
         public virtual Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
             => next();
 

@@ -100,6 +100,8 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
     public IActionBuilder AddConsumedEvent<TEvent>()
     {
         Model.ConsumedEventTypes.Add(typeof(TEvent));
+        if (!Model.ConsumedBindingOrder.Contains(typeof(TEvent)))
+            Model.ConsumedBindingOrder.Add(typeof(TEvent));
 
         return this;
     }
@@ -110,6 +112,8 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
         if (!Model.ConsumedEventNames.Contains(eventName))
         {
             Model.ConsumedEventNames.Add(eventName);
+            if (!Model.ConsumedBindingOrder.Contains(typeof(Stateflows.Common.StructuralEvent)))
+                Model.ConsumedBindingOrder.Add(typeof(Stateflows.Common.StructuralEvent));
         }
 
         return this;
@@ -125,6 +129,8 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
     public IActionBuilder AddConsumedToken<TToken>()
     {
         Model.ConsumedTokenTypes.Add(typeof(TToken));
+        if (!Model.ConsumedBindingOrder.Contains(typeof(TToken)))
+            Model.ConsumedBindingOrder.Add(typeof(TToken));
 
         return this;
     }

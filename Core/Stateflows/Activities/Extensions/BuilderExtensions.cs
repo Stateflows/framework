@@ -1,4 +1,5 @@
-﻿using Stateflows.Common.Classes;
+using Stateflows.Common.Classes;
+using Stateflows.Activities.Models;
 using Stateflows.Common.Extensions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Builders;
@@ -24,6 +25,7 @@ namespace Stateflows.Activities.Extensions
                         ActivityNodeContextAccessor.Context.Value = null;
                     }
                 });
+                builder.Node.OperationTypes[(ActivityOperationKind.Initialize, builder.Node.Initialize.Actions.Count - 1)] = typeof(TStructuredActivity);
             }
 
             if (typeof(IStructuredActivityNodeFinalization).IsAssignableFrom(typeof(TStructuredActivity)))
@@ -39,12 +41,14 @@ namespace Stateflows.Activities.Extensions
                         ActivityNodeContextAccessor.Context.Value = null;
                     }
                 });
+                builder.Node.OperationTypes[(ActivityOperationKind.Finalize, builder.Node.Finalize.Actions.Count - 1)] = typeof(TStructuredActivity);
             }
         }
 
         public static void AddObjectFlowEvents<TFlow, TToken>(this IObjectFlowBuilder<TToken> builder)
             where TFlow : class, IFlow<TToken>
         {
+            RegistrationMetadata.Flow(builder, typeof(TFlow));
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TFlow>())
             {
                 builder.SetWeight(TFlow.Weight);
@@ -52,7 +56,7 @@ namespace Stateflows.Activities.Extensions
 
             if (typeof(IFlowGuard<TToken>).IsAssignableFrom(typeof(TFlow)))
             {
-                builder.AddGuard(async c =>
+                RegistrationMetadata.Guard(() => builder.AddGuard(async c =>
                 {
                     var result = false;
                     var flow = await ((BaseContext)c).NodeScope.GetFlowAsync<TFlow>(c);
@@ -64,13 +68,14 @@ namespace Stateflows.Activities.Extensions
                     }
 
                     return result;
-                });
+                }), ActivityGuardKind.Leaf, typeof(TFlow));
             }
         }
 
         public static void AddObjectTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>(this IObjectFlowBuilder<TToken> builder)
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
         {
+            RegistrationMetadata.Flow(builder, typeof(TTransformationFlow));
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TTransformationFlow>())
             {
                 builder.SetWeight(TTransformationFlow.Weight);
@@ -78,7 +83,7 @@ namespace Stateflows.Activities.Extensions
 
             if (typeof(IFlowGuard<TToken>).IsAssignableFrom(typeof(TTransformationFlow)))
             {
-                builder.AddGuard(async c =>
+                RegistrationMetadata.Guard(() => builder.AddGuard(async c =>
                 {
                     var result = false;
                     var flow = await ((BaseContext)c).NodeScope.GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(c);
@@ -90,12 +95,12 @@ namespace Stateflows.Activities.Extensions
                     }
 
                     return result;
-                });
+                }), ActivityGuardKind.Leaf, typeof(TTransformationFlow));
             }
 
             if (typeof(IFlowTransformation<TToken, TTransformedToken>).IsAssignableFrom(typeof(TTransformationFlow)))
             {
-                builder.AddTransformation(async c =>
+                RegistrationMetadata.Transformation(() => builder.AddTransformation(async c =>
                 {
                     TTransformedToken result = default;
                     var flow = await ((BaseContext)c).NodeScope.GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(c);
@@ -107,13 +112,14 @@ namespace Stateflows.Activities.Extensions
                     }
 
                     return result;
-                });
+                }), typeof(TTransformationFlow));
             }
         }
 
         public static void AddElseObjectTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>(this IObjectFlowBuilder<TToken> builder)
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
         {
+            RegistrationMetadata.Flow(builder, typeof(TTransformationFlow));
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TTransformationFlow>())
             {
                 builder.SetWeight(TTransformationFlow.Weight);
@@ -121,7 +127,7 @@ namespace Stateflows.Activities.Extensions
 
             if (typeof(IFlowTransformation<TToken, TTransformedToken>).IsAssignableFrom(typeof(TTransformationFlow)))
             {
-                builder.AddTransformation(async c =>
+                RegistrationMetadata.Transformation(() => builder.AddTransformation(async c =>
                 {
                     TTransformedToken result = default;
                     var flow = await ((BaseContext)c).NodeScope.GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(c);
@@ -133,13 +139,14 @@ namespace Stateflows.Activities.Extensions
                     }
 
                     return result;
-                });
+                }), typeof(TTransformationFlow));
             }
         }
 
         public static void AddControlFlowEvents<TControlFlow>(this IControlFlowBuilder builder)
             where TControlFlow : class, IControlFlow
         {
+            RegistrationMetadata.Flow(builder, typeof(TControlFlow));
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TControlFlow>())
             {
                 builder.SetWeight(TControlFlow.Weight);
@@ -147,7 +154,7 @@ namespace Stateflows.Activities.Extensions
 
             if (typeof(IControlFlowGuard).IsAssignableFrom(typeof(TControlFlow)))
             {
-                builder.AddGuard(async c =>
+                RegistrationMetadata.Guard(() => builder.AddGuard(async c =>
                 {
                     var result = false;
                     var flow = await ((BaseContext)c).NodeScope.GetFlowAsync<TControlFlow>(c);
@@ -159,7 +166,7 @@ namespace Stateflows.Activities.Extensions
                     }
 
                     return result;
-                });
+                }), ActivityGuardKind.Leaf, typeof(TControlFlow));
             }
         }
     }

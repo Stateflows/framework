@@ -70,7 +70,8 @@ public interface IActivityActionBase<out TReturn>
         );
 
         var graph = ((IGraphBuilder)this).Graph;
-        graph.VisitingTasks.Add(visitor => visitor.NodeTypeAddedAsync<TAction>(graph.Name, graph.Version, actionNodeName));
+        graph.AllNamedNodes[actionNodeName].ImplementationType = typeof(TAction);
+        graph.AllNamedNodes[actionNodeName].OperationTypes[(ActivityOperationKind.Execute, graph.AllNamedNodes[actionNodeName].Action.Actions.Count - 1)] = typeof(TAction);
 
         return result;
     }

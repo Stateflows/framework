@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Classes;
@@ -131,7 +131,9 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             );
 
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.AcceptEventNodeTypeAddedAsync<TEvent, TAcceptEventAction>(graph.Name, graph.Version, actionNodeName));
+            graph.AllNamedNodes[actionNodeName].ImplementationType = typeof(TAcceptEventAction);
+        graph.AllNamedNodes[actionNodeName].OperationTypes[(ActivityOperationKind.Execute, graph.AllNamedNodes[actionNodeName].Action.Actions.Count - 1)] = typeof(TAcceptEventAction);
+            graph.AllNamedNodes[actionNodeName].ImplementationEventType = typeof(TEvent);
 
             return result;
         }
@@ -235,6 +237,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                 b =>
                 {
                     var nodeBuilder = (NodeBuilder)b;
+                    nodeBuilder.Node.ImplementationType = typeof(TTimeEventAction);
+                    nodeBuilder.Node.OperationTypes[(ActivityOperationKind.Execute, nodeBuilder.Node.Action.Actions.Count)] = typeof(TTimeEventAction);
                     buildAction?.Invoke(new TimeEventNodeBuilder<TTimeEventAction>(nodeBuilder.Node, nodeBuilder.ActivityBuilder));
                 }
             );

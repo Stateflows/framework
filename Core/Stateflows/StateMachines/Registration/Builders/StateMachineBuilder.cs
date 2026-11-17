@@ -51,8 +51,6 @@ namespace Stateflows.StateMachines.Registration.Builders
                 var context = new StateMachineInitializationContext(c);
                 return await actionAsync(context);
             }));
-            
-            Graph.VisitingTasks.Add(v => v.DefaultInitializerAddedAsync(Graph.Name, Graph.Version));
 
             return this;
         }
@@ -82,27 +80,31 @@ namespace Stateflows.StateMachines.Registration.Builders
             actionAsync.ThrowIfNull(nameof(actionAsync));
             Graph.StateflowsBuilder.Events.RegisterClr(typeof(TInitializationEvent));
             
-            var initializerName = Event<TInitializationEvent>.Name;
-            
-            if (!Graph.Initializers.TryGetValue(initializerName, out var initializer))
+            if (!Graph.InitializerDeclarations.TryGetValue(typeof(TInitializationEvent), out var initializer))
             {
                 initializer = new Logic<StateMachinePredicateAsync>(Constants.Initialize);
-
-                Graph.Initializers.Add(initializerName, initializer);
+                Graph.InitializerDeclarations.Add(typeof(TInitializationEvent), initializer);
                 Graph.InitializerTypes.Add(typeof(TInitializationEvent));
             }
 
-            initializer.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
+            var registrationIndex = initializer.Actions.Count;
+            StateMachinePredicateAsync execute = c => initializer.Registrations[registrationIndex].ObserveAsync(c, () => c.Executor.RunInScopeAsync(async () =>
             {
-                var result = false;
-                var context = new StateMachineInitializationContext<TInitializationEvent>(c, c.EventHolder as EventHolder<TInitializationEvent>);
-
-                result = await actionAsync(context);
-
-                return result;
+                var holder = new EventHolder<TInitializationEvent>
+                {
+                    Payload = new EventContext<TInitializationEvent>(c).Event,
+                    Id = c.EventHolder.Id, Headers = c.EventHolder.Headers
+                };
+                return await actionAsync(new StateMachineInitializationContext<TInitializationEvent>(c, holder));
             }));
-            
-            Graph.VisitingTasks.Add(v => v.InitializerAddedAsync<TInitializationEvent>(Graph.Name, Graph.Version));
+            initializer.Actions.Add(execute);
+            foreach (var type in Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(typeof(TInitializationEvent)))
+            {
+                var name = Event.GetName(type);
+                if (!Graph.Initializers.TryGetValue(name, out var runtime))
+                    Graph.Initializers.Add(name, runtime = new Logic<StateMachinePredicateAsync>(Constants.Initialize));
+                runtime.Actions.Add(execute);
+            }
 
             return this;
         }
@@ -117,8 +119,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
                 await actionAsync(context);
             }));
-            
-            Graph.VisitingTasks.Add(v => v.FinalizerAddedAsync(Graph.Name, Graph.Version));
 
             return this;
         }
@@ -143,8 +143,6 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateDefinitionException(vertex.Name, $"State '{vertex.Name}' is already registered", Graph.Class);
             Graph.Vertices.Add(vertex.Name, vertex);
             Graph.AllVertices.Add(vertex.Identifier, vertex);
-            
-            Graph.VisitingTasks.Add(visitor => visitor.VertexAddedAsync(Graph.Name, Graph.Version, vertex.Name, vertex.Type));
 
             return this;
         }

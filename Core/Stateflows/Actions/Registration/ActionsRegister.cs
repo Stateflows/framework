@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -25,12 +25,10 @@ namespace Stateflows.Actions.Registration
 
         public readonly List<ActionObserverFactoryAsync> GlobalObserverFactories = [];
 
-        private readonly MethodInfo ActionTypeAddedAsyncMethod = typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.ActionTypeAddedAsync));
 
-        private readonly MethodInfo CustomEventAddedAsyncMethod = typeof(IActionVisitor).GetMethods()
-            .Single(m => m.Name == nameof(IActionVisitor.CustomEventAddedAsync) && m.IsGenericMethodDefinition);
 
         internal Stateflows.Events.EventsRegister EventsRegister { get; set; }
+        internal ITypeMapper TypeMapper { get; set; }
 
         public readonly Dictionary<string, ActionModel> Actions = new();
 
@@ -72,35 +70,19 @@ namespace Stateflows.Actions.Registration
 
             ActionModel actionModel = null;
 
-            Func<IActionVisitor, Task> visitingAction = async v =>
-            {
-                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                    .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
-
-                await v.ActionAddingAsync(actionName, version, actionModel.BehaviorClassType, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
-                await v.ActionAddedAsync(actionName, version);
-                var eventTypes = new List<Type>();
-                eventTypes.AddRange(actionModel.ConsumedEventTypes);
-                eventTypes.AddRange(actionModel.ConsumedTokenTypes);
-                var methods = eventTypes.Select(t => CustomEventAddedAsyncMethod.MakeGenericMethod(t)).ToArray();
-                foreach (var method in methods)
-                {
-                    await (Task)method.Invoke(v, [actionName, version, new[] { BehaviorStatus.Initialized }]);
-                }
-                await VisitConsumedEventNamesAsync(v, actionModel);
-            };
 
             actionModel = new ActionModel()
             {
                 Name = actionName,
+                TypeMapper = TypeMapper,
                 Version = version,
                 Delegate = actionDelegate,
-                VisitingAction = visitingAction,
                 OwnerClass = OwnerClass,
                 ParentClass = ParentClass,
             };
 
             buildAction?.Invoke(new ActionBuilder(actionModel));
+            actionModel.FinalizeBindings();
 
             if (!Actions.TryAdd(key, actionModel))
             {
@@ -126,54 +108,27 @@ namespace Stateflows.Actions.Registration
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
             }
 
-            var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var ownerClass = OwnerClass;
             var parentClass = ParentClass;
 
-            // Func<IActionVisitor, Task> visitingAction = async v =>
-            // {
-            //     var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-            //         .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
-            //
-            //     await v.ActionAddingAsync(actionName, version, ownerClass, parentClass, hasDefaultInstance);
-            //     await v.ActionAddedAsync(actionName, version);
-            //     await (Task)method.Invoke(v, [actionName, version]);
-            // };
             
             ActionModel actionModel = null;
             
-            Func<IActionVisitor, Task> visitingAction = async v =>
-            {
-                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                    .Any(t => t.BehaviorClass.Type == actionModel.BehaviorClassType && t.BehaviorClass.Name == actionName);
-
-                await v.ActionAddingAsync(actionName, version, actionModel.BehaviorClassType, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
-                await v.ActionAddedAsync(actionName, version);
-                await (Task)ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType).Invoke(v, [actionName, version]);
-                var eventTypes = new List<Type>();
-                eventTypes.AddRange(actionModel.ConsumedEventTypes);
-                eventTypes.AddRange(actionModel.ConsumedTokenTypes);
-                var methods = eventTypes.Select(t => CustomEventAddedAsyncMethod.MakeGenericMethod(t)).ToArray();
-                foreach (var method in methods)
-                {
-                    await (Task)method.Invoke(v, [actionName, version, new[] { BehaviorStatus.Initialized }]);
-                }
-                await VisitConsumedEventNamesAsync(v, actionModel);
-            };
 
             actionModel = new ActionModel()
             {
                 Name = actionName,
+                TypeMapper = TypeMapper,
                 Version = version,
-                // Delegate = actionDelegate,
-                VisitingAction = visitingAction,
+                ImplementationType = actionType,
                 OwnerClass = ownerClass,
                 ParentClass = parentClass,
             };
 
             buildAction?.Invoke(new ActionBuilder(actionModel));
+            actionModel.FinalizeBindings();
 
             actionModel.Delegate = async context =>
             {
@@ -218,24 +173,6 @@ namespace Stateflows.Actions.Registration
             }
         }
 
-        private async Task VisitConsumedEventNamesAsync(IActionVisitor visitor, ActionModel actionModel)
-        {
-            if (actionModel.ConsumedEventNames.Count == 0)
-            {
-                return;
-            }
-
-            if (EventsRegister == null)
-            {
-                throw new InvalidOperationException("Structural events register is not available.");
-            }
-
-            foreach (var eventName in actionModel.ConsumedEventNames)
-            {
-                await visitor.CustomEventAddedAsync(EventsRegister.GetEvent(eventName), actionModel.Name, actionModel.Version, [BehaviorStatus.Initialized]);
-            }
-        }
-
         [DebuggerHidden]
         public void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
@@ -243,9 +180,9 @@ namespace Stateflows.Actions.Registration
 
         public async Task VisitActionsAsync(IActionVisitor visitor)
         {
-            foreach (var action in Actions.Where(kv => kv.Key.EndsWith(".current")).Select(kv => kv.Value))
+            foreach (var action in Actions.Where(kv => !kv.Key.EndsWith(".current")).Select(kv => kv.Value))
             {
-                await action.VisitingAction(visitor);
+                await action.VisitAsync(visitor);
             }
         }
 
@@ -255,7 +192,7 @@ namespace Stateflows.Actions.Registration
                          .Where(item => item.Key == $"{activityName}.{version}")
                          .Select(item => item.Value))
             {
-                await action.VisitingAction(visitor);
+                await action.VisitAsync(visitor);
             }
         }
 

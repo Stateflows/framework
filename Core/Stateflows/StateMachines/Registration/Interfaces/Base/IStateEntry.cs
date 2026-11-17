@@ -45,6 +45,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.RecordStateActionType(vertex, Constants.Entry, vertex.Entry.Actions.Count, typeof(TActivity));
+            vertex.Graph.RecordStateActionBehavior(vertex, Constants.Entry, vertex.Entry.Actions.Count, new BehaviorClass(BehaviorType.Activity, activityName));
             return AddOnEntry(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Entry, c, activityName));
         }
 
@@ -58,6 +60,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.RecordStateActionBehavior(vertex, Constants.Entry, vertex.Entry.Actions.Count, new BehaviorClass(BehaviorType.Activity, activityName));
             return AddOnEntry(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Entry, c, activityName));
         }
         #endregion
@@ -77,6 +80,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction, version: 1), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.RecordStateActionType(vertex, Constants.Entry, vertex.Entry.Actions.Count, typeof(TAction));
+            vertex.Graph.RecordStateActionBehavior(vertex, Constants.Entry, vertex.Entry.Actions.Count, new BehaviorClass(BehaviorType.Action, actionName));
             return AddOnEntry(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Entry, c, actionName));
         }
         
@@ -92,6 +97,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.RecordStateActionBehavior(vertex, Constants.Entry, vertex.Entry.Actions.Count, new BehaviorClass(BehaviorType.Action, actionName));
             return AddOnEntry(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Entry, c, actionName));
         }
         #endregion
@@ -112,12 +118,16 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.2.1.-State" />
         TReturn AddOnEntry<TStateEntry>(ElementBuildAction<TStateEntry> buildAction = null)
             where TStateEntry : class, IStateEntry
-            => AddOnEntry(async c =>
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            vertex.Graph.RecordStateActionType(vertex, Constants.Entry, vertex.Entry.Actions.Count, typeof(TStateEntry));
+            return AddOnEntry(async c =>
             {
                 var state = await ((BaseContext)c).Context.Executor.GetStateAsync<TStateEntry>(c);
                 buildAction?.Invoke(new ElementBuilder<TStateEntry>(state));
                 await state.OnEntryAsync();
             });
+        }
 
         /// <summary>Registers typed handlers for the state's entry operation.</summary>
         /// <typeparam name="TStateEntry1">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>

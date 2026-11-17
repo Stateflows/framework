@@ -6,11 +6,12 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common.Classes
 {
-    internal abstract class BaseBehavior : IBehavior, IUnwatcher, INotificationHandler, IInjectionScope
+    internal abstract class BaseBehavior : IBehavior, IEnvelopeRequestBehavior, IUnwatcher, INotificationHandler, IInjectionScope
     {
         public BehaviorId Id { get; }
 
@@ -94,41 +95,58 @@ namespace Stateflows.Common.Classes
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
         {
             var eventHolder = @event.ToTypedEventHolder(headers);
-            var executionToken = await ProcessEventAsync(Id, eventHolder);
+            var observer = BehaviorDispatchAmbient.Current;
+            return observer == null ? await DispatchAsync() : await observer.SendAsync(Id, eventHolder, DispatchAsync);
 
-            if (ResponseHolder.ResponsesAreSet())
+            async Task<SendResult> DispatchAsync()
             {
-                ResponseHolder.CopyResponses(executionToken.Responses);
-            }
+                var executionToken = await ProcessEventAsync(Id, eventHolder);
 
-            return new SendResult( 
-                executionToken.Status, 
-                executionToken.Validation
-            );
+                if (ResponseHolder.ResponsesAreSet())
+                {
+                    ResponseHolder.CopyResponses(executionToken.Responses);
+                }
+
+                return new SendResult(
+                    executionToken.Status,
+                    executionToken.Validation
+                );
+            }
         }
 
         [DebuggerHidden]
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader> headers = null)
         {
             var eventHolder = request.ToTypedEventHolder(headers);
-            var executionToken = await ProcessEventAsync(Id, eventHolder);
+            return await RequestEnvelopeAsync<TResponse>(eventHolder);
+        }
 
-            if (ResponseHolder.ResponsesAreSet())
+        public async Task<RequestResult<TResponse>> RequestEnvelopeAsync<TResponse>(EventHolder eventHolder)
+        {
+            var observer = BehaviorDispatchAmbient.Current;
+            return observer == null ? await DispatchAsync() : await observer.RequestAsync(Id, eventHolder, DispatchAsync);
+
+            async Task<RequestResult<TResponse>> DispatchAsync()
             {
-                ResponseHolder.CopyResponses(executionToken.Responses);
-            }
-            else
-            {
-                ResponseHolder.SetResponses(executionToken.Responses);
-            }
+                var executionToken = await ProcessEventAsync(Id, eventHolder);
 
-            var result = new RequestResult<TResponse>(
-                executionToken.EventHolder,
-                executionToken.Status,
-                executionToken.Validation
-            );
+                if (ResponseHolder.ResponsesAreSet())
+                {
+                    ResponseHolder.CopyResponses(executionToken.Responses);
+                }
+                else
+                {
+                    ResponseHolder.SetResponses(executionToken.Responses);
+                }
 
-            return result;
+                var result = new RequestResult<TResponse>(
+                    executionToken.EventHolder,
+                    executionToken.Status,
+                    executionToken.Validation
+                );
+
+                return result;
+            }
         }
         
         public async Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificationsSince = null)

@@ -34,8 +34,11 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         internal readonly Edge Edge;
+        public string Identifier => Edge.DefinitionIdentifier;
 
         private readonly TokenPipelineContext context;
+        internal FlowOperationRegistration Operation => context.Operation;
+        internal TokenHolder OperationToken => context.Token;
 
         private Stream stream;
         protected Stream Stream => stream ??= Context.GetStream(Edge.Identifier, RootContext.GetStreamThreadId(Edge, NodeScope));

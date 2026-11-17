@@ -21,6 +21,7 @@ using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Classes;
 using Stateflows.StateMachines.Interfaces;
+using Stateflows.StateMachines.Exceptions;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -111,8 +112,9 @@ namespace Stateflows.StateMachines.Engine
 
         public readonly Inspector Inspector;
 
-        private KeyValuePair<string, Logic<StateMachinePredicateAsync>>[] GetDeferrals()
-            => VerticesTree.GetAllNodes_FromTheTop().SelectMany(vertex => vertex.Value.Deferrals).ToArray();
+        private (Vertex Vertex, string Trigger, Logic<StateMachinePredicateAsync> Guards)[] GetDeferrals()
+            => VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.Deferrals
+                .Select(rule => (node.Value, rule.Key, rule.Value))).ToArray();
 
         public Tree<Vertex> VerticesTree { get; private set; } = null;
 
@@ -304,7 +306,10 @@ namespace Stateflows.StateMachines.Engine
                 .Select(type => type.GetEventName())
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
                     ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.Edges.Values)
-                        .Where(edge => edge.StructuralEventName != null).Select(edge => edge.StructuralEventName)
+                        .Where(edge => edge.StructuralEventNames != null).SelectMany(edge => edge.StructuralEventNames!)
+                    : [])
+                .Concat(BehaviorStatus == BehaviorStatus.Initialized
+                    ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.BehaviorStructuralEvents)
                     : [])
                 .Distinct()
                 .ToArray();
@@ -322,7 +327,7 @@ namespace Stateflows.StateMachines.Engine
                         .ToArray(),
                     
                     BehaviorStatus.NotInitialized => Graph.InitializerTypes.Any()
-                        ? Graph.InitializerTypes.ToArray()
+                        ? Graph.InitializerTypes.SelectMany(Graph.StateflowsBuilder.TypeMapper.GetMappedTypes).Distinct().ToArray()
                         : [ typeof(Initialize) ],
                     
                     _ => []
@@ -348,20 +353,53 @@ namespace Stateflows.StateMachines.Engine
         }
 
         [DebuggerHidden]
-        private async Task<bool> TryDeferEventAsync(KeyValuePair<string, Logic<StateMachinePredicateAsync>>[] deferrals, EventHolder eventHolder)
+        private async Task<bool> TryDeferEventAsync((Vertex Vertex, string Trigger, Logic<StateMachinePredicateAsync> Guards)[] deferrals, EventHolder eventHolder, bool isReevaluation = false)
         {
-            var matchingDeferrals = deferrals.Where(deferral => deferral.Key == eventHolder.Name);
-            foreach (var deferral in matchingDeferrals)
+            Context.SetEvent(eventHolder);
+            try
             {
-                if (await deferral.Value.IterateOverAsync(Context))
+                var matchingDeferrals = deferrals.Where(deferral => deferral.Trigger == eventHolder.Name);
+                foreach (var deferral in matchingDeferrals)
                 {
-                    Context.DeferredEvents.Add(eventHolder);
-                    
-                    return true;
+                    var context = new DeferralObservationContext(Context, deferral.Vertex, eventHolder, isReevaluation);
+                    if (await DoDeferralGuardAsync(context, deferral.Guards))
+                    {
+                        if (!isReevaluation)
+                        {
+                            await Inspector.OnEventDeferredAsync(context, () =>
+                            {
+                                Context.DeferredEvents.Add(eventHolder);
+                                return Task.CompletedTask;
+                            });
+                        }
+                        return true;
+                    }
                 }
+                return false;
             }
-            
-            return false;
+            finally
+            {
+                Context.ClearEvent();
+            }
+        }
+
+        private async Task<bool> DoDeferralGuardAsync(DeferralObservationContext context, Logic<StateMachinePredicateAsync> guards)
+        {
+            try
+            {
+                BeginScope();
+                return await Inspector.OnDeferralGuardAsync(context, () => guards.IterateOverAsync(Context));
+            }
+            catch (Exception exception)
+            {
+                StateHasChanged = false;
+                await Inspector.OnDeferralGuardExceptionAsync(context, exception);
+                throw;
+            }
+            finally
+            {
+                await EndScopeAsync();
+            }
         }
 
         [DebuggerHidden]
@@ -370,7 +408,7 @@ namespace Stateflows.StateMachines.Engine
             var deferrals = GetDeferrals();
             foreach (var eventHolder in Context.DeferredEvents)
             {
-                if (await TryDeferEventAsync(deferrals, eventHolder))
+                if (await TryDeferEventAsync(deferrals, eventHolder, isReevaluation: true))
                 {
                     continue;
                 }
@@ -418,9 +456,8 @@ namespace Stateflows.StateMachines.Engine
             {
                 deferred = false;
 
-                var activatedEdges = new List<Edge>();
-
-                Edge lastActivatedEdge = null;
+                var activatedEdges = new List<TransitionRoute>();
+                TransitionRoute lastActivatedEdge = null;
 
                 foreach (var vertex in currentStack)
                 {
@@ -433,7 +470,6 @@ namespace Stateflows.StateMachines.Engine
                     {
                         var locator = ServiceProvider.GetRequiredService<IBehaviorLocator>();
                         var behaviorId = vertex.GetBehaviorId(Context.Id);
-                        if (locator.TryLocateBehavior(behaviorId, out var behavior))
                         {
                             var headers = eventHolder.Headers.ToDictionary();
                             headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
@@ -441,14 +477,26 @@ namespace Stateflows.StateMachines.Engine
                                 OwnerId = Context.Context.ContextOwnerId ?? Context.Context.Id,
                                 ParentId = Context.Context.Id,
                             };
-                            _ = behavior.SendAsync(eventHolder.Payload, headers);
+                            var delivery = eventHolder.Payload.ToTypedEventHolder();
+                            delivery.Id = eventHolder.Id;
+                            delivery.Headers = headers;
+                            await Inspector.OnHostedBehaviorEventForwardAsync(
+                                new HostedBehaviorObservationContext(Context, vertex, behaviorId, delivery), () =>
+                                {
+                                    if (!locator.TryLocateBehavior(behaviorId, out var behavior))
+                                        throw new StateDefinitionException(vertex.Name,
+                                            $"Embedded {vertex.BehaviorType} '{vertex.BehaviorName}' not found", Graph.Class);
+                                    Common.Engine.BehaviorObservation.Dispatch(behaviorId, delivery,
+                                        () => _ = delivery.SendAsync(behavior, headers));
+                                    return Task.CompletedTask;
+                                });
 
                             return EventStatus.Forwarded;
                         }
                     }
                     
                     var edges = vertex.OrderedEdges
-                        .SelectMany(edge => edge.GetActualEdges())
+                        .SelectMany(edge => edge.GetRoutes())
                         .ToArray();
 
                     if (vertex.Type == VertexType.Fork)
@@ -459,12 +507,12 @@ namespace Stateflows.StateMachines.Engine
                     {
                         foreach (var edge in edges)
                         {
-                            if (!eventHolder.Triggers(edge) ||
+                            if (!eventHolder.Triggers(edge.TriggerEdge) ||
                                 (
                                     lastActivatedEdge != null &&
                                     !edge.Source.IsOrthogonalTo(lastActivatedEdge.Source)
                                 ) ||
-                                !await DoGuardAsync<TEvent>(edge)
+                                !await DoRouteGuardAsync<TEvent>(edge)
                             )
                             {
                                 continue;
@@ -476,7 +524,7 @@ namespace Stateflows.StateMachines.Engine
                     }
                 }
 
-                var joins = new Dictionary<Vertex, List<Edge>>();
+                var joins = new Dictionary<Vertex, List<TransitionRoute>>();
                 foreach (var edge in activatedEdges)
                 {
                     if (
@@ -491,7 +539,7 @@ namespace Stateflows.StateMachines.Engine
                     {
                         if (!joins.TryGetValue(edge.Target, out var edges))
                         {
-                            edges = new List<Edge>();
+                            edges = new List<TransitionRoute>();
                             joins[edge.Target] = edges;
                         }
                         
@@ -569,14 +617,40 @@ namespace Stateflows.StateMachines.Engine
         }
 
         [DebuggerHidden]
-        private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
+        private async Task<bool> DoRouteGuardAsync<TEvent>(TransitionRoute route)
+        {
+            if (!await DoGuardAsync<TEvent>(route.TriggerEdge, route, 0)) return false;
+            for (var index = 1; index < route.Segments.Count; index++)
+            {
+                Context.SetEvent(new Completion().ToEventHolder());
+                try
+                {
+                    if (!await DoGuardAsync<Completion>(route.Segments[index], route, index)) return false;
+                }
+                finally { Context.ClearEvent(); }
+            }
+            return true;
+        }
+
+        private async Task DoRouteEffectAsync<TEvent>(TransitionRoute route)
+        {
+            await DoEffectAsync<TEvent>(route.TriggerEdge, route, 0);
+            for (var index = 1; index < route.Segments.Count; index++)
+            {
+                Context.SetEvent(new Completion().ToEventHolder());
+                try { await DoEffectAsync<Completion>(route.Segments[index], route, index); }
+                finally { Context.ClearEvent(); }
+            }
+        }
+
+        private async Task<bool> DoGuardAsync<TEvent>(Edge edge, TransitionRoute? route = null, int routeIndex = 0)
         {
             GuardContext<TEvent> context = null;
             try
             {
                 BeginScope();
 
-                context = new GuardContext<TEvent>(Context, edge);
+                context = new GuardContext<TEvent>(Context, edge, route, routeIndex);
 
                 var result = await Inspector.OnTransitionGuardAsync(context, () => edge.Guards.IterateOverAsync(Context));
                 
@@ -595,14 +669,14 @@ namespace Stateflows.StateMachines.Engine
         }
 
         [DebuggerHidden]
-        private async Task DoEffectAsync<TEvent>(Edge edge)
+        private async Task DoEffectAsync<TEvent>(Edge edge, TransitionRoute? route = null, int routeIndex = 0)
         {
             TransitionContext<TEvent> context = null;
             try
             {
                 BeginScope();
 
-                context = new TransitionContext<TEvent>(Context, edge);
+                context = new TransitionContext<TEvent>(Context, edge, route, routeIndex);
 
                 await Inspector.OnTransitionEffectAsync(context, () => edge.Effects.IterateOverAsync(Context));
             }
@@ -761,7 +835,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 BeginScope();
 
-                context = new StateActionContext(Context, vertex, Constants.Finalize);
+                context = new StateActionContext(Context, vertex, Constants.Entry);
                 await Inspector.OnStateEntryAsync(context, () => vertex.Entry.IterateOverAsync(Context));
             }
             catch (Exception e)
@@ -784,7 +858,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 BeginScope();
 
-                context = new StateActionContext(Context, vertex, Constants.Finalize);
+                context = new StateActionContext(Context, vertex, Constants.Exit);
                 await Inspector.OnStateExitAsync(context, () => vertex.Exit.IterateOverAsync(Context));
             }
             catch (Exception e)
@@ -800,7 +874,10 @@ namespace Stateflows.StateMachines.Engine
         }
 
         [DebuggerHidden]
-        private async Task DoConsumeAsync<TEvent>(Edge edge, Region[] regionsToOmit = null)
+        private Task DoConsumeAsync<TEvent>(Edge edge, Region[] regionsToOmit = null)
+            => DoConsumeAsync<TEvent>(new TransitionRoute(new[] { edge }), regionsToOmit);
+
+        private async Task DoConsumeAsync<TEvent>(TransitionRoute edge, Region[] regionsToOmit = null)
         {
             regionsToOmit ??= [];
             var exitingVertices = new List<Vertex>();
@@ -864,8 +941,9 @@ namespace Stateflows.StateMachines.Engine
                 {
                     if (Context.StatesTree.TryFind(exitingVertex.Identifier, out var node))
                     {
-                        var stateValues = Context.GetStateValues(exitingVertex.ParentRegion.History.Name);
-                        stateValues.HistoryTree = node.Clone();
+                        var region = exitingVertex.ParentRegion;
+                        var stateValues = Context.GetStateValues(region.ParentVertex.Name);
+                        stateValues.RegionHistory[region.ParentVertex.Regions.IndexOf(region)] = node.Clone();
                     }
                 }
 
@@ -881,7 +959,7 @@ namespace Stateflows.StateMachines.Engine
             
             RebuildVerticesTree();
             
-            await DoEffectAsync<TEvent>(edge);
+            await DoRouteEffectAsync<TEvent>(edge);
 
             var regions = new List<Region>();
 
@@ -944,10 +1022,11 @@ namespace Stateflows.StateMachines.Engine
                 var handled = false;
                 if (topVertex.Type == VertexType.History)
                 {
-                    var historyValues = Context.GetStateValues(topVertex.Name);
-                    if (historyValues.HistoryTree != null)
+                    var region = topVertex.HistoricalRegion;
+                    var historyValues = Context.GetStateValues(region.ParentVertex.Name);
+                    if (historyValues.RegionHistory.TryGetValue(region.ParentVertex.Regions.IndexOf(region), out var rememberedTree))
                     {
-                        var historyTree = historyValues.HistoryTree.Clone();
+                        var historyTree = rememberedTree.Clone();
                         var parentIdentifier = topVertex.HistoricalRegion.ParentVertex?.Identifier;
                         if (parentIdentifier != null)
                         {
@@ -1022,7 +1101,7 @@ namespace Stateflows.StateMachines.Engine
         }
         
         [DebuggerHidden]
-        private async Task DoJoinAsync(IEnumerable<Edge> edges, Vertex join)
+        private async Task DoJoinAsync(IEnumerable<TransitionRoute> edges, Vertex join)
         {
             var enteringVertices = new List<Vertex>();
             while (join != null)
@@ -1030,7 +1109,8 @@ namespace Stateflows.StateMachines.Engine
                 enteringVertices.Insert(0, join);
                 join = join.ParentRegion?.ParentVertex;
             }
-            
+
+            var commonAncestorCount = enteringVertices.Count;
             foreach (var edge in edges)
             {
                 var exitingVertices = new List<Vertex>();
@@ -1049,17 +1129,19 @@ namespace Stateflows.StateMachines.Engine
 
                 if (enteringVertices.Any() && exitingVertices.Any())
                 {
+                    var edgeCommonAncestorCount = 0;
                     while (
-                        enteringVertices.Any() &&
+                        edgeCommonAncestorCount < enteringVertices.Count &&
                         exitingVertices.Any() &&
-                        enteringVertices[0] == exitingVertices[0] &&
-                        enteringVertices[0] != edge.Target
+                        enteringVertices[edgeCommonAncestorCount] == exitingVertices[0] &&
+                        enteringVertices[edgeCommonAncestorCount] != edge.Target
                     )
                     {
-                        enteringVertices.RemoveAt(0);
+                        edgeCommonAncestorCount++;
                         exitingVertices.RemoveAt(0);
                     }
 
+                    commonAncestorCount = Math.Min(commonAncestorCount, edgeCommonAncestorCount);
                     exitingVertices.Reverse();
 
                     foreach (var exitingVertex in exitingVertices)
@@ -1077,9 +1159,10 @@ namespace Stateflows.StateMachines.Engine
                     }
                 }
 
-                await DoEffectAsync<Completion>(edge);
+                await DoRouteEffectAsync<Completion>(edge);
             }
 
+            enteringVertices.RemoveRange(0, commonAncestorCount);
             var regions = new List<Region>();
 
             for (var i = 0; i < enteringVertices.Count; i++)

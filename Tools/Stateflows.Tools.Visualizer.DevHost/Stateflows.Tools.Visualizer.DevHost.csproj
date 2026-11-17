@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <LifecareProject Condition="'$(LifecareProject)' == '' And Exists('..\..\..\Lifecare-SystemAdministration\Lifecare-Clearing.Api\Lifecare-Clearing.Api.csproj')">..\..\..\Lifecare-SystemAdministration\Lifecare-Clearing.Api\Lifecare-Clearing.Api.csproj</LifecareProject>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(LifecareProject)' != ''">
+    <DefineConstants>$(DefineConstants);LIFECARE_MODELS</DefineConstants>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(LifecareProject)' != ''">
+    <ProjectReference Include="$(LifecareProject)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
+    <ProjectReference Include="..\..\Runtimes\Stateflows.Runtimes.Orleans\Stateflows.Runtimes.Orleans.csproj" />
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
+    <Compile Include="..\..\Examples\Stateflows.Examples.StreamingTelemetry\Contracts.cs" Link="Examples\Contracts.cs" />
+    <Compile Include="..\..\Examples\Stateflows.Examples.StreamingTelemetry\TelemetryActivity.cs" Link="Examples\TelemetryActivity.cs" />
+    <Compile Include="..\..\Examples\Stateflows.Examples.StreamingTelemetry\TelemetryActions.cs" Link="Examples\TelemetryActions.cs" />
+    <Compile Include="..\..\Examples\Stateflows.Examples.StreamingTelemetry\TelemetryEndpoints.cs" Link="Examples\TelemetryEndpoints.cs" />
+  </ItemGroup>
+</Project>

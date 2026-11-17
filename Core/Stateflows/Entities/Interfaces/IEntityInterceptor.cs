@@ -23,11 +23,11 @@ namespace Stateflows.Entities
         /// awaited and reported as an invalid hook implementation before processing completes.
         /// </remarks>
         /// <typeparam name="TEvent">The incoming event payload type.</typeparam>
-        /// <param name="context">The incoming event and its behavior execution context.</param>
+        /// <param name="eventContext">The incoming event and its behavior execution context.</param>
         /// <param name="next">The continuation that processes the event.</param>
         /// <returns>The resulting event status.</returns>
         Task<EventStatus> ProcessEventAsync<TEvent>(
-            IEventContext<TEvent> context,
+            IEventContext<TEvent> eventContext,
             Func<Task<EventStatus>> next);
     }
 }

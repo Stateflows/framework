@@ -27,7 +27,7 @@ namespace Stateflows.StateMachines.Engine
         public override async Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
         {
             await next();
-            if (context.Target != null)
+            if (context.Target != null && context.RouteIndex == context.RouteTransitionIds.Count - 1)
             {
                 foreach (var vertexName in ExitedStates.Select(v => v.Name))
                 {

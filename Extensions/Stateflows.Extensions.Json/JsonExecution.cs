@@ -27,10 +27,6 @@ internal static class JsonExecution
     private static void BuildTransition<TEvent>(ClrBinding binding, Edge edge)
         => ((ITransitionDefinition<TEvent>)binding.CreateDefinition()).Build(new TransitionBuilder<TEvent>(edge));
 
-    private static Func<IStateMachineVisitor, Task> TransitionVisit<TEvent>(Edge edge)
-        => visitor => visitor.TransitionAddedAsync<TEvent>(edge.Graph.Name, edge.Graph.Version, edge.SourceName,
-            edge.TargetName == "" ? null : edge.TargetName, edge.IsElse);
-
     private static void AddStateHandler<T>(ClrBinding binding, Vertex vertex, string role) where T : class, IState
     {
         var builder = new StateBuilder(vertex);
@@ -52,6 +48,8 @@ internal static class JsonExecution
             case "onInitialize": builder.AddOnInitialize(Execute); break;
             default: builder.AddOnFinalize(Execute); break;
         }
+        var (logic, operation) = StateOperation(vertex, role);
+        vertex.Graph.RecordStateActionType(vertex, operation, logic.Actions.Count - 1, typeof(T));
     }
 
     internal static void AddStateBehavior(Vertex vertex, string role, BehaviorClass behavior)
@@ -67,7 +65,19 @@ internal static class JsonExecution
             case "onInitialize": builder.AddOnInitialize(Execute); break;
             default: builder.AddOnFinalize(Execute); break;
         }
+        var (logic, _) = StateOperation(vertex, role);
+        logic.Registrations[logic.Actions.Count - 1] = new OperationRegistration { Behavior = behavior };
     }
+
+    private static (Common.Models.Logic<Interfaces.StateMachineActionAsync> Logic, string Operation) StateOperation(Vertex vertex, string role)
+        => role switch
+        {
+            "onEntry" => (vertex.Entry, Registration.Constants.Entry),
+            "onExit" => (vertex.Exit, Registration.Constants.Exit),
+            "onInitialize" => (vertex.Initialize, Registration.Constants.Initialization),
+            "onFinalize" => (vertex.Finalize, Registration.Constants.Finalization),
+            _ => throw new ArgumentOutOfRangeException(nameof(role))
+        };
 
     private static Func<RootContext, Edge, Task<bool>> TransitionGuard<T, TEvent>(ClrBinding binding)
         where T : class, ITransitionGuard<TEvent>
@@ -120,17 +130,20 @@ internal static class JsonExecution
 
     private static void AddDefaultInitializer<T>(ClrBinding binding, StateMachineBuilder builder)
         where T : class, IDefaultInitializer
-        => builder.AddDefaultInitializer(async context =>
+    {
+        builder.AddDefaultInitializer(async context =>
         {
             var instance = await binding.ConfigureAsync(((BaseContext)context).Context.Executor.GetDefaultInitializerAsync<T>(context));
             return await instance.OnInitializeAsync();
         });
+        var logic = builder.Graph.DefaultInitializer;
+        logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(typeof(T));
+    }
 
-    private static void AddInitializer<T, TEvent, TTrigger>(ClrBinding binding, StateMachineBuilder builder)
+    private static Func<RootContext, Task<bool>> InitializerHandler<T, TEvent>(ClrBinding binding)
         where T : class, IInitializer<TEvent>
-        => builder.AddInitializer<TTrigger>(async context =>
+        => async root =>
         {
-            var root = ((BaseContext)context).Context;
             var payload = new EventContext<TEvent>(root).Event;
             var typedContext = new StateMachineInitializationContext<TEvent>(root, new EventHolder<TEvent>
             {
@@ -138,15 +151,31 @@ internal static class JsonExecution
             });
             var instance = await binding.ConfigureAsync(root.Executor.GetInitializerAsync<T, TEvent>(typedContext));
             return await instance.OnInitializeAsync(payload);
+        };
+
+    private static void AddInitializerBinding<TTrigger>(ClrBinding binding, StateMachineBuilder builder,
+        Dictionary<Type, Func<RootContext, Task<bool>>> dispatch)
+    {
+        builder.AddInitializer<TTrigger>(context =>
+        {
+            var root = ((BaseContext)context).Context;
+            return dispatch[root.EventHolder.PayloadType](root);
         });
+        var logic = builder.Graph.InitializerDeclarations[typeof(TTrigger)];
+        logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(binding.Type);
+    }
 
     private static void AddFinalizer<T>(ClrBinding binding, StateMachineBuilder builder)
         where T : class, IFinalizer
-        => builder.AddFinalizer(async context =>
+    {
+        builder.AddFinalizer(async context =>
         {
             var instance = await binding.ConfigureAsync(((BaseContext)context).Context.Executor.GetFinalizerAsync<T>(context));
             await instance.OnFinalizeAsync();
         });
+        var logic = builder.Graph.Finalize;
+        logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(typeof(T));
+    }
 
     internal static void AddInfrastructure(ClrBinding binding, string role, StateMachineBuilder builder)
     {

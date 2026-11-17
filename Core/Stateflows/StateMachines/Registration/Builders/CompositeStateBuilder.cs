@@ -85,8 +85,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             Region.Vertices.Add(vertex.Name, vertex);
             Region.Graph.AllVertices.Add(vertex.Identifier, vertex);
 
-            Graph.VisitingTasks.Add(visitor => visitor.VertexAddedAsync(Graph.Name, Graph.Version, vertex.Name, vertex.Type));
-
             return this;
         }
 
@@ -1372,7 +1370,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             AddVertex(historyEntrypointName, VertexType.History);
             var historyVertex = Vertex.DefaultRegion.Vertices[historyEntrypointName];
             historyVertex.HistoricalRegion = Vertex.DefaultRegion;
-            Vertex.DefaultRegion.History ??= historyVertex;
             
             buildAction?.Invoke(new StateBuilder(historyVertex));
 
@@ -1415,8 +1412,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
 
             if (
-                !Vertex.Deferrals.TryGetValue(typeof(TEvent).GetEventName(), out var deferralLogic) ||
-                deferralLogic?.OriginStateMachineName == null
+                !Vertex.TryGetInheritedDeferral(typeof(TEvent), out var deferralLogic)
             )
             {
                 throw new StateMachineOverrideException($"Deferral of event '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);

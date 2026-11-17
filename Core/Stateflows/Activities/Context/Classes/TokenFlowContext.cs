@@ -1,4 +1,5 @@
-﻿using Stateflows.Activities.Context.Interfaces;
+﻿using System;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -14,6 +15,16 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         public TToken Token { get; private set; }
+
+        public string TransformationId => Operation.Registration.Identifier;
+
+        public int TransformationOrder => Operation.Registration.Order;
+
+        public Guid TokenId => OperationToken.Id;
+
+        public Type InputTokenType => Operation.InputType;
+
+        public Type OutputTokenType => Operation.OutputType;
     }
 
     internal class TokenFlowContext<TToken, TTransformedToken> : TokenFlowContext<TToken>,

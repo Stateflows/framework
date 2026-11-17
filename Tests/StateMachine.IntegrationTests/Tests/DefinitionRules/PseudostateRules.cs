@@ -203,12 +203,10 @@ public class PseudostateRules
     [DataRow("root")]
     [DataRow("missing-historical-region")]
     [DataRow("wrong-historical-region")]
-    [DataRow("wrong-selected-kind")]
-    [DataRow("foreign-selected-history")]
-    public void HistoryOwnershipAndSelectionMustAgree(string invalid)
+    public void HistoryOwnershipMustAgree(string invalid)
     {
         var model = new DefinitionModel();
-        var (_, a, b, _, left, _) = model.Orthogonal();
+        var (_, a, b, _, _, _) = model.Orthogonal();
         var history = model.History(a);
         switch (invalid)
         {
@@ -219,8 +217,6 @@ public class PseudostateRules
                 break;
             case "missing-historical-region": history.HistoricalRegion = null!; break;
             case "wrong-historical-region": history.HistoricalRegion = b; break;
-            case "wrong-selected-kind": a.History = left; break;
-            case "foreign-selected-history": a.History = model.History(b, "other-history"); break;
         }
         model.Reject();
     }
@@ -318,7 +314,7 @@ public class PseudostateRules
                 model.Edge(history, model.Add($"{history.Name}-fallback", parent: region), otherwise: true);
         }
         model.Graph.Build();
-        Assert.AreSame(first, region.History);
+        Assert.IsTrue(region.HasHistory);
     }
 
     [TestMethod, TestCategory("SM-049")]

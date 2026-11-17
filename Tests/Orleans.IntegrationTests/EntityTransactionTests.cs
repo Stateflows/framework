@@ -42,8 +42,12 @@ public sealed class EntityTransactionTests
 
         var cluster = Guid.NewGuid().ToString("N");
         var entityOperationCompleted = false;
+        var observation = new BehaviorOperationProbe();
         using var host = Host.CreateDefaultBuilder()
-            .ConfigureServices((_, services) => services.AddStateflows(builder => builder
+            .ConfigureServices((_, services) =>
+            {
+                services.AddSingleton<IBehaviorObserver>(observation);
+                services.AddStateflows(builder => builder
                 .AddStateMachines(machines => machines.AddStateMachine("entity-transaction", machine => machine
                     .AddEntity<ICounter>()
                     .AddInitialState("initial", state => state.AddTransition<Update>("done", transition =>
@@ -61,7 +65,8 @@ public sealed class EntityTransactionTests
                             if (fail)
                                 throw new InvalidOperationException("The source execution failed.");
                         })))
-                    .AddState("done")))))
+                    .AddState("done"))));
+            })
             .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Error))
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(ports[0], ports[1], clusterId: cluster, serviceId: cluster)
@@ -84,6 +89,18 @@ public sealed class EntityTransactionTests
             var result = await source.SendAsync(new Update()).WaitAsync(TimeSpan.FromSeconds(15));
             Assert.IsTrue(entityOperationCompleted, "The entity update must complete before the source outcome is evaluated.");
             Assert.AreEqual(fail ? EventStatus.Failed : EventStatus.Consumed, result.Status);
+            var operation = observation.Entities.Single();
+            Assert.AreEqual(join, operation.Context.JoinTransaction);
+            Assert.AreEqual(true, operation.Result);
+            Assert.AreEqual(mutate ? EntityOperationKind.Mutation : EntityOperationKind.FieldWrite, operation.Context.Kind);
+            var entityDefinition = $"entity:entity-transaction.entity.{Entity<ICounter>.Name}";
+            Assert.AreEqual(mutate
+                ? $"{entityDefinition}/mutation:{Event.GetName(typeof(Add))}"
+                : $"{entityDefinition}/field:{nameof(ICounter.Count)}",
+                operation.Context.DefinitionElementId);
+            var call = observation.Calls.Single(item => item.ParentOperationId == operation.Context.OperationId);
+            Assert.AreEqual(operation.Context.Source, call.Source);
+            Assert.AreEqual(operation.Context.Target, call.Target);
 
             var count = await entity.RequestAsync(new FieldStateRequest<int> { Name = nameof(ICounter.Count) });
             Assert.AreEqual(EventStatus.Consumed, count.Status);

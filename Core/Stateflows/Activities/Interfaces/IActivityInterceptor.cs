@@ -5,22 +5,31 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
-    /// <summary>Intercepts activity event processing to implement cross-cutting behavior.</summary>
-    /// <remarks>Interceptors wrap event processing, including initialization; global interceptors wrap local ones in registration order.</remarks>
+    /// <summary>
+    /// Wraps event processing for activities, including initialization, to implement
+    /// cross-cutting behavior. For each event, global interceptors wrap local
+    /// interceptors, with each group applied in registration order.
+    /// </summary>
+    /// <remarks>
+    /// An interceptor may short-circuit by returning its own event status without
+    /// invoking <paramref name="next"/>. Otherwise it must invoke and await
+    /// <paramref name="next"/> exactly once before it completes. It may return a
+    /// different status from the continuation's status, or handle an exception from
+    /// the continuation; exceptions thrown by the interceptor itself propagate.
+    /// Repeated invocations and completing before an invoked continuation completes
+    /// are rejected.
+    /// </remarks>
     public interface IActivityInterceptor
     {
         /// <summary>
-        /// Wraps event processing, including initialization. Globals wrap locals in registration order.
+        /// Intercepts processing of one event for an activity. This callback is
+        /// entered before the remaining interceptor chain and activity event handling;
+        /// the event context identifies both the event and the activity receiving it.
         /// </summary>
-        /// <remarks>
-        /// Call and await <paramref name="next"/> at most once, or return a status to short-circuit.
-        /// The returned status may be replaced and continuation exceptions explicitly handled.
-        /// Repeated or unfinished continuation calls are rejected.
-        /// </remarks>
-        /// <typeparam name="TEvent">The event type being processed.</typeparam>
-        /// <param name="context">The event and activity context.</param>
-        /// <param name="next">The continuation representing the remaining pipeline and event processing.</param>
-        /// <returns>The event processing status, which an interceptor may replace when short-circuiting.</returns>
-        Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next);
+        /// <typeparam name="TEvent">The CLR type of the event being processed.</typeparam>
+        /// <param name="eventContext">The event context, including the event and the activity's processing identity and state.</param>
+        /// <param name="next">The continuation for remaining interceptors and activity event processing; invoke and await it once unless short-circuiting.</param>
+        /// <returns>The status reported for event processing; this interceptor may return a different status from the continuation when it handles or short-circuits processing.</returns>
+        Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> eventContext, Func<Task<EventStatus>> next);
     }
 }

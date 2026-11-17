@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel.DataAnnotations;
 using StateMachine.IntegrationTests.Utils;
 using Stateflows.Common.Context;
 using Stateflows.Common.Context.Interfaces;
@@ -15,6 +16,7 @@ namespace Entity.IntegrationTests.Tests
     public interface IObservedEntityTemplate
     {
         [Field(FieldAccess.Get | FieldAccess.Set)]
+        [Range(-3, 100)]
         int Value { get; set; }
 
         [Field(FieldAccess.Get | FieldAccess.Set)]
@@ -51,6 +53,7 @@ namespace Entity.IntegrationTests.Tests
         public List<(string Name, BehaviorId Behavior)> Factories { get; } = new();
         public int Initializations { get; set; }
         public string? ContinuationViolation { get; set; }
+        public List<(string Name, object? Value, object? Before, object? After)> FieldSets { get; } = new();
 
         public void Clear()
         {
@@ -59,12 +62,44 @@ namespace Entity.IntegrationTests.Tests
             Results.Clear();
             Exceptions.Clear();
             Factories.Clear();
+            FieldSets.Clear();
         }
     }
 
     public class RecordingEntityObserver(ObservationLog log, string name) : IEntityObserver
     {
         private readonly Guid instance = Guid.NewGuid();
+
+        public Task OnFieldSetAsync<TTemplate, TField>(
+            IFieldSetObservationContext<TTemplate, TField> fieldSetContext, Func<Task> next)
+        {
+            Assert.AreEqual(typeof(IObservedEntityTemplate), typeof(TTemplate));
+            Assert.AreEqual(typeof(int), typeof(TField));
+            var entity = (IObservedEntityTemplate)(object)fieldSetContext.Entity!;
+            var before = fieldSetContext.FieldName == nameof(IObservedEntityTemplate.Value) ? entity.Value : entity.Unrelated;
+            return ObserveAsync(fieldSetContext, "field-set", async () =>
+            {
+                if (name == "global" && log.ContinuationViolation == "field-observer-missing")
+                    return;
+                if (name == "global" && log.ContinuationViolation == "field-observer-forgotten-await")
+                {
+                    _ = next();
+                    return;
+                }
+                if (name == "global" && log.ContinuationViolation == "field-observer-swallowed-failure")
+                {
+                    try { await next(); }
+                    catch (InvalidOperationException) { }
+                    return;
+                }
+
+                await next();
+                if (name == "global" && log.ContinuationViolation == "field-observer-double")
+                    await next();
+                var after = fieldSetContext.FieldName == nameof(IObservedEntityTemplate.Value) ? entity.Value : entity.Unrelated;
+                log.FieldSets.Add((fieldSetContext.FieldName, fieldSetContext.Value, before, after));
+            });
+        }
 
         private async Task ObserveAsync(IBehaviorActionContext context, string operation, Func<Task> next)
         {
@@ -302,11 +337,13 @@ namespace Entity.IntegrationTests.Tests
             AssertObserverOrder("projection");
             AssertInterceptorOrder(EventStatus.Initialized);
             Assert.IsFalse(log.Entries.Any(entry => entry.StartsWith("mutation:")));
+            Assert.AreEqual(0, log.FieldSets.Count);
             var previousInstances = log.Instances.Select(entry => entry.Instance).ToHashSet();
 
             log.Clear();
             Assert.AreEqual(EventStatus.Consumed, (await entity.SendAsync(new ObservedMutation(3))).Status);
             AssertObserverOrder("mutation");
+            Assert.AreEqual(0, log.FieldSets.Count, "Mutation field assignments are not direct FieldState writes.");
             AssertObserverOrder(nameof(IObservedEntityTemplate.Double));
             AssertObserverOrder(nameof(IObservedEntityTemplate.Quadruple));
             AssertObserverOrder("projection");
@@ -332,6 +369,12 @@ namespace Entity.IntegrationTests.Tests
             log.Clear();
 
             Assert.IsTrue(await entity.TrySetAsync(nameof(IObservedEntityTemplate.Value), 5));
+            AssertObserverOrder("field-set");
+            Assert.AreEqual(4, log.FieldSets.Count);
+            Assert.IsTrue(log.FieldSets.All(write => write.Name == nameof(IObservedEntityTemplate.Value)
+                && Equals(write.Value, 5) && Equals(write.Before, 1) && Equals(write.After, 5)));
+            Assert.IsTrue(log.Entries.IndexOf("field-set:local-factory:before") < log.Entries.IndexOf("Double:global:before"));
+            Assert.IsTrue(log.Entries.IndexOf("projection:global:finally") < log.Entries.IndexOf("field-set:local-factory:after"));
             AssertObserverOrder(nameof(IObservedEntityTemplate.Double));
             AssertObserverOrder(nameof(IObservedEntityTemplate.Quadruple));
             AssertObserverOrder("projection");
@@ -373,7 +416,8 @@ namespace Entity.IntegrationTests.Tests
             log.Clear();
 
             Assert.IsTrue(await entity.TrySetAsync(nameof(IObservedEntityTemplate.Unrelated), 7));
-            Assert.AreEqual(0, log.Instances.Count,
+            AssertObserverOrder("field-set");
+            Assert.AreEqual(4, log.Instances.Count,
                 "Reading Unrelated inside observers must not add dependencies to either computed field or projection.");
             Assert.AreEqual(0, log.Results.Count);
 
@@ -382,6 +426,52 @@ namespace Entity.IntegrationTests.Tests
             AssertObserverOrder(nameof(IObservedEntityTemplate.Quadruple));
             AssertObserverOrder("projection");
             Assert.IsTrue(log.Results.Contains(new ObservedSnapshot(2, 4, 8)));
+        }
+
+        [TestMethod]
+        public async Task FieldSet_UnchangedValueIsObserved_ButInvalidAndRejectedWritesAreNot()
+        {
+            var entity = Locate();
+            await entity.SendAsync(new Initialize());
+            log.Clear();
+
+            Assert.IsTrue(await entity.TrySetAsync(nameof(IObservedEntityTemplate.Value), 1));
+            AssertObserverOrder("field-set");
+            Assert.AreEqual(4, log.FieldSets.Count);
+            log.Clear();
+
+            Assert.AreEqual(EventStatus.Invalid, (await entity.SendAsync(new FieldState<int> { Name = nameof(IObservedEntityTemplate.Value), Value = 101 })).Status);
+            Assert.AreEqual(EventStatus.Rejected, (await entity.SendAsync(new FieldState<int> { Name = nameof(IObservedEntityTemplate.Double), Value = 4 })).Status);
+            Assert.AreEqual(EventStatus.Failed, (await entity.SendAsync(new FieldState<int> { Name = "missing", Value = 4 })).Status);
+            Assert.AreEqual(EventStatus.Failed, (await entity.SendAsync(new FieldState<string> { Name = nameof(IObservedEntityTemplate.Value), Value = "wrong type" })).Status);
+            Assert.AreEqual(0, log.FieldSets.Count);
+            Assert.IsFalse(log.Entries.Any(entry => entry.StartsWith("field-set:")));
+        }
+
+        [TestMethod]
+        [DataRow("field-observer-missing", 9)]
+        [DataRow("field-observer-double", 9)]
+        [DataRow("field-observer-forgotten-await", 9)]
+        [DataRow("field-observer-swallowed-failure", -2)]
+        [DataRow(null, -2)]
+        [DataRow(null, -3)]
+        public async Task FieldSet_FailuresAndInvalidContinuationsRollback(string? violation, int value)
+        {
+            var entity = Locate();
+            await entity.SendAsync(new Initialize());
+            log.Clear();
+            log.ContinuationViolation = violation;
+
+            Assert.AreEqual(EventStatus.Failed, (await entity.SendAsync(new FieldState<int>
+            {
+                Name = nameof(IObservedEntityTemplate.Value),
+                Value = value
+            })).Status);
+            Assert.IsTrue(log.Entries.Contains("field-set:global:finally"));
+            log.ContinuationViolation = null;
+            var (success, storedValue) = await entity.TryGetAsync<int>(nameof(IObservedEntityTemplate.Value));
+            Assert.IsTrue(success);
+            Assert.AreEqual(1, storedValue);
         }
 
         [TestMethod]

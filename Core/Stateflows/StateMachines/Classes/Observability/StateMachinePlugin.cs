@@ -7,6 +7,18 @@ namespace Stateflows.StateMachines
 {
     internal abstract class StateMachinePlugin : IStateMachinePlugin
     {
+        public virtual Task OnActionAsync(IStateMachineActionObservationContext context, Func<Task> next) => next();
+        public virtual Task OnPredicateAsync(IStateMachinePredicateObservationContext predicateContext, Func<Task<bool>> next) => next();
+        public virtual Task OnHostedBehaviorInitializeAsync(IHostedBehaviorObservationContext context, Func<Task> next) => next();
+        public virtual Task OnHostedBehaviorFinalizeAsync(IHostedBehaviorObservationContext context, Func<Task> next) => next();
+        public virtual Task OnHostedBehaviorEventForwardAsync(IHostedBehaviorObservationContext context, Func<Task> next) => next();
+
+        public virtual Task OnDeferralGuardAsync(IDeferralObservationContext context, Func<Task<bool>> next)
+            => next();
+
+        public virtual Task OnEventDeferredAsync(IDeferralObservationContext context, Func<Task> next)
+            => next();
+
         public virtual Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
             => next();
 
@@ -38,6 +50,9 @@ namespace Stateflows.StateMachines
             => Task.FromResult(false);
 
         public virtual Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
+            => Task.FromResult(false);
+
+        public virtual Task<bool> OnDeferralGuardExceptionAsync(IDeferralObservationContext context, Exception exception)
             => Task.FromResult(false);
 
         public virtual Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)

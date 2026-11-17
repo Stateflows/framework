@@ -70,10 +70,12 @@ public sealed class StagingTests
     public async Task StagedSelfSendsFollowSuccessfulCommit(string scenario)
     {
         var probe = new Probe { Scenario = scenario };
+        var observation = new BehaviorOperationProbe();
         var storage = new TestStorage();
         using var host = CreateHost(services =>
         {
             services.AddSingleton<IStateflowsExecutionInterceptor>(probe);
+            services.AddSingleton<IBehaviorObserver>(observation);
             services.AddStateflows(builder => builder.AddStateMachines(machines => machines
                 .AddStateMachine("staging", machine => machine
                     .AddInitialState("initial", state => state
@@ -106,11 +108,24 @@ public sealed class StagingTests
                     (await behavior.SendAsync(new Run()).WaitAsync(TimeSpan.FromSeconds(15))).Status);
 
             if (scenario == "success")
+            {
                 Assert.IsTrue(await probe.Followup.Task.WaitAsync(TimeSpan.FromSeconds(10)),
                     "Self-send must execute after source values have committed.");
+                await observation.DispatchStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                var stage = observation.Stages.Single();
+                var dispatch = observation.Dispatches.Single();
+                Assert.AreEqual(stage.Event.Id, dispatch.Event.Id);
+                Assert.AreEqual(stage.Source, dispatch.Source);
+                Assert.AreEqual(stage.Target, dispatch.Target);
+                Assert.AreEqual(true, dispatch.Dispatched);
+                Assert.IsFalse(observation.Calls.Any(call => call.Event.Id == stage.Event.Id),
+                    "A synchronous post-commit dispatch must not also be reported as an awaited send.");
+            }
             else
             {
                 Assert.IsFalse(probe.Followup.Task.IsCompleted);
+                Assert.AreEqual(1, observation.Stages.Count);
+                Assert.IsTrue(observation.Dispatches.IsEmpty);
                 var status = await behavior.RequestAsync(new StateMachineInfoRequest());
                 Assert.AreEqual("initial", status.Response.CurrentStates.Value, "Source transition must not commit.");
             }

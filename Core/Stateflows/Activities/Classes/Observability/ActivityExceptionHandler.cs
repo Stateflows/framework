@@ -9,31 +9,31 @@ namespace Stateflows.Activities
     public abstract class ActivityExceptionHandler : IActivityExceptionHandler
     {
         /// <inheritdoc/>
-        public virtual Task<bool> OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
+        public virtual Task<bool> OnActivityInitializationExceptionAsync(IActivityInitializationContext initializationContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnActivityFinalizationExceptionAsync(IActivityFinalizationContext context, Exception exception)
+        public virtual Task<bool> OnActivityFinalizationExceptionAsync(IActivityFinalizationContext finalizationContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception)
+        public virtual Task<bool> OnNodeInitializationExceptionAsync(IActivityNodeContext nodeContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception)
+        public virtual Task<bool> OnNodeFinalizationExceptionAsync(IActivityNodeContext nodeContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
+        public virtual Task<bool> OnNodeExecutionExceptionAsync(IActivityNodeContext nodeContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
+        public virtual Task<bool> OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> guardContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnFlowTransformationExceptionAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
+        public virtual Task<bool> OnFlowTransformationExceptionAsync<TToken, TTransformedToken>(ITransformationContext<TToken> transformationContext, Exception exception)
             => Task.FromResult(false);
 
     }

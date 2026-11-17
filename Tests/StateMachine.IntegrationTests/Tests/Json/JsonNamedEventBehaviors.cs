@@ -46,31 +46,27 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
         }
     }
 
-    private sealed class MachineVisitor : StateMachineVisitor
+    private sealed class MachineVisitor(IEventsRegister events) : StateMachineVisitor
     {
         public List<EventDefinition> Named { get; } = [];
         public List<Type> Clr { get; } = [];
-        public override Task TransitionAddedAsync(EventDefinition definition, string stateMachineName,
-            int stateMachineVersion, string sourceVertexName, string? targetVertexName = null, bool isElse = false)
+        public override Task TransitionAddedAsync<TEvent>(string id, string stateMachineName, int stateMachineVersion,
+            string sourceVertexName, string? targetVertexName, bool isElse, bool isLocal, bool polymorphic, IReadOnlyList<string> eventNames)
         {
-            Named.Add(definition);
-            return Task.CompletedTask;
-        }
-        public override Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion,
-            string sourceVertexName, string? targetVertexName = null, bool isElse = false)
-        {
-            Clr.Add(typeof(TEvent));
+            if (typeof(TEvent) == typeof(StructuralEvent)) Named.AddRange(eventNames.Select(events.GetEvent));
+            else Clr.Add(typeof(TEvent));
             return Task.CompletedTask;
         }
     }
 
-    private sealed class AcceptVisitor : ActivityVisitor
+    private sealed class AcceptVisitor(IEventsRegister events) : ActivityVisitor
     {
         public List<EventDefinition> Named { get; } = [];
-        public override Task AcceptEventNodeAddedAsync(EventDefinition definition, string activityName,
-            int activityVersion, string nodeName, string? parentNodeName = null)
+        public override Task AcceptEventNodeAddedAsync<TEvent>(string nodeId, string activityName,
+            int activityVersion, IReadOnlyList<string> eventNames)
         {
-            Named.Add(definition);
+            if (typeof(TEvent) == typeof(StructuralEvent))
+                Named.AddRange(eventNames.Select(events.GetEvent));
             return Task.CompletedTask;
         }
     }
@@ -84,8 +80,9 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
           "vertices":[
             {"kind":"state","name":"waiting","transitions":[
               {"kind":"event","triggers":[
-                {"clrType":"ping"},{"eventName":"orderSubmitted"},{"eventName":"orderCancelled"}
-              ],"target":"done","guard":{"clrType":"guard"},"effects":[{"clrType":"effect"}]}
+                {"eventName":"orderSubmitted"},{"eventName":"orderCancelled"}
+              ],"target":"done","guard":{"clrType":"guard"},"effects":[{"clrType":"effect"}]},
+              {"kind":"event","triggers":[{"clrType":"ping"}],"target":"done","guard":{"clrType":"guard"},"effects":[{"clrType":"effect"}]}
             ]},
             {"kind":"state","name":"done"}
           ]
@@ -124,12 +121,11 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
             JsonStateMachineDefinition.Parse(Machine().ToString(), Options()).Register(machines);
             var namedMachine = Machine();
             namedMachine["name"] = "json-only-named";
-            ((JArray)namedMachine["vertices"]![0]!["transitions"]![0]!["triggers"]!).RemoveAt(0);
+            ((JArray)namedMachine["vertices"]![0]!["transitions"]!).RemoveAt(1);
             JsonStateMachineDefinition.Parse(namedMachine.ToString(), Options()).Register(machines);
             var fallback = Machine();
             fallback["name"] = "json-named-else";
             var transitions = (JArray)fallback["vertices"]![0]!["transitions"]!;
-            transitions[0]["triggers"] = JArray.Parse("""[{"eventName":"orderSubmitted"}]""");
             var otherwise = (JObject)transitions[0].DeepClone();
             otherwise["else"] = true;
             otherwise.Remove("guard");
@@ -137,9 +133,11 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
             JsonStateMachineDefinition.Parse(fallback.ToString(), Options()).Register(machines);
             var internalMachine = Machine();
             internalMachine["name"] = "json-named-internal";
-            var transition = internalMachine["vertices"]![0]!["transitions"]![0]!;
-            transition["kind"] = "internal";
-            ((JObject)transition).Remove("target");
+            foreach (var transition in internalMachine["vertices"]![0]!["transitions"]!)
+            {
+                transition["kind"] = "internal";
+                ((JObject)transition).Remove("target");
+            }
             JsonStateMachineDefinition.Parse(internalMachine.ToString(), Options()).Register(machines);
         });
         builder.AddActivities(activities => JsonActivityDefinition.Parse(Activity().ToString(), Options()).Register(activities));
@@ -183,16 +181,18 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     }
 
     [TestMethod]
-    public async Task NamedElseTransitionsUseNameRoutingAfterGuardRejection()
+    [DataRow("orderSubmitted")]
+    [DataRow("orderCancelled")]
+    public async Task NamedElseTransitionsUseNameRoutingAfterGuardRejection(string name)
     {
         Assert.IsTrue(StateMachineLocator.TryLocateStateMachine(new StateMachineId("json-named-else", "one"), out var machine));
         await machine.SendAsync(new Initialize());
         var factory = ServiceProvider.GetRequiredService<IEventFactory>();
         Assert.AreEqual(EventStatus.NotConsumed, (await machine.SendAsync(factory.CreateFromJson("other", "{}"))).Status);
         Assert.AreEqual(EventStatus.Consumed,
-            (await machine.SendAsync(factory.CreateFromJson("orderSubmitted", """{"quantity":0}"""))).Status);
+            (await machine.SendAsync(factory.CreateFromJson(name, """{"quantity":0}"""))).Status);
         Assert.AreEqual("done", (await machine.GetStatusAsync()).Response.CurrentStates.Value);
-        CollectionAssert.AreEqual(new[] { "orderSubmitted" }, trace.Entries.ToArray());
+        CollectionAssert.AreEqual(new[] { name }, trace.Entries.ToArray());
     }
 
     [TestMethod]
@@ -226,12 +226,12 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     [TestMethod]
     public async Task NamedDescriptorsReachBehaviorVisitorsWithoutWildcardSubstitution()
     {
-        var machine = new MachineVisitor();
+        var machine = new MachineVisitor(ServiceProvider.GetRequiredService<IEventsRegister>());
         await ServiceProvider.GetRequiredService<IStateMachinesRegister>().VisitStateMachineAsync("json-named", 1, machine);
         CollectionAssert.AreEquivalent(new[] { "orderSubmitted", "orderCancelled" }, machine.Named.Select(e => e.Name).ToArray());
         CollectionAssert.AreEqual(new[] { typeof(Ping) }, machine.Clr.ToArray());
         Assert.IsTrue(machine.Named.All(e => e.Fields["quantity"].Type == FieldType.Int32));
-        var activity = new AcceptVisitor();
+        var activity = new AcceptVisitor(ServiceProvider.GetRequiredService<IEventsRegister>());
         await ((Stateflows.Activities.Registration.ActivitiesRegister)ServiceProvider.GetRequiredService<IActivitiesRegister>())
             .VisitActivityAsync("json-named-activity", 1, activity);
         Assert.AreEqual("orderSubmitted", activity.Named.Single().Name);
@@ -283,7 +283,7 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
     }
 
     [TestMethod]
-    public void DuplicateStructuralTriggersFailBinding()
+    public void DuplicateStructuralTriggersFailSchema()
     {
         var builder = new StateflowsBuilder(new ServiceCollection());
         Events(builder);
@@ -292,11 +292,11 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
             JArray.Parse("""[{"eventName":"orderSubmitted"},{"eventName":"orderSubmitted"}]""");
         var exception = Assert.Throws<JsonStateMachineException>(() => builder.AddStateMachines(machines =>
             JsonStateMachineDefinition.Parse(document.ToString(), Options()).Register(machines)));
-        Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d => d.RuleId == "JSON-003"));
+        Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d => d.RuleId == "JSON-002"));
     }
 
     [TestMethod]
-    public void MixedNamedElseTriggersFailBindingInsteadOfOmittingTriggers()
+    public void MixedClrAndNamedTriggersFailSchemaInsteadOfOmittingTriggers()
     {
         var builder = new StateflowsBuilder(new ServiceCollection());
         Events(builder);
@@ -304,10 +304,10 @@ public class JsonNamedEventBehaviors : StateflowsTestClass
         var transition = (JObject)document["vertices"]![0]!["transitions"]![0]!;
         transition["else"] = true;
         transition.Remove("guard");
+        ((JArray)transition["triggers"]!).Add(JObject.Parse("""{"clrType":"ping"}"""));
         var exception = Assert.Throws<JsonStateMachineException>(() => builder.AddStateMachines(machines =>
             JsonStateMachineDefinition.Parse(document.ToString(), Options()).Register(machines)));
-        Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d =>
-            d.RuleId == "JSON-003" && d.Message.Contains("one else edge")));
+        Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d => d.RuleId == "JSON-002"));
     }
 
     [TestMethod]

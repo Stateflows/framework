@@ -417,15 +417,18 @@ namespace Stateflows.Entities.Engine
 
                 try
                 {
-                    var oldValues = GetTrackedFieldValuesSnapshot();
-                    context.Values[field.Name.GetFieldKey()] = value!;
-                    var newValues = GetTrackedFieldValuesSnapshot();
-                    var changedFieldNames = GetChangedFieldNames(oldValues, newValues);
-                    if (changedFieldNames.Count != 0)
+                    await field.ObserveSetAsync(context.Values, value, inspection, async () =>
                     {
-                        var allChangedFields = await EntityContextValues.StabilizeComputedFieldsAsync(registration.Model, context.Values, inspection, changedFieldNames);
-                        await EntityContextValues.RefreshDependentProjectionsAsync(registration.Model, context.Values, behaviorContext, inspection, allChangedFields);
-                    }
+                        var oldValues = GetTrackedFieldValuesSnapshot();
+                        context.Values[field.Name.GetFieldKey()] = value!;
+                        var newValues = GetTrackedFieldValuesSnapshot();
+                        var changedFieldNames = GetChangedFieldNames(oldValues, newValues);
+                        if (changedFieldNames.Count != 0)
+                        {
+                            var allChangedFields = await EntityContextValues.StabilizeComputedFieldsAsync(registration.Model, context.Values, inspection, changedFieldNames);
+                            await EntityContextValues.RefreshDependentProjectionsAsync(registration.Model, context.Values, behaviorContext, inspection, allChangedFields);
+                        }
+                    });
 
                     Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': FieldState write for field '{name}' processed successfully");
                 }

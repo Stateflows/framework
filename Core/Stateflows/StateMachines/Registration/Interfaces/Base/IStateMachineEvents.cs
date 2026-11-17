@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Classes;
+using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using Stateflows.StateMachines.Models;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -29,7 +31,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddDefaultInitializer<TDefaultInitializer>()
             where TDefaultInitializer : class, IDefaultInitializer
-            => AddDefaultInitializer(async c => await (await ((BaseContext)c).Context.Executor.GetDefaultInitializerAsync<TDefaultInitializer>(c)).OnInitializeAsync());
+        {
+            var result = AddDefaultInitializer(async c => await (await ((BaseContext)c).Context.Executor.GetDefaultInitializerAsync<TDefaultInitializer>(c)).OnInitializeAsync());
+            var logic = ((IGraphBuilder)this).Graph.DefaultInitializer;
+            logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(typeof(TDefaultInitializer));
+            return result;
+        }
 
         /// <summary>Registers a predicate that accepts or rejects initialization by a specific event type.</summary>
         /// <typeparam name="TInitializationEvent">Initialization event payload type passed to the initializer through its
@@ -50,7 +57,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddInitializer<TInitializationEvent, TInitializer>()
             where TInitializer : class, IInitializer<TInitializationEvent>
-            => AddInitializer<TInitializationEvent>(async c => await (await ((BaseContext)c).Context.Executor.GetInitializerAsync<TInitializer, TInitializationEvent>(c)).OnInitializeAsync(c.InitializationEvent));
+        {
+            var result = AddInitializer<TInitializationEvent>(async c => await (await ((BaseContext)c).Context.Executor.GetInitializerAsync<TInitializer, TInitializationEvent>(c)).OnInitializeAsync(c.InitializationEvent));
+            var logic = ((IGraphBuilder)this).Graph.InitializerDeclarations[typeof(TInitializationEvent)];
+            logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(typeof(TInitializer));
+            return result;
+        }
 
         /// <summary>Registers a handler executed when the State Machine finalizes.</summary>
         /// <param name="actionAsync">Asynchronous handler receiving the machine action context during finalization.</param>
@@ -66,6 +78,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddFinalizer<TFinalizer>()
             where TFinalizer : class, IFinalizer
-            => AddFinalizer(async c => await (await ((BaseContext)c).Context.Executor.GetFinalizerAsync<TFinalizer>(c)).OnFinalizeAsync());
+        {
+            var result = AddFinalizer(async c => await (await ((BaseContext)c).Context.Executor.GetFinalizerAsync<TFinalizer>(c)).OnFinalizeAsync());
+            var logic = ((IGraphBuilder)this).Graph.Finalize;
+            logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(typeof(TFinalizer));
+            return result;
+        }
     }
 }

@@ -67,6 +67,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             activityName += $".effect.{edge.Effects.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            edge.Graph.RecordTransitionActionType(edge, Constants.Effect, edge.Effects.Actions.Count, typeof(TActivity));
+            edge.Graph.RecordTransitionActionBehavior(edge, Constants.Effect, edge.Effects.Actions.Count, new BehaviorClass(BehaviorType.Activity, activityName));
             return AddEffect(c => StateMachineActivityExtensions.RunEffectActivity(c, activityName));
         }
 
@@ -87,6 +89,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             activityName += $".effect.{edge.Effects.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            edge.Graph.RecordTransitionActionBehavior(edge, Constants.Effect, edge.Effects.Actions.Count, new BehaviorClass(BehaviorType.Activity, activityName));
             return AddEffect(c => StateMachineActivityExtensions.RunEffectActivity(c, activityName));
         }
         
@@ -111,6 +114,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             actionName += $".effect.{edge.Effects.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            edge.Graph.RecordTransitionActionType(edge, Constants.Effect, edge.Effects.Actions.Count, typeof(TAction));
+            edge.Graph.RecordTransitionActionBehavior(edge, Constants.Effect, edge.Effects.Actions.Count, new BehaviorClass(BehaviorType.Action, actionName));
             return AddEffect(c => StateMachineActionExtensions.RunEffectActionAsync(c, actionName));
         }
 
@@ -133,6 +138,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             actionName += $".effect.{edge.Effects.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            edge.Graph.RecordTransitionActionBehavior(edge, Constants.Effect, edge.Effects.Actions.Count, new BehaviorClass(BehaviorType.Action, actionName));
             return AddEffect(c => StateMachineActionExtensions.RunEffectActionAsync(c, actionName));
         }
         
@@ -153,12 +159,16 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddEffect<TEffect>(ElementBuildAction<TEffect> buildAction = null)
             where TEffect : class, ITransitionEffect<TEvent>
-            => AddEffect(async c => 
+        {
+            var edge = ((IEdgeBuilder)this).Edge;
+            edge.Graph.RecordTransitionActionType(edge, Constants.Effect, edge.Effects.Actions.Count, typeof(TEffect));
+            return AddEffect(async c =>
             {
                 var state = await ((BaseContext)c).Context.Executor.GetTransitionEffectAsync<TEffect, TEvent>(c);
                 buildAction?.Invoke(new ElementBuilder<TEffect>(state));
                 await state.EffectAsync(c.Event);
             });
+        }
 
         /// <summary>Registers typed effects for the current transition.</summary>
         /// <typeparam name="TEffect1">Typed transition effect implementing <see cref="ITransitionEffect&lt;TEvent&gt;" />.

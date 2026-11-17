@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -82,6 +82,11 @@ namespace Stateflows.StateMachines.Engine
             => ObserverPipeline.RunAsync<IStateMachineObserver, TResult>(Plugins,
                 () => ObserverPipeline.RunAsync(Observers, next, observe), observe);
 
+        public Task OnActionAsync(ActionObservationContext context, Func<Task> next)
+            => ObserveAsync(next, (observer, inner) => observer.OnActionAsync(context, inner));
+        public Task<bool> OnPredicateAsync(PredicateObservationContext context, Func<Task<bool>> next)
+            => ObserveAsync(next, (observer, inner) => observer.OnPredicateAsync(context, inner));
+
         public async Task<bool> OnStateMachineInitializeAsync(StateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
             if (InitializeInspection != null) InitializeInspection.Active = true;
@@ -146,6 +151,24 @@ namespace Stateflows.StateMachines.Engine
                 inspection?.EndAction(Constants.Entry);
             }
         }
+
+        public Task OnHostedBehaviorInitializeAsync(HostedBehaviorObservationContext context, Func<Task> next)
+            => ObserveAsync(next, (observer, inner) => observer.OnHostedBehaviorInitializeAsync(context, inner));
+        public Task OnHostedBehaviorFinalizeAsync(HostedBehaviorObservationContext context, Func<Task> next)
+            => ObserveAsync(next, (observer, inner) => observer.OnHostedBehaviorFinalizeAsync(context, inner));
+        public Task OnHostedBehaviorEventForwardAsync(HostedBehaviorObservationContext context, Func<Task> next)
+            => ObserveAsync(next, (observer, inner) => observer.OnHostedBehaviorEventForwardAsync(context, inner));
+
+        public Task<bool> OnDeferralGuardAsync(DeferralObservationContext context, Func<Task<bool>> next)
+            => ObserveAsync(next, (observer, inner) => observer.OnDeferralGuardAsync(context, inner));
+
+        public Task<bool> OnDeferralGuardExceptionAsync(DeferralObservationContext context, Exception exception)
+            => HandleExceptionAsync(context, exception,
+                h => h.OnDeferralGuardExceptionAsync(context, exception),
+                p => p.OnDeferralGuardExceptionAsync(context, exception), nameof(OnDeferralGuardExceptionAsync));
+
+        public Task OnEventDeferredAsync(DeferralObservationContext context, Func<Task> next)
+            => ObserveAsync(next, (observer, inner) => observer.OnEventDeferredAsync(context, inner));
 
         public async Task OnStateExitAsync(StateActionContext context, Func<Task> next)
         {

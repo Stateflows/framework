@@ -10,35 +10,39 @@ namespace Stateflows.StateMachines
     public abstract class StateMachineExceptionHandler : IStateMachineExceptionHandler
     {
         /// <inheritdoc/>
-        public virtual Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
+        public virtual Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext initializationContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
+        public virtual Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext finalizationContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+        public virtual Task<bool> OnDeferralGuardExceptionAsync(IDeferralObservationContext context, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+        public virtual Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> transitionContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
+        public virtual Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> transitionContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
+        public virtual Task<bool> OnStateInitializationExceptionAsync(IStateActionContext stateContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
+        public virtual Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext stateContext, Exception exception)
             => Task.FromResult(false);
 
         /// <inheritdoc/>
-        public virtual Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
+        public virtual Task<bool> OnStateEntryExceptionAsync(IStateActionContext stateContext, Exception exception)
+            => Task.FromResult(false);
+
+        /// <inheritdoc/>
+        public virtual Task<bool> OnStateExitExceptionAsync(IStateActionContext stateContext, Exception exception)
             => Task.FromResult(false);
     }
 }

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Activities.Models;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
@@ -27,9 +28,9 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddDefaultInitializer<TInitializer>()
             where TInitializer : class, IDefaultInitializer
-            => AddDefaultInitializer(async c
+            => RegistrationMetadata.Initializer(() => AddDefaultInitializer(async c
                 => await (await ((BaseContext)c).NodeScope.GetDefaultInitializerAsync<TInitializer>(c)).OnInitializeAsync()
-            );
+            ), typeof(TInitializer));
 
         /// <summary>Adds an initializer for a typed initialization request.</summary>
         /// <typeparam name="TInitializationEvent">Initialization request payload type supplied to the typed initializer.
@@ -50,9 +51,9 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddInitializer<TInitializationEvent, TInitializer>()
             where TInitializer : class, IInitializer<TInitializationEvent>
-            => AddInitializer<TInitializationEvent>(async c
+            => RegistrationMetadata.Initializer(() => AddInitializer<TInitializationEvent>(async c
                 => await (await ((BaseContext)c).NodeScope.GetInitializerAsync<TInitializer, TInitializationEvent>(c)).OnInitializeAsync(c.InitializationEvent)
-            );
+            ), typeof(TInitializer), typeof(TInitializationEvent));
 
         /// <summary>Adds an asynchronous activity finalizer.</summary>
         /// <param name="actionAsync">Asynchronous callback invoked when the Activity finalizes.</param>
@@ -68,8 +69,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddFinalizer<TFinalizer>()
             where TFinalizer : class, IFinalizer
-            => AddFinalizer(async c
+            => RegistrationMetadata.Finalizer(() => AddFinalizer(async c
                 => await (await ((BaseContext)c).NodeScope.GetFinalizerAsync<TFinalizer>(c)).OnFinalizeAsync()
-            );
+            ), typeof(TFinalizer));
     }
 }

@@ -27,9 +27,6 @@ namespace Stateflows.Entities.Registration
 
         public readonly List<EntityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
-        private readonly MethodInfo EntityTypeAddedAsyncMethod =
-            typeof(IEntityVisitor).GetMethod(nameof(IEntityVisitor.EntityTypeAddedAsync));
-
         public BehaviorClass? OwnerClass { get; set; }
 
         public BehaviorClass? ParentClass { get; set; }
@@ -91,17 +88,7 @@ namespace Stateflows.Entities.Registration
                 StateflowsBuilder = stateflowsBuilder
             };
 
-            entityRegistration.VisitingTasks.Add(async visitor =>
-            {
-                await visitor.EntityAddingAsync<TTemplate>(entityName, version, entityRegistration.OwnerClass, entityRegistration.ParentClass);
-            });
-
             buildAction?.Invoke(new EntityBuilder<TTemplate>(entityRegistration));
-
-            entityRegistration.VisitingTasks.Add(async visitor =>
-            {
-                await visitor.EntityAddedAsync<TTemplate>(entityName, version);
-            });
 
             Entities.Add(key, entityRegistration);
 
@@ -139,22 +126,9 @@ namespace Stateflows.Entities.Registration
                 StateflowsBuilder = stateflowsBuilder
             };
 
-            entityRegistration.VisitingTasks.Add(async visitor =>
-            {
-                await visitor.EntityAddingAsync<TTemplate>(entityName, version, entityRegistration.OwnerClass, entityRegistration.ParentClass);
-            });
-            
             var builder = new EntityBuilder<TTemplate>(entityRegistration);
             RegisterEntity(entityType, builder);
             buildAction?.Invoke(builder);
-
-            var method = EntityTypeAddedAsyncMethod.MakeGenericMethod(typeof(TTemplate), entityType);
-
-            entityRegistration.VisitingTasks.Add(async visitor =>
-            {
-                await visitor.EntityAddedAsync<TTemplate>(entityName, version);
-                await (Task)method.Invoke(visitor, [entityName, version]);
-            });
 
             Entities.Add(key, entityRegistration);
 
@@ -229,17 +203,12 @@ namespace Stateflows.Entities.Registration
             var tasks = Entities
                 .Where((item, index) => !item.Key.EndsWith(".current"))
                 .Select(item => item.Value)
-                .SelectMany(graph => graph.VisitingTasks);
+                .Select(graph => graph);
 
             foreach (var task in tasks)
             {
-                await task(visitor);
+                await task.VisitAsync(visitor);
             }
-            
-            // foreach (var entity in Entities.Where(item => !item.Key.EndsWith(".current")).Select(item => item.Value))
-            // {
-            //     await entity.VisitingTasks(visitor);
-            // }
         }
 
         public async Task VisitEntityAsync(string entityName, int version, IEntityVisitor visitor)
@@ -247,18 +216,12 @@ namespace Stateflows.Entities.Registration
             var tasks = Entities
                 .Where((item, index) => item.Key == $"{entityName}.{version}")
                 .Select(item => item.Value)
-                .SelectMany(graph => graph.VisitingTasks);
+                .Select(graph => graph);
 
             foreach (var task in tasks)
             {
-                await task(visitor);
+                await task.VisitAsync(visitor);
             }
-            
-            // foreach (var entity in Entities.Where(item => item.Key == $"{entityName}.{version}").Select(item => item.Value))
-            // {
-            //     await entity.VisitingTasks(visitor);
-            // }
         }
     }
 }
-

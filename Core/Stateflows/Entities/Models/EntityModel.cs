@@ -48,6 +48,8 @@ namespace Stateflows.Entities.Models
 
         public abstract Task ComputeAsync(Dictionary<string, object> values, EntityInspection inspection);
 
+        public abstract Task ObserveSetAsync(Dictionary<string, object> values, object? value, EntityInspection inspection, Func<Task> next);
+
         public abstract Type ValueType { get; }
 
         public abstract Task<EventValidation> ValidateAsync(object? value, Dictionary<string, object> values, IServiceProvider services);
@@ -66,6 +68,11 @@ namespace Stateflows.Entities.Models
             => FieldValidation.ValidateAsync((TField)value!, member, EntityProxy<TTemplate>.Create(values, EntityModel).Item2, services);
 
         public override bool IsComputed => Computation != null;
+
+        public override Task ObserveSetAsync(Dictionary<string, object> values, object? value, EntityInspection inspection, Func<Task> next)
+            => inspection.HasObservers
+                ? inspection.FieldSetAsync(EntityProxy<TTemplate>.Create(values, EntityModel).Item2, Name, (TField)value!, next)
+                : next();
 
         public override async Task ComputeAsync(Dictionary<string, object> values, EntityInspection inspection)
         {

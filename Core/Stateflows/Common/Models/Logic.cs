@@ -15,6 +15,7 @@ namespace Stateflows.Common.Models
         public string? OriginStateMachineName { get; set; }
 
         public List<TDelegate> Actions { get; set; } = [];
+        internal Dictionary<int, Stateflows.StateMachines.Models.OperationRegistration> Registrations { get; } = [];
 
         public bool Any => Actions.Any();
 

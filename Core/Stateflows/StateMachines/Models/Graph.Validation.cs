@@ -127,9 +127,6 @@ namespace Stateflows.StateMachines.Models
                 if (region.InitialVertex != null && (string.IsNullOrEmpty(region.InitialVertexName) ||
                     !region.Vertices.TryGetValue(region.InitialVertexName, out var selected) || selected != region.InitialVertex))
                     Error("SM-013", path, "Resolved region initial vertex disagrees with its selection.");
-                if (region.History != null && (region.History.Type != VertexType.History ||
-                    !region.Vertices.Values.Contains(region.History) || region.History.HistoricalRegion != region))
-                    Error("SM-029", path, "Selected history must be a contained history entrypoint for this region.");
             }
 
             void ValidateInitial(Dictionary<string, Vertex> members, string selected, string path, bool root)
@@ -200,7 +197,7 @@ namespace Stateflows.StateMachines.Models
                     Error("SM-018", path, "Internal transitions cannot specify a destination.");
                 if (internalTarget && !edge.IsLocal)
                     Error("SM-024", path, "Internal transitions cannot be configured as external targeted transitions.");
-                if (edge.TriggerType == null || (edge.StructuralEventName == null && edge.DeclaredTriggerTypes == null && edge.Trigger != Event.GetName(edge.TriggerType)) ||
+                if (edge.TriggerType == null || (edge.StructuralEventNames == null && edge.Trigger != Event.GetName(edge.TriggerType)) ||
                     (edge.Type == EdgeType.DefaultTransition && edge.TriggerType != typeof(Completion)) ||
                     (edge.Type == EdgeType.Transition && edge.TriggerType == typeof(Completion)))
                     Error("SM-019", path, "Transition kind and declared trigger must agree.");
@@ -210,20 +207,18 @@ namespace Stateflows.StateMachines.Models
                 edge.ActualTriggers = [];
                 if (edge.TriggerType != null)
                 {
-                    var declared = edge.DeclaredTriggerTypes ?? [edge.TriggerType];
-                    var mapped = declared.SelectMany(type => StateflowsBuilder.TypeMapper.GetMappedTypes(type) ?? []).ToArray();
-                    if (declared.Count == 0 || declared.Distinct().Count() != declared.Count ||
-                        (declared.Contains(typeof(Completion)) && declared.Count != 1))
-                        Error("SM-019", path, "Declared trigger sets must be nonempty, distinct and cannot mix Completion with other triggers.");
+                    var mapped = StateflowsBuilder.TypeMapper.GetMappedTypes(edge.TriggerType)?.ToArray();
                     if (mapped == null || mapped.Length == 0 || mapped.Any(t => t == null || t.ContainsGenericParameters || t == typeof(void) || t.IsByRef || t.IsPointer))
                         Error("SM-038", path, "Mapped triggers must contain usable closed CLR event types.");
                     else
                     {
                         edge.ActualTriggerTypes = mapped.ToHashSet();
-                        edge.ActualTriggers = edge.StructuralEventName == null
+                        edge.ActualTriggers = edge.StructuralEventNames == null
                             ? mapped.Select(Event.GetName).ToHashSet()
-                            : new HashSet<string> { StateflowsBuilder.Events.GetEvent(edge.StructuralEventName).Name };
-                        if (edge.StructuralEventName == null)
+                            : edge.StructuralEventNames.Select(name => StateflowsBuilder.Events.GetEvent(name).Name).ToHashSet();
+                        if (edge.StructuralEventNames is { Count: 0 } || edge.StructuralEventNames?.Distinct().Count() != edge.StructuralEventNames?.Count)
+                            Error("SM-019", path, "Structural trigger names must be nonempty and distinct.");
+                        if (edge.StructuralEventNames == null)
                             foreach (var type in mapped) StateflowsBuilder.Events.RegisterClr(type);
                     }
                 }
@@ -273,9 +268,9 @@ namespace Stateflows.StateMachines.Models
                     if (vertex.StructuralDeferrals.Contains(deferral.Key))
                         StateflowsBuilder.Events.GetEvent(deferral.Key);
                     if (!vertex.DeferralTypes.TryGetValue(deferral.Key, out var type) || type == null ||
-                        (!vertex.StructuralDeferrals.Contains(deferral.Key) && Event.GetName(type) != deferral.Key))
+                        (!vertex.StructuralDeferrals.Contains(deferral.Key) && !StateflowsBuilder.TypeMapper.GetMappedTypes(type).Select(Event.GetName).Contains(deferral.Key)))
                         Error("SM-038", deferralPath, $"Deferred event '{deferral.Key}' requires matching CLR type information.");
-                    else if (type == typeof(Completion) || type == typeof(Finalize) || type.IsSubclassOf(typeof(TimeEvent)))
+                    else if (StateflowsBuilder.TypeMapper.GetMappedTypes(type).Any(mapped => mapped == typeof(Completion) || mapped == typeof(Finalize) || mapped.IsSubclassOf(typeof(TimeEvent))))
                         Error("SM-036", deferralPath, $"Event '{deferral.Key}' cannot be deferred.");
                     else if (!vertex.StructuralDeferrals.Contains(deferral.Key))
                         StateflowsBuilder.Events.RegisterClr(type);
@@ -362,6 +357,23 @@ namespace Stateflows.StateMachines.Models
                     }
                 }
             }
+            var junctionColors = new Dictionary<Vertex, int>();
+            void ValidateJunctionRoute(Vertex vertex)
+            {
+                if (junctionColors.TryGetValue(vertex, out var color))
+                {
+                    if (color == 1) Error("SM-052", Path(vertex), "Junction routes cannot contain a cycle.");
+                    return;
+                }
+                junctionColors[vertex] = 1;
+                foreach (var edge in vertex.Edges.Values.Where(edge => edge != null))
+                    if (resolved.TryGetValue(edge, out var target) && target.Type == VertexType.Junction)
+                        ValidateJunctionRoute(target);
+                junctionColors[vertex] = 2;
+            }
+            foreach (var junction in vertices.Where(vertex => vertex.Type == VertexType.Junction))
+                ValidateJunctionRoute(junction);
+
             if (ValidationReport.HasErrors)
             {
                 if (ValidationReport.Diagnostics.Where(d => d.Severity == ModelDiagnosticSeverity.Error).All(d => d.RuleId == "SM-045"))

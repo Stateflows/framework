@@ -22,7 +22,6 @@ namespace Stateflows.StateMachines.Models
 
         internal string? ResourceName { get; set; } = null;
 
-        internal readonly List<Func<IStateMachineVisitor, Task>> VisitingTasks = new List<Func<IStateMachineVisitor, Task>>();
 
         internal readonly StateflowsBuilder StateflowsBuilder;
 
@@ -75,6 +74,7 @@ namespace Stateflows.StateMachines.Models
 
         public readonly Dictionary<string, Logic<StateMachinePredicateAsync>> Initializers = new Dictionary<string, Logic<StateMachinePredicateAsync>>();
         public readonly List<Type> InitializerTypes = new List<Type>();
+        internal Dictionary<Type, Logic<StateMachinePredicateAsync>> InitializerDeclarations { get; } = [];
         public Logic<StateMachinePredicateAsync> DefaultInitializer;
 
         public Logic<StateMachineActionAsync> Finalize { get; } =
@@ -111,6 +111,8 @@ namespace Stateflows.StateMachines.Models
 
         public void Build()
         {
+            foreach (var vertex in AllVertices.Values)
+                vertex?.PrepareDeferrals();
             ValidateDefinition();
 
             if (!StateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName))
@@ -128,6 +130,7 @@ namespace Stateflows.StateMachines.Models
 
                 vertex.BehaviorEventTypes.Clear();
                 vertex.BehaviorStructuralEvents.Clear();
+                vertex.BehaviorEventBindings.Clear();
                 if (string.IsNullOrEmpty(vertex.BehaviorName)) continue;
                 switch (vertex.BehaviorType)
                 {
@@ -135,21 +138,24 @@ namespace Stateflows.StateMachines.Models
                         var activityVisitor = new DoActivityVisitor(StateflowsBuilder.TypeMapper);
                         StateflowsBuilder.EnsureActivitiesServices().VisitActivityAsync(vertex.BehaviorName, 1, activityVisitor).GetAwaiter().GetResult();
                         vertex.BehaviorEventTypes.AddRange(activityVisitor.EventTypes);
-                        vertex.BehaviorStructuralEvents.UnionWith(activityVisitor.EventDefinitions.Select(e => e.Name));
+                        foreach (var binding in activityVisitor.EventBindings) vertex.BehaviorEventBindings.Add(binding.Key, binding.Value);
+                        vertex.BehaviorStructuralEvents.UnionWith(activityVisitor.EventNames.Where(name => !activityVisitor.EventTypes.Any(type => Event.GetName(type) == name)));
                         break;
 
                     case BehaviorType.StateMachine:
                         var machineVisitor = new SubmachineVisitor(StateflowsBuilder.TypeMapper);
                         StateflowsBuilder.EnsureStateMachinesServices().VisitStateMachineAsync(vertex.BehaviorName, 1, machineVisitor).GetAwaiter().GetResult();
                         vertex.BehaviorEventTypes.AddRange(machineVisitor.EventTypes);
-                        vertex.BehaviorStructuralEvents.UnionWith(machineVisitor.EventDefinitions.Select(e => e.Name));
+                        foreach (var binding in machineVisitor.EventBindings) vertex.BehaviorEventBindings.Add(binding.Key, binding.Value);
+                        vertex.BehaviorStructuralEvents.UnionWith(machineVisitor.EventNames.Where(name => !machineVisitor.EventTypes.Any(type => Event.GetName(type) == name)));
                         break;
 
                     default:
                         var actionVisitor = new DoActionVisitor(StateflowsBuilder.TypeMapper);
                         StateflowsBuilder.EnsureActionsServices().VisitActionAsync(vertex.BehaviorName, 1, actionVisitor).GetAwaiter().GetResult();
                         vertex.BehaviorEventTypes.AddRange(actionVisitor.EventTypes);
-                        vertex.BehaviorStructuralEvents.UnionWith(actionVisitor.EventDefinitions.Select(e => e.Name));
+                        foreach (var binding in actionVisitor.EventBindings) vertex.BehaviorEventBindings.Add(binding.Key, binding.Value);
+                        vertex.BehaviorStructuralEvents.UnionWith(actionVisitor.EventNames.Where(name => !actionVisitor.EventTypes.Any(type => Event.GetName(type) == name)));
                         break;
                 }
             }
@@ -160,11 +166,9 @@ namespace Stateflows.StateMachines.Models
                 edge.TimeTriggerTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet();
                 edge.RecurringTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet();
                 edge.Signature = $"{edge.Source.Identifier}-{edge.Trigger}->";
-                var triggerDescriptor = edge.IsElse ? $"{edge.Trigger}|else" : edge.Trigger;
-                edge.Identifier = edge.Target != null
-                    ? $"{edge.Source.Identifier}-{triggerDescriptor}->{edge.Target.Identifier}"
-                    : $"{edge.Source.Identifier}-{triggerDescriptor}";
+                edge.Identifier = $"transition:{edge.Source.Name.Length}:{edge.Source.Name}:{edge.Source.Edges.Values.ToList().IndexOf(edge)}";
             }
+            PrepareOperations();
             StateflowsBuilder.ResourcesByBehaviorClass[Class] = resourceName;
         }
     }

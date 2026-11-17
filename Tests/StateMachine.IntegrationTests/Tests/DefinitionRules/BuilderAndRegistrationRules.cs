@@ -15,6 +15,19 @@ namespace StateMachine.IntegrationTests.Tests.DefinitionRules;
 [TestCategory("DefinitionRules")]
 public class BuilderAndRegistrationRules
 {
+    [TestMethod, TestCategory("SM-052")]
+    public void JunctionCyclesAreRejectedBeforeRouteExpansion()
+    {
+        var model = new DefinitionModel();
+        var first = model.Add("first", VertexType.Junction);
+        var second = model.Add("second", VertexType.Junction);
+        model.Edge(model.Initial, first, typeof(Ping));
+        model.Edge(first, second);
+        model.Edge(second, first);
+        model.Reject();
+        Assert.IsTrue(model.Graph.ValidationReport.Diagnostics.Any(diagnostic => diagnostic.RuleId == "SM-052"));
+    }
+
     [TestMethod, TestCategory("SM-001")]
     [DataRow("graph")]
     [DataRow("state")]

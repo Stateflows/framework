@@ -10,4 +10,6 @@ internal interface IDeferralBuilder
     Type EventType { get; }
     Vertex Vertex { get; }
     Logic<StateMachinePredicateAsync> Guards { get; }
+    string RegistrationAddress { get; }
+    void RecordGuard(OperationRegistration registration);
 }

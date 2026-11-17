@@ -1,176 +1,206 @@
-﻿using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Common;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.StateMachines;
+
+/// <summary>Receives callbacks describing a finalized state-machine definition.</summary>
+/// <remarks>
+/// Callbacks are awaited serially in declaration/model traversal order. The machine identity
+/// (<c>stateMachineId</c>, <c>stateMachineName</c>, <c>stateMachineVersion</c>) is repeated first in every callback; element identifiers and
+/// related element identifiers identify definition elements, not runtime machine instances.
+/// A referenced element is reported before its implementation-type or nested metadata callbacks.
+/// <see cref="StateMachineAddedAsync"/> is always the final callback for a definition.
+/// </remarks>
+public interface IStateMachineVisitor
 {
-    /// <summary>Receives state-machine definition metadata while registrations are visited, rather than observing runtime state changes.</summary>
-    /// <remarks>Implementations can build diagrams, catalogs, or integration metadata.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.</remarks>
-    public interface IStateMachineVisitor
-    {
-        /// <summary>Visits a transition whose trigger is represented by an event definition, including named structural events.</summary>
-        /// <param name="definition">The trigger's event identity and structural metadata.</param>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="sourceVertexName">The registered source vertex name.</param>
-        /// <param name="targetVertexName">The target vertex name, or null for an internal transition.</param>
-        /// <param name="isElse">Whether this is the fallback when ordinary guards do not select a transition.</param>
-        /// <returns>A task completing when the metadata is processed.</returns>
-        Task TransitionAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
-            string sourceVertexName, string targetVertexName = null, bool isElse = false)
-            => Task.CompletedTask;
+    /// <summary>Begins reporting a finalized state-machine definition.</summary>
+    /// <param name="stateMachineId">The definition-level identifier of this state machine.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="ownerClass">The owning behavior class, or <see langword="null"/> when there is no owner.</param>
+    /// <param name="parentClass">The parent behavior class, or <see langword="null"/> when there is no parent.</param>
+    /// <param name="hasDefaultInstance">Whether a default instance is configured for this behavior class.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before proceeding.</returns>
+    Task StateMachineAddingAsync(string stateMachineId, string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass, BehaviorClass? parentClass, bool hasDefaultInstance);
 
-        /// <summary>Visits an event definition exposed by an embedded do behavior.</summary>
-        /// <param name="definition">The event metadata exposed by the embedded behavior.</param>
-        /// <param name="stateMachineName">The containing machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="stateName">The state hosting the behavior.</param>
-        /// <param name="behaviorName">The embedded behavior class name.</param>
-        /// <param name="behaviorType">The embedded behavior kind.</param>
-        /// <returns>A task completing when the metadata is processed.</returns>
-        Task DoBehaviorAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
-            string stateName, string behaviorName, string behaviorType) => Task.CompletedTask;
+    /// <summary>Reports the CLR state-machine implementation type, when one is registered.</summary>
+    /// <typeparam name="TStateMachine">The concrete state-machine implementation type.</typeparam>
+    /// <param name="stateMachineId">The definition-level identifier of this state machine.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before proceeding.</returns>
+    Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineId, string stateMachineName, int stateMachineVersion) where TStateMachine : class, IStateMachine;
 
-        /// <summary>Begins visiting a machine definition before its elements are reported.</summary>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="hasDefaultInstance">Whether a default instance is registered.</param>
-        /// <returns>A task completing before element visitation proceeds.</returns>
-        Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false);
-        
-        /// <summary>Completes visitation of a machine definition after its elements have been reported.</summary>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <returns>A task completing when definition visitation is complete.</returns>
-        Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion);
+    /// <summary>Completes reporting the definition after all its elements and metadata have been visited.</summary>
+    /// <param name="stateMachineId">The definition-level identifier of this state machine.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <returns>A task that completes when this callback has finished; this is the last callback in the visitation.</returns>
+    Task StateMachineAddedAsync(string stateMachineId, string stateMachineName, int stateMachineVersion);
 
-        /// <summary>Reports the CLR type associated with a machine definition.</summary>
-        /// <typeparam name="TStateMachine">The typed definition.</typeparam>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <returns>A task completing when the type metadata is processed.</returns>
-        Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
-            where TStateMachine : class, IStateMachine;
+    /// <summary>Reports a vertex (state or pseudostate) before its implementation type and nested regions.</summary>
+    /// <param name="vertexId">The definition-level identifier of the vertex.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="vertexName">The vertex's registered name.</param>
+    /// <param name="vertexType">The semantic kind of vertex.</param>
+    /// <param name="parentVertexId">The containing vertex identifier, or <see langword="null"/> if this vertex belongs to the machine's root region.</param>
+    /// <param name="regionId">The containing region identifier, or <see langword="null"/> if there is no containing region.</param>
+    /// <param name="regionIndex">The zero-based position of the containing region in its parent vertex, or <see langword="null"/> when there is no parent vertex.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before proceeding.</returns>
+    Task VertexAddedAsync(string vertexId, string stateMachineName, int stateMachineVersion, string vertexName, VertexType vertexType, string? parentVertexId, string? regionId, int? regionIndex);
 
-        /// <summary>Reports an initializer accepting a particular initialization event type.</summary>
-        /// <typeparam name="TInitializationEvent">The accepted initialization payload.</typeparam>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <returns>A task completing when the initializer metadata is processed.</returns>
-        Task InitializerAddedAsync<TInitializationEvent>(string stateMachineName, int stateMachineVersion);
+    /// <summary>Reports the CLR implementation type for a vertex, when one is registered.</summary>
+    /// <typeparam name="TVertex">The concrete vertex implementation type.</typeparam>
+    /// <param name="vertexId">The definition-level identifier of the vertex described by this metadata.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <returns>A task that completes when this callback has finished; it follows the corresponding <see cref="VertexAddedAsync"/> callback.</returns>
+    Task VertexTypeAddedAsync<TVertex>(string vertexId, string stateMachineName, int stateMachineVersion) where TVertex : class, IVertex;
 
-        /// <summary>Reports the machine's default initializer.</summary>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <returns>A task completing when the initializer metadata is processed.</returns>
-        Task DefaultInitializerAddedAsync(string stateMachineName, int stateMachineVersion);
+    /// <summary>Reports a nested region before visiting its vertices.</summary>
+    /// <param name="regionId">The definition-level identifier of the region.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="parentVertexId">The identifier of the vertex that owns the region.</param>
+    /// <param name="regionIndex">The zero-based position of the region in its parent vertex.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before visiting the region's vertices.</returns>
+    Task RegionAddedAsync(string regionId, string stateMachineName, int stateMachineVersion, string parentVertexId, int regionIndex);
 
-        /// <summary>Reports the machine's finalization callback.</summary>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <returns>A task completing when the finalizer metadata is processed.</returns>
-        Task FinalizerAddedAsync(string stateMachineName, int stateMachineVersion);
+    /// <summary>Reports a transition before its implementation type, guards, and effects.</summary>
+    /// <typeparam name="TEvent">The CLR payload type of the transition's triggering event.</typeparam>
+    /// <param name="transitionId">The definition-level identifier of the transition.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="sourceVertexId">The identifier of the transition's source vertex.</param>
+    /// <param name="targetVertexId">The identifier of its target vertex, or <see langword="null"/> for a transition with no explicit target.</param>
+    /// <param name="isElse">Whether this is an else transition, considered after other eligible transitions from its source.</param>
+    /// <param name="isLocal">Whether the transition is local rather than external.</param>
+    /// <param name="polymorphicTriggers">Whether trigger matching includes derived event payload types.</param>
+    /// <param name="triggerNames">The event names that trigger this transition, in ordinal-sorted order.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before proceeding.</returns>
+    Task TransitionAddedAsync<TEvent>(string transitionId, string stateMachineName, int stateMachineVersion, string sourceVertexId, string? targetVertexId, bool isElse, bool isLocal, bool polymorphicTriggers, IReadOnlyList<string> triggerNames);
 
-        /// <summary>Reports a state or pseudostate and its containment in the definition.</summary>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="vertexName">The registered vertex name.</param>
-        /// <param name="vertexType">The vertex's state or pseudostate kind.</param>
-        /// <param name="parentVertexName">The containing vertex, or null for a top-level vertex.</param>
-        /// <returns>A task completing when the vertex metadata is processed.</returns>
-        Task VertexAddedAsync(string stateMachineName, int stateMachineVersion, string vertexName, VertexType vertexType, string? parentVertexName = null);
+    /// <summary>Reports the CLR implementation type for a transition, when one is registered.</summary>
+    /// <typeparam name="TEvent">The CLR payload type of the transition's triggering event.</typeparam>
+    /// <typeparam name="TTransition">The concrete transition implementation type.</typeparam>
+    /// <param name="transitionId">The definition-level identifier of the transition described by this metadata.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <returns>A task that completes when this callback has finished; it follows the corresponding <see cref="TransitionAddedAsync{TEvent}"/> callback.</returns>
+    Task TransitionTypeAddedAsync<TEvent, TTransition>(string transitionId, string stateMachineName, int stateMachineVersion) where TTransition : class, ITransition<TEvent>;
 
-        /// <summary>Reports the CLR type associated with a vertex.</summary>
-        /// <typeparam name="TVertex">The vertex definition type.</typeparam>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="vertexName">The registered vertex name.</param>
-        /// <returns>A task completing when the type metadata is processed.</returns>
-        Task VertexTypeAddedAsync<TVertex>(string stateMachineName, int stateMachineVersion, string vertexName)
-            where TVertex : class, IVertex;
+    /// <summary>Reports an event-specific machine initializer before its guard registrations.</summary>
+    /// <typeparam name="TEvent">The CLR payload type associated with this initializer.</typeparam>
+    /// <param name="initializerId">The definition-level identifier of the initializer.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="eventNames">The event names mapped to this initializer, in ordinal-sorted order.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before reporting the initializer's guards.</returns>
+    Task InitializerAddedAsync<TEvent>(string initializerId, string stateMachineName, int stateMachineVersion, IReadOnlyList<string> eventNames);
 
-        /// <summary>Reports a CLR-event-triggered transition; completion transitions use <see cref="Completion"/>.</summary>
-        /// <typeparam name="TEvent">The trigger payload type.</typeparam>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="sourceVertexName">The registered source vertex.</param>
-        /// <param name="targetVertexName">The target vertex, or null for an internal transition.</param>
-        /// <param name="isElse">Whether the transition is a fallback.</param>
-        /// <returns>A task completing when transition metadata is processed.</returns>
-        Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string? targetVertexName = null, bool isElse = false);
+    /// <summary>Reports the default initializer before its guard registrations, when it exists.</summary>
+    /// <param name="initializerId">The definition-level identifier of the default initializer.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before reporting the initializer's guards.</returns>
+    Task DefaultInitializerAddedAsync(string initializerId, string stateMachineName, int stateMachineVersion);
 
-        /// <summary>Reports the CLR implementation type associated with a transition.</summary>
-        /// <typeparam name="TEvent">The trigger payload type.</typeparam>
-        /// <typeparam name="TTransition">The transition implementation.</typeparam>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="sourceVertexName">The registered source vertex.</param>
-        /// <param name="targetVertexName">The target vertex, or null for an internal transition.</param>
-        /// <param name="isElse">Whether the transition is a fallback.</param>
-        /// <returns>A task completing when type metadata is processed.</returns>
-        Task TransitionTypeAddedAsync<TEvent, TTransition>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string? targetVertexName = null, bool isElse = false)
-            where TTransition : class, ITransition<TEvent>;
+    /// <summary>Reports the machine finalizer before its action registrations, when it exists.</summary>
+    /// <param name="finalizerId">The definition-level identifier of the machine finalizer.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before reporting the finalizer's actions.</returns>
+    Task FinalizerAddedAsync(string finalizerId, string stateMachineName, int stateMachineVersion);
 
-        /// <summary>Reports a custom event handled by a machine and the behavior statuses in which it is supported.</summary>
-        /// <typeparam name="TEvent">The custom event payload.</typeparam>
-        /// <param name="stateMachineName">The registered machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="supportedStatuses">The statuses in which the event handler is available.</param>
-        /// <returns>A task completing when event metadata is processed.</returns>
-        Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses);
+    /// <summary>Reports an action registration in its owning state or transition operation.</summary>
+    /// <param name="actionId">The definition-level identifier of the action registration.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="ownerElementId">The identifier of the state, transition, initializer, finalizer, or other element that owns the action.</param>
+    /// <param name="operationKind">The operation to which the action belongs.</param>
+    /// <param name="actionIndex">The zero-based position of the action within its operation.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before any action type or behavior metadata.</returns>
+    Task ActionAddedAsync(string actionId, string stateMachineName, int stateMachineVersion, string ownerElementId, StateMachineOperation operationKind, int actionIndex);
 
-        /// <summary>Reports an embedded do behavior and its CLR event types.</summary>
-        /// <param name="stateMachineName">The containing machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="stateName">The state hosting the behavior.</param>
-        /// <param name="behaviorName">The embedded behavior class name.</param>
-        /// <param name="behaviorType">The embedded behavior kind.</param>
-        /// <param name="eventTypes">Event types exposed by the embedded behavior.</param>
-        /// <returns>A task completing when behavior metadata is processed.</returns>
-        Task DoBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName, string behaviorType, IEnumerable<Type> eventTypes);
+    /// <summary>Reports the CLR implementation type for an action registration, when one is registered.</summary>
+    /// <typeparam name="TImplementation">The concrete action implementation type.</typeparam>
+    /// <param name="actionId">The definition-level identifier of the action registration described by this metadata.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <returns>A task that completes when this callback has finished; it follows the corresponding <see cref="ActionAddedAsync"/> callback.</returns>
+    Task ActionTypeAddedAsync<TImplementation>(string actionId, string stateMachineName, int stateMachineVersion) where TImplementation : class;
 
-        /// <summary>Reports a behavior executed as a state's entry action.</summary>
-        /// <param name="stateMachineName">The containing machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="stateName">The state whose entry invokes the behavior.</param>
-        /// <param name="behaviorName">The invoked behavior class name.</param>
-        /// <param name="behaviorType">The invoked behavior kind.</param>
-        /// <returns>A task completing when action metadata is processed.</returns>
-        Task OnEntryBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName, string behaviorType);
+    /// <summary>Reports the behavior invoked by an action registration, when the action delegates to a behavior.</summary>
+    /// <param name="actionId">The definition-level identifier of the action registration described by this metadata.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="actionBehaviorClass">The behavior class invoked by the action.</param>
+    /// <returns>A task that completes when this callback has finished; it follows the corresponding <see cref="ActionAddedAsync"/> callback and any action type callback.</returns>
+    Task ActionBehaviorAddedAsync(string actionId, string stateMachineName, int stateMachineVersion, BehaviorClass actionBehaviorClass);
 
-        /// <summary>Reports a behavior executed as a state's exit action.</summary>
-        /// <param name="stateMachineName">The containing machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="stateName">The state whose exit invokes the behavior.</param>
-        /// <param name="behaviorName">The invoked behavior class name.</param>
-        /// <param name="behaviorType">The invoked behavior kind.</param>
-        /// <returns>A task completing when action metadata is processed.</returns>
-        Task OnExitBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName, string behaviorType);
-        
-        /// <summary>Reports a behavior used to evaluate a transition guard.</summary>
-        /// <typeparam name="TEvent">The trigger payload type.</typeparam>
-        /// <param name="stateMachineName">The containing machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="sourceVertexName">The transition's source vertex.</param>
-        /// <param name="targetVertexName">The target, or null for an internal transition.</param>
-        /// <param name="isElse">Whether the transition is a fallback.</param>
-        /// <param name="behaviorName">The guard behavior class name.</param>
-        /// <param name="behaviorType">The guard behavior kind.</param>
-        /// <returns>A task completing when guard metadata is processed.</returns>
-        Task GuardBehaviorAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string? targetVertexName, bool isElse, string behaviorName, string behaviorType);
-        
-        /// <summary>Reports a behavior used to execute a transition effect.</summary>
-        /// <typeparam name="TEvent">The trigger payload type.</typeparam>
-        /// <param name="stateMachineName">The containing machine name.</param>
-        /// <param name="stateMachineVersion">The definition version.</param>
-        /// <param name="sourceVertexName">The transition's source vertex.</param>
-        /// <param name="targetVertexName">The target, or null for an internal transition.</param>
-        /// <param name="isElse">Whether the transition is a fallback.</param>
-        /// <param name="behaviorName">The effect behavior class name.</param>
-        /// <param name="behaviorType">The effect behavior kind.</param>
-        /// <returns>A task completing when effect metadata is processed.</returns>
-        Task EffectBehaviorAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string? targetVertexName, bool isElse, string behaviorName, string behaviorType);
-    }
+    /// <summary>Reports a Boolean guard registration before its type, behavior, and child-guard metadata.</summary>
+    /// <param name="guardId">The definition-level identifier of the guard registration.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="ownerElementId">The identifier of the state, transition, deferral, or initializer that owns the guard tree.</param>
+    /// <param name="parentGuardId">The parent guard identifier, or <see langword="null"/> for a root guard.</param>
+    /// <param name="guardIndex">The zero-based position of this guard among its siblings.</param>
+    /// <param name="guardKind">The Boolean operation or predicate represented by this guard registration.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before reporting child guards.</returns>
+    Task GuardAddedAsync(string guardId, string stateMachineName, int stateMachineVersion, string ownerElementId, string? parentGuardId, int guardIndex, GuardKind guardKind);
+
+    /// <summary>Reports the CLR implementation type for a guard registration, when one is registered.</summary>
+    /// <typeparam name="TImplementation">The concrete guard implementation type.</typeparam>
+    /// <param name="guardId">The definition-level identifier of the guard registration described by this metadata.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <returns>A task that completes when this callback has finished; it follows the corresponding <see cref="GuardAddedAsync"/> callback.</returns>
+    Task GuardTypeAddedAsync<TImplementation>(string guardId, string stateMachineName, int stateMachineVersion) where TImplementation : class;
+
+    /// <summary>Reports the behavior invoked by a guard registration, when the guard delegates to a behavior.</summary>
+    /// <param name="guardId">The definition-level identifier of the guard registration described by this metadata.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="guardBehaviorClass">The behavior class invoked by the guard.</param>
+    /// <returns>A task that completes when this callback has finished; it follows the corresponding <see cref="GuardAddedAsync"/> callback and any guard type callback.</returns>
+    Task GuardBehaviorAddedAsync(string guardId, string stateMachineName, int stateMachineVersion, BehaviorClass guardBehaviorClass);
+
+    /// <summary>Reports a grouped event-deferral rule before its guard registrations.</summary>
+    /// <typeparam name="TEvent">The CLR payload type associated with the deferral rule.</typeparam>
+    /// <param name="deferralId">The definition-level identifier of the deferral rule.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="vertexId">The identifier of the state that owns the rule.</param>
+    /// <param name="eventNames">The event names handled by the rule, in ordinal-sorted order.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before reporting the rule's guards.</returns>
+    Task DeferralAddedAsync<TEvent>(string deferralId, string stateMachineName, int stateMachineVersion, string vertexId, IReadOnlyList<string> eventNames);
+
+    /// <summary>Reports a behavior hosted by a state before its implementation type and event bindings.</summary>
+    /// <param name="hostedBehaviorId">The definition-level identifier of the hosted-behavior relationship.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="vertexId">The identifier of the state that hosts the behavior.</param>
+    /// <param name="hostedBehaviorClass">The behavior class hosted by the state.</param>
+    /// <returns>A task that completes when this callback has finished; visitation awaits it before hosted-behavior metadata.</returns>
+    Task HostedBehaviorAddedAsync(string hostedBehaviorId, string stateMachineName, int stateMachineVersion, string vertexId, BehaviorClass hostedBehaviorClass);
+
+    /// <summary>Reports the CLR implementation type for a hosted behavior, when one is registered.</summary>
+    /// <typeparam name="TImplementation">The concrete hosted-behavior implementation type.</typeparam>
+    /// <param name="hostedBehaviorId">The definition-level identifier of the hosted-behavior relationship described by this metadata.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <returns>A task that completes when this callback has finished; it follows the corresponding <see cref="HostedBehaviorAddedAsync"/> callback.</returns>
+    Task HostedBehaviorTypeAddedAsync<TImplementation>(string hostedBehaviorId, string stateMachineName, int stateMachineVersion) where TImplementation : class;
+
+    /// <summary>Reports an event binding that forwards an event to a hosted behavior.</summary>
+    /// <typeparam name="TEvent">The CLR payload type of the bound event.</typeparam>
+    /// <param name="hostedBehaviorEventId">The definition-level identifier of this hosted-behavior event binding.</param>
+    /// <param name="stateMachineName">The registered state-machine behavior name.</param>
+    /// <param name="stateMachineVersion">The registered definition version.</param>
+    /// <param name="hostedBehaviorId">The identifier of the hosted-behavior relationship receiving the event.</param>
+    /// <param name="eventNames">The event names forwarded by this binding, in ordinal-sorted order.</param>
+    /// <returns>A task that completes when this callback has finished; it follows the corresponding <see cref="HostedBehaviorAddedAsync"/> callback.</returns>
+    Task HostedBehaviorEventAddedAsync<TEvent>(string hostedBehaviorEventId, string stateMachineName, int stateMachineVersion, string hostedBehaviorId, IReadOnlyList<string> eventNames);
 }

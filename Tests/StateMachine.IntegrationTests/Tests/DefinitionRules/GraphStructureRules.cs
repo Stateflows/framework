@@ -184,7 +184,6 @@ public class GraphStructureRules
             model.Graph.Vertices.Remove(owner.Name);
             parent.Vertices.Add(owner.Name, owner);
             owner.ParentRegion = owner.HistoricalRegion = parent;
-            parent.History = owner;
         }
         model.Add("child", parent: model.Region(owner));
         model.Reject();

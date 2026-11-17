@@ -7,7 +7,7 @@ namespace StateMachine.IntegrationTests.Tests
     public class SMVisitor : StateMachineVisitor
     {
         public List<Type> VertexTypes { get; set; }
-        public override async Task VertexTypeAddedAsync<TVertex>(string stateMachineName, int stateMachineVersion, string vertexName)
+        public override async Task VertexTypeAddedAsync<TVertex>(string vertexName, string stateMachineName, int stateMachineVersion)
         {
             VertexTypes.Add(typeof(TVertex));
         }

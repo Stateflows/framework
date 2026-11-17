@@ -10,9 +10,12 @@ namespace Stateflows.Activities
         public static async Task<bool> IterateOverAsync(this Logic<ActivityPredicateAsync> action, BaseContext context)
         {
             var hit = true;
-            foreach (var handler in action.Actions)
+            var registrations = context.Context.Executor.Graph.OperationRegistrations[action];
+            for (var i = 0; i < action.Actions.Count; i++)
             {
-                if (!await handler(context))
+                var handler = action.Actions[i];
+                if (!await context.Context.Executor.Inspector.OnPredicateAsync(
+                    new PredicateObservationContext(context, registrations[i]), () => handler(context)))
                 {
                     hit = false;
                     break;

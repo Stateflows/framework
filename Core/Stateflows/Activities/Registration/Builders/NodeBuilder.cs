@@ -72,7 +72,6 @@ namespace Stateflows.Activities.Registration
         {
             var edge = AddFlowInternal<ControlToken>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));
             
-            Graph.VisitingTasks.Add(v => v.ControlFlowAddedAsync(Graph.Name, Graph.Version, Node.Name, edge.IsCrossScope ? edge.TargetName : targetNodeName, false));
             
             return this;
         }
@@ -81,7 +80,6 @@ namespace Stateflows.Activities.Registration
         {
             var edge = AddFlowInternal<ControlToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseControlFlowBuilder));
             
-            Graph.VisitingTasks.Add(v => v.ControlFlowAddedAsync(Graph.Name, Graph.Version, Node.Name, edge.IsCrossScope ? edge.TargetName : targetNodeName, true));
             
             return this;
         }
@@ -90,7 +88,6 @@ namespace Stateflows.Activities.Registration
         {
             var edge = AddFlowInternal<TToken>(targetNodeName, false, buildAction);
             
-            Graph.VisitingTasks.Add(v => v.FlowAddedAsync<TToken>(Graph.Name, Graph.Version, Node.Name, edge.IsCrossScope ? edge.TargetName : targetNodeName, false));
             
             return this;
         }
@@ -99,7 +96,6 @@ namespace Stateflows.Activities.Registration
         {
             var edge = AddFlowInternal<TToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseObjectFlowBuilder<TToken>));
             
-            Graph.VisitingTasks.Add(v => v.FlowAddedAsync<TToken>(Graph.Name, Graph.Version, Node.Name, edge.IsCrossScope ? edge.TargetName : targetNodeName, true));
             
             return this;
         }

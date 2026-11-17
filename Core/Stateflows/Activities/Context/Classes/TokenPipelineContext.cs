@@ -14,6 +14,7 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         internal readonly Edge Edge;
+        internal FlowOperationRegistration Operation { get; set; }
 
         public readonly TokenHolder Token;
 

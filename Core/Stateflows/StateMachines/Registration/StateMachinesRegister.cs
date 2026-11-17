@@ -32,9 +32,6 @@ namespace Stateflows.StateMachines.Registration
 
         private readonly Dictionary<string, int> CurrentVersions = [];
 
-        private readonly MethodInfo StateMachineTypeAddedAsyncMethod =
-            typeof(IStateMachineVisitor).GetMethod(nameof(IStateMachineVisitor.StateMachineTypeAddedAsync));
-
         public BehaviorClass? OwnerClass { get; set; }
         public BehaviorClass? ParentClass { get; set; }
 
@@ -96,22 +93,8 @@ namespace Stateflows.StateMachines.Registration
 
             var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass);
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
-            
-            builder.Graph.VisitingTasks.Add(v =>
-            {
-                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                    .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
-
-                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
-            });
-
             buildAction(builder);
             builder.Graph.Build();
-
-            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version));
 
             StateMachines.Add(key, builder.Graph);
 
@@ -141,28 +124,9 @@ namespace Stateflows.StateMachines.Registration
                     }
             };
             
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
-            
-            builder.Graph.VisitingTasks.Add(v =>
-            {
-                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                    .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
-
-                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
-            });
-            
             RegisterStateMachine(stateMachineType, builder);
             buildAction?.Invoke(new StateMachineUtilsBuilder(builder.Graph));
             builder.Graph.Build();
-
-            var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
-
-            builder.Graph.VisitingTasks.AddRange([
-                v => v.StateMachineAddedAsync(stateMachineName, version),
-                v => (Task)method.Invoke(v, [ stateMachineName, version ])
-            ]);
 
             StateMachines.Add(key, builder.Graph);
 
@@ -296,11 +260,11 @@ namespace Stateflows.StateMachines.Registration
             var tasks = StateMachines
                 .Where((item, _) => !item.Key.EndsWith(".current") && item.Value.ParentClass is null)
                 .Select(item => item.Value)
-                .SelectMany(graph => graph.VisitingTasks);
+                .Select(graph => graph);
 
             foreach (var task in tasks)
             {
-                await task(visitor);
+                await task.VisitAsync(visitor);
             }
         }
 
@@ -309,11 +273,11 @@ namespace Stateflows.StateMachines.Registration
             var tasks = StateMachines
                 .Where(item => item.Key == $"{stateMachineName}.{version}")
                 .Select(item => item.Value)
-                .SelectMany(graph => graph.VisitingTasks);
+                .Select(graph => graph);
 
             foreach (var task in tasks)
             {
-                await task(visitor);
+                await task.VisitAsync(visitor);
             }
         }
     }

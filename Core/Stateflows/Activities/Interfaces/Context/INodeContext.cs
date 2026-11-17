@@ -6,6 +6,9 @@ namespace Stateflows.Activities
     /// <summary>Describes an activity node and the flows connected to it.</summary>
     public interface INodeContext
     {
+        /// <summary>The definition node identity, when supplied by the execution provider.</summary>
+        string? Identifier => null;
+
         /// <summary>
         /// Name of the node
         /// </summary>

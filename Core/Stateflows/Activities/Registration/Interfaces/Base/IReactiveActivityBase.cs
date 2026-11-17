@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces.Internal;
@@ -56,7 +56,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             );
 
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.NodeTypeAddedAsync<TStructuredActivity>(graph.Name, graph.Version, structuredActivityName));
+            graph.AllNamedNodes[structuredActivityName].ImplementationType = typeof(TStructuredActivity);
+        graph.AllNamedNodes[structuredActivityName].OperationTypes[(ActivityOperationKind.Execute, graph.AllNamedNodes[structuredActivityName].Action.Actions.Count - 1)] = typeof(TStructuredActivity);
 
             return result;
         }
@@ -126,7 +127,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             );
 
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.NodeTypeAddedAsync<TParallelActivity>(graph.Name, graph.Version, structuredActivityName));
+            graph.AllNamedNodes[structuredActivityName].ImplementationType = typeof(TParallelActivity);
+        graph.AllNamedNodes[structuredActivityName].OperationTypes[(ActivityOperationKind.Execute, graph.AllNamedNodes[structuredActivityName].Action.Actions.Count - 1)] = typeof(TParallelActivity);
 
             return result;
         }
@@ -196,7 +198,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             );
 
         var graph = ((IGraphBuilder)this).Graph;
-        graph.VisitingTasks.Add(visitor => visitor.NodeTypeAddedAsync<TIterativeActivity>(graph.Name, graph.Version, structuredActivityName));
+        graph.AllNamedNodes[structuredActivityName].ImplementationType = typeof(TIterativeActivity);
+        graph.AllNamedNodes[structuredActivityName].OperationTypes[(ActivityOperationKind.Execute, graph.AllNamedNodes[structuredActivityName].Action.Actions.Count - 1)] = typeof(TIterativeActivity);
 
         return result;
     }

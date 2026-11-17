@@ -54,7 +54,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             );
 
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.VertexTypeAddedAsync<TState>(graph.Name, graph.Version, stateName));
+            graph.AllVertices[stateName].ImplementationType = typeof(TState);
             
             return result;
         }
@@ -104,7 +104,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             );
             
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.VertexTypeAddedAsync<TCompositeState>(graph.Name, graph.Version, compositeStateName));
+            graph.AllVertices[compositeStateName].ImplementationType = typeof(TCompositeState);
             
             return result;
         }
@@ -153,7 +153,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             );
 
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.VertexTypeAddedAsync<TOrthogonalState>(graph.Name, graph.Version, orthogonalStateName));
+            graph.AllVertices[orthogonalStateName].ImplementationType = typeof(TOrthogonalState);
             
             return result;
         }

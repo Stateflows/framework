@@ -1,6 +1,7 @@
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 using Stateflows.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ namespace Stateflows;
 
 public class GrainBehavior :
     IBehavior,
+    IEnvelopeRequestBehavior,
     IAsyncDisposable,
     IBehaviorGrainObserver,
     IUnwatcher,
@@ -196,31 +198,49 @@ public class GrainBehavior :
     public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
     {
         var eventHolder = @event.ToTypedEventHolder(headers);
-        if (eventHolder.Headers.Values.Any(header => header is JoinTransaction))
-            Stateflows.Storage.BehaviorTransactionScope.Joining();
-        OrleansEventHolder envelope = eventHolder;
-        envelope.IsRequest = false;
-        var result = await ProcessAsync(envelope,
-            eventHolder.Headers.Values.Any(header => header is JoinTransaction),
-            envelope.Headers.ContainsKey(nameof(Stateflows.Common.Stream)));
-        return new SendResult(result.Status, result.Validation);
+        var observer = BehaviorDispatchAmbient.Current;
+        return observer == null ? await DispatchAsync() : await observer.SendAsync(Id, eventHolder, DispatchAsync);
+
+        async Task<SendResult> DispatchAsync()
+        {
+            if (eventHolder.Headers.Values.Any(header => header is JoinTransaction))
+                Stateflows.Storage.BehaviorTransactionScope.Joining();
+            OrleansEventHolder envelope = eventHolder;
+            envelope.IsRequest = false;
+            var result = await ProcessAsync(envelope,
+                eventHolder.Headers.Values.Any(header => header is JoinTransaction),
+                envelope.Headers.ContainsKey(nameof(Stateflows.Common.Stream)));
+            return new SendResult(result.Status, result.Validation);
+        }
     }
 
     public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IDictionary<string, EventHeader>? headers = null)
     {
-        var h = (OrleansEventHolder)request.ToTypedEventHolder(headers);
-        if (((EventHolder)h).Headers.Values.Any(header => header is JoinTransaction))
-            Stateflows.Storage.BehaviorTransactionScope.Joining();
-        h.IsRequest = true;
-        try
+        var eventHolder = request.ToTypedEventHolder(headers);
+        return await RequestEnvelopeAsync<TResponseEvent>(eventHolder);
+    }
+
+    public async Task<RequestResult<TResponseEvent>> RequestEnvelopeAsync<TResponseEvent>(EventHolder eventHolder)
+    {
+        var observer = BehaviorDispatchAmbient.Current;
+        return observer == null ? await DispatchAsync() : await observer.RequestAsync(Id, eventHolder, DispatchAsync);
+
+        async Task<RequestResult<TResponseEvent>> DispatchAsync()
         {
-            var result = await ProcessAsync(h, ((EventHolder)h).Headers.Values.Any(header => header is JoinTransaction));
-            return new RequestResult<TResponseEvent>((RequestResult)result);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
+            var h = (OrleansEventHolder)eventHolder;
+            if (((EventHolder)h).Headers.Values.Any(header => header is JoinTransaction))
+                Stateflows.Storage.BehaviorTransactionScope.Joining();
+            h.IsRequest = true;
+            try
+            {
+                var result = await ProcessAsync(h, ((EventHolder)h).Headers.Values.Any(header => header is JoinTransaction));
+                return new RequestResult<TResponseEvent>((RequestResult)result);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 

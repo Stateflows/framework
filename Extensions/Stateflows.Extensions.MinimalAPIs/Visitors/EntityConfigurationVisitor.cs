@@ -5,14 +5,14 @@ internal class EntityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
 {
     private BehaviorClass? OwnerClass = null;
 
-    public override Task EntityAddingAsync<TTemplate>(string entityName, int entityVersion,
-        BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    public override Task EntityAddingAsync<TTemplate>(string id, string entityName, int entityVersion,
+        BehaviorClass? ownerClass, BehaviorClass? parentClass, bool hasDefaultInstance)
     {
         OwnerClass = ownerClass;
         return Task.CompletedTask;
     }
 
-    public override Task EntityAddedAsync<TTemplate>(string entityName, int entityVersion)
+    public override Task EntityAddedAsync<TTemplate>(string id, string entityName, int entityVersion)
     {
         if (OwnerClass != null)
         {

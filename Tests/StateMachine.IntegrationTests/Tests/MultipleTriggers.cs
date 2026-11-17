@@ -8,6 +8,15 @@ namespace StateMachine.IntegrationTests.Tests
     [TestClass]
     public class OneOfTriggers : StateflowsTestClass
     {
+        public sealed class MappedDeferrals : IStateMachine
+        {
+            public static void Build(IStateMachineBuilder builder) => builder
+                .AddInitialState("initial", state => state
+                    .AddDeferredEvent<OneOf<OtherEvent, SomeEvent>>(deferral => deferral.AddGuard(_ => true))
+                    .AddTransition<OneOf<OtherEvent, SomeEvent>>("target"))
+                .AddState("target");
+        }
+
         [TestInitialize]
         public override void Initialize()
             => base.Initialize();
@@ -20,6 +29,9 @@ namespace StateMachine.IntegrationTests.Tests
         {
             builder
                 .AddStateMachines(b => b
+                    .AddStateMachine("mapped-override", machine => machine
+                        .UseStateMachine<MappedDeferrals>(overrides => overrides.UseState("initial", state => state
+                            .UseDeferredEvent<OneOf<OtherEvent, SomeEvent>>(deferral => deferral.AddGuard(_ => false)))))
                     .AddStateMachine("simple", b => b
                         .AddInitialState("state1", b => b
                             .AddTransition<OneOf<OtherEvent, SomeEvent>>("state2", b => b
@@ -53,6 +65,17 @@ namespace StateMachine.IntegrationTests.Tests
                 )
                 .AddOneOf()
                 ;
+        }
+
+        [TestMethod]
+        public async Task MappedDeferralOverridesUseTheSharedDeclaredRegistration()
+        {
+            Assert.IsTrue(StateMachineLocator.TryLocateStateMachine(new StateMachineId("mapped-override", "other"), out var other));
+            Assert.IsTrue(StateMachineLocator.TryLocateStateMachine(new StateMachineId("mapped-override", "some"), out var some));
+            Assert.AreEqual(EventStatus.Consumed, (await other.SendAsync(new OtherEvent())).Status);
+            Assert.AreEqual(EventStatus.Consumed, (await some.SendAsync(new SomeEvent())).Status);
+            Assert.AreEqual("target", (await other.GetStatusAsync()).Response.CurrentStates.Value);
+            Assert.AreEqual("target", (await some.GetStatusAsync()).Response.CurrentStates.Value);
         }
 
         [TestMethod]

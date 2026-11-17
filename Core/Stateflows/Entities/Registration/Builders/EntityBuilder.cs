@@ -63,11 +63,6 @@ namespace Stateflows.Entities.Registration.Builders
                 }
             };
 
-            Registration.VisitingTasks.Add(async visitor =>
-            {
-                await visitor.InitializerAddedAsync<TTemplate, TInitializationEvent>(Registration.Name, Registration.Version);
-            });
-
             return this;
         }
 
@@ -87,19 +82,6 @@ namespace Stateflows.Entities.Registration.Builders
             
             buildAction?.Invoke(new FieldBuilder<TTemplate, TField>(fieldModel));
             
-            // Access may be configured after the field is added (attributes, FieldBuilder), so it is read at visit time.
-            Registration.VisitingTasks.Add(async visitor =>
-            {
-                await visitor.FieldAddedAsync<TTemplate, TField>(
-                    Registration.Name,
-                    Registration.Version,
-                    fieldName,
-                    fieldModel.HasDefaultValue && fieldModel.DefaultValue is TField defaultValue ? defaultValue : default!,
-                    fieldModel.IsComputed,
-                    fieldModel.Access
-                );
-            });
-
             return this;
         }
 
@@ -130,11 +112,6 @@ namespace Stateflows.Entities.Registration.Builders
                 }
             };
             
-            Registration.VisitingTasks.Add(async visitor =>
-            {
-                await visitor.MutationAddedAsync<TTemplate, TMutationEvent>(Registration.Name, Registration.Version);
-            });
-            
             return this;
         }
 
@@ -158,11 +135,6 @@ namespace Stateflows.Entities.Registration.Builders
                 },
                 PublishScope = publishScope
             };
-            
-            Registration.VisitingTasks.Add(async visitor =>
-            {
-                await visitor.ProjectionAddedAsync<TTemplate, TProjectionTemplate>(Registration.Name, Registration.Version, publishScope);
-            });
             
             return this;
         }

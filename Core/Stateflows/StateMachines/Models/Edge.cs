@@ -19,20 +19,20 @@ namespace Stateflows.StateMachines.Models
     internal class Edge
     {
         internal string? SourcePath { get; set; }
-        internal IReadOnlyList<Type>? DeclaredTriggerTypes { get; set; }
 
         public string OriginStateMachineName { get; set; } = null;
         
         public string Name { get; set; }
 
         public string Identifier { get; set; }
+        internal Type? ImplementationType { get; set; }
 
         public string Signature { get; set; }
 
         public Graph Graph { get; set; }
 
         public Type TriggerType { get; set; }
-        public string StructuralEventName { get; set; }
+        public IReadOnlyList<string>? StructuralEventNames { get; set; }
 
         private bool polymorphicTriggers = false;
         private bool polymorphicTriggersSet = false;
@@ -66,7 +66,6 @@ namespace Stateflows.StateMachines.Models
 
         public bool IsLocal { get; set; } = true;
 
-        public Func<IStateMachineVisitor, Task>? VisitingTask { get; set; } = null;
 
         public Logic<StateMachinePredicateAsync> Guards { get; } = new(Constants.Guard);
 
@@ -79,53 +78,10 @@ namespace Stateflows.StateMachines.Models
 
         public Dictionary<string, object> Metadata { get; } = [];
 
-        public IEnumerable<Edge> GetActualEdges()
+        public IEnumerable<TransitionRoute> GetRoutes()
             => Target?.Type == VertexType.Junction
-                ? Target.Edges.Values.Select(MergeWith).ToArray()
-                : new Edge[] { this };
-
-        private Edge MergeWith(Edge edge)
-        {
-            var actualTriggerTypes = ActualTriggerTypes.ToHashSet();
-
-            var triggerDescriptor = edge.IsElse
-                ? $"{Trigger}|else"
-                : Trigger;
-
-            var identifier = edge.Target != null
-                ? $"{Source.Identifier}-{triggerDescriptor}->{edge.Target.Identifier}"
-                : $"{Source.Identifier}-{triggerDescriptor}";
-
-            var result = new Edge()
-            {
-                Graph = Graph,
-                Trigger = Trigger,
-                TriggerType = TriggerType,
-                StructuralEventName = StructuralEventName,
-                DeclaredTriggerTypes = DeclaredTriggerTypes,
-                SourcePath = SourcePath,
-                ActualTriggerTypes = actualTriggerTypes,
-                TimeTriggerTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet(),
-                RecurringTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet(),
-                ActualTriggers = ActualTriggers.ToHashSet(),
-                Type = Type,
-                IsElse = edge.IsElse,
-                SourceName = SourceName,
-                Source = Source,
-                TargetName = edge.TargetName,
-                Target = edge.Target,
-                Name = $"{SourceName}-{triggerDescriptor}->{edge.TargetName}",
-                Identifier = identifier,
-                Signature = $"{Source.Identifier}-{Trigger}->",
-            };
-
-            result.Guards.Actions.AddRange(Guards.Actions);
-            result.Guards.Actions.AddRange(edge.Guards.Actions);
-
-            result.Effects.Actions.AddRange(Effects.Actions);
-            result.Effects.Actions.AddRange(edge.Effects.Actions);
-
-            return result;
-        }
+                ? Target.OrderedEdges.SelectMany(edge => edge.GetRoutes())
+                    .Select(route => new TransitionRoute(Array.AsReadOnly(new[] { this }.Concat(route.Segments).ToArray())))
+                : new[] { new TransitionRoute(Array.AsReadOnly(new[] { this })) };
     }
 }
