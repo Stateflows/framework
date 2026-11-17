@@ -32,6 +32,8 @@ namespace Stateflows.StateMachines.Models
             if (StateMachineType != null && (!StateMachineType.IsClass ||
                 StateMachineType.ContainsGenericParameters || !typeof(IStateMachine).IsAssignableFrom(StateMachineType)))
                 Error("SM-042", rootPath, "The CLR implementation must be a closed class implementing IStateMachine.");
+            foreach (var name in PayloadInitializerDeclarations.Values.SelectMany(declaration => declaration.Names))
+                StateflowsBuilder.Payloads.GetPayload(name);
 
             var vertices = new HashSet<Vertex>();
             var regions = new HashSet<Region>();

@@ -311,6 +311,9 @@ namespace Stateflows.StateMachines.Engine
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
                     ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.BehaviorPayloads)
                     : [])
+                .Concat(BehaviorStatus == BehaviorStatus.NotInitialized
+                    ? Graph.PayloadInitializerDeclarations.Values.SelectMany(declaration => declaration.Names)
+                    : [])
                 .Distinct()
                 .ToArray();
 
@@ -326,7 +329,7 @@ namespace Stateflows.StateMachines.Engine
                         .Distinct()
                         .ToArray(),
                     
-                    BehaviorStatus.NotInitialized => Graph.InitializerTypes.Any()
+                    BehaviorStatus.NotInitialized => Graph.Initializers.Any()
                         ? Graph.InitializerTypes.SelectMany(Graph.StateflowsBuilder.TypeMapper.GetMappedTypes).Distinct().ToArray()
                         : [ typeof(Initialize) ],
                     

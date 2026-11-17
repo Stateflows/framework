@@ -75,6 +75,7 @@ namespace Stateflows.StateMachines.Models
         public readonly Dictionary<string, Logic<StateMachinePredicateAsync>> Initializers = new Dictionary<string, Logic<StateMachinePredicateAsync>>();
         public readonly List<Type> InitializerTypes = new List<Type>();
         internal Dictionary<Type, Logic<StateMachinePredicateAsync>> InitializerDeclarations { get; } = [];
+        internal Dictionary<string, PayloadInitializerDeclaration> PayloadInitializerDeclarations { get; } = new(StringComparer.Ordinal);
         public Logic<StateMachinePredicateAsync> DefaultInitializer;
 
         public Logic<StateMachineActionAsync> Finalize { get; } =

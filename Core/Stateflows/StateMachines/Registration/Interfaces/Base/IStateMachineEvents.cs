@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Payloads;
+using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 using Stateflows.StateMachines.Models;
@@ -63,6 +66,55 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(typeof(TInitializer));
             return result;
         }
+
+        /// <summary>Registers a predicate that accepts or rejects initialization by any of the given payload events.</summary>
+        /// <param name="eventNames">Names of registered payloads accepted as initialization events.</param>
+        /// <param name="actionAsync">Asynchronous predicate receiving the initialization context; its
+        /// <c>InitializationEvent</c> is the received <see cref="Payload" />. Return true to accept initialization.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddInitializer(IReadOnlyList<string> eventNames, Func<IStateMachineInitializationContext<Payload>, Task<bool>> actionAsync)
+        {
+            StateMachineBuilder.AddPayloadInitializer(((IGraphBuilder)this).Graph, eventNames, actionAsync);
+            return (TReturn)this;
+        }
+
+        /// <summary>Registers a predicate that accepts or rejects initialization by the given payload event.</summary>
+        /// <param name="eventName">Name of a registered payload accepted as initialization event.</param>
+        /// <param name="actionAsync">Asynchronous predicate receiving the initialization context.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddInitializer(string eventName, Func<IStateMachineInitializationContext<Payload>, Task<bool>> actionAsync)
+            => AddInitializer([eventName], actionAsync);
+
+        /// <summary>Registers an initializer class for any of the given payload events.</summary>
+        /// <typeparam name="TInitializer">Initialization predicate implementing <see cref="IInitializer&lt;Payload&gt;" />.</typeparam>
+        /// <param name="eventNames">Names of registered payloads accepted as initialization events.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddInitializer<TInitializer>(IReadOnlyList<string> eventNames)
+            where TInitializer : class, IInitializer<Payload>
+        {
+            var graph = ((IGraphBuilder)this).Graph;
+            StateMachineBuilder.AddPayloadInitializer(graph, eventNames,
+                async c => await (await ((BaseContext)c).Context.Executor.GetInitializerAsync<TInitializer, Payload>(c)).OnInitializeAsync(c.InitializationEvent));
+            var logic = graph.PayloadInitializerDeclarations[PayloadNameSet.Key(eventNames)].Logic;
+            logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(typeof(TInitializer));
+            return (TReturn)this;
+        }
+
+        /// <summary>Registers an initializer class for the given payload event.</summary>
+        /// <typeparam name="TInitializer">Initialization predicate implementing <see cref="IInitializer&lt;Payload&gt;" />.</typeparam>
+        /// <param name="eventName">Name of a registered payload accepted as initialization event.</param>
+        /// <returns>The current machine builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddInitializer<TInitializer>(string eventName)
+            where TInitializer : class, IInitializer<Payload>
+            => AddInitializer<TInitializer>([eventName]);
 
         /// <summary>Registers a handler executed when the State Machine finalizes.</summary>
         /// <param name="actionAsync">Asynchronous handler receiving the machine action context during finalization.</param>
