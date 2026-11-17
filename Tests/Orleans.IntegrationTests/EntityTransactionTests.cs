@@ -115,16 +115,19 @@ public sealed class EntityTransactionTests
             finishSource.TrySetResult();
             var result = await processing.WaitAsync(TimeSpan.FromSeconds(15));
             Assert.AreEqual(fail ? EventStatus.Failed : EventStatus.Consumed, result.Status);
-            var operation = observation.Entities.Single();
+            var operationKind = mutate ? EntityOperationKind.Mutation : EntityOperationKind.FieldWrite;
+            var operation = observation.Entities.Single(item => item.Context.Kind == operationKind);
             Assert.AreEqual(join, operation.Context.JoinTransaction);
             Assert.AreEqual(true, operation.Result);
-            Assert.AreEqual(mutate ? EntityOperationKind.Mutation : EntityOperationKind.FieldWrite, operation.Context.Kind);
             var entityDefinition = $"entity:entity-transaction.entity.{Entity<ICounter>.Name}";
             Assert.AreEqual(mutate
                 ? $"{entityDefinition}/mutation:{Event.GetName(typeof(Add))}"
                 : $"{entityDefinition}/field:{nameof(ICounter.Count)}",
                 operation.Context.DefinitionElementId);
-            var call = observation.Calls.Single(item => item.ParentOperationId == operation.Context.OperationId);
+            var operationEvent = mutate ? typeof(Add) : typeof(FieldState<int>);
+            var call = observation.Calls.Single(item =>
+                item.ParentOperationId == operation.Context.OperationId &&
+                item.Event.Name == Event.GetName(operationEvent));
             Assert.AreEqual(operation.Context.Source, call.Source);
             Assert.AreEqual(operation.Context.Target, call.Target);
 
