@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows;
+using Stateflows.Activities.Context.Classes;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Enums;
@@ -8,7 +9,6 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Payloads;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
-using ActivityStream = Stateflows.Activities.Streams.Stream;
 
 namespace Activity.IntegrationTests.Tests;
 
@@ -16,7 +16,7 @@ namespace Activity.IntegrationTests.Tests;
 public sealed class EntityFrameworkPayloadTokenPersistence
 {
     [TestMethod]
-    public async Task PersistentPayloadFlowQueueRoundTripsThroughEntityFrameworkStorage()
+    public async Task PersistentPayloadFlowQueueRestoresFromEntityFrameworkStorage()
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -34,20 +34,18 @@ public sealed class EntityFrameworkPayloadTokenPersistence
             Payload = payloadFactory.Create("queued-payload", payload => payload.Set("value", 42)),
             IsStreamed = true
         };
-        var flow = new ActivityStream { EdgeIdentifier = "payload-flow" };
-        flow.Consume([token], isPersistent: true);
-
         var id = new BehaviorId(BehaviorType.Activity, "payload-persistence", Guid.NewGuid().ToString("N"));
         var context = new StateflowsContext(id);
-        context.Values["Activity.PersistentPayloadFlow"] = flow;
+        var threadId = Guid.NewGuid();
+        var root = new RootContext(context);
+        var flow = root.GetStream("payload-flow", threadId);
+        flow.Consume([token], isPersistent: true);
 
         var storage = provider.GetRequiredService<IStateflowsStorage>();
         await storage.DehydrateAsync(context);
         var restored = await storage.HydrateAsync(id);
 
-        Assert.IsTrue(restored.Values.TryGetValue("Activity.PersistentPayloadFlow", out var value));
-        Assert.IsInstanceOfType<ActivityStream>(value);
-        var restoredFlow = (ActivityStream)value;
+        var restoredFlow = new RootContext(restored).GetStream("payload-flow", threadId);
         Assert.IsTrue(restoredFlow.IsPersistent);
         var restoredToken = restoredFlow.Tokens.Single();
         Assert.IsTrue(restoredToken.IsStreamed);
