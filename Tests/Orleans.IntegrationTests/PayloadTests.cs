@@ -69,6 +69,14 @@ public sealed partial class BehaviorNotificationTests
                 Assert.AreEqual("structural-query", restored.Name);
                 Assert.AreEqual(7, ((Payload)restored.BoxedPayload).Get<int>("value"));
 
+                var tokenTransfer = new TokensInput()
+                    .Add<Payload>(request)
+                    .Add(42);
+                OrleansEventHolder wireTransfer = tokenTransfer.ToTypedEventHolder();
+                var restoredTransfer = (TokensInput)((EventHolder)wireTransfer).BoxedPayload;
+                Assert.AreEqual("structural-query", ((Payload)restoredTransfer.Tokens[0].BoxedPayload).Name);
+                Assert.AreEqual(42, restoredTransfer.Tokens[1].BoxedPayload);
+
                 var response = await behavior.RequestAsync(request);
                 Assert.AreEqual(EventStatus.Consumed, response.Status);
                 Assert.AreEqual("structural-response", response.Response.Name);

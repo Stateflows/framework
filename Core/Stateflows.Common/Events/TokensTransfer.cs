@@ -7,6 +7,12 @@ namespace Stateflows.Common;
 /// <summary>Adds token payloads to the input token set of a behavior.</summary>
 public interface ITokensInput
 {
+    /// <summary>Adds a payload token identified by its registered name.</summary>
+    ITokensInput Add(Payload payload);
+
+    /// <summary>Adds payload tokens identified by their registered names.</summary>
+    ITokensInput AddRange(params Payload[] payloads);
+
     /// <summary>Adds a token payload.</summary>
     /// <typeparam name="TToken">The token type.</typeparam>
     /// <param name="token">The token to add.</param>
@@ -26,6 +32,12 @@ public interface ITokensOutput
     /// <typeparam name="TToken">The token type to retrieve.</typeparam>
     /// <returns>Matching token payloads.</returns>
     IEnumerable<TToken> GetAllOfType<TToken>();
+
+    /// <summary>Gets output payload tokens with the specified name.</summary>
+    IEnumerable<Payload> GetPayloadTokens(string name);
+
+    /// <summary>Gets output payload tokens whose names are in the specified set.</summary>
+    IEnumerable<Payload> GetPayloadTokens(IReadOnlyList<string> names);
 }
 
 /// <summary>Reads output tokens of a single requested type.</summary>
@@ -54,6 +66,23 @@ public class TokensOutputEvent : TokensTransferEvent;
 /// <summary>Request for inserting token payloads of any type into a behavior.</summary>
 public sealed class TokensInput : TokensInputEvent, ITokensInput, IRequest<TokensOutput>
 {
+    ITokensInput ITokensInput.Add(Payload payload) => Add(payload);
+    ITokensInput ITokensInput.AddRange(params Payload[] payloads) => AddRange(payloads);
+
+    /// <summary>Adds a payload token to this input request.</summary>
+    public TokensInput Add(Payload payload)
+    {
+        Tokens.Add(new TokenHolder<Payload> { Payload = payload });
+        return this;
+    }
+
+    /// <summary>Adds payload tokens to this input request.</summary>
+    public TokensInput AddRange(params Payload[] payloads)
+    {
+        Tokens.AddRange(payloads.Select(payload => new TokenHolder<Payload> { Payload = payload }));
+        return this;
+    }
+
     ITokensInput ITokensInput.Add<TToken>(TToken token)
         => Add(token);
 
@@ -96,6 +125,16 @@ public sealed class TokensOutput : TokensOutputEvent, ITokensOutput
         => Tokens
             .Where(holder => typeof(TToken).IsAssignableFrom(holder.ActualPayloadType))
             .Select(holder => (TToken)holder.BoxedPayload);
+
+    /// <summary>Gets output payload tokens with the specified name.</summary>
+    public IEnumerable<Payload> GetPayloadTokens(string name)
+        => GetPayloadTokens([name]);
+
+    /// <summary>Gets output payload tokens whose names are in the specified set.</summary>
+    public IEnumerable<Payload> GetPayloadTokens(IReadOnlyList<string> names)
+        => Tokens
+            .Where(holder => holder.BoxedPayload is Payload payload && names.Contains(payload.Name))
+            .Select(holder => (Payload)holder.BoxedPayload);
 }
 
 /// <summary>Request for inserting tokens of a single type into a behavior.</summary>

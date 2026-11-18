@@ -3,6 +3,7 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
+using Stateflows.Common.Utilities;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Payloads;
 using StateMachine.IntegrationTests.Utils;
@@ -73,6 +74,22 @@ public sealed class PayloadTokenInjection : StateflowsTestClass
 
         var output = await activity.GetOutputAsync(["first", "second"]);
         CollectionAssert.AreEquivalent(new[] { "first", "second" }, output.Select(token => token.Name).ToArray());
+    }
+
+    [TestMethod]
+    public void MixedTokenTransferRoundTripsThroughPolymorphicJson()
+    {
+        var original = new TokensInput()
+            .Add<Payload>(payloadFactory.Create("first", _ => { }))
+            .Add(42);
+
+        var json = StateflowsJsonConverter.SerializePolymorphicObject(original);
+        var restored = StateflowsJsonConverter.DeserializeObject<TokensInput>(json)!;
+
+        Assert.HasCount(2, restored.Tokens);
+        var payloadToken = restored.Tokens.OfType<TokenHolder<Payload>>().Single();
+        Assert.AreEqual("first", payloadToken.Payload.Name);
+        Assert.AreEqual(42, restored.Tokens.OfType<TokenHolder<int>>().Single().Payload);
     }
 
     [TestMethod]
