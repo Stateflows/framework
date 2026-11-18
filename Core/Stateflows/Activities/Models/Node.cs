@@ -51,6 +51,10 @@ namespace Stateflows.Activities.Models
         public IReadOnlyList<string>? TokenNames { get; set; }
         /// <summary>Token key of a decision (its <see cref="EventType"/> or <see cref="TokenNames"/>).</summary>
         public TokenKey? SelectionKey => EventType == null ? null : TokenKey.Of(EventType, TokenNames);
+        /// <summary>Payload names that outgoing flows of a payload pin or payload decision inherit (section 4.4.2).</summary>
+        public IReadOnlyList<string>? BoundTokenNames => PinTokenType != null
+            ? PinTokenNames
+            : Type == NodeType.Decision ? TokenNames : null;
         public IReadOnlyList<string> PayloadNames { get; set; }
         internal string[] EffectiveEventNames { get; set; } = [];
 

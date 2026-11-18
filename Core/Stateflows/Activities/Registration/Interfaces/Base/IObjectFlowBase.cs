@@ -1,4 +1,8 @@
-﻿using System.Diagnostics;
+using System.Collections.Generic;
+using System.Diagnostics;
+using Stateflows.Common;
+using Stateflows.Payloads;
+using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Extensions;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
@@ -82,6 +86,218 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             where TTargetNode : class, IActivityNode
             => AddFlow<TToken, TTransformedToken, TTransformationFlow>(ActivityNode<TTargetNode>.Name);
+
+        #region Payload flows
+        /// <summary>Adds an object flow carrying payload tokens with any of the given names.</summary>
+        /// <param name="tokenNames">Names of the payload tokens the flow takes from this node.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <param name="buildAction">Callback configuring guards and transformations of the flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow(IReadOnlyList<string> tokenNames, string targetNodeName, ObjectFlowBuildAction<Payload> buildAction = null)
+            => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => AddFlow(targetNodeName, buildAction));
+
+        /// <summary>Adds an object flow carrying payload tokens with the given name.</summary>
+        /// <param name="tokenName">Name of the payload tokens the flow takes from this node.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <param name="buildAction">Callback configuring guards and transformations of the flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow(string tokenName, string targetNodeName, ObjectFlowBuildAction<Payload> buildAction = null)
+            => AddFlow([tokenName], targetNodeName, buildAction);
+
+        /// <summary>Adds an object flow carrying payload tokens with any of the given names to the node registered
+        /// under the default name of <typeparamref name="TTargetNode"/>.</summary>
+        /// <typeparam name="TTargetNode">Target node type.</typeparam>
+        /// <param name="tokenNames">Names of the payload tokens the flow takes from this node.</param>
+        /// <param name="buildAction">Callback configuring guards and transformations of the flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTargetNode>(IReadOnlyList<string> tokenNames, ObjectFlowBuildAction<Payload> buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => AddFlow(tokenNames, ActivityNode<TTargetNode>.Name, buildAction);
+
+        /// <summary>Adds a class-based object flow carrying payload tokens with any of the given names.</summary>
+        /// <typeparam name="TFlow">Flow class.</typeparam>
+        /// <param name="tokenNames">Names of the payload tokens the flow takes from this node.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TFlow>(IReadOnlyList<string> tokenNames, string targetNodeName)
+            where TFlow : class, IFlow<Payload>
+            => AddFlow(tokenNames, targetNodeName, b => b.AddObjectFlowEvents<TFlow, Payload>());
+
+        /// <summary>Adds a class-based object flow carrying payload tokens with the given name.</summary>
+        /// <typeparam name="TFlow">Flow class.</typeparam>
+        /// <param name="tokenName">Name of the payload tokens the flow takes from this node.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TFlow>(string tokenName, string targetNodeName)
+            where TFlow : class, IFlow<Payload>
+            => AddFlow<TFlow>([tokenName], targetNodeName);
+
+        /// <summary>Adds a class-based object flow carrying payload tokens with any of the given names to the node
+        /// registered under the default name of <typeparamref name="TTargetNode"/>.</summary>
+        /// <typeparam name="TFlow">Flow class.</typeparam>
+        /// <typeparam name="TTargetNode">Target node type.</typeparam>
+        /// <param name="tokenNames">Names of the payload tokens the flow takes from this node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TFlow, TTargetNode>(IReadOnlyList<string> tokenNames)
+            where TFlow : class, IFlow<Payload>
+            where TTargetNode : class, IActivityNode
+            => AddFlow<TFlow>(tokenNames, ActivityNode<TTargetNode>.Name);
+
+        /// <summary>Adds a class-based object flow that transforms payload tokens with any of the given names to
+        /// <typeparamref name="TTransformedToken"/>.</summary>
+        /// <typeparam name="TTransformedToken">Token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="tokenNames">Names of the payload tokens the flow takes from this node.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTransformedToken, TTransformationFlow>(IReadOnlyList<string> tokenNames, string targetNodeName)
+            where TTransformationFlow : class, IFlowTransformation<Payload, TTransformedToken>
+            => AddFlow(tokenNames, targetNodeName, b => b.AddObjectTransformationFlowEvents<TTransformationFlow, Payload, TTransformedToken>());
+
+        /// <summary>Adds a class-based object flow that transforms payload tokens with the given name to
+        /// <typeparamref name="TTransformedToken"/>.</summary>
+        /// <typeparam name="TTransformedToken">Token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="tokenName">Name of the payload tokens the flow takes from this node.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTransformedToken, TTransformationFlow>(string tokenName, string targetNodeName)
+            where TTransformationFlow : class, IFlowTransformation<Payload, TTransformedToken>
+            => AddFlow<TTransformedToken, TTransformationFlow>([tokenName], targetNodeName);
+
+        /// <summary>Adds a class-based object flow that transforms payload tokens with any of the given names to
+        /// <typeparamref name="TTransformedToken"/>, targeting the node registered under the default name of
+        /// <typeparamref name="TTargetNode"/>.</summary>
+        /// <typeparam name="TTransformedToken">Token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <typeparam name="TTargetNode">Target node type.</typeparam>
+        /// <param name="tokenNames">Names of the payload tokens the flow takes from this node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTransformedToken, TTransformationFlow, TTargetNode>(IReadOnlyList<string> tokenNames)
+            where TTransformationFlow : class, IFlowTransformation<Payload, TTransformedToken>
+            where TTargetNode : class, IActivityNode
+            => AddFlow<TTransformedToken, TTransformationFlow>(tokenNames, ActivityNode<TTargetNode>.Name);
+
+        /// <summary>Adds a class-based object flow that transforms payload tokens with any of the given names to
+        /// payload tokens with any of the transformed names.</summary>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="tokenNames">Names of the payload tokens the flow takes from this node.</param>
+        /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTransformedToken, TTransformationFlow>(IReadOnlyList<string> tokenNames, IReadOnlyList<string> transformedNames, string targetNodeName)
+            where TTransformedToken : Payload
+            where TTransformationFlow : class, IFlowTransformation<Payload, TTransformedToken>
+        {
+            var names = PayloadNameSet.Validate(transformedNames, nameof(transformedNames));
+            return AddFlow(tokenNames, targetNodeName, b => PayloadFlowScope.With(names, nameof(transformedNames),
+                () => b.AddObjectTransformationFlowEvents<TTransformationFlow, Payload, TTransformedToken>()));
+        }
+
+        /// <summary>Adds a class-based object flow that transforms payload tokens with the given name to payload
+        /// tokens with the transformed name.</summary>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="tokenName">Name of the payload tokens the flow takes from this node.</param>
+        /// <param name="transformedName">Name of the payload tokens the transformation produces.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTransformedToken, TTransformationFlow>(string tokenName, string transformedName, string targetNodeName)
+            where TTransformedToken : Payload
+            where TTransformationFlow : class, IFlowTransformation<Payload, TTransformedToken>
+            => AddFlow<TTransformedToken, TTransformationFlow>([tokenName], [transformedName], targetNodeName);
+
+        /// <summary>Adds a class-based object flow that transforms payload tokens with any of the given names to
+        /// payload tokens with any of the transformed names, targeting the node registered under the default name of
+        /// <typeparamref name="TTargetNode"/>.</summary>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <typeparam name="TTargetNode">Target node type.</typeparam>
+        /// <param name="tokenNames">Names of the payload tokens the flow takes from this node.</param>
+        /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTransformedToken, TTransformationFlow, TTargetNode>(IReadOnlyList<string> tokenNames, IReadOnlyList<string> transformedNames)
+            where TTransformedToken : Payload
+            where TTransformationFlow : class, IFlowTransformation<Payload, TTransformedToken>
+            where TTargetNode : class, IActivityNode
+            => AddFlow<TTransformedToken, TTransformationFlow>(tokenNames, transformedNames, ActivityNode<TTargetNode>.Name);
+
+        /// <summary>Adds a class-based object flow that transforms <typeparamref name="TToken"/> tokens to payload
+        /// tokens with any of the transformed names.</summary>
+        /// <typeparam name="TToken">Token type the flow takes from this node.</typeparam>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TToken, TTransformedToken, TTransformationFlow>(IReadOnlyList<string> transformedNames, string targetNodeName)
+            where TTransformedToken : Payload
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+        {
+            var names = PayloadNameSet.Validate(transformedNames, nameof(transformedNames));
+            return AddFlow<TToken>(targetNodeName, b => PayloadFlowScope.With(names, nameof(transformedNames),
+                () => b.AddObjectTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>()));
+        }
+
+        /// <summary>Adds a class-based object flow that transforms <typeparamref name="TToken"/> tokens to payload
+        /// tokens with the transformed name.</summary>
+        /// <typeparam name="TToken">Token type the flow takes from this node.</typeparam>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="transformedName">Name of the payload tokens the transformation produces.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TToken, TTransformedToken, TTransformationFlow>(string transformedName, string targetNodeName)
+            where TTransformedToken : Payload
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+            => AddFlow<TToken, TTransformedToken, TTransformationFlow>([transformedName], targetNodeName);
+
+        /// <summary>Adds a class-based object flow that transforms <typeparamref name="TToken"/> tokens to payload
+        /// tokens with any of the transformed names, targeting the node registered under the default name of
+        /// <typeparamref name="TTargetNode"/>.</summary>
+        /// <typeparam name="TToken">Token type the flow takes from this node.</typeparam>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <typeparam name="TTargetNode">Target node type.</typeparam>
+        /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TToken, TTransformedToken, TTransformationFlow, TTargetNode>(IReadOnlyList<string> transformedNames)
+            where TTransformedToken : Payload
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+            where TTargetNode : class, IActivityNode
+            => AddFlow<TToken, TTransformedToken, TTransformationFlow>(transformedNames, ActivityNode<TTargetNode>.Name);
+        #endregion
     }
     
     /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
@@ -112,6 +328,40 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         TReturn UseFlow<TToken, TTargetNode>(ObjectFlowBuildAction<TToken> buildAction = null)
             where TTargetNode : class, IActivityNode
             => UseFlow(ActivityNode<TTargetNode>.Name, buildAction);
+
+        /// <summary>Overrides the inherited object flow to the target node whose payload token names equal the given
+        /// set (in any order).</summary>
+        /// <param name="tokenNames">Names of the payload tokens carried by the inherited flow.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <param name="buildAction">Callback adding guards and transformations to the inherited flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn UseFlow(IReadOnlyList<string> tokenNames, string targetNodeName, ObjectFlowBuildAction<Payload> buildAction = null)
+            => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => UseFlow(targetNodeName, buildAction));
+
+        /// <summary>Overrides the inherited object flow to the target node that carries payload tokens with the given
+        /// name.</summary>
+        /// <param name="tokenName">Name of the payload tokens carried by the inherited flow.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <param name="buildAction">Callback adding guards and transformations to the inherited flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn UseFlow(string tokenName, string targetNodeName, ObjectFlowBuildAction<Payload> buildAction = null)
+            => UseFlow([tokenName], targetNodeName, buildAction);
+
+        /// <summary>Overrides the inherited payload object flow to the node registered under the default name of
+        /// <typeparamref name="TTargetNode"/>.</summary>
+        /// <typeparam name="TTargetNode">Target node type.</typeparam>
+        /// <param name="tokenNames">Names of the payload tokens carried by the inherited flow.</param>
+        /// <param name="buildAction">Callback adding guards and transformations to the inherited flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn UseFlow<TTargetNode>(IReadOnlyList<string> tokenNames, ObjectFlowBuildAction<Payload> buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => UseFlow(tokenNames, ActivityNode<TTargetNode>.Name, buildAction);
     }
 
     /// <summary>Adds fallback typed object flows from the current node.</summary>
@@ -127,6 +377,26 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.2.1.-Data-Flow" />
         TReturn AddElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null);
+
+        /// <summary>Adds a fallback object flow carrying payload tokens with any of the given names.</summary>
+        /// <param name="tokenNames">Names of the payload tokens the flow takes from this node.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <param name="buildAction">Callback configuring transformations of the flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddElseFlow(IReadOnlyList<string> tokenNames, string targetNodeName, ElseObjectFlowBuildAction<Payload> buildAction = null)
+            => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => AddElseFlow(targetNodeName, buildAction));
+
+        /// <summary>Adds a fallback object flow carrying payload tokens with the given name.</summary>
+        /// <param name="tokenName">Name of the payload tokens the flow takes from this node.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <param name="buildAction">Callback configuring transformations of the flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddElseFlow(string tokenName, string targetNodeName, ElseObjectFlowBuildAction<Payload> buildAction = null)
+            => AddElseFlow([tokenName], targetNodeName, buildAction);
     }
 
     /// <summary>Adds typed object decision flows from a decision node.</summary>
@@ -203,6 +473,54 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             where TTargetNode : class, IActivityNode
             => AddFlow<TTransformedToken, TTransformationFlow>(ActivityNode<TTargetNode>.Name);
+
+        /// <summary>Adds a class-based object flow that transforms the decision's tokens to payload tokens with any of
+        /// the transformed names.</summary>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTransformedToken, TTransformationFlow>(IReadOnlyList<string> transformedNames, string targetNodeName)
+            where TTransformedToken : Payload
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+        {
+            var names = PayloadNameSet.Validate(transformedNames, nameof(transformedNames));
+            return AddFlow(targetNodeName, b => PayloadFlowScope.With(names, nameof(transformedNames),
+                () => b.AddObjectTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>()));
+        }
+
+        /// <summary>Adds a class-based object flow that transforms the decision's tokens to payload tokens with the
+        /// transformed name.</summary>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="transformedName">Name of the payload tokens the transformation produces.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTransformedToken, TTransformationFlow>(string transformedName, string targetNodeName)
+            where TTransformedToken : Payload
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+            => AddFlow<TTransformedToken, TTransformationFlow>([transformedName], targetNodeName);
+
+        /// <summary>Adds a class-based object flow that transforms the decision's tokens to payload tokens with any of
+        /// the transformed names, targeting the node registered under the default name of
+        /// <typeparamref name="TTargetNode"/>.</summary>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TTransformationFlow">Transformation flow class.</typeparam>
+        /// <typeparam name="TTargetNode">Target node type.</typeparam>
+        /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddFlow<TTransformedToken, TTransformationFlow, TTargetNode>(IReadOnlyList<string> transformedNames)
+            where TTransformedToken : Payload
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+            where TTargetNode : class, IActivityNode
+            => AddFlow<TTransformedToken, TTransformationFlow>(transformedNames, ActivityNode<TTargetNode>.Name);
     }
 
     /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
@@ -285,6 +603,54 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TElseTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             where TTargetNode : class, IActivityNode
             => AddElseFlow<TTransformedToken, TElseTransformationFlow>(ActivityNode<TTargetNode>.Name);
+
+        /// <summary>Adds a class-based fallback flow that transforms the decision's tokens to payload tokens with any
+        /// of the transformed names.</summary>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TElseTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddElseFlow<TTransformedToken, TElseTransformationFlow>(IReadOnlyList<string> transformedNames, string targetNodeName)
+            where TTransformedToken : Payload
+            where TElseTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+        {
+            var names = PayloadNameSet.Validate(transformedNames, nameof(transformedNames));
+            return AddElseFlow(targetNodeName, b => PayloadFlowScope.With(names, nameof(transformedNames),
+                () => (b as IObjectFlowBuilder<TToken>).AddElseObjectTransformationFlowEvents<TElseTransformationFlow, TToken, TTransformedToken>()));
+        }
+
+        /// <summary>Adds a class-based fallback flow that transforms the decision's tokens to payload tokens with the
+        /// transformed name.</summary>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TElseTransformationFlow">Transformation flow class.</typeparam>
+        /// <param name="transformedName">Name of the payload tokens the transformation produces.</param>
+        /// <param name="targetNodeName">Registered name of the target node.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddElseFlow<TTransformedToken, TElseTransformationFlow>(string transformedName, string targetNodeName)
+            where TTransformedToken : Payload
+            where TElseTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+            => AddElseFlow<TTransformedToken, TElseTransformationFlow>([transformedName], targetNodeName);
+
+        /// <summary>Adds a class-based fallback flow that transforms the decision's tokens to payload tokens with any
+        /// of the transformed names, targeting the node registered under the default name of
+        /// <typeparamref name="TTargetNode"/>.</summary>
+        /// <typeparam name="TTransformedToken">Payload token type delivered to the target.</typeparam>
+        /// <typeparam name="TElseTransformationFlow">Transformation flow class.</typeparam>
+        /// <typeparam name="TTargetNode">Target node type.</typeparam>
+        /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        TReturn AddElseFlow<TTransformedToken, TElseTransformationFlow, TTargetNode>(IReadOnlyList<string> transformedNames)
+            where TTransformedToken : Payload
+            where TElseTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+            where TTargetNode : class, IActivityNode
+            => AddElseFlow<TTransformedToken, TElseTransformationFlow>(transformedNames, ActivityNode<TTargetNode>.Name);
     }
 
     /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>

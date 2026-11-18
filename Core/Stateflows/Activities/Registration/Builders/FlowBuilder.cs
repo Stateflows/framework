@@ -74,7 +74,7 @@ namespace Stateflows.Activities.Registration.Builders
                 });
 
                 Edge.TokenPipeline.Actions.Add(logic);
-                Edge.Operations.Add(new FlowOperationRegistration { InputType = typeof(TToken), OutputType = typeof(TToken) });
+                Edge.Operations.Add(new FlowOperationRegistration { InputType = typeof(TToken), OutputType = typeof(TToken), InputTokenNames = Edge.TargetTokenNames, OutputTokenNames = Edge.TargetTokenNames });
             }
 
             return this;
@@ -82,6 +82,12 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
         {
+            var transformedNames = PayloadFlowScope.Take();
+            if (transformedNames == null && Stateflows.Payloads.PayloadNameSet.IsPayloadType(typeof(TTransformedToken)))
+                throw new Stateflows.Activities.Exceptions.ActivityDefinitionException(
+                    $"Transformation to {typeof(TTransformedToken).Name} on flow from '{Edge.SourceName}' to '{Edge.TargetName}' must declare the payload token names it produces; use an AddTransformation overload accepting transformed token names.",
+                    Graph.Class);
+            var inputTokenNames = Edge.TargetTokenNames;
             var logic = new Logic<TokenPipelineActionAsync>(Constants.Transformation);
 
             logic.Actions.Add(async (context, inspector) =>
@@ -96,6 +102,9 @@ namespace Stateflows.Activities.Registration.Builders
                 {
                     var transformed = await inspector.OnFlowTransformAsync<TToken, TTransformedToken>(
                         flowContext, () => transformationAsync(flowContext));
+                    if (transformedNames != null && transformed is Payload payload && !transformedNames.Contains(payload.Name))
+                        throw new ArgumentException(
+                            $"Transformation on flow from '{Edge.SourceName}' to '{Edge.TargetName}' produced payload '{payload.Name}', which is not one of its declared token names: {string.Join(", ", transformedNames)}.");
                     var transformedToken = transformed.ToTokenHolder();
 
                     return transformedToken;
@@ -119,8 +128,9 @@ namespace Stateflows.Activities.Registration.Builders
             });
 
             Edge.TokenPipeline.Actions.Add(logic);
-            Edge.Operations.Add(new FlowOperationRegistration { IsTransformation = true, InputType = typeof(TToken), OutputType = typeof(TTransformedToken) });
+            Edge.Operations.Add(new FlowOperationRegistration { IsTransformation = true, InputType = typeof(TToken), OutputType = typeof(TTransformedToken), InputTokenNames = inputTokenNames, OutputTokenNames = transformedNames });
             Edge.TargetTokenType = typeof(TTransformedToken);
+            Edge.TargetTokenNames = transformedNames;
 
             return new FlowBuilder<TTransformedToken>(Edge);
         }
