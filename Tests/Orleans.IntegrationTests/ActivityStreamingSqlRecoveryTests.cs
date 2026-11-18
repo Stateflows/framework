@@ -10,6 +10,7 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
+using Stateflows.Payloads;
 
 namespace Orleans.IntegrationTests;
 
@@ -42,8 +43,10 @@ public sealed class ActivityStreamingSqlRecoveryTests
         var id = new ActivityId("sql-stream-recovery", Guid.NewGuid().ToString("N"));
         using (var behavior = first.Services.GetRequiredService<IBehaviorFactory>().CreateBehavior(id))
         {
+            var payloadFactory = first.Services.GetRequiredService<IPayloadFactory>();
             Assert.AreEqual(EventStatus.Accepted,
-                (await behavior.SendAsync(new TokensInput().Add(0).Add(1).Add(2).Add(3).Add("initial"),
+                (await behavior.SendAsync(new TokensInput().Add(0).Add(1).Add(2).Add(3).Add("initial")
+                    .Add(payloadFactory.Create("sql-recovery-payload", payload => payload.Set("value", 100))),
                     StreamHeader).WaitAsync(Deadline)).Status);
             await cluster.Probe.WaitForAsync(() =>
                 cluster.Probe.CountOf("second:0") == 1 && cluster.Probe.Active > 0);
@@ -52,7 +55,8 @@ public sealed class ActivityStreamingSqlRecoveryTests
             Assert.AreEqual(0, cluster.Probe.CountOf("after"));
 
             Assert.AreEqual(EventStatus.Accepted,
-                (await behavior.SendAsync(new TokensInput().Add(4).Add(5).Add("later"),
+                (await behavior.SendAsync(new TokensInput().Add(4).Add(5).Add("later")
+                    .Add(payloadFactory.Create("sql-recovery-payload", payload => payload.Set("value", 200))),
                     StreamHeader).WaitAsync(Deadline)).Status);
 
             async Task<EventStatus> CheckpointAsync()
@@ -119,6 +123,10 @@ public sealed class ActivityStreamingSqlRecoveryTests
             Assert.AreEqual(1, cluster.Probe.CountOf($"common:{value}:{(value < 4 ? "initial" : "later")}"),
                 "Queued arrivals must retain their own common inputs.");
         }
+        Assert.IsTrue(cluster.Probe.CountOf("payload:100") > 0,
+            "The named payload token from the initial stream batch must survive SQL recovery.");
+        Assert.IsTrue(cluster.Probe.CountOf("payload:200") > 0,
+            "The named payload token from the queued stream batch must survive SQL recovery.");
         Assert.IsTrue(cluster.Probe.Peak <= concurrency, "Recovery must preserve the partition bound.");
         if (!parallel)
             Assert.AreEqual(1, cluster.Probe.Threads.Distinct().Count(),
@@ -162,6 +170,8 @@ public sealed class ActivityStreamingSqlRecoveryTests
             var value = context.GetTokensOfType<int>().Single();
             Count($"first:{value}");
             Count($"common:{value}:{context.GetTokensOfType<string>().Single()}");
+            foreach (var payload in context.GetTokensOfType<Payload>())
+                Count($"payload:{payload.Get<int>("value")}");
             Threads.Enqueue(((ActionContext)context).NodeScope.ThreadId);
             var active = Interlocked.Increment(ref Active);
             int previous;
@@ -212,6 +222,8 @@ public sealed class ActivityStreamingSqlRecoveryTests
                                     var selection = ((Stateflows.Activities.Context.Interfaces.ITokenContext<object>)context).Tokens!;
                                     Probe.Count($"selection:{value}:{string.Join(",", selection)}");
                                     Probe.Count($"second:{value}");
+                                    foreach (var payload in context.GetTokensOfType<Payload>())
+                                        Probe.Count($"payload:{payload.Get<int>("value")}");
                                     Probe.Threads.Enqueue(((ActionContext)context).NodeScope.ThreadId);
                                     context.PassTokensOfTypeOn<int>();
                                     return Task.CompletedTask;
@@ -229,7 +241,8 @@ public sealed class ActivityStreamingSqlRecoveryTests
                                 Probe.Completed.TrySetResult();
                                 return Task.CompletedTask;
                             });
-                        })));
+                        })).AddPayloads(payloads => payloads
+                            .AddPayload("sql-recovery-payload", payload => payload.AddField("value", FieldType.Int32))));
                     services.Configure<StateflowsRuntimeOptions>(options =>
                     {
                         options.SuspendActivityCheckpointResumeForTesting = true;
