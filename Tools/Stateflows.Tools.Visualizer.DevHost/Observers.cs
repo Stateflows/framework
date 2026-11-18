@@ -49,14 +49,14 @@ public sealed class NetworkObserver(Capture capture) : ActivityObserver
         IActivityBeforeFlowContext context, Func<Task<IActivityAfterFlowContext>> next)
         => await capture.ObserveAsync(context, context.Identifier, "flow.activation", next,
             result => result.Activated ? "taken" : "waiting", result => result.TargetTokenCount, context.Weight,
-            payloadTokens: () => Capture.SnapshotPayloadTokens(context.PayloadTokens));
+            payloadTokens: () => Capture.SnapshotPayloadTokens(context.Tokens));
     public override async Task OnFlowGuardAsync<TToken>(IGuardContext<TToken> context, Func<Task<bool>> next)
         => await capture.ObserveAsync(context, context.Identifier, "flow.guard", next,
             result => result ? "executed" : "guard-rejected",
-            payloadTokens: () => Capture.SnapshotPayloadTokens(context.Token));
+            payloadTokens: () => Capture.SnapshotPayloadTokens(new object?[] { context.Token }));
     public override async Task OnFlowTransformAsync<TToken, TTransformedToken>(
         ITransformationContext<TToken> context, Func<Task<TTransformedToken>> next)
         => await capture.ObserveAsync(context, context.Identifier, "flow.transform", next, _ => "executed",
-            payloadTokens: () => Capture.SnapshotPayloadTokens(context.Token),
-            completedPayloadTokens: result => Capture.SnapshotPayloadTokens(result));
+            payloadTokens: () => Capture.SnapshotPayloadTokens(new object?[] { context.Token }),
+            completedPayloadTokens: result => Capture.SnapshotPayloadTokens(new object?[] { result }));
 }

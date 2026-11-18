@@ -92,11 +92,8 @@ public sealed class Capture(DefinitionCatalog catalog, DebugSession debugger)
         }
     }
 
-    public static IReadOnlyList<PayloadTokenSnapshot> SnapshotPayloadTokens(params object?[] values)
-        => SnapshotPayloadTokens(values.OfType<Payload>());
-
-    public static IReadOnlyList<PayloadTokenSnapshot> SnapshotPayloadTokens(IEnumerable<Payload> payloads)
-        => payloads.Select(payload => new PayloadTokenSnapshot(payload.Name,
+    public static IReadOnlyList<PayloadTokenSnapshot> SnapshotPayloadTokens(IEnumerable<object?> values)
+        => values.OfType<Payload>().Select(payload => new PayloadTokenSnapshot(payload.Name,
             payload.Fields.ToDictionary(field => field.Key, field => SnapshotValue(field.Value), StringComparer.Ordinal)))
             .ToArray();
 

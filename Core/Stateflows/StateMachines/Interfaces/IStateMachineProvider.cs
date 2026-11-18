@@ -85,8 +85,8 @@ public interface IStateMachineProvider
     /// <param name="stateMachineClass">The machine definition identity.</param>
     /// <param name="version">The definition version.</param>
     /// <param name="state">The registered deferring state.</param>
-    /// <param name="trigger">The deferred event type.</param>
+    /// <param name="eventType">The deferred event type.</param>
     /// <param name="addingCallback">Receives each deferral predicate delegate.</param>
     /// <returns>A task completing when the delegates have been supplied.</returns>
-    Task ProvideDeferralGuardsAsync(StateMachineClass stateMachineClass, int version, string state, Type trigger, Action<Delegate> addingCallback);
+    Task ProvideDeferralGuardsAsync(StateMachineClass stateMachineClass, int version, string state, Type eventType, Action<Delegate> addingCallback);
 }

@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
@@ -42,8 +41,8 @@ namespace Stateflows.Activities
         /// <summary>The number of tokens currently available at the source node.</summary>
         int SourceTokenCount { get; }
 
-        /// <summary>The payload tokens considered for transfer, including their names and field values.</summary>
-        IReadOnlyList<Payload> PayloadTokens => Array.Empty<Payload>();
+        /// <summary>The tokens considered for transfer on this flow.</summary>
+        IReadOnlyList<object> Tokens => Array.Empty<object>();
     }
 
     /// <summary>Flow information available after transfer evaluation.</summary>

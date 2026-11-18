@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Builders;
@@ -24,7 +25,7 @@ public class PayloadFlows : StateflowsTestClass
             IActivityBeforeFlowContext context, Func<Task<IActivityAfterFlowContext>> next)
         {
             lock (InspectedPayloads)
-                InspectedPayloads.AddRange(context.PayloadTokens.Select(payload =>
+                InspectedPayloads.AddRange(context.Tokens.OfType<Payload>().Select(payload =>
                     $"{payload.Name}:{payload.Get<int>("v")}"));
             return next();
         }
@@ -205,6 +206,101 @@ public class PayloadFlows : StateflowsTestClass
         await Run("selection");
         lock (InspectedPayloads)
             CollectionAssert.AreEqual(new[] { "a:1", "b:2", "c:3" }, InspectedPayloads.Order().ToArray());
+    }
+
+    [TestMethod]
+    public void PublicApiUsesTokenVocabularyAndListOnlyPayloadOverloads()
+    {
+        var namespaces = new[]
+        {
+            "Stateflows.StateMachines", "Stateflows.Activities", "Stateflows.Actions", "Stateflows.Entities"
+        };
+        var types = typeof(IActivityBuilder).Assembly.GetExportedTypes()
+            .Where(type => namespaces.Any(prefix => type.Namespace == prefix ||
+                type.Namespace?.StartsWith(prefix + ".", StringComparison.Ordinal) == true))
+            .ToArray();
+        var allowedPayloadMembers = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "GetPayloadTokens", "HasPayloadTokens", "PassPayloadTokensOn",
+            "AddConsumedPayloadToken", "AddProducedPayloadToken"
+        };
+        var violations = new List<string>();
+        foreach (var type in types)
+        foreach (var member in type.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+        {
+            if (member.Name.Contains("Payload", StringComparison.OrdinalIgnoreCase) && !allowedPayloadMembers.Contains(member.Name))
+                violations.Add($"{type.FullName}.{member.Name} uses Payload vocabulary");
+            if (member.Name.Contains("Trigger", StringComparison.OrdinalIgnoreCase) &&
+                !IsTransitionMember(type, member))
+                violations.Add($"{type.FullName}.{member.Name} uses Trigger outside a transition");
+
+            var parameters = member switch
+            {
+                MethodBase method => method.GetParameters(),
+                PropertyInfo property => property.GetIndexParameters(),
+                _ => []
+            };
+            foreach (var parameter in parameters)
+            {
+                if (parameter.Name?.Contains("Payload", StringComparison.OrdinalIgnoreCase) == true)
+                    violations.Add($"{type.FullName}.{member.Name} parameter '{parameter.Name}' uses Payload vocabulary");
+                if (parameter.Name?.Contains("Trigger", StringComparison.OrdinalIgnoreCase) == true &&
+                    !IsTransitionMember(type, member))
+                    violations.Add($"{type.FullName}.{member.Name} parameter '{parameter.Name}' uses Trigger outside a transition");
+            }
+        }
+
+        var activityInterfaces = types.Where(type => type.IsInterface).ToArray();
+        var listOnlyNames = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "AddFlow", "UseFlow", "AddIterativeActivity", "UseIterativeActivity",
+            "AddParallelActivity", "UseParallelActivity"
+        };
+        var listOnlyOverloads = activityInterfaces.SelectMany(type => type.GetMethods())
+            .Where(method => listOnlyNames.Contains(method.Name) && HasStringListFirstParameter(method))
+            .Where(method => method.Name is "AddFlow" or "UseFlow"
+                ? method.GetGenericArguments().Any(HasActivityNodeConstraint)
+                : method.GetGenericArguments().Any(HasActivityConstraint))
+            .DistinctBy(MethodSignature)
+            .ToArray();
+        foreach (var method in listOnlyOverloads)
+        {
+            var parameters = method.GetParameters();
+            var constraints = GenericConstraintSignature(method);
+            var hasSingleNameForm = activityInterfaces.SelectMany(type => type.GetMethods())
+                .Any(candidate => candidate.Name == method.Name &&
+                    candidate.GetGenericArguments().Length == method.GetGenericArguments().Length &&
+                    candidate.GetParameters().Length == parameters.Length &&
+                    candidate.GetParameters()[0].ParameterType == typeof(string) &&
+                    candidate.GetParameters().Skip(1).Select(parameter => parameter.ParameterType)
+                        .SequenceEqual(parameters.Skip(1).Select(parameter => parameter.ParameterType)) &&
+                    GenericConstraintSignature(candidate) == constraints);
+            if (hasSingleNameForm)
+                violations.Add($"{method.DeclaringType?.FullName}.{method.Name} has a string-first overload");
+        }
+
+        Assert.AreEqual(0, violations.Count, string.Join(Environment.NewLine, violations.Order()));
+
+        static bool IsTransitionMember(Type type, MemberInfo member)
+            => member.Name.Contains("Transition", StringComparison.Ordinal) ||
+                type.Name.Contains("Transition", StringComparison.Ordinal);
+
+        static bool HasStringListFirstParameter(MethodInfo method)
+            => method.GetParameters().FirstOrDefault()?.ParameterType == typeof(IReadOnlyList<string>);
+
+        static bool HasActivityNodeConstraint(Type parameter)
+            => parameter.GetGenericParameterConstraints().Contains(typeof(IActivityNode));
+
+        static bool HasActivityConstraint(Type parameter)
+            => parameter.GetGenericParameterConstraints().Contains(typeof(IActivity));
+
+        static string MethodSignature(MethodInfo method)
+            => $"{method.DeclaringType?.FullName}.{method.Name}`{method.GetGenericArguments().Length}(" +
+                string.Join(",", method.GetParameters().Select(parameter => parameter.ParameterType.ToString())) + ")";
+
+        static string GenericConstraintSignature(MethodInfo method)
+            => string.Join("|", method.GetGenericArguments().Select(parameter =>
+                string.Join(",", parameter.GetGenericParameterConstraints().Select(constraint => constraint.ToString()).Order())));
     }
 
     [TestMethod]

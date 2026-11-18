@@ -78,7 +78,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public int SourceTokenCount { get; set; }
 
-        public System.Collections.Generic.IReadOnlyList<Payload> PayloadTokens { get; set; } = [];
+        public System.Collections.Generic.IReadOnlyList<object> Tokens { get; set; } = [];
 
         public int TargetTokenCount { get; set; }
 

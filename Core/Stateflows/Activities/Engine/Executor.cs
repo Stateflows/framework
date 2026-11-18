@@ -2089,9 +2089,8 @@ namespace Stateflows.Activities.Engine
             .Select(token => token.CopyForExecution(context.IsStreamed || token.IsStreamed))
             .ToArray();
 
-            flowContext.PayloadTokens = originalTokens
+            flowContext.Tokens = originalTokens
                 .Select(token => token.BoxedPayload)
-                .OfType<Payload>()
                 .ToArray();
             flowContext.TokenCount = stream.Tokens.Count;
             flowContext.SourceTokenCount = originalTokens.Count();
