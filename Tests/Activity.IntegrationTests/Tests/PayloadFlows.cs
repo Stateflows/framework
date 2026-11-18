@@ -16,6 +16,19 @@ public class PayloadFlows : StateflowsTestClass
 {
     internal static IPayloadFactory PayloadFactory = null!;
     internal static readonly List<string> Received = [];
+    internal static readonly List<string> InspectedPayloads = [];
+
+    public sealed class PayloadInspectionObserver : ActivityObserver
+    {
+        public override Task OnFlowActivateAsync(
+            IActivityBeforeFlowContext context, Func<Task<IActivityAfterFlowContext>> next)
+        {
+            lock (InspectedPayloads)
+                InspectedPayloads.AddRange(context.PayloadTokens.Select(payload =>
+                    $"{payload.Name}:{payload.Get<int>("v")}"));
+            return next();
+        }
+    }
 
     private static Payload Make(string name, int value = 0)
         => PayloadFactory.Create(name, b => b.Set("v", value));
@@ -84,6 +97,7 @@ public class PayloadFlows : StateflowsTestClass
     public override void Initialize()
     {
         Received.Clear();
+        InspectedPayloads.Clear();
         base.Initialize();
         PayloadFactory = ServiceProvider.GetRequiredService<IPayloadFactory>();
     }
@@ -101,6 +115,7 @@ public class PayloadFlows : StateflowsTestClass
                 .AddPayload("submit", b => b.AddField("v", FieldType.Int32)))
             .AddActivities(b => b
                 .AddActivity("selection", b => b
+                    .AddObserver<PayloadInspectionObserver>()
                     .AddInitial(b => b.AddControlFlow("produce"))
                     .AddAction("produce", ProduceAbc, b => b
                         .AddFlow(["a", "b"], "ab")
@@ -182,6 +197,14 @@ public class PayloadFlows : StateflowsTestClass
     {
         await Run("selection");
         CollectionAssert.AreEqual(new[] { "ab:a:1", "ab:b:2", "c:c:3" }, Snapshot());
+    }
+
+    [TestMethod]
+    public async Task FlowInspectionExposesPayloadNamesAndFields()
+    {
+        await Run("selection");
+        lock (InspectedPayloads)
+            CollectionAssert.AreEqual(new[] { "a:1", "b:2", "c:3" }, InspectedPayloads.Order().ToArray());
     }
 
     [TestMethod]
