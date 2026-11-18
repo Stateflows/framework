@@ -223,7 +223,7 @@ internal sealed partial class BoundDocument
         if (completion && node.Value<string>("kind") == "event")
             Error(path + "/kind", "Completion-triggered targeted transitions must use kind 'default'.", "SM-019");
         var trigger = payloadNames == null ? Event.GetName(triggerType)
-            : payloadNames.Length == 1 ? payloadNames[0] : System.Text.Json.JsonSerializer.Serialize(payloadNames.Order(StringComparer.Ordinal));
+            : Stateflows.Payloads.PayloadNameSet.Key(payloadNames);
         var target = node.Value<string>("kind") == "internal" ? "" : names[path + "/target"];
         var otherwise = node.Value<bool?>("else") == true;
         Edge edge;
@@ -231,10 +231,9 @@ internal sealed partial class BoundDocument
         {
             Edge? namedEdge = null;
             new StateBuilder(vertex).AddTransitionInternal<Payload>(target, otherwise,
-                builder => namedEdge = ((TransitionBuilder<Payload>)builder).Edge, trigger);
+                builder => namedEdge = ((TransitionBuilder<Payload>)builder).Edge, payloadNames);
             edge = namedEdge!;
             edge.SourcePath = path;
-            edge.PayloadNames = payloadNames;
             edge.IsLocal = node.Value<bool?>("local") ?? true;
         }
         else

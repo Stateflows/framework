@@ -60,13 +60,27 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IOverridenTransitionBuilder<Payload> ChangeTrigger(string eventName)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+            return ChangeTrigger(new[] { eventName });
+        }
+
+        /// <summary>Changes a compatible inherited transition to match any of the given payload names.</summary>
+        /// <param name="eventNames">Registered payload names to match. Must contain at least one name; names must be
+        /// distinct and must not be null, empty, or whitespace.</param>
+        /// <returns>A builder for the same transition whose callbacks receive the payload.</returns>
+        /// <exception cref="System.ArgumentException">The name set is invalid.</exception>
+        /// <exception cref="System.InvalidOperationException">The original trigger cannot accept a
+        /// <see cref="Payload" /> payload.</exception>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+        IOverridenTransitionBuilder<Payload> ChangeTrigger(System.Collections.Generic.IReadOnlyList<string> eventNames)
+        {
+            var names = Stateflows.Payloads.PayloadNameSet.Validate(eventNames, nameof(eventNames));
             if (!typeof(TEvent).IsAssignableFrom(typeof(Payload)))
                 throw new System.InvalidOperationException("A CLR-typed transition cannot be changed to an incompatible payload trigger.");
             var builder = (TransitionBuilder<TEvent>)this;
             var edge = builder.Edge;
-            edge.PayloadNames = [eventName];
+            edge.PayloadNames = names;
             edge.TriggerType = typeof(Payload);
-            edge.Trigger = eventName;
+            edge.Trigger = Stateflows.Payloads.PayloadNameSet.Key(names);
             return new TransitionBuilder<Payload>(edge);
         }
     }

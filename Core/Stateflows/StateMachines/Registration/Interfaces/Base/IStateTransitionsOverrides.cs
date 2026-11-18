@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using Stateflows.Payloads;
 using System.Linq;
 using Stateflows.Common;
 using Stateflows.StateMachines.Models;
@@ -16,13 +18,69 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         private Edge FindPayloadTransition(string eventName, string targetStateName, bool internalTransition, bool isElse)
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+            return FindPayloadTransition(new[] { eventName }, targetStateName, internalTransition, isElse);
+        }
+
+        private Edge FindPayloadTransition(IReadOnlyList<string> eventNames, string targetStateName, bool internalTransition, bool isElse)
+        {
+            var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));
             var vertex = ((IVertexBuilder)this).Vertex;
-            var edge = vertex.Edges.Values.FirstOrDefault(edge => edge.PayloadNames?.Contains(eventName) == true &&
+            var edge = vertex.Edges.Values.FirstOrDefault(edge => PayloadNameSet.SetEquals(edge.PayloadNames, names) &&
                 edge.Type == (internalTransition ? EdgeType.InternalTransition : EdgeType.Transition) &&
                 edge.IsElse == isElse && (internalTransition || edge.TargetName == targetStateName));
             if (edge?.OriginStateMachineName == null)
-                throw new StateMachineOverrideException($"Payload transition triggered by '{eventName}' not found in overriden state '{vertex.Name}'.", vertex.Graph.Class);
+                throw new StateMachineOverrideException($"Payload transition triggered by '{PayloadNameSet.Key(names)}' not found in overriden state '{vertex.Name}'.", vertex.Graph.Class);
             return edge;
+        }
+
+        /// <summary>Extends an inherited transition whose trigger name set equals the given set (order-insensitive).</summary>
+        /// <param name="eventNames">Payload names of the inherited transition.</param>
+        /// <param name="targetStateName">Target vertex name identifying the inherited transition to extend.</param>
+        /// <param name="buildAction">Callback configuring the inherited transition.</param>
+        /// <returns>The current source-state builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
+        TReturn UseTransition(IReadOnlyList<string> eventNames, string targetStateName, OverridenTransitionBuildAction<Payload> buildAction)
+        {
+            var edge = FindPayloadTransition(eventNames, targetStateName, false, false);
+            buildAction?.Invoke(new TransitionBuilder<Payload>(edge));
+            return (TReturn)this;
+        }
+
+        /// <summary>Extends an inherited internal transition whose trigger name set equals the given set.</summary>
+        /// <param name="eventNames">Payload names of the inherited transition.</param>
+        /// <param name="buildAction">Callback configuring the inherited transition.</param>
+        /// <returns>The current source-state builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
+        TReturn UseInternalTransition(IReadOnlyList<string> eventNames, OverridenInternalTransitionBuildAction<Payload> buildAction)
+        {
+            var edge = FindPayloadTransition(eventNames, null, true, false);
+            buildAction?.Invoke(new TransitionBuilder<Payload>(edge));
+            return (TReturn)this;
+        }
+
+        /// <summary>Extends an inherited fallback transition whose trigger name set equals the given set.</summary>
+        /// <param name="eventNames">Payload names of the inherited transition.</param>
+        /// <param name="targetStateName">Target vertex name identifying the inherited transition to extend.</param>
+        /// <param name="buildAction">Callback configuring the inherited transition.</param>
+        /// <returns>The current source-state builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
+        TReturn UseElseTransition(IReadOnlyList<string> eventNames, string targetStateName, OverridenElseTransitionBuildAction<Payload> buildAction)
+        {
+            var edge = FindPayloadTransition(eventNames, targetStateName, false, true);
+            buildAction?.Invoke(new TransitionBuilder<Payload>(edge));
+            return (TReturn)this;
+        }
+
+        /// <summary>Extends an inherited fallback internal transition whose trigger name set equals the given set.</summary>
+        /// <param name="eventNames">Payload names of the inherited transition.</param>
+        /// <param name="buildAction">Callback configuring the inherited transition.</param>
+        /// <returns>The current source-state builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
+        TReturn UseElseInternalTransition(IReadOnlyList<string> eventNames, OverridenElseInternalTransitionBuildAction<Payload> buildAction)
+        {
+            var edge = FindPayloadTransition(eventNames, null, true, true);
+            buildAction?.Invoke(new TransitionBuilder<Payload>(edge));
+            return (TReturn)this;
         }
 
         /// <summary>Extends an inherited event-triggered transition from the current state.</summary>
