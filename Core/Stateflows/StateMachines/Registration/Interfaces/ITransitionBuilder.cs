@@ -70,7 +70,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         /// <exception cref="System.ArgumentException">The name set is invalid.</exception>
         /// <exception cref="System.InvalidOperationException">The original trigger cannot accept a
         /// <see cref="Payload" /> payload.</exception>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
         IOverridenTransitionBuilder<Payload> ChangeTrigger(System.Collections.Generic.IReadOnlyList<string> eventNames)
         {
             var names = Stateflows.Payloads.PayloadNameSet.Validate(eventNames, nameof(eventNames));

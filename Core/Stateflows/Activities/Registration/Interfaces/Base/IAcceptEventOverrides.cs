@@ -30,7 +30,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// builder is scoped to that element.</param>
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
         TReturn UseAcceptEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
             OverridenAcceptEventActionBuildAction<Payload> buildAction)
         {

@@ -272,7 +272,7 @@ public class JsonDefinitions
               "guard":{"clrType":"guard"},"metadata":{"x":{"$type":"int","$value":3}}}]
             """);
         State(model)["deferrals"] = JArray.Parse("""
-            [{"triggers":[{"clrType":"union"}],"guard":{"clrType":"guard"}}]
+            [{"events":[{"clrType":"union"}],"guard":{"clrType":"guard"}}]
             """);
         builder.AddStateMachineJson(model.ToString(), Options());
         var graph = register.StateMachines["json-machine.1"];
@@ -567,7 +567,7 @@ public class JsonDefinitions
     {
         var (_, register, builder) = Host();
         var model = Model();
-        State(model)["deferrals"] = JArray.Parse("""[{"triggers":[{"clrType":"completion"}]}]""");
+        State(model)["deferrals"] = JArray.Parse("""[{"events":[{"clrType":"completion"}]}]""");
         var exception = Assert.Throws<JsonStateMachineException>(() => builder.AddStateMachineJson(model.ToString(), Options()));
         Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(d =>
             d.RuleId == "SM-036" && d.ElementPath == "/vertices/0/deferrals/0"));

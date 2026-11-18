@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// local/external target semantics. Callbacks receive the payload.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
         TReturn AddTransition(IReadOnlyList<string> eventNames, string targetStateName, TransitionBuildAction<Payload> transitionBuildAction = null)
         {
             var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));

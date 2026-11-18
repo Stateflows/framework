@@ -17,6 +17,7 @@ using Stateflows.Common.Exceptions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Validation;
+using Stateflows.Payloads;
 using Stateflows.StateMachines.Json;
 
 namespace Stateflows.Activities.Json;
@@ -30,6 +31,7 @@ internal sealed partial class BoundActivityDocument(
     private readonly TypedJson serializer = new(types);
     private readonly Dictionary<string, ClrBinding> bindings = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Type> resolvedTypes = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string[]> eventNames = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Dictionary<string, string>> targetAliases = new(StringComparer.Ordinal);
     private readonly HashSet<string> nodeNames = new(StringComparer.Ordinal);
 
@@ -119,15 +121,34 @@ internal sealed partial class BoundActivityDocument(
         return (string)pinType.GetProperty("Name")!.GetValue(null)!;
     }
 
+    private bool BindEventNames(JToken node, string path)
+    {
+        string[] names;
+        if (node["eventNames"] is JArray list)
+        {
+            names = list.Values<string>().ToArray()!;
+            for (var i = 0; i < names.Length; i++)
+            {
+                try { services.Payloads.GetPayload(names[i]); }
+                catch (ArgumentException exception) { Error($"{path}/eventNames/{i}", exception.Message); }
+            }
+        }
+        else if (node.Value<string>("eventName") is { } name)
+        {
+            names = [name];
+            try { services.Payloads.GetPayload(name); }
+            catch (ArgumentException exception) { Error(path + "/eventName", exception.Message); }
+        }
+        else return false;
+        eventNames[path] = names;
+        resolvedTypes[path + "/eventType"] = typeof(Payload);
+        return true;
+    }
+
     private Type? BindEventNode(JToken node, string path, string kind)
     {
         Type? eventType;
-        if (kind == "acceptEvent" && node.Value<string>("eventName") is { } eventName)
-        {
-            try { services.Payloads.GetPayload(eventName); }
-            catch (ArgumentException exception) { Error(path + "/eventName", exception.Message); }
-            resolvedTypes[path + "/eventType"] = eventType = typeof(Payload);
-        }
+        if (kind == "acceptEvent" && BindEventNames(node, path)) eventType = typeof(Payload);
         else eventType = BindType(node.Value<string>("eventType")!, path + "/eventType");
         if (eventType == null) return null;
         if (services.TypeMapper.GetMappedTypes(eventType).Any() != true)
@@ -350,7 +371,9 @@ internal sealed partial class BoundActivityDocument(
 
         foreach (var (initializer, path) in Items(document, "", "initializers"))
         {
-            var eventType = BindType(initializer.Value<string>("eventType")!, path + "/eventType");
+            var eventType = BindEventNames(initializer, path)
+                ? typeof(Payload)
+                : BindType(initializer.Value<string>("eventType")!, path + "/eventType");
             if (eventType != null) BindClr(initializer["handler"]!, path + "/handler",
                 typeof(IInitializer<>).MakeGenericType(eventType));
         }
@@ -490,9 +513,9 @@ internal sealed partial class BoundActivityDocument(
                 var eventAction = CreateBoundDelegate(
                     typeof(AcceptEventActionDelegateAsync<>).MakeGenericType(eventType),
                     nameof(HandleAcceptedEvent), eventType, binding.Type, binding);
-                if (node.Value<string>("eventName") is { } eventName)
+                if (eventNames.TryGetValue(path, out var acceptedNames))
                     CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptEventAction",
-                        [], [eventName, name!, eventAction, actionCallback], methodParameterCount: 4);
+                        [], [acceptedNames, name!, eventAction, actionCallback], methodParameterCount: 4);
                 else
                     CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptEventAction",
                         [eventType], [name!, eventAction, actionCallback], methodParameterCount: 3);
@@ -1087,9 +1110,19 @@ internal sealed partial class BoundActivityDocument(
         var method = typeof(BoundActivityDocument).GetMethod(nameof(Initializer), BindingFlags.NonPublic | BindingFlags.Static)!
             .MakeGenericMethod(eventType, binding.Type);
         var callback = Delegate.CreateDelegate(delegateType, binding, method);
-        CallGenericInterface(builder, typeof(IActivityEvents<>), "AddInitializer", [eventType], [callback], methodParameterCount: 1);
         var graph = ((IGraphBuilder)builder).Graph;
-        var eventName = eventType.GetEventName();
+        string eventName;
+        if (eventNames.TryGetValue(path, out var names))
+        {
+            ((ActivityBuilder)(IGraphBuilder)builder).AddPayloadInitializer(names,
+                (Func<IActivityInitializationContext<Payload>, Task<bool>>)callback);
+            eventName = PayloadNameSet.Key(names);
+        }
+        else
+        {
+            CallGenericInterface(builder, typeof(IActivityEvents<>), "AddInitializer", [eventType], [callback], methodParameterCount: 1);
+            eventName = eventType.GetEventName();
+        }
         graph.InitializerImplementations[(eventName, graph.Initializers[eventName].Actions.Count - 1)] = binding.Type;
     }
 

@@ -28,7 +28,7 @@ public interface IOverridenAcceptEventActionBuilder<in TEvent> :
     /// <param name="eventNames">Registered payload names accepted by this node.</param>
     /// <returns>A builder typed for the payload.</returns>
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
     IOverridenAcceptEventActionBuilder<Payload> ChangeAcceptedEvent(IReadOnlyList<string> eventNames);
 
     /// <summary>Changes this node to accept a payload with the specified name.</summary>
@@ -77,7 +77,7 @@ public interface IOverridenAcceptEventActionBuilder<in TEvent, out TAcceptEventA
     /// <param name="eventNames">Registered payload names accepted by this node.</param>
     /// <returns>A builder typed for the payload.</returns>
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
     IOverridenAcceptEventActionBuilder<Payload> ChangeAcceptedEvent(IReadOnlyList<string> eventNames);
 
     /// <summary>Changes this node to accept a payload with the specified name.</summary>

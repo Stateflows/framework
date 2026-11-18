@@ -185,13 +185,13 @@ public class JsonExecutionTests : StateflowsTestClass
                     state["do"] = JObject.Parse("""{"behaviorClass":{"type":"Action","name":"hosted"}}""");
                 if (name == "initializers")
                     model["initializers"] = JArray.Parse("""
-                        [{"triggers":[{"clrType":"union"}],
+                        [{"events":[{"clrType":"union"}],
                           "handlers":[{"clrType":"initializer","configuration":"configured"}]}]
                         """);
                 if (name == "deferral")
                 {
                     state["deferrals"] = JArray.Parse("""
-                        [{"triggers":[{"clrType":"union"}],"guard":{"clrType":"unionPredicate"}}]
+                        [{"events":[{"clrType":"union"}],"guard":{"clrType":"unionPredicate"}}]
                         """);
                     state.Remove("transitions");
                 }

@@ -131,13 +131,13 @@ internal sealed partial class BoundDocument(
     private Type[] Mapped(Type type)
         => services.TypeMapper.GetMappedTypes(type)?.ToArray() ?? [];
 
-    private Type[] BindTriggers(JToken parent, string path, bool completion = false)
+    private Type[] BindTriggers(JToken parent, string path, bool completion = false, string property = "triggers")
     {
         if (completion) return triggers[path] = [typeof(Completion)];
         var declared = new List<Type>();
         var covered = new HashSet<Type>();
         var payload = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var (node, itemPath) in Items(parent, path, "triggers"))
+        foreach (var (node, itemPath) in Items(parent, path, property))
         {
             if (node.Value<string>("eventName") is { } eventName)
             {
@@ -161,16 +161,16 @@ internal sealed partial class BoundDocument(
             declared.Add(type);
         }
         if (covered.GroupBy(Event.GetName).Any(g => g.Count() > 1))
-            Error(path + "/triggers", "Different trigger types resolve to the same event name.");
+            Error(path + "/" + property, "Different trigger types resolve to the same event name.");
         if (covered.Contains(typeof(Completion)) && (covered.Count != 1 || payload.Count != 0))
-            Error(path + "/triggers", "Completion cannot be combined with other triggers.");
+            Error(path + "/" + property, "Completion cannot be combined with other triggers.");
         if (declared.Count > 1 || (declared.Count != 0 && payload.Count != 0))
-            Error(path + "/triggers", "Declare exactly one CLR trigger type or a collection of payload names, never both.");
+            Error(path + "/" + property, "Declare exactly one CLR trigger type or a collection of payload names, never both.");
         payloadTriggers[path] = payload.ToArray();
         if (payload.Count != 0)
         {
             if (covered.Contains(typeof(Payload)) || covered.Contains(typeof(PayloadRequest)))
-                Error(path + "/triggers", "A CLR payload wildcard cannot be combined with named payload triggers.");
+                Error(path + "/" + property, "A CLR payload wildcard cannot be combined with named payload triggers.");
             declared.Add(typeof(Payload));
         }
         return triggers[path] = declared.ToArray();
@@ -245,7 +245,7 @@ internal sealed partial class BoundDocument(
             BindClr(node, path, typeof(IDefaultInitializer));
         foreach (var (node, path) in Items(document, "", "initializers"))
         {
-            var declared = BindTriggers(node, path);
+            var declared = BindTriggers(node, path, property: "events");
             foreach (var (handler, handlerPath) in Items(node, path, "handlers"))
                 BindEventClr(handler, handlerPath, typeof(IInitializer<>), declared);
         }
@@ -301,7 +301,7 @@ internal sealed partial class BoundDocument(
             }
             foreach (var (deferral, deferralPath) in Items(node, vertexPath, "deferrals"))
             {
-                var declared = BindTriggers(deferral, deferralPath);
+                var declared = BindTriggers(deferral, deferralPath, property: "events");
                 if (deferral["guard"] is { } guard) BindGuard(guard, deferralPath + "/guard", declared, true);
             }
             if (node["do"] is { } hosted) BindBehavior(hosted, vertexPath + "/do", true, kind);

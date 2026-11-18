@@ -34,7 +34,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// deferred unconditionally while the state is active.</param>
         /// <returns>The current state builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
         TReturn AddDeferredEvent(IReadOnlyList<string> eventNames, DeferralBuildAction<Payload> buildAction = null)
         {
             var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));

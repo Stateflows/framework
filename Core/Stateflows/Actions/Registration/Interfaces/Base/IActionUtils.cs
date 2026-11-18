@@ -32,7 +32,7 @@ public interface IActionUtils<out TReturn>
     /// <summary>Declares that the action consumes payload events with any of the specified names.</summary>
     /// <param name="eventNames">Registered payload names consumed by the action.</param>
     /// <returns>The current builder.</returns>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
     TReturn AddConsumedEvent(System.Collections.Generic.IReadOnlyList<string> eventNames)
     {
         var names = Stateflows.Payloads.PayloadNameSet.Validate(eventNames, nameof(eventNames));

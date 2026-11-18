@@ -179,11 +179,22 @@ Guards/effects for named triggers implement `ITransitionGuard<Payload>` /
 `ITransitionEffect<Payload>`. Transition definitions must expose one contract
 covering the complete trigger set. Visitors receive the declared CLR type and all effective
 event names; payload schema details can be resolved through the event registry.
-This named JSON syntax applies to
-transitions only: initializer and deferral trigger declarations still use `clrType`.
+State-machine initializers and deferrals declare the events they consume under the
+`events` key, using the same shape as transition `triggers` (one `clrType` or a unique list
+of `eventName` references); the `triggers` key is rejected there. Handlers for named
+events implement `IInitializer<Payload>` / `IDeferralGuard<Payload>`:
 
-Activity accept-event nodes use exactly one of `eventType` (the existing CLR alias) or
-`eventName` (the registered payload name), keeping the existing implementation binding:
+```json
+"initializers": [{
+  "events": [{ "eventName": "orderSubmitted" }, { "eventName": "orderCancelled" }],
+  "handlers": [{ "clrType": "handlers.startOrder" }]
+}]
+```
+
+Activity accept-event nodes and activity initializers use exactly one of `eventType`
+(the existing CLR alias), `eventName` (one registered payload name) or `eventNames`
+(a nonempty, unique list of registered payload names), keeping the existing
+implementation binding:
 
 ```json
 {
@@ -199,8 +210,8 @@ Activity accept-event nodes use exactly one of `eventType` (the existing CLR ali
 `ExecuteAsync(Payload, CancellationToken)` receives the decoded payload;
 normal host DI and `IConfigurable<T>` binding still apply. The loader calls the core named
 accept-event builder overload, so routing and visitor descriptors use the registered
-event's name and definition. Time/send/publish nodes and activity initializers retain
-their existing CLR-only `eventType` syntax.
+event's name and definition. Named activity initializers implement `IInitializer<Payload>`.
+Time/send/publish nodes retain their existing CLR-only `eventType` syntax.
 
 ## Behavior definitions
 
@@ -422,9 +433,9 @@ Language-specific union syntax is not part of the JSON format.
 Otherwise declaration order determines evaluation order. `all` / `any` are ordered, nonempty,
 short-circuiting guard groups.
 
-Deferrals are ordered declarations containing `triggers` and an optional `guard`.
-One declared CLR type (possibly a mapped union) owns one guard expression shared by its
-effective event names; omitting it means unconditional deferral.
+Deferrals are ordered declarations containing `events` and an optional `guard`.
+One declared CLR type (possibly a mapped union) or one list of payload names owns one guard
+expression shared by its effective event names; omitting it means unconditional deferral.
 Forbidden deferred event types and conflicts with outgoing transitions use existing graph validation.
 
 ## Behavior-class handlers and hosted behaviors

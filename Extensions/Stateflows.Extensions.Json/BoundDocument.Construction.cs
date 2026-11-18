@@ -74,7 +74,10 @@ internal sealed partial class BoundDocument
             {
                 var binding = bindings[handlerPath];
                 var dispatch = EventDispatch<Func<Context.Classes.RootContext, Task<bool>>>(handlerPath, "InitializerHandler");
-                Invoke("AddInitializerBinding", [triggers[path].Single()], binding, builder, dispatch);
+                if (payloadTriggers.TryGetValue(path, out var names) && names.Length != 0)
+                    JsonExecution.AddPayloadInitializerBinding(binding, builder, names, dispatch);
+                else
+                    Invoke("AddInitializerBinding", [triggers[path].Single()], binding, builder, dispatch);
             }
         foreach (var (_, path) in Items(document, "", "finalizers"))
         {
@@ -378,6 +381,19 @@ internal sealed partial class BoundDocument
             var evaluate = CompileGuard(guard, path + "/guard", vertex, null, registration, false);
             logic.Registrations[0] = registration;
             logic.Actions.Add(c => evaluate(c));
+        }
+        if (payloadTriggers.TryGetValue(path, out var payloadNames) && payloadNames.Length != 0)
+        {
+            var deferred = payloadNames.FirstOrDefault(vertex.Deferrals.ContainsKey);
+            if (deferred != null)
+                Error(path, $"Event '{deferred}' is already deferred.", "SM-035");
+            else
+            {
+                vertex.AddPayloadDeferral(payloadNames, logic);
+                foreach (var name in payloadNames)
+                    vertex.DeferralPaths.Add(name, path);
+            }
+            return;
         }
         foreach (var type in triggers[path].SelectMany(Mapped).Distinct())
         {

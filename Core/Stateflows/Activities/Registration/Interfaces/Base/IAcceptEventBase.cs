@@ -35,7 +35,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// </param>
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
         TReturn AddAcceptEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
             AcceptEventActionDelegateAsync<Payload> eventActionAsync,
             AcceptEventActionBuildAction<Payload> buildAction = null)
@@ -53,7 +53,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// </param>
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.3.-Payloads" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
         TReturn AddAcceptEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
             AcceptEventActionBuildAction<Payload> buildAction = null)
             => AddAcceptEventAction(eventNames, actionNodeName, _ => Task.CompletedTask, buildAction);
