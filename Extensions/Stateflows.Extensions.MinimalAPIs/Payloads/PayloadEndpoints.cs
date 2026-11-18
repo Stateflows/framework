@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Collections.Concurrent;
 using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +28,8 @@ internal static class PayloadEndpoints
         PayloadDefinition definition,
         Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks,
         bool hasDefaultInstance = false,
-        BehaviorStatus[]? supportedStatuses = null
+        BehaviorStatus[]? supportedStatuses = null,
+        IAuthorizeData[]? authorization = null
     )
     {
         supportedStatuses ??= [BehaviorStatus.Initialized];
@@ -54,6 +56,8 @@ internal static class PayloadEndpoints
             );
 
             ConfigureEndpoint(routeHandlerBuilder, behaviorClass, definition, interceptor.ValidationSchemaMappers);
+            if (authorization is { Length: > 0 })
+                routeHandlerBuilder.RequireAuthorization(authorization);
 
             interceptor.AfterPayloadEndpointDefinition(behaviorClass, definition, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
@@ -94,6 +98,8 @@ internal static class PayloadEndpoints
             );
 
             ConfigureEndpoint(routeHandlerBuilder, behaviorClass, definition, interceptor.ValidationSchemaMappers);
+            if (authorization is { Length: > 0 })
+                routeHandlerBuilder.RequireAuthorization(authorization);
 
             interceptor.AfterPayloadEndpointDefinition(behaviorClass, definition, isDefaultInstance: true, method, defaultInstanceRoute, routeHandlerBuilder);
 

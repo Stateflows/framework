@@ -46,6 +46,15 @@ namespace Entity.IntegrationTests.Tests
         public int Count { get; set; }
     }
 
+    public interface IPayloadApiEntityTemplate
+    {
+        [Stateflows.Entities.Attributes.Field]
+        string Value { get; set; }
+
+        [Stateflows.Entities.Attributes.Mutation("ping", "hostedPing")]
+        void Ping(Payload e) => Value = $"{e.Name}:{e.Get<string>("value")}";
+    }
+
     [TestClass]
     public class PayloadMinimalApis
     {
@@ -131,6 +140,11 @@ namespace Entity.IntegrationTests.Tests
                         .AddAcceptEventAction("ping", "receive", _ => Task.CompletedTask)))
                 .AddActions(a => a
                     .AddAction("payloadAction", _ => Task.CompletedTask, ab => ab.AddConsumedEvent("ping")))
+                .AddOneOf()
+                .AddEntities(e => e
+                    .AddEntity<IPayloadApiEntityTemplate>("payloadEntity", b => b
+                        .AddInitializer("submit", c => c.Entity.Value = "init")
+                        .AddMutation<OneOf.OneOf<PayloadEntityApproved, PayloadEntityRejected>>(c => c.Entity.Value = "mapped")))
             );
 
             app = builder.Build();
@@ -398,6 +412,20 @@ namespace Entity.IntegrationTests.Tests
             var document = await GetOpenApiAsync();
             var schema = EventSchema(document, "/stateflows/stateMachines/payloadApi/{instance}/hostedPing");
             Assert.IsTrue(schema.GetProperty("properties").TryGetProperty("value", out _), schema.ToString());
+        }
+
+        [TestMethod]
+        public async Task PayloadEntityEndpointsAreRegisteredPerNameAndMappedType()
+        {
+            var document = await GetOpenApiAsync();
+            var paths = document.GetProperty("paths").EnumerateObject().Select(p => p.Name).ToArray();
+            foreach (var suffix in new[] { "ping", "hostedPing", "submit", "payloadEntityApproved", "payloadEntityRejected" })
+                CollectionAssert.Contains(paths, $"/stateflows/entities/payloadEntity/{{instance}}/{suffix}", string.Join(Environment.NewLine, paths));
+
+            var mutation = await http.PostAsync("/stateflows/entities/payloadEntity/e/hostedPing", Body(new { value = "v" }));
+            var text = await mutation.Content.ReadAsStringAsync();
+            Assert.AreEqual(HttpStatusCode.OK, mutation.StatusCode, text);
+            StringAssert.Contains(text, "Consumed");
         }
 
         [TestMethod]

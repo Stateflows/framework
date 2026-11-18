@@ -23,15 +23,18 @@ namespace Stateflows.Extensions.MinimalAPIs;
 /// </summary>
 internal class EntityVisitor(
     IEndpointRouteBuilder routeBuilder,
-    Interceptor interceptor
+    Interceptor interceptor,
+    ITypeMapper typeMapper,
+    IPayloadsRegister payloadsRegister
 ) : Entities.EntityVisitor
 {
     private sealed class EntityDefinition(string name, int version)
     {
         public string Name { get; } = name;
         public int Version { get; } = version;
-        public Dictionary<Type, System.Action> Initializers { get; } = new();
-        public Dictionary<Type, System.Action> Mutations { get; } = new();
+        // keyed by event name: one endpoint per payload name or (mapped) event type
+        public Dictionary<string, System.Action> Initializers { get; } = new();
+        public Dictionary<string, System.Action> Mutations { get; } = new();
         public Dictionary<Type, System.Action> Projections { get; } = new();
         public Dictionary<string, System.Action> Fields { get; } = new();
     }
@@ -73,8 +76,17 @@ internal class EntityVisitor(
     {
         if (IsCurrent(entityName, entityVersion))
         {
-            current!.Initializers[typeof(TInitializationEvent)] = () =>
-                RegisterEventEndpoint<TInitializationEvent>(entityName, [BehaviorStatus.NotInitialized]);
+            if (typeof(TInitializationEvent) == typeof(Payload))
+            {
+                foreach (var eventName in eventNames)
+                    current!.Initializers[eventName] = () =>
+                        RegisterPayloadEndpoint(entityName, eventName, [BehaviorStatus.NotInitialized]);
+            }
+            else
+            {
+                foreach (var (eventName, register) in GetMappedEndpoints<TInitializationEvent>(entityName, [BehaviorStatus.NotInitialized], null))
+                    current!.Initializers[eventName] = register;
+            }
         }
 
         return Task.CompletedTask;
@@ -86,12 +98,22 @@ internal class EntityVisitor(
         {
             var methods = new[] { typeof(TTemplate) }.Concat(typeof(TTemplate).GetInterfaces())
                 .SelectMany(type => type.GetMethods())
-                .Where(method => method.IsDefined(typeof(MutationAttribute)) &&
-                    method.GetParameters() is [var parameter] && parameter.ParameterType == typeof(TMutationEvent))
+                .Where(method => method.GetCustomAttribute<MutationAttribute>() is { } attribute &&
+                    method.GetParameters() is [var parameter] && parameter.ParameterType == typeof(TMutationEvent) &&
+                    (typeof(TMutationEvent) != typeof(Payload) || attribute.EventNames.Any(eventNames.Contains)))
                 .Distinct();
             var authorization = GetAccessorAuthorization(methods);
-            current!.Mutations[typeof(TMutationEvent)] = () =>
-                RegisterEventEndpoint<TMutationEvent>(entityName, [BehaviorStatus.Initialized], authorization);
+            if (typeof(TMutationEvent) == typeof(Payload))
+            {
+                foreach (var eventName in eventNames)
+                    current!.Mutations[eventName] = () =>
+                        RegisterPayloadEndpoint(entityName, eventName, [BehaviorStatus.Initialized], authorization);
+            }
+            else
+            {
+                foreach (var (eventName, register) in GetMappedEndpoints<TMutationEvent>(entityName, [BehaviorStatus.Initialized], authorization))
+                    current!.Mutations[eventName] = register;
+            }
         }
 
         return Task.CompletedTask;
@@ -206,6 +228,26 @@ internal class EntityVisitor(
             eventType.IsAssignableTo(typeof(SystemEvent)) ||
             eventType.IsAssignableTo(typeof(Exception))
         );
+
+    private IEnumerable<(string EventName, System.Action Register)> GetMappedEndpoints<TEvent>(string entityName,
+        BehaviorStatus[] supportedStatuses, IAuthorizeData[]? authorization)
+        => typeMapper.GetMappedTypes(typeof(TEvent))
+            .Distinct()
+            .Select(eventType => (
+                Event.GetName(eventType),
+                (System.Action)(() => RegisterEventEndpointMethod
+                    .MakeGenericMethod(eventType)
+                    .Invoke(this, [entityName, supportedStatuses, authorization]))
+            ))
+            .ToArray();
+
+    private static readonly MethodInfo RegisterEventEndpointMethod = typeof(EntityVisitor)
+        .GetMethod(nameof(RegisterEventEndpoint), BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+    private void RegisterPayloadEndpoint(string entityName, string eventName, BehaviorStatus[] supportedStatuses,
+        IAuthorizeData[]? authorization = null)
+        => routeBuilder.RegisterPayloadEndpoint(entityInterceptor, BehaviorType.Entity, entityName,
+            payloadsRegister.GetPayload(eventName), HateoasLinks, hasDefaultInstance: false, supportedStatuses, authorization);
 
     private void RegisterEventEndpoint<TEvent>(string entityName, BehaviorStatus[] supportedStatuses,
         IAuthorizeData[]? authorization = null)

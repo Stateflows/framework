@@ -205,9 +205,9 @@ namespace Stateflows.Entities.Engine
             => ReportedStatus switch
             {
                 BehaviorStatus.NotInitialized => registration.Model.Initializers.Count != 0
-                    ? registration.Model.Initializers.Keys.Select(type => Event.GetName(type)).ToArray()
+                    ? registration.Model.Initializers.Keys.ToArray()
                     : [Event<Initialize>.Name],
-                BehaviorStatus.Initialized => registration.Model.Mutations.Keys.Select(type => Event.GetName(type)).ToArray(),
+                BehaviorStatus.Initialized => registration.Model.Mutations.Keys.ToArray(),
                 _ => []
             };
 
@@ -271,8 +271,8 @@ namespace Stateflows.Entities.Engine
                 return EventStatus.Initialized;
             }
 
-            var eventType = typeof(TEvent);
-            if (registration.Model.Initializers.TryGetValue(eventType, out var initModel) && initModel.Invoke != null)
+            var eventName = @event is Payload payload ? payload.Name : Event.GetName(typeof(TEvent));
+            if (registration.Model.Initializers.TryGetValue(eventName, out var initModel) && initModel.Invoke != null)
             {
                 try
                 {
@@ -288,7 +288,7 @@ namespace Stateflows.Entities.Engine
                 catch (Exception ex)
                 {
                     context.ExecutionExceptions.Enqueue(ex);
-                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': initializer for '{Event.GetName(eventType)}' threw exception: {ex}");
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': initializer for '{eventName}' threw exception: {ex}");
                     throw;
                 }
                 return EventStatus.Initialized;
@@ -347,9 +347,9 @@ namespace Stateflows.Entities.Engine
                 }
             }
             else
-            if (registration.Model.Mutations.TryGetValue(eventType, out var mutationModel) && mutationModel != null)
+            if (registration.Model.Mutations.TryGetValue(eventHolder.Payload is Payload mutationPayload ? mutationPayload.Name : Event.GetName(eventType), out var mutationModel) && mutationModel != null)
             {   
-                Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': mutation '{Event.GetName(eventType)}' received, processing");
+                Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': mutation '{mutationModel.Key}' received, processing");
                 try
                 {
                     await mutationModel.InvokeAsync(context.Values, behaviorContext, inspection, eventHolder.Payload);
@@ -357,11 +357,11 @@ namespace Stateflows.Entities.Engine
                 catch (Exception ex)
                 {
                     context.ExecutionExceptions.Enqueue(ex);
-                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': mutation '{Event.GetName(eventType)}' threw exception: {ex}");
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': mutation '{mutationModel.Key}' threw exception: {ex}");
                     return EventStatus.Failed;
                 }
 
-                Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': mutation '{Event.GetName(eventType)}' processed successfully");
+                Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': mutation '{mutationModel.Key}' processed successfully");
                 return EventStatus.Consumed;
             }
             else

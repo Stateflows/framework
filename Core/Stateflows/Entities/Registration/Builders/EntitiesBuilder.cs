@@ -4,12 +4,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Stateflows.Common;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Engine;
 using Stateflows.Entities.Enums;
 using Stateflows.Entities.Registration.Interfaces;
+using Stateflows.Payloads;
 
 namespace Stateflows.Entities.Registration.Builders
 {
@@ -110,8 +112,20 @@ namespace Stateflows.Entities.Registration.Builders
                     .Invoke(null, [builder, property]);
             }
 
+            var typeMapper = (builder as EntityBuilder<TTemplate>)?.Registration.StateflowsBuilder.TypeMapper;
+            ThrowOnDuplicateEventNames(typeof(TTemplate), "Mutation", analysis.Mutations, method => method.GetCustomAttribute<MutationAttribute>()!.EventNames, typeMapper);
+            ThrowOnDuplicateEventNames(typeof(TTemplate), "Initializer", analysis.Initializers, method => method.GetCustomAttribute<InitializerAttribute>()!.EventNames, typeMapper);
+
             foreach (var method in analysis.Mutations.OrderBy(method => method.Name))
             {
+                var eventNames = method.GetCustomAttribute<MutationAttribute>()!.EventNames;
+                if (eventNames.Count != 0)
+                {
+                    builder.AddMutation(eventNames,
+                        context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [context.MutationEvent]));
+                    continue;
+                }
+
                 RegisterMutationMethod
                     .MakeGenericMethod(typeof(TTemplate), method.GetParameters()[0].ParameterType)
                     .Invoke(null, [builder, method]);
@@ -126,9 +140,73 @@ namespace Stateflows.Entities.Registration.Builders
 
             foreach (var method in analysis.Initializers.OrderBy(method => method.Name))
             {
+                var eventNames = method.GetCustomAttribute<InitializerAttribute>()!.EventNames;
+                if (eventNames.Count != 0)
+                {
+                    builder.AddInitializer(eventNames,
+                        context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [context.InitializationEvent]));
+                    continue;
+                }
+
                 RegisterInitializerMethod
                     .MakeGenericMethod(typeof(TTemplate), method.GetParameters()[0].ParameterType)
                     .Invoke(null, [builder, method]);
+            }
+        }
+
+        private static void ThrowOnDuplicateEventNames(Type templateType, string kind, IEnumerable<MethodInfo> methods,
+            Func<MethodInfo, IReadOnlyList<string>> getDeclaredNames, ITypeMapper typeMapper)
+        {
+            var duplicate = methods
+                .SelectMany(method =>
+                {
+                    var declaredNames = getDeclaredNames(method);
+                    var eventNames = declaredNames.Count != 0
+                        ? declaredNames
+                        : (typeMapper?.GetMappedTypes(method.GetParameters()[0].ParameterType) ?? [method.GetParameters()[0].ParameterType])
+                            .Select(Event.GetName)
+                            .Distinct();
+                    return eventNames.Select(eventName => (eventName, method));
+                })
+                .GroupBy(entry => entry.eventName, StringComparer.Ordinal)
+                .FirstOrDefault(group => group.Count() > 1);
+            if (duplicate != null)
+            {
+                throw new InvalidOperationException(
+                    $"{kind} event '{duplicate.Key}' is declared multiple times on template '{templateType.FullName}' (methods {string.Join(", ", duplicate.Select(entry => $"'{entry.method.Name}'"))})."
+                );
+            }
+        }
+
+        private static void ValidateEventNames(Type templateType, string kind, MethodInfo method, IReadOnlyList<string> eventNames)
+        {
+            var isPayload = PayloadNameSet.IsPayloadType(method.GetParameters()[0].ParameterType);
+            if (isPayload && eventNames.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    $"{kind} method '{templateType.FullName}.{method.Name}' takes a Payload parameter and must list its event names in the attribute."
+                );
+            }
+
+            if (!isPayload && eventNames.Count != 0)
+            {
+                throw new InvalidOperationException(
+                    $"{kind} method '{templateType.FullName}.{method.Name}' lists event names, which are allowed only for a Payload parameter."
+                );
+            }
+
+            if (isPayload)
+            {
+                try
+                {
+                    PayloadNameSet.Validate(eventNames, "eventNames");
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new InvalidOperationException(
+                        $"{kind} method '{templateType.FullName}.{method.Name}' declares invalid event names: {ex.Message}", ex
+                    );
+                }
             }
         }
 
@@ -275,6 +353,8 @@ namespace Stateflows.Entities.Registration.Builders
                         );
                     }
 
+                    ValidateEventNames(templateType, "Mutation", method, method.GetCustomAttribute<MutationAttribute>()!.EventNames);
+
                     analysis.Mutations.Add(method);
                 }
 
@@ -329,18 +409,10 @@ namespace Stateflows.Entities.Registration.Builders
                         );
                     }
 
+                    ValidateEventNames(templateType, "Initializer", method, method.GetCustomAttribute<InitializerAttribute>()!.EventNames);
+
                     analysis.Initializers.Add(method);
                 }
-            }
-
-            var duplicateInitializerType = analysis.Initializers
-                .GroupBy(method => method.GetParameters()[0].ParameterType)
-                .FirstOrDefault(group => group.Count() > 1);
-            if (duplicateInitializerType != null)
-            {
-                throw new InvalidOperationException(
-                    $"Initializer event type '{duplicateInitializerType.Key.FullName}' is declared multiple times on template '{templateType.FullName}'."
-                );
             }
 
             var duplicateProjectionType = analysis.Projections
@@ -350,16 +422,6 @@ namespace Stateflows.Entities.Registration.Builders
             {
                 throw new InvalidOperationException(
                     $"Projection type '{duplicateProjectionType.Key.FullName}' is declared multiple times on template '{templateType.FullName}'."
-                );
-            }
-
-            var duplicateMutationType = analysis.Mutations
-                .GroupBy(method => method.GetParameters()[0].ParameterType)
-                .FirstOrDefault(group => group.Count() > 1);
-            if (duplicateMutationType != null)
-            {
-                throw new InvalidOperationException(
-                    $"Mutation event type '{duplicateMutationType.Key.FullName}' is declared multiple times on template '{templateType.FullName}'."
                 );
             }
 

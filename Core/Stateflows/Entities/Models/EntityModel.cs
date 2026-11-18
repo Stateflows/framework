@@ -20,11 +20,13 @@ namespace Stateflows.Entities.Models
         
         public Dictionary<string, FieldModel> Fields { get; } = [];
 
-        public Dictionary<Type, MutationModel> Mutations { get; } = [];
+        /// <summary>Mutation handlers keyed by effective event name (CLR event name, mapped event name or payload name).</summary>
+        public Dictionary<string, MutationModel> Mutations { get; } = new(StringComparer.Ordinal);
 
         public List<Action<Dictionary<string, object>>> DefaultInitializerInvoke { get; set; } = [];
 
-        public Dictionary<Type, InitializerModel> Initializers { get; } = [];
+        /// <summary>Initializers keyed by effective event name (CLR event name, mapped event name or payload name).</summary>
+        public Dictionary<string, InitializerModel> Initializers { get; } = new(StringComparer.Ordinal);
 
         public Dictionary<Type, ProjectionModel> Projections { get; } = [];
     }
@@ -96,6 +98,8 @@ namespace Stateflows.Entities.Models
     {
         public Type MutationType { get; set; }
 
+        public string Key { get; set; }
+
         public Delegate MutationAction { get; set; }
         
         public Func<Dictionary<string, object>, BehaviorContext, EntityInspection, object, Task> InvokeAsync { get; set; }
@@ -104,6 +108,8 @@ namespace Stateflows.Entities.Models
     internal class InitializerModel
     {
         public Type InitializationEventType { get; set; }
+
+        public string Key { get; set; }
 
         public Delegate InitializerAction { get; set; }
 

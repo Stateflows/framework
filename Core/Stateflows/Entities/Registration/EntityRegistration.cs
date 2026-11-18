@@ -44,10 +44,10 @@ namespace Stateflows.Entities.Registration
                     Name, Version, field.Name, field.HasDefaultValue, field.DefaultValue ?? (field.ValueType.IsValueType ? Activator.CreateInstance(field.ValueType) : null), field.IsComputed, field.Access);
             for (var index = 0; index < Model.DefaultInitializerInvoke.Count; index++)
                 await Invoke(nameof(visitor.DefaultInitializerAddedAsync), [template], $"{Identifier}/default-initializer:{index}", Name, Version, index);
-            foreach (var type in Model.Initializers.Keys)
-                await Invoke(nameof(visitor.InitializerAddedAsync), [template, type], $"{Identifier}/initializer:{Event.GetName(type)}", Name, Version, new[] { Event.GetName(type) });
-            foreach (var type in Model.Mutations.Keys)
-                await Invoke(nameof(visitor.MutationAddedAsync), [template, type], $"{Identifier}/mutation:{Event.GetName(type)}", Name, Version, new[] { Event.GetName(type) });
+            foreach (var group in Model.Initializers.GroupBy(pair => pair.Value))
+                await Invoke(nameof(visitor.InitializerAddedAsync), [template, group.Key.InitializationEventType], $"{Identifier}/initializer:{group.Key.Key}", Name, Version, group.Select(pair => pair.Key).ToArray());
+            foreach (var group in Model.Mutations.GroupBy(pair => pair.Value))
+                await Invoke(nameof(visitor.MutationAddedAsync), [template, group.Key.MutationType], $"{Identifier}/mutation:{group.Key.Key}", Name, Version, group.Select(pair => pair.Key).ToArray());
             foreach (var projection in Model.Projections.Values)
                 await Invoke(nameof(visitor.ProjectionAddedAsync), [template, projection.ProjectionType],
                     $"{Identifier}/projection:{Event.GetName(projection.ProjectionType)}", Name, Version, projection.PublishScope);

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Stateflows.Common;
+using Stateflows.Common.Utilities;
 using Stateflows.Entities.Attributes;
+using Stateflows.Payloads;
 using Stateflows.Entities.Engine;
 using Stateflows.Entities.Enums;
 using Stateflows.Entities.Models;
@@ -49,22 +52,57 @@ namespace Stateflows.Entities.Registration.Builders
 
         public IEntityBuilder<TTemplate> AddInitializer<TInitializationEvent>(InitializerAction<TTemplate, TInitializationEvent> action)
         {
-            Registration.Model.Initializers[typeof(TInitializationEvent)] = new InitializerModel
+            RejectPayloadType<TInitializationEvent>("initializer", "AddInitializer(eventNames, action)");
+            return SetInitializer(MappedEventNames<TInitializationEvent>(), Event.GetName(typeof(TInitializationEvent)), action);
+        }
+
+        public IEntityBuilder<TTemplate> AddInitializer(IReadOnlyList<string> eventNames, InitializerAction<TTemplate, Payload> action)
+        {
+            eventNames = PayloadNameSet.Validate(eventNames, nameof(eventNames));
+            return SetInitializer(eventNames, PayloadNameSet.Key(eventNames), action);
+        }
+
+        private IEntityBuilder<TTemplate> SetInitializer<TInitializationEvent>(IEnumerable<string> eventNames, string key,
+            InitializerAction<TTemplate, TInitializationEvent> action)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            var model = new InitializerModel
             {
                 InitializationEventType = typeof(TInitializationEvent),
+                Key = key,
                 InitializerAction = action,
                 Invoke = (values, eventObj) =>
                 {
                     var (_, entity) = EntityProxy<TTemplate>.Create(values, Registration.Model);
                     action(new EntityInitializationContext<TTemplate, TInitializationEvent>(
                         entity,
-                        (TInitializationEvent)eventObj
+                        ConvertEvent<TInitializationEvent>(eventObj)
                     ));
                 }
             };
+            foreach (var eventName in eventNames)
+                Registration.Model.Initializers[eventName] = model;
 
             return this;
         }
+
+        private IEnumerable<string> MappedEventNames<TEvent>()
+            => Registration.StateflowsBuilder.TypeMapper.GetMappedTypes(typeof(TEvent)).Select(Event.GetName).Distinct().ToArray();
+
+        private void RejectPayloadType<TEvent>(string kind, string alternative)
+        {
+            if (PayloadNameSet.IsPayloadType(typeof(TEvent)))
+                throw new InvalidOperationException(
+                    $"Entity '{Registration.Name}': a payload {kind} must declare its event names; use {alternative}.");
+        }
+
+        private static TEvent ConvertEvent<TEvent>(object eventObj)
+            => eventObj is TEvent typed
+                ? typed
+                : ImplicitConverter.TryConvert<TEvent>(eventObj, out var converted)
+                    ? converted
+                    : throw new InvalidOperationException(
+                        $"Event of type '{eventObj?.GetType().FullName}' cannot be converted to '{typeof(TEvent).FullName}'.");
 
         public IEntityBuilder<TTemplate> AddField<TField>(Expression<Func<TTemplate, TField>> fieldSelector, FieldBuildAction<TTemplate, TField> buildAction = null)
         {
@@ -87,18 +125,34 @@ namespace Stateflows.Entities.Registration.Builders
 
         public IEntityBuilder<TTemplate> AddMutation<TMutationEvent>(MutationAction<TTemplate, TMutationEvent> mutationAction)
         {
-            Registration.Model.Mutations[typeof(TMutationEvent)] = new MutationModel
+            RejectPayloadType<TMutationEvent>("mutation", "AddMutation(eventNames, mutationAction)");
+            return SetMutation(MappedEventNames<TMutationEvent>(), Event.GetName(typeof(TMutationEvent)), mutationAction);
+        }
+
+        public IEntityBuilder<TTemplate> AddMutation(IReadOnlyList<string> eventNames, MutationAction<TTemplate, Payload> mutationAction)
+        {
+            eventNames = PayloadNameSet.Validate(eventNames, nameof(eventNames));
+            return SetMutation(eventNames, PayloadNameSet.Key(eventNames), mutationAction);
+        }
+
+        private IEntityBuilder<TTemplate> SetMutation<TMutationEvent>(IEnumerable<string> eventNames, string key,
+            MutationAction<TTemplate, TMutationEvent> mutationAction)
+        {
+            if (mutationAction == null) throw new ArgumentNullException(nameof(mutationAction));
+            var model = new MutationModel
             {
                 MutationType = typeof(TMutationEvent),
+                Key = key,
                 MutationAction = mutationAction,
                 InvokeAsync = async (values, behaviorContext, inspection, eventObj) =>
                 {
                     var oldValues = GetTrackedFieldValuesSnapshot(values);
 
                     var (_, entity) = EntityProxy<TTemplate>.Create(values, Registration.Model);
-                    await inspection.MutationAsync(entity, (TMutationEvent)eventObj, () =>
+                    var mutationEvent = ConvertEvent<TMutationEvent>(eventObj);
+                    await inspection.MutationAsync(entity, mutationEvent, () =>
                     {
-                        mutationAction(new MutationContext<TTemplate, TMutationEvent>(entity, (TMutationEvent)eventObj));
+                        mutationAction(new MutationContext<TTemplate, TMutationEvent>(entity, mutationEvent));
                         return Task.CompletedTask;
                     });
 
@@ -111,7 +165,9 @@ namespace Stateflows.Entities.Registration.Builders
                     }
                 }
             };
-            
+            foreach (var eventName in eventNames)
+                Registration.Model.Mutations[eventName] = model;
+
             return this;
         }
 
