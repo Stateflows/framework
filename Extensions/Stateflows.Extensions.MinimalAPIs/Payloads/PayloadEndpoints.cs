@@ -118,7 +118,7 @@ internal static class PayloadEndpoints
         }
     }
 
-    private static void ConfigureEndpoint(RouteHandlerBuilder routeHandlerBuilder, BehaviorClass behaviorClass, PayloadDefinition definition,
+    internal static void ConfigureEndpoint(RouteHandlerBuilder routeHandlerBuilder, BehaviorClass behaviorClass, PayloadDefinition definition,
         IReadOnlyDictionary<Type, Action<ValidationAttribute, Microsoft.OpenApi.OpenApiSchema>> validationSchemaMappers)
     {
         routeHandlerBuilder

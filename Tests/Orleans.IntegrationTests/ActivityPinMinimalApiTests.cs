@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +24,7 @@ using Stateflows.Common.Utilities;
 using Stateflows.Interfaces;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.MinimalAPIs.Attributes;
+using Stateflows.Payloads;
 using CollisionA = Orleans.IntegrationTests.ActivityPinTypesA;
 using CollisionB = Orleans.IntegrationTests.ActivityPinTypesB;
 
@@ -31,6 +33,27 @@ namespace Orleans.IntegrationTests;
 [TestClass]
 public sealed class ActivityPinMinimalApiTests
 {
+    public sealed class PayloadPinEndpointInterceptor : EndpointDefinitionInterceptor
+    {
+        public static readonly ConcurrentBag<string> BeforeRoutes = [];
+        public static readonly ConcurrentBag<string> AfterRoutes = [];
+
+        public override bool BeforePayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition,
+            bool isDefaultInstance, ref string method, ref string route)
+        {
+            if (behaviorClass.Name == "pin-payload" && eventDefinition.Name == "pinMessage")
+                BeforeRoutes.Add(route);
+            return true;
+        }
+
+        public override void AfterPayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition,
+            bool isDefaultInstance, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
+        {
+            if (behaviorClass.Name == "pin-payload" && eventDefinition.Name == "pinMessage")
+                AfterRoutes.Add(route);
+        }
+    }
+
     private WebApplication app = null!;
     private HttpClient http = null!;
     private readonly TaskCompletionSource started = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -40,6 +63,8 @@ public sealed class ActivityPinMinimalApiTests
     [TestInitialize]
     public async Task Initialize()
     {
+        PayloadPinEndpointInterceptor.BeforeRoutes.Clear();
+        PayloadPinEndpointInterceptor.AfterRoutes.Clear();
         var ports = GetPorts();
         var cluster = Guid.NewGuid().ToString("N");
         var builder = WebApplication.CreateBuilder();
@@ -48,6 +73,7 @@ public sealed class ActivityPinMinimalApiTests
         builder.Services.AddAuthentication("pin-test")
             .AddScheme<AuthenticationSchemeOptions, PinAuthenticationHandler>("pin-test", _ => { });
         builder.Services.AddAuthorization();
+        builder.Services.AddOpenApi();
         builder.Host.UseOrleans(silo => silo
             .UseLocalhostClustering(ports[1], ports[2], null, cluster, cluster)
             .UseInMemoryReminderService()
@@ -55,6 +81,10 @@ public sealed class ActivityPinMinimalApiTests
             .AddStateflowsRuntime());
         builder.Services.AddStateflows(sf => sf
             .AddDefaultInstance(new ActivityClass("pin-default"))
+            .AddPayloads(events => events
+                .AddPayload("pinMessage", payload => payload.AddField("value", FieldType.Int32))
+                .AddPayload("pinReply", _ => { })
+                .AddRequest("pinQuery", "pinReply", _ => { }))
             .AddActivities(activities => activities
                 .AddActivity("pin-http", activity => activity
                     .AddInputPin<int>(pin => pin.AddFlow("numbers"))
@@ -92,12 +122,18 @@ public sealed class ActivityPinMinimalApiTests
                 .AddActivity("pin-secure", activity => activity
                     .AddInputPin<SecurePin>(pin => pin.AddFlow<OutputPin<SecurePin>>()).AddOutputPin<SecurePin>())
                 .AddActivity("pin-configured", activity => activity
-                    .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>()).AddOutputPin<int>())));
+                    .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>()).AddOutputPin<int>())
+                .AddActivity("pin-payload", activity => activity
+                    .AddInputPin("pinMessage", pin => pin.AddFlow("pin-message-output"))
+                    .AddOutputPin("pinMessage", "pin-message-output", _ => { })
+                    .AddInputPin("pinQuery", _ => { }))));
 
         app = builder.Build();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.MapOpenApi();
         app.MapStateflowsMinimalAPIsEndpoints(api => api
+            .AddEndpointDefinitionInterceptor<PayloadPinEndpointInterceptor>()
             .ConfigureActivities(activities => activities.ConfigureActivity("pin-configured", activity => activity
                 .ConfigureStandardInstances(instances => instances
                     .ConfigureEventEndpoint<TokensInput<int>>(endpoint => endpoint.UpdateRoute(_ => "/custom/input/{instance}"))
@@ -283,6 +319,49 @@ public sealed class ActivityPinMinimalApiTests
     }
 
     [TestMethod]
+    [Timeout(60_000)]
+    public async Task PayloadPinsUseNamedEndpointsAndDecodeRegisteredPayloads()
+    {
+        const string root = "/stateflows/activities/pin-payload/a";
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var request = new HttpRequestMessage(HttpMethod.Get, root + "/output/pinMessage?stream=true");
+        using var output = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation.Token);
+        Assert.AreEqual(HttpStatusCode.OK, output.StatusCode);
+        using var reader = new StreamReader(await output.Content.ReadAsStreamAsync(cancellation.Token));
+
+        using var invalid = await http.PostAsync(root + "/input/pinMessage",
+            new StringContent("{\"event\":{\"value\":\"invalid\"}}", Encoding.UTF8, "application/json"), cancellation.Token);
+        Assert.AreEqual(HttpStatusCode.BadRequest, invalid.StatusCode);
+
+        using var input = await http.PostAsync(root + "/input/pinMessage",
+            new StringContent("{\"event\":{\"value\":12}}", Encoding.UTF8, "application/json"), cancellation.Token);
+        Assert.AreEqual(HttpStatusCode.OK, input.StatusCode, await input.Content.ReadAsStringAsync());
+        var responseBody = JsonDocument.Parse(await input.Content.ReadAsStringAsync());
+        CollectionAssert.Contains(responseBody.RootElement.GetProperty("links").EnumerateArray()
+            .Select(link => link.GetProperty("rel").GetString()).ToArray(), "input/pinMessage");
+        var notification = await ReadSseAsync(reader, cancellation.Token);
+        Assert.AreEqual(12, notification.GetProperty("payload").GetProperty("value").GetInt32());
+        cancellation.Cancel();
+
+        var routes = ((IEndpointRouteBuilder)app).DataSources.SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>().Select(endpoint => endpoint.RoutePattern.RawText!).ToArray();
+        CollectionAssert.DoesNotContain(routes, "/stateflows/activities/pin-payload/{instance}/input/pinQuery");
+        Assert.AreEqual(2, PayloadPinEndpointInterceptor.BeforeRoutes.Count);
+        Assert.AreEqual(2, PayloadPinEndpointInterceptor.AfterRoutes.Count);
+
+        using var openApi = JsonDocument.Parse(await http.GetStringAsync("/openapi/v1.json"));
+        var paths = openApi.RootElement.GetProperty("paths");
+        var inputField = paths.GetProperty("/stateflows/activities/pin-payload/{instance}/input/pinMessage")
+            .GetProperty("post").GetProperty("requestBody").GetProperty("content").GetProperty("application/json")
+            .GetProperty("schema").GetProperty("properties").GetProperty("event").GetProperty("properties").GetProperty("value");
+        AssertSchemaType(inputField, "integer");
+        var outputField = paths.GetProperty("/stateflows/activities/pin-payload/{instance}/output/pinMessage")
+            .GetProperty("get").GetProperty("responses").GetProperty("200").GetProperty("content")
+            .GetProperty("application/json").GetProperty("schema").GetProperty("properties").GetProperty("value");
+        AssertSchemaType(outputField, "integer");
+    }
+
+    [TestMethod]
     public async Task CollidingTokenRouteNamesFailMappingExplicitly()
     {
         var builder = WebApplication.CreateBuilder();
@@ -294,6 +373,22 @@ public sealed class ActivityPinMinimalApiTests
         var exception = Assert.Throws<InvalidOperationException>(() => collisionApp.MapStateflowsMinimalAPIsEndpoints());
         StringAssert.Contains(exception.Message, "same endpoint");
         StringAssert.Contains(exception.Message, "input/token");
+    }
+
+    [TestMethod]
+    public void PayloadPinRouteCollisionWithTypedPinFailsMappingExplicitly()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddStateflows(sf => sf
+            .AddLegacyRuntime()
+            .AddPayloads(events => events.AddPayload("int32", _ => { }))
+            .AddActivities(activities => activities.AddActivity("payload-collision", activity => activity
+                .AddInputPin<int>(_ => { })
+                .AddInputPin("int32", _ => { }))));
+        using var collisionApp = builder.Build();
+        var exception = Assert.Throws<InvalidOperationException>(() => collisionApp.MapStateflowsMinimalAPIsEndpoints());
+        StringAssert.Contains(exception.Message, "same endpoint");
+        StringAssert.Contains(exception.Message, "input/int32");
     }
 
     [TestMethod]
@@ -338,7 +433,11 @@ public sealed class ActivityPinMinimalApiTests
             .OfType<RouteEndpoint>().Select(endpoint => endpoint.RoutePattern.RawText!).ToArray();
         CollectionAssert.Contains(routes, "/stateflows/activities/pin-http/{instance}/input/int32");
         CollectionAssert.Contains(routes, "/stateflows/activities/pin-http/{instance}/output/string");
+        CollectionAssert.Contains(routes, "/stateflows/activities/pin-payload/{instance}/input/pinMessage");
+        CollectionAssert.Contains(routes, "/stateflows/activities/pin-payload/{instance}/output/pinMessage");
         CollectionAssert.DoesNotContain(routes, "/stateflows/activities/pin-http/{instance}/input/hiddenPin");
+        CollectionAssert.DoesNotContain(routes, "/stateflows/activities/pin-payload/{instance}/input/payload");
+        CollectionAssert.DoesNotContain(routes, "/stateflows/activities/pin-payload/{instance}/output/pinQuery");
         CollectionAssert.DoesNotContain(routes, "/stateflows/activities/pin-nested/{instance}/input/string");
         CollectionAssert.DoesNotContain(routes, "/stateflows/activities/pin-nested/{instance}/output/string");
         Assert.AreEqual(1, routes.Count(route => route == "/stateflows/activities/pin-versions/{instance}/input/string"));
@@ -346,6 +445,15 @@ public sealed class ActivityPinMinimalApiTests
         CollectionAssert.DoesNotContain(routes, "/stateflows/activities/pin-removed/{instance}/input/int32");
         CollectionAssert.DoesNotContain(routes, "/stateflows/activities/pin-removed/{instance}/output/int32");
         CollectionAssert.Contains(routes, "/stateflows/custom/output/{instance}");
+    }
+
+    private static void AssertSchemaType(JsonElement schema, string expectedType)
+    {
+        var type = schema.GetProperty("type");
+        var matches = type.ValueKind == JsonValueKind.Array
+            ? type.EnumerateArray().Any(item => item.GetString() == expectedType)
+            : type.GetString() == expectedType;
+        Assert.IsTrue(matches, $"Expected schema type '{expectedType}', got {type}.");
     }
 
     private sealed class PinAuthenticationHandler(

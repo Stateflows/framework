@@ -25,15 +25,20 @@ internal class ActivityVisitor(
     private string CurrentActivityName = string.Empty;
     private BehaviorClass? OwnerClass = null;
 
-    private readonly Dictionary<(string Name, int Version), Dictionary<(bool Input, Type Type), System.Action>> pinEndpoints = new();
+    private readonly Dictionary<(string Name, int Version), Dictionary<(bool Input, Type Type, string? PayloadName), System.Action>> pinEndpoints = new();
     private readonly Dictionary<string, int> latestPinVersions = new();
+    private readonly HashSet<(string Name, int Version, string ElementId, TokenNamesDeclarationKind Kind)> rootPayloadPins = [];
 
     public Task InputPinAddedAsync<TToken>(string pinId, string activityName, int activityVersion, string? parentNodeId)
     {
-        if (OwnerClass == null && parentNodeId == null && ActivityPinEndpoints.IsMappable<TToken>())
+        if (OwnerClass == null && parentNodeId == null && typeof(TToken) == typeof(Payload))
+        {
+            rootPayloadPins.Add((activityName, activityVersion, pinId, TokenNamesDeclarationKind.InputPin));
+        }
+        else if (OwnerClass == null && parentNodeId == null && ActivityPinEndpoints.IsMappable<TToken>())
         {
             var hasDefaultInstance = HasDefaultInstance;
-            pinEndpoints[(activityName, activityVersion)][(true, typeof(TToken))] = () =>
+            pinEndpoints[(activityName, activityVersion)][(true, typeof(TToken), null)] = () =>
                 routeBuilder.RegisterInputPinEndpoint<TToken>(interceptor, activityName, hasDefaultInstance, HateoasLinks);
         }
         return Task.CompletedTask;
@@ -41,12 +46,37 @@ internal class ActivityVisitor(
 
     public Task OutputPinAddedAsync<TToken>(string pinId, string activityName, int activityVersion, string? parentNodeId)
     {
-        if (OwnerClass == null && parentNodeId == null && ActivityPinEndpoints.IsMappable<TToken>())
+        if (OwnerClass == null && parentNodeId == null && typeof(TToken) == typeof(Payload))
+        {
+            rootPayloadPins.Add((activityName, activityVersion, pinId, TokenNamesDeclarationKind.OutputPin));
+        }
+        else if (OwnerClass == null && parentNodeId == null && ActivityPinEndpoints.IsMappable<TToken>())
         {
             var hasDefaultInstance = HasDefaultInstance;
-            pinEndpoints[(activityName, activityVersion)][(false, typeof(TToken))] = () =>
+            pinEndpoints[(activityName, activityVersion)][(false, typeof(TToken), null)] = () =>
                 routeBuilder.RegisterOutputPinEndpoint<TToken>(interceptor, activityName, hasDefaultInstance, HateoasLinks);
         }
+        return Task.CompletedTask;
+    }
+
+    public Task TokenNamesDeclaredAsync(string elementId, string activityName, int activityVersion,
+        TokenNamesDeclarationKind kind, IReadOnlyList<string> tokenNames)
+    {
+        if (!rootPayloadPins.Contains((activityName, activityVersion, elementId, kind)))
+            return Task.CompletedTask;
+
+        foreach (var tokenName in tokenNames)
+        {
+            var definition = eventsRegister.GetPayload(tokenName);
+            if (definition.IsRequest)
+                continue;
+
+            var hasDefaultInstance = HasDefaultInstance;
+            var isInput = kind == TokenNamesDeclarationKind.InputPin;
+            pinEndpoints[(activityName, activityVersion)][(isInput, typeof(Payload), tokenName)] = () =>
+                routeBuilder.RegisterPayloadPinEndpoint(interceptor, definition, activityName, isInput, hasDefaultInstance, HateoasLinks);
+        }
+
         return Task.CompletedTask;
     }
 

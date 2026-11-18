@@ -109,6 +109,31 @@ internal sealed class PayloadOpenApi(IReadOnlyDictionary<Type, Action<Validation
         }
     }
 
+    public Task ApplyOutputPinAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context,
+        PayloadDefinition definition, CancellationToken cancellationToken)
+    {
+        operation.Summary ??= $"Receives '{definition.Name}' output token";
+        operation.RequestBody = null;
+        operation.Responses ??= new OpenApiResponses();
+        operation.Responses["200"] = new OpenApiResponse
+        {
+            Description = $"Next '{definition.Name}' output token",
+            Content = new Dictionary<string, OpenApiMediaType>
+            {
+                ["application/json"] = new() { Schema = CreateEventSchema(definition) },
+                ["text/event-stream"] = new()
+                {
+                    Schema = new OpenApiSchema
+                    {
+                        Type = JsonSchemaType.String,
+                        Description = "Server-sent events stream of matching payload output tokens (when 'stream=true')"
+                    }
+                }
+            }
+        };
+        return Task.CompletedTask;
+    }
+
     internal OpenApiSchema CreateRequestEnvelopeSchema(PayloadDefinition definition)
     {
         var schema = new OpenApiSchema
