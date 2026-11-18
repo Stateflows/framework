@@ -110,6 +110,11 @@ namespace Stateflows.Activities.Models
             foreach (var node in AllNodes.Values.Where(node => node != null))
             {
                 node.IncomingEdges?.Clear();
+                foreach (var name in node.InputTokenKeys.Concat(node.OptionalInputTokenKeys).Concat(node.OutputTokenKeys)
+                    .Where(key => key.IsPayload).SelectMany(key => key.Names).Distinct(StringComparer.Ordinal))
+                {
+                    StateflowsBuilder.Payloads.GetPayload(name);
+                }
                 if (node.PayloadNames != null)
                 {
                     foreach (var payloadName in node.PayloadNames)

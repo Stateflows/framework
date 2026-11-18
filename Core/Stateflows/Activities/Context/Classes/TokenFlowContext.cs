@@ -25,6 +25,10 @@ namespace Stateflows.Activities.Context.Classes
         public Type InputTokenType => Operation.InputType;
 
         public Type OutputTokenType => Operation.OutputType;
+
+        public System.Collections.Generic.IReadOnlyList<string> InputTokenNames => Operation.InputTokenNames ?? [];
+
+        public System.Collections.Generic.IReadOnlyList<string> OutputTokenNames => Operation.OutputTokenNames ?? [];
     }
 
     internal class TokenFlowContext<TToken, TTransformedToken> : TokenFlowContext<TToken>,

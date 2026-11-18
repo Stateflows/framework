@@ -22,6 +22,9 @@ namespace Stateflows.Activities.Context.Interfaces
 
         /// <summary>Forwards all available input tokens to outgoing flows.</summary>
         void PassAllTokensOn();
+
+        /// <summary>Forwards input payload tokens whose names are in the specified set.</summary>
+        void PassPayloadTokensOn(IReadOnlyList<string> tokenNames);
     }
 
     // public interface IActionOutput : IOutput

@@ -33,3 +33,15 @@ public interface IOptionalInputOutputToken<TToken> : IOptionalInputToken<TToken>
     /// <remarks>If no token is available, the default value of <typeparamref name="TToken"/> is forwarded.</remarks>
     void PassOn();
 }
+
+/// <summary>Combines input and output access to payload tokens selected by a <c>TokenName</c> attribute.</summary>
+public interface IInputOutputTokens : IInputOutputTokens<Stateflows.Common.Payload>;
+
+/// <summary>Combines access to one input payload token and its output collection.</summary>
+public interface IInputOutputToken : IInputOutputToken<Stateflows.Common.Payload>;
+
+/// <summary>Combines optional input and output access to payload tokens.</summary>
+public interface IOptionalInputOutputTokens : IOptionalInputOutputTokens<Stateflows.Common.Payload>;
+
+/// <summary>Combines optional access to one input payload token and its output collection.</summary>
+public interface IOptionalInputOutputToken : IOptionalInputOutputToken<Stateflows.Common.Payload>;

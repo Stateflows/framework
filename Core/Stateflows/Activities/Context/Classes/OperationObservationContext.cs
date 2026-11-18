@@ -16,6 +16,7 @@ internal abstract class OperationObservationContext(BaseContext context, Activit
     public int Order => registration.Order;
     public object? Event => eventHolder?.BoxedPayload;
     public string? EventName => eventHolder?.Name;
+    public virtual string? TokenName => null;
     public Guid? EventId => eventHolder?.Id;
     public IDictionary<string, EventHeader>? EventHeaders => eventHolder?.Headers;
     public IBehaviorContext Behavior => ((IBehaviorActionContext)actionContext).Behavior;
@@ -42,5 +43,6 @@ internal sealed class PredicateObservationContext(BaseContext context, ActivityO
     public ActivityGuardKind Kind => registration.GuardKind;
     public Type? TokenType => flowContext?.Operation.InputType;
     public object? Token => flowContext?.OperationToken.BoxedPayload;
+    public override string? TokenName => flowContext?.OperationToken.Name;
     public Guid? TokenId => flowContext?.OperationToken.Id;
 }

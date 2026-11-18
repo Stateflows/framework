@@ -39,6 +39,8 @@ namespace Stateflows.Actions.Models
         public List<Type> ProducedEventTypes { get; } = [];
         public List<Type> ConsumedTokenTypes { get; } = [];
         public List<Type> ProducedTokenTypes { get; } = [];
+        public List<string> ConsumedPayloadTokenNames { get; } = [];
+        public List<string> ProducedPayloadTokenNames { get; } = [];
         internal List<Type> ConsumedBindingOrder { get; } = [];
         private Dictionary<Type, string[]> BindingNames { get; } = [];
         private Dictionary<Type, string[]> ProducedBindingNames { get; } = [];
@@ -81,6 +83,26 @@ namespace Stateflows.Actions.Models
                 catch (ArgumentException e)
                 {
                     throw new ActionDefinitionException($"Action '{Name}' consumes event '{eventName}' which is not registered.", new ActionClass(Name), e);
+                }
+            }
+
+            ValidatePayloadTokenNames(stateflowsBuilder, ConsumedPayloadTokenNames, "consumes");
+            ValidatePayloadTokenNames(stateflowsBuilder, ProducedPayloadTokenNames, "produces");
+        }
+
+        private void ValidatePayloadTokenNames(StateflowsBuilder stateflowsBuilder, IEnumerable<string> names, string operation)
+        {
+            foreach (var tokenName in names)
+            {
+                try
+                {
+                    stateflowsBuilder.Payloads.GetPayload(tokenName);
+                }
+                catch (ArgumentException e)
+                {
+                    throw new ActionDefinitionException(
+                        $"Action '{Name}' {operation} payload token '{tokenName}' which is not registered.",
+                        new ActionClass(Name), e);
                 }
             }
         }

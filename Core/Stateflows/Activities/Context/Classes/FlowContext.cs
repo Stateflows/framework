@@ -68,6 +68,10 @@ namespace Stateflows.Activities.Context.Classes
         
         public Type TargetTokenType => Edge.TargetTokenType;
 
+        public System.Collections.Generic.IReadOnlyList<string> TokenNames => Edge.TokenNames ?? [];
+
+        public System.Collections.Generic.IReadOnlyList<string> TargetTokenNames => Edge.TargetTokenNames ?? [];
+
         public int Weight => Edge.Weight;
 
         public int TokenCount { get; set; }

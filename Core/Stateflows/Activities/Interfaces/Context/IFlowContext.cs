@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
@@ -20,6 +21,12 @@ namespace Stateflows.Activities
         
         /// <summary>The token type accepted by the target node.</summary>
         Type TargetTokenType { get; }
+
+        /// <summary>The payload names selected by the source side of this flow, or an empty list for typed flows.</summary>
+        IReadOnlyList<string> TokenNames => Array.Empty<string>();
+
+        /// <summary>The payload names produced by this flow, or an empty list for typed flows.</summary>
+        IReadOnlyList<string> TargetTokenNames => Array.Empty<string>();
 
         /// <summary>The configured flow weight used by flow scheduling and selection.</summary>
         int Weight { get; }

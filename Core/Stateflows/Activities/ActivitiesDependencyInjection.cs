@@ -127,6 +127,7 @@ namespace Stateflows.Activities
                         .AddTransient(typeof(IOptionalInputOutputToken<>), typeof(OptionalInputOutputToken<>))
                         
                         .AddTransient(typeof(IOutputTokens<>), typeof(OutputTokens<>))
+                        .AddSingleton<IModelElementParameterResolver, PayloadTokenParameterResolver>()
                         ;
                 }
 

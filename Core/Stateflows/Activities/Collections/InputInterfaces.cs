@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
@@ -34,4 +35,16 @@ namespace Stateflows.Activities
         /// <summary>Gets the matching token, or the default value of <typeparamref name="TToken"/> when none is available.</summary>
         TToken TokenOrDefault { get; }
     }
+
+    /// <summary>Provides input payload tokens selected by a <see cref="TokenNameAttribute"/> parameter.</summary>
+    public interface IInputTokens : IInputTokens<Payload>;
+
+    /// <summary>Provides one required input payload token selected by a <see cref="TokenNameAttribute"/> parameter.</summary>
+    public interface IInputToken : IInputToken<Payload>;
+
+    /// <summary>Provides optional input payload tokens selected by a <see cref="TokenNameAttribute"/> parameter.</summary>
+    public interface IOptionalInputTokens : IOptionalInputTokens<Payload>;
+
+    /// <summary>Provides optional access to one input payload token selected by a <see cref="TokenNameAttribute"/> parameter.</summary>
+    public interface IOptionalInputToken : IOptionalInputToken<Payload>;
 }

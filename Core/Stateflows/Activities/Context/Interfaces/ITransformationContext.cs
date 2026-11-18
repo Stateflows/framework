@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Stateflows.Activities.Context.Interfaces
 {
@@ -21,6 +22,12 @@ namespace Stateflows.Activities.Context.Interfaces
 
         /// <summary>Gets the declared output type of this stage, which can differ from the flow's final target token type.</summary>
         Type OutputTokenType { get; }
+
+        /// <summary>The payload names accepted by this transformation stage, or an empty list for typed input.</summary>
+        IReadOnlyList<string> InputTokenNames => Array.Empty<string>();
+
+        /// <summary>The payload names produced by this transformation stage, or an empty list for typed output.</summary>
+        IReadOnlyList<string> OutputTokenNames => Array.Empty<string>();
     }
     
     /// <summary>Transformation context that also exposes the value produced by the transformation.</summary>
@@ -30,5 +37,11 @@ namespace Stateflows.Activities.Context.Interfaces
     {
         /// <summary>The value produced for the current transformation operation.</summary>
         TTransformedToken TransformedToken { get; }
+
+        /// <summary>The payload names accepted by this transformation stage, or an empty list for typed input.</summary>
+        IReadOnlyList<string> InputTokenNames => Array.Empty<string>();
+
+        /// <summary>The payload names produced by this transformation stage, or an empty list for typed output.</summary>
+        IReadOnlyList<string> OutputTokenNames => Array.Empty<string>();
     }
 }
