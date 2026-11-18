@@ -35,6 +35,20 @@ public class PayloadTransitions : StateflowsTestClass
             .AddState("done");
     }
 
+    public sealed class OkGuard : ITransitionGuard<Payload>
+    {
+        public Task<bool> GuardAsync(Payload @event) => Task.FromResult(@event.Get<bool>("ok"));
+    }
+
+    public sealed class RecordEffect : ITransitionEffect<Payload>
+    {
+        public Task EffectAsync(Payload @event)
+        {
+            Record("class:" + @event.Name);
+            return Task.CompletedTask;
+        }
+    }
+
     [TestInitialize]
     public override void Initialize()
     {
@@ -76,6 +90,12 @@ public class PayloadTransitions : StateflowsTestClass
                             .AddEffect(async c => Record(c.Event.Name)))
                         .AddElseInternalTransition(["ping", "pong"], b => b
                             .AddEffect(async c => Record("else:" + c.Event.Name)))))
+                .AddStateMachine("classes", b => b
+                    .AddInitialState("waiting", b => b
+                        .AddTransition(["submit", "cancel"], "done", b => b
+                            .AddGuard<OkGuard>()
+                            .AddEffect<RecordEffect>()))
+                    .AddState("done"))
                 .AddStateMachine("mapped", b => b
                     .AddInitialState("waiting", b => b
                         .AddTransition<OneOf<SomeEvent, OtherEvent>>("typed")
@@ -112,6 +132,18 @@ public class PayloadTransitions : StateflowsTestClass
         Assert.AreEqual(EventStatus.Consumed, (await machine.SendAsync(Factory.Create(name, b => b.Set("ok", true)))).Status);
         Assert.AreEqual("done", await State(machine));
         CollectionAssert.AreEqual(new[] { name }, Effects.ToArray());
+    }
+
+    [TestMethod]
+    [DataRow("submit")]
+    [DataRow("cancel")]
+    public async Task GuardAndEffectClassesReceiveEveryNameOfTheSet(string name)
+    {
+        var machine = await Start("classes");
+        Assert.AreEqual(EventStatus.NotConsumed, (await machine.SendAsync(Factory.Create(name, b => b.Set("ok", false)))).Status);
+        Assert.AreEqual(EventStatus.Consumed, (await machine.SendAsync(Factory.Create(name, b => b.Set("ok", true)))).Status);
+        Assert.AreEqual("done", await State(machine));
+        CollectionAssert.AreEqual(new[] { "class:" + name }, Effects.ToArray());
     }
 
     [TestMethod]

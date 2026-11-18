@@ -77,6 +77,10 @@ public class PayloadInitializers : StateflowsTestClass
                     .AddInitializer<StartInitializer>(["start", "begin"])
                     .AddInitial(b => b.AddControlFlow("run"))
                     .AddAction("run", async c => Executed = true))
+                .AddActivity("classSugar", b => b
+                    .AddInitializer<StartInitializer>("start")
+                    .AddInitial(b => b.AddControlFlow("run"))
+                    .AddAction("run", async c => Executed = true))
                 .AddActivity("oneOf", b => b
                     .AddInitializer<OneOf<SomeEvent, OtherEvent>>(async c =>
                     {
@@ -138,6 +142,23 @@ public class PayloadInitializers : StateflowsTestClass
         Assert.AreEqual(EventStatus.Initialized, (await Locate("class").SendAsync(Factory.Create("begin", b => b.Set("ok", true)))).Status);
         Assert.AreEqual("begin", InitializedBy);
     }
+
+    [TestMethod]
+    public async Task ClassInitializerWithSugarNameHandlesOnlyThatName()
+    {
+        Assert.AreEqual(EventStatus.Initialized, (await Locate("classSugar").SendAsync(Factory.Create("start", b => b.Set("ok", true)))).Status);
+        Assert.AreEqual("start", InitializedBy);
+
+        InitializedBy = null;
+        Executed = false;
+        Assert.AreNotEqual(EventStatus.Initialized, (await Locate("classSugar").SendAsync(Factory.Create("begin", b => b.Set("ok", true)))).Status);
+        Assert.IsNull(InitializedBy);
+        Assert.IsFalse(Executed);
+    }
+
+    [TestMethod]
+    public void TypedPayloadClassInitializerIsRejected()
+        => Assert.ThrowsExactly<ActivityDefinitionException>(() => NewBuilder().AddInitializer<Payload, StartInitializer>());
 
     [TestMethod]
     public async Task OneOfInitializerMatchesEveryMappedType()

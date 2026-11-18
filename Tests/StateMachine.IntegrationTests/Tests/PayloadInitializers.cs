@@ -70,6 +70,9 @@ public class PayloadInitializers : StateflowsTestClass
                 .AddStateMachine("class", b => b
                     .AddInitializer<StartInitializer>(["start", "begin"])
                     .AddInitialState("ready"))
+                .AddStateMachine("classSugar", b => b
+                    .AddInitializer<StartInitializer>("start")
+                    .AddInitialState("ready"))
                 .AddStateMachine("mixed", b => b
                     .AddInitializer<SomeEvent>(async c => true)
                     .AddInitializer("start", async c => true)
@@ -124,6 +127,21 @@ public class PayloadInitializers : StateflowsTestClass
         Assert.AreEqual(EventStatus.Initialized, (await machine.SendAsync(Factory.Create("begin", b => b.Set("ok", true)))).Status);
         Assert.AreEqual("begin", InitializedBy);
     }
+
+    [TestMethod]
+    public async Task ClassInitializerWithSugarNameHandlesOnlyThatName()
+    {
+        Assert.AreEqual(EventStatus.Initialized, (await (await Locate("classSugar")).SendAsync(Factory.Create("start", b => b.Set("ok", true)))).Status);
+        Assert.AreEqual("start", InitializedBy);
+
+        InitializedBy = null;
+        Assert.AreNotEqual(EventStatus.Initialized, (await (await Locate("classSugar")).SendAsync(Factory.Create("begin", b => b.Set("ok", true)))).Status);
+        Assert.IsNull(InitializedBy);
+    }
+
+    [TestMethod]
+    public void TypedPayloadClassInitializerIsRejected()
+        => Assert.ThrowsExactly<StateMachineDefinitionException>(() => ((IStateMachineBuilder)new DefinitionModel().Builder).AddInitializer<Payload, StartInitializer>());
 
     [TestMethod]
     public async Task ExpectedEventsListAllInitializers()

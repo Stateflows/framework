@@ -47,7 +47,36 @@ namespace Stateflows.Entities
                     {
                         var behaviorClass = new BehaviorClass(BehaviorType.Entity, registration.Name);
                         stateflowsBuilder.ResourcesByBehaviorClass[behaviorClass] = defaultResource;
+                        ValidateEvents(stateflowsBuilder, registration.Name, "initializer",
+                            registration.Model.Initializers.Select(pair => (pair.Key, pair.Value.InitializationEventType)));
+                        ValidateEvents(stateflowsBuilder, registration.Name, "mutation",
+                            registration.Model.Mutations.Select(pair => (pair.Key, pair.Value.MutationType)));
                     }
+                }
+            }
+        }
+
+        private static void ValidateEvents(StateflowsBuilder stateflowsBuilder, string entityName, string kind,
+            IEnumerable<(string Name, System.Type EventType)> events)
+        {
+            foreach (var (name, eventType) in events)
+            {
+                if (typeof(Stateflows.Common.Payload).IsAssignableFrom(eventType))
+                {
+                    try
+                    {
+                        stateflowsBuilder.Payloads.GetPayload(name);
+                    }
+                    catch (System.ArgumentException e)
+                    {
+                        throw new System.InvalidOperationException(
+                            $"Entity '{entityName}' declares {kind} event '{name}' which is not registered.", e);
+                    }
+                }
+                else
+                {
+                    foreach (var type in stateflowsBuilder.TypeMapper.GetMappedTypes(eventType))
+                        stateflowsBuilder.Payloads.RegisterClr(type);
                 }
             }
         }

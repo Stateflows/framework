@@ -362,7 +362,7 @@ namespace Entity.IntegrationTests.Tests
             CollectionAssert.Contains(visitor.Mutations, "overriddenPayload:Payload:order.expired:mutation:order.expired");
         }
 
-        private static Exception DefinitionError(Stateflows.Entities.Registration.Interfaces.EntitiesBuildAction build)
+        private static Exception DefinitionError(Stateflows.Entities.Registration.Interfaces.EntitiesBuildAction build, Action<IStateflowsBuilder>? extra = null)
         {
             var exception = Assert.Throws<Exception>(() =>
             {
@@ -370,6 +370,7 @@ namespace Entity.IntegrationTests.Tests
                 services.AddStateflows(b =>
                 {
                     RegisterPayloads(b);
+                    extra?.Invoke(b);
                     b.AddEntities(build);
                 });
                 services.BuildServiceProvider().GetRequiredService<IEntitiesRegister>();
@@ -442,6 +443,32 @@ namespace Entity.IntegrationTests.Tests
             var exception = DefinitionError(e => e.AddEntity<IDuplicatePayloadNamesTemplate>("bad"));
             Assert.IsInstanceOfType<InvalidOperationException>(exception);
             StringAssert.Contains(exception.Message, "'order.expired' is declared multiple times");
+        }
+
+        [TestMethod]
+        public void UnregisteredPayloadName_IsRejected()
+        {
+            var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddMutation(["order.unknown"], _ => { })));
+            Assert.IsInstanceOfType<InvalidOperationException>(exception);
+            StringAssert.Contains(exception.Message, "'order.unknown' which is not registered");
+        }
+
+        [TestMethod]
+        public void UnregisteredInitializerName_IsRejected()
+        {
+            var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddInitializer("order.unknown", _ => { })));
+            Assert.IsInstanceOfType<InvalidOperationException>(exception);
+            StringAssert.Contains(exception.Message, "initializer event 'order.unknown'");
+        }
+
+        [TestMethod]
+        public void PayloadNameEqualToEntityClrEventName_IsRejected()
+        {
+            var exception = DefinitionError(
+                e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddMutation<PayloadEntityApproved>(_ => { })),
+                b => b.AddPayloads(p => p.AddPayload(Event<PayloadEntityApproved>.Name, d => d.AddField("value", FieldType.String))));
+            Assert.IsInstanceOfType<ArgumentException>(exception);
+            StringAssert.Contains(exception.Message, "already used by a payload");
         }
 
         [TestMethod]
