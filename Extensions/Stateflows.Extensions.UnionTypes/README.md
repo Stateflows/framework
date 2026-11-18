@@ -27,6 +27,12 @@ construct union values, or change event serialization. Existing projects can
 continue targeting .NET 10; only applications referencing this extension need
 .NET 11.
 
+Named payloads are a separate contract mechanism. Declare payload event names
+or token names through the payload-aware APIs; the union mapper expands CLR
+event/token declarations and does not map payload names to union cases. See
+[Payloads](https://github.com/Stateflows/framework/wiki/4.6.-Payloads) for
+named payload events and Activity tokens.
+
 The mapper recognizes `System.Runtime.CompilerServices.UnionAttribute`, including
 compiler-generated `union` declarations and manually implemented union patterns.
 Cases come from public single-parameter constructors, or from public static
