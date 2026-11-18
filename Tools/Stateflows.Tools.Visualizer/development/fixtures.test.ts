@@ -52,6 +52,17 @@ describe('synthetic definition fixtures', () => {
     }
   });
 
+  test('activity fixtures preserve payload pin and flow names through layout', async () => {
+    const document = syntheticFixtures.find(item => item.document.id === 'synthetic:activity:small')!.document;
+    const input = document.nodes.find(node => node.id === 'module-0/Payload input')!;
+    const flow = document.edges.find(edge => edge.id === 'module-0/edge/Payload input/Validate/Payload tokens')!;
+    expect(input.pinTokenNames).toEqual(['order', 'cancel']);
+    expect(flow.tokenNames).toEqual(['order', 'cancel']);
+
+    const layout = await layoutDiagram(document);
+    expect(layout.edges.find(edge => edge.id === flow.id)?.tokenNames).toEqual(['order', 'cancel']);
+  });
+
   for (const { document } of syntheticFixtures) {
     test(`routes every edge and contains children: ${document.id}`, async () => {
       const layout = await layoutDiagram(document);

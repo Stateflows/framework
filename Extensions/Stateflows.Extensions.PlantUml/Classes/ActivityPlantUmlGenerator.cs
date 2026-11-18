@@ -23,7 +23,9 @@ namespace Stateflows.Extensions.PlantUml.Classes
             foreach (var node in nodes.Where(pins.ContainsKey))
             {
                 var direction = node.Type == NodeType.InputPin ? "Input" : "Output";
-                var tokenName = node.PinTokenType.GetTokenName().ToShortName();
+                var tokenName = node.PinTokenNames.Count == 0
+                    ? node.PinTokenType.GetTokenName().ToShortName()
+                    : string.Join(", ", node.PinTokenNames);
                 var pin = pins[node];
                 // Legacy Activity syntax declares nodes through links; a hidden self-link also covers isolated pins.
                 builder.AppendLine($"{new string(' ', indentCount)}\"{direction} pin\\n{tokenName}\" as {pin} -[hidden]-> {pin}");
@@ -98,6 +100,11 @@ namespace Stateflows.Extensions.PlantUml.Classes
                     }
                     else
                     {
+                        var tokenName = flow.TokenNames.Count == 0
+                            ? flow.TokenName.ToShortName()
+                            : string.Join(", ", flow.TokenNames);
+                        if (flow.TargetTokenNames.Count != 0)
+                            tokenName += " -> " + string.Join(", ", flow.TargetTokenNames);
                         var tokenCountInfo = flow.Status == FlowStatus.NotUsed
                             ? flow.Weight > 1
                                 ? $" (expected {flow.Weight})"
@@ -108,7 +115,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
                                     ? $" (optional, passed {flow.TokenCount})"
                                     : $" (passed {flow.TokenCount})";
                         
-                        builder.AppendLine($"{indent}{source} -->[{flow.TokenName.ToShortName()}{tokenCountInfo}] {target} {stereotype}");
+                        builder.AppendLine($"{indent}{source} -->[{tokenName}{tokenCountInfo}] {target} {stereotype}");
                     }
                 }
                 

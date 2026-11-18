@@ -13,6 +13,27 @@ public sealed class PayloadTokenInjection : StateflowsTestClass
 {
     private IPayloadFactory payloadFactory = null!;
 
+    private sealed class TokenNamesVisitor : ActionVisitor
+    {
+        public readonly List<(bool Input, string[] Names)> Declarations = [];
+
+        public override Task InputTokenNamesAddedAsync(string pinId, string actionName, int actionVersion,
+            IReadOnlyList<string> tokenNames)
+        {
+            if (actionName == "named-token-injection")
+                Declarations.Add((true, tokenNames.ToArray()));
+            return Task.CompletedTask;
+        }
+
+        public override Task OutputTokenNamesAddedAsync(string pinId, string actionName, int actionVersion,
+            IReadOnlyList<string> tokenNames)
+        {
+            if (actionName == "named-token-injection")
+                Declarations.Add((false, tokenNames.ToArray()));
+            return Task.CompletedTask;
+        }
+    }
+
     public sealed class NamedTokenAction(
         [TokenName("first")] IInputTokens input,
         [TokenName("first")] IOutputTokens output) : IAction
@@ -59,5 +80,16 @@ public sealed class PayloadTokenInjection : StateflowsTestClass
         var output = result.Response.GetPayloadTokens("first").ToArray();
         Assert.HasCount(1, output);
         Assert.IsEmpty(result.Response.GetPayloadTokens("other"));
+    }
+
+    [TestMethod]
+    public async Task VisitorReportsPayloadTokenNamesOnInputsAndOutputs()
+    {
+        var visitor = new TokenNamesVisitor();
+        await ServiceProvider.GetRequiredService<IActionsRegister>().VisitActionsAsync(visitor);
+
+        Assert.AreEqual(2, visitor.Declarations.Count);
+        Assert.IsTrue(visitor.Declarations.Any(item => item.Input && item.Names.SequenceEqual(["first"])));
+        Assert.IsTrue(visitor.Declarations.Any(item => !item.Input && item.Names.SequenceEqual(["first"])));
     }
 }

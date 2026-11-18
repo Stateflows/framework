@@ -10,10 +10,11 @@ public sealed record ActivityDefinition(
 
 /// <summary>A node whose identity can be correlated with runtime node contexts.</summary>
 public sealed record ActivityNodeDefinition(
-    string Id, string Name, NodeType Kind, string? ParentId, string? PinTokenType,
+    string Id, string Name, NodeType Kind, string? ParentId, string? PinTokenType, IReadOnlyList<string> PinTokenNames,
     string? EventName, NodeOptions Options);
 
 /// <summary>A flow including its actual endpoints, token conversion, weight, and fallback semantics.</summary>
 public sealed record ActivityFlowDefinition(
     string Id, string SourceId, string TargetId, string TokenType, string TargetTokenType,
-    int Weight, bool IsElse, bool IsCrossScope);
+    int Weight, bool IsElse, bool IsCrossScope, IReadOnlyList<string> TokenNames,
+    IReadOnlyList<string> TargetTokenNames);

@@ -57,6 +57,8 @@ function activityModule(prefix: string, nodes: DiagramNode[], edges: DiagramEdge
 
   node('Start', 'Initial');
   node('Input', 'InputPin', undefined, ['Order']);
+  nodes.push({ id: `${prefix}/Payload input`, label: 'Payload input', kind: 'InputPin',
+    pinTokenNames: ['order', 'cancel'] });
   node('Validate', 'Action', undefined, ['Validate order and emit accepted items']);
   node('Choose', 'Decision');
   node('Process', 'StructuredActivity');
@@ -78,6 +80,7 @@ function activityModule(prefix: string, nodes: DiagramNode[], edges: DiagramEdge
   node('End', 'Final');
   edge('Start processing', 'Start', 'Validate');
   edge('Order', 'Input', 'Validate', 'object');
+  edge('Payload tokens', 'Payload input', 'Validate', 'object', { tokenNames: ['order', 'cancel'] });
   edge('Item', 'Validate', 'Choose', 'object');
   edge('[valid] Item', 'Choose', 'Input pin', 'object');
   edge('[else] Item', 'Choose', 'Rejected', 'object', { isElse: true });

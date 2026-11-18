@@ -15,6 +15,9 @@ namespace Stateflows.Activities.Inspection.Interfaces
         /// <summary>The declared token type of a typed boundary pin, or null for other nodes.</summary>
         Type PinTokenType => null;
 
+        /// <summary>The payload names declared by a boundary pin, or an empty list for typed pins.</summary>
+        IReadOnlyList<string> PinTokenNames => Array.Empty<string>();
+
         /// <summary>Whether the node is active.</summary>
         bool Active { get; }
         

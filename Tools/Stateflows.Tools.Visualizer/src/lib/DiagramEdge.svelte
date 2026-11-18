@@ -18,7 +18,9 @@
     : ['waiting', 'guard-rejected'].includes(observation?.status ?? '') ? 'var(--sfv-waiting, #fbbf24)'
     : ['taken', 'executed'].includes(observation?.status ?? '') ? 'var(--sfv-success, #34d399)'
     : 'var(--sfv-edge, #94a3b8)');
-  let caption = $derived(`${model.label}${model.hiddenEndpoints ? ' [hidden endpoint]' : ''}${observation ? ` · ${observation.status}` : ''}${observation?.tokenCount !== undefined ? ` ${observation.tokenCount}/${observation.requiredTokens ?? '?'}` : ''}`);
+  let tokenNames = $derived(model.tokenNames?.length
+    ? ` · ${model.tokenNames.join(', ')}${model.targetTokenNames?.length ? ` → ${model.targetTokenNames.join(', ')}` : ''}` : '');
+  let caption = $derived(`${model.label}${tokenNames}${model.hiddenEndpoints ? ' [hidden endpoint]' : ''}${observation ? ` · ${observation.status}` : ''}${observation?.tokenCount !== undefined ? ` ${observation.tokenCount}/${observation.requiredTokens ?? '?'}` : ''}`);
 </script>
 
 <BaseEdge {id} {path} {markerEnd} interactionWidth={20}

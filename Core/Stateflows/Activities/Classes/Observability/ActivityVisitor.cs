@@ -43,5 +43,7 @@ namespace Stateflows.Activities
         public virtual Task ControlFlowGuardTypeAddedAsync<TGuard>(string guardId, string activityName, int activityVersion) where TGuard : class, IControlFlowGuard => Task.CompletedTask;
         public virtual Task TransformationFlowAddedAsync<TToken, TTransformedToken>(string transformationId, string activityName, int activityVersion, string flowId, int order) => Task.CompletedTask;
         public virtual Task TransformationFlowTypeAddedAsync<TToken, TTransformedToken, TTransformation>(string transformationId, string activityName, int activityVersion) where TTransformation : class, IFlowTransformation<TToken, TTransformedToken> => Task.CompletedTask;
+        public virtual Task TokenNamesDeclaredAsync(string elementId, string activityName, int activityVersion,
+            TokenNamesDeclarationKind kind, IReadOnlyList<string> tokenNames) => Task.CompletedTask;
     }
 }

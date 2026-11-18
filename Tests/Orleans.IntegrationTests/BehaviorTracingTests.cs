@@ -19,6 +19,7 @@ using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Entities;
 using Stateflows.Entities.Attributes;
+using Stateflows.Payloads;
 using Stateflows.StateMachines;
 
 namespace Orleans.IntegrationTests;
@@ -231,7 +232,45 @@ public sealed class BehaviorTracingTests
         }
     }
 
+    [TestMethod]
+    public async Task PayloadFlowAndNodeSpansIncludeDeclaredTokenNames()
+    {
+        var instance = Guid.NewGuid().ToString("N");
+        var spans = new ConcurrentQueue<Activity>();
+        using var host = CreateHostBuilder(instance, spans, captureAll: true).Build();
+        try
+        {
+            await host.StartAsync();
+            using var scope = host.Services.CreateScope();
+            var locator = scope.ServiceProvider.GetRequiredService<IActivityLocator>();
+            Assert.IsTrue(locator.TryLocateActivity(new ActivityId("payload-traced", instance), out var activity));
+            using (activity)
+            {
+                var factory = scope.ServiceProvider.GetRequiredService<IPayloadFactory>();
+                var result = await activity.SendAsync(new TokensInput().Add(factory.Create("tracePayload", _ => { })));
+                Assert.AreEqual(EventStatus.Consumed, result.Status);
+            }
+
+            var tokenNames = spans.Select(span => span.GetTagItem("stateflows.token.names")).FirstOrDefault(value => value != null);
+            Assert.IsNotNull(tokenNames, "Payload node and flow spans should carry their declared token name.");
+            var serializedNames = tokenNames switch
+            {
+                string text => text,
+                IEnumerable<string> names => string.Join(",", names),
+                _ => tokenNames.ToString()
+            };
+            StringAssert.Contains(serializedNames!, "tracePayload");
+        }
+        finally
+        {
+            await host.StopAsync();
+        }
+    }
+
     private static IHostBuilder CreateHostBuilder(string instance, ConcurrentQueue<Activity> spans)
+        => CreateHostBuilder(instance, spans, captureAll: false);
+
+    private static IHostBuilder CreateHostBuilder(string instance, ConcurrentQueue<Activity> spans, bool captureAll)
     {
         var ports = GetFreeTcpPorts(2);
         var clusterId = Guid.NewGuid().ToString("N");
@@ -246,9 +285,13 @@ public sealed class BehaviorTracingTests
                             .AddInitialState("running", state => state
                                 .AddDoActivity(activity => activity
                                     .AddAcceptEventAction<TracedEvent>(_ => Task.CompletedTask)))))
+                    .AddPayloads(events => events.AddPayload("tracePayload", _ => { }))
+                    .AddActivities(activities => activities.AddActivity("payload-traced", activity => activity
+                        .AddInputPin("tracePayload", pin => pin.AddFlow("payload-output"))
+                        .AddOutputPin("tracePayload", "payload-output", pin => pin.SetTimeToLive(300))))
                 )
                 .AddOpenTelemetry().WithTracing(tracing =>
-                    tracing.AddProcessor(new CapturingProcessor(spans, instance))
+                    tracing.AddProcessor(new CapturingProcessor(spans, instance, captureAll))
                 )
             )
             .UseOrleans(silo => silo
@@ -260,11 +303,11 @@ public sealed class BehaviorTracingTests
 
     public sealed class TracedEvent;
 
-    private sealed class CapturingProcessor(ConcurrentQueue<Activity> spans, string instance) : BaseProcessor<Activity>
+    private sealed class CapturingProcessor(ConcurrentQueue<Activity> spans, string instance, bool captureAll = false) : BaseProcessor<Activity>
     {
         public override void OnEnd(Activity activity)
         {
-            if (activity.DisplayName.Contains(instance))
+            if (captureAll || activity.DisplayName.Contains(instance))
                 spans.Enqueue(activity);
         }
     }

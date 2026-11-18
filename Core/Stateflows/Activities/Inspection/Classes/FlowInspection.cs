@@ -68,7 +68,12 @@ namespace Stateflows.Activities.Inspection.Classes
             }
         }
 
-        public string TokenName => Edge.TokenType.GetTokenName();
+        public string TokenName => Edge.SourceKey.Identifier;
+
+        public System.Collections.Generic.IReadOnlyList<string> TokenNames => Edge.TokenNames ?? System.Array.Empty<string>();
+
+        public System.Collections.Generic.IReadOnlyList<string> TargetTokenNames
+            => Edge.TargetTokenNames ?? System.Array.Empty<string>();
 
         public FlowType Type => Edge.TokenType == typeof(ControlToken)
             ? FlowType.ControlFlow

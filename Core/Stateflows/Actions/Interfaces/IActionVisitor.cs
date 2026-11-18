@@ -86,6 +86,10 @@ namespace Stateflows.Actions
         /// <returns>A task completed when this visitor has finished handling the notification.</returns>
         Task InputTokenAddedAsync<TToken>(string pinId, string actionName, int actionVersion) => Task.CompletedTask;
 
+        /// <summary>Reports payload token names accepted by an action input.</summary>
+        Task InputTokenNamesAddedAsync(string pinId, string actionName, int actionVersion,
+            IReadOnlyList<string> tokenNames) => Task.CompletedTask;
+
         /// <summary>
         /// Reports one output-token binding, in the order the action definition
         /// registered its distinct produced token types.
@@ -96,6 +100,10 @@ namespace Stateflows.Actions
         /// <param name="actionVersion">The registered version of the action definition.</param>
         /// <returns>A task completed when this visitor has finished handling the notification.</returns>
         Task OutputTokenAddedAsync<TToken>(string pinId, string actionName, int actionVersion) => Task.CompletedTask;
+
+        /// <summary>Reports payload token names produced by an action output.</summary>
+        Task OutputTokenNamesAddedAsync(string pinId, string actionName, int actionVersion,
+            IReadOnlyList<string> tokenNames) => Task.CompletedTask;
 
         /// <summary>
         /// Reports the action's finalized configuration after its consumed-event

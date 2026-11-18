@@ -6,6 +6,12 @@
         /// <summary>The token type name associated with the flow.</summary>
         string TokenName { get; }
 
+        /// <summary>The payload names selected by the source side of this flow, or an empty list for typed flows.</summary>
+        System.Collections.Generic.IReadOnlyList<string> TokenNames => System.Array.Empty<string>();
+
+        /// <summary>The payload names produced by this flow, or an empty list for typed targets.</summary>
+        System.Collections.Generic.IReadOnlyList<string> TargetTokenNames => System.Array.Empty<string>();
+
         /// <summary>The flow's kind.</summary>
         FlowType Type { get; }
 

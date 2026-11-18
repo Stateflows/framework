@@ -53,8 +53,26 @@ internal partial class Graph
             await visitor.NodeConfigurationAddedAsync(node.DefinitionIdentifier, Name, Version, node.Options, node.ChunkSize,
                 node.MaxConcurrency, node.Anchored, node.PublishScope, node.TimeToLive, node.Retain, node.ImmediatePublish);
             if (node.PinTokenType != null)
+            {
                 await DispatchAsync(visitor, node.Type == NodeType.InputPin ? nameof(IActivityVisitor.InputPinAddedAsync) : nameof(IActivityVisitor.OutputPinAddedAsync),
                     [node.PinTokenType], node.DefinitionIdentifier, Name, Version, node.Parent is Graph ? null : node.Parent?.DefinitionIdentifier);
+                if (node.PinTokenNames != null)
+                    await visitor.TokenNamesDeclaredAsync(node.DefinitionIdentifier, Name, Version,
+                        node.Type == NodeType.InputPin ? TokenNamesDeclarationKind.InputPin : TokenNamesDeclarationKind.OutputPin,
+                        node.PinTokenNames);
+            }
+            if (node.TokenNames != null)
+            {
+                var kind = node.Type switch
+                {
+                    NodeType.Decision => TokenNamesDeclarationKind.Decision,
+                    NodeType.IterativeActivity => TokenNamesDeclarationKind.IterativeActivity,
+                    NodeType.ParallelActivity => TokenNamesDeclarationKind.ParallelActivity,
+                    _ => (TokenNamesDeclarationKind?)null
+                };
+                if (kind.HasValue)
+                    await visitor.TokenNamesDeclaredAsync(node.DefinitionIdentifier, Name, Version, kind.Value, node.TokenNames);
+            }
             await VisitOperationsAsync(visitor, node);
         }
 
@@ -114,6 +132,12 @@ internal partial class Graph
                     await DispatchAsync(visitor, nameof(IActivityVisitor.FlowTypeAddedAsync), [edge.TokenType, edge.ImplementationType], edge.DefinitionIdentifier, Name, Version);
             }
             await visitor.FlowConfigurationAddedAsync(edge.DefinitionIdentifier, Name, Version, edge.TargetTokenType, edge.Weight, edge.IsCrossScope, edge.Owner.DefinitionIdentifier);
+            if (edge.TokenNames != null)
+                await visitor.TokenNamesDeclaredAsync(edge.DefinitionIdentifier, Name, Version,
+                    TokenNamesDeclarationKind.FlowSource, edge.TokenNames);
+            if (edge.TargetTokenNames != null)
+                await visitor.TokenNamesDeclaredAsync(edge.DefinitionIdentifier, Name, Version,
+                    TokenNamesDeclarationKind.FlowTarget, edge.TargetTokenNames);
             for (var i = 0; i < edge.TokenPipeline.Actions.Count; i++)
             {
                 var operation = edge.Operations[i];
@@ -121,6 +145,9 @@ internal partial class Graph
                 if (operation.IsTransformation)
                 {
                     await DispatchAsync(visitor, nameof(IActivityVisitor.TransformationFlowAddedAsync), [operation.InputType, operation.OutputType], id, Name, Version, edge.DefinitionIdentifier, i);
+                    if (operation.OutputTokenNames != null)
+                        await visitor.TokenNamesDeclaredAsync(id, Name, Version,
+                            TokenNamesDeclarationKind.TransformationProduced, operation.OutputTokenNames);
                     foreach (var implementation in operation.ImplementationTypes)
                         await DispatchAsync(visitor, nameof(IActivityVisitor.TransformationFlowTypeAddedAsync), [operation.InputType, operation.OutputType, implementation], id, Name, Version);
                 }

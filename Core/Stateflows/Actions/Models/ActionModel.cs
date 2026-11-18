@@ -131,12 +131,22 @@ namespace Stateflows.Actions.Models
                         ProducedBindingNames[type]], null);
             order = 0;
             foreach (var type in ConsumedTokenTypes.Distinct())
+            {
+                var pinId = $"{Identifier}/input/{order++}";
                 await (Task)typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.InputTokenAddedAsync))
-                    .MakeGenericMethod(type).Invoke(visitor, BindingFlags.DoNotWrapExceptions, null, [$"{Identifier}/input/{order++}", Name, Version], null);
+                    .MakeGenericMethod(type).Invoke(visitor, BindingFlags.DoNotWrapExceptions, null, [pinId, Name, Version], null);
+                if (type == typeof(Payload) && ConsumedPayloadTokenNames.Count != 0)
+                    await visitor.InputTokenNamesAddedAsync(pinId, Name, Version, ConsumedPayloadTokenNames);
+            }
             order = 0;
             foreach (var type in ProducedTokenTypes.Distinct())
+            {
+                var pinId = $"{Identifier}/output/{order++}";
                 await (Task)typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.OutputTokenAddedAsync))
-                    .MakeGenericMethod(type).Invoke(visitor, BindingFlags.DoNotWrapExceptions, null, [$"{Identifier}/output/{order++}", Name, Version], null);
+                    .MakeGenericMethod(type).Invoke(visitor, BindingFlags.DoNotWrapExceptions, null, [pinId, Name, Version], null);
+                if (type == typeof(Payload) && ProducedPayloadTokenNames.Count != 0)
+                    await visitor.OutputTokenNamesAddedAsync(pinId, Name, Version, ProducedPayloadTokenNames);
+            }
             await visitor.ActionAddedAsync(Identifier, Name, Version);
         }
     }
