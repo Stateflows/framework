@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Builders;
+using Stateflows.Common;
+using Stateflows.Payloads;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
@@ -132,6 +135,44 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddParallelActivity<TParallelizationToken>(ParallelActivityBuildAction buildAction, int chunkSize = 1, int maxConcurrency = -1)
             => AddParallelActivity<TParallelizationToken>(ParallelActivityNode<TParallelizationToken>.Name, buildAction, chunkSize, maxConcurrency);
+
+        /// <summary>Adds a parallel activity for payload tokens with the specified names.</summary>
+        TReturn AddParallelActivity(IReadOnlyList<string> parallelizationTokenNames, string actionNodeName,
+            ParallelActivityBuildAction buildAction, int chunkSize = 1, int maxConcurrency = -1)
+            => PayloadFlowScope.With(parallelizationTokenNames, nameof(parallelizationTokenNames),
+                () => AddParallelActivity<Payload>(actionNodeName, buildAction, chunkSize, maxConcurrency));
+
+        /// <summary>Adds a parallel activity for payload tokens with the specified names and the default node name.</summary>
+        TReturn AddParallelActivity(IReadOnlyList<string> parallelizationTokenNames, ParallelActivityBuildAction buildAction,
+            int chunkSize = 1, int maxConcurrency = -1)
+            => AddParallelActivity(parallelizationTokenNames, ParallelActivityNode.GetName(parallelizationTokenNames),
+                buildAction, chunkSize, maxConcurrency);
+
+        /// <summary>Adds a parallel activity for payload tokens with the specified name.</summary>
+        TReturn AddParallelActivity(string parallelizationTokenName, string actionNodeName,
+            ParallelActivityBuildAction buildAction, int chunkSize = 1, int maxConcurrency = -1)
+            => AddParallelActivity(new[] { parallelizationTokenName }, actionNodeName, buildAction, chunkSize, maxConcurrency);
+
+        /// <summary>Adds a typed parallel activity implementation for the specified payload token names.</summary>
+        public TReturn AddParallelActivity<TParallelActivity>(IReadOnlyList<string> parallelizationTokenNames,
+            string actionNodeName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1, int maxConcurrency = -1)
+            where TParallelActivity : class, IStructuredActivityNode
+            => PayloadFlowScope.With(parallelizationTokenNames, nameof(parallelizationTokenNames),
+                () => AddParallelActivity<Payload, TParallelActivity>(actionNodeName, buildAction, chunkSize, maxConcurrency));
+
+        /// <summary>Adds a typed parallel activity implementation for the specified payload token names.</summary>
+        public TReturn AddParallelActivity<TParallelActivity>(IReadOnlyList<string> parallelizationTokenNames,
+            ParallelActivityBuildAction buildAction = null, int chunkSize = 1, int maxConcurrency = -1)
+            where TParallelActivity : class, IStructuredActivityNode
+            => PayloadFlowScope.With(parallelizationTokenNames, nameof(parallelizationTokenNames),
+                () => AddParallelActivity<Payload, TParallelActivity>(buildAction, chunkSize, maxConcurrency));
+
+        /// <summary>Adds a typed parallel activity implementation for the specified payload token name.</summary>
+        public TReturn AddParallelActivity<TParallelActivity>(string parallelizationTokenName, string actionNodeName,
+            ParallelActivityBuildAction buildAction = null, int chunkSize = 1, int maxConcurrency = -1)
+            where TParallelActivity : class, IStructuredActivityNode
+            => AddParallelActivity<TParallelActivity>(new[] { parallelizationTokenName }, actionNodeName,
+                buildAction, chunkSize, maxConcurrency);
         #endregion
         
         #region AddIterativeActivity
@@ -194,6 +235,42 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddIterativeActivity<TIterationToken>(IterativeActivityBuildAction buildAction, int chunkSize = 1)
             => AddIterativeActivity<TIterationToken>(IterativeActivityNode<TIterationToken>.Name, buildAction, chunkSize);
+
+        /// <summary>Adds an iterative activity for payload tokens with the specified names.</summary>
+        public TReturn AddIterativeActivity(IReadOnlyList<string> iterationTokenNames, string actionNodeName,
+            IterativeActivityBuildAction buildAction, int chunkSize = 1)
+            => PayloadFlowScope.With(iterationTokenNames, nameof(iterationTokenNames),
+                () => AddIterativeActivity<Payload>(actionNodeName, buildAction, chunkSize));
+
+        /// <summary>Adds an iterative activity for payload tokens with the specified names and the default node name.</summary>
+        public TReturn AddIterativeActivity(IReadOnlyList<string> iterationTokenNames,
+            IterativeActivityBuildAction buildAction, int chunkSize = 1)
+            => AddIterativeActivity(iterationTokenNames, IterativeActivityNode.GetName(iterationTokenNames), buildAction, chunkSize);
+
+        /// <summary>Adds an iterative activity for payload tokens with the specified name.</summary>
+        public TReturn AddIterativeActivity(string iterationTokenName, string actionNodeName,
+            IterativeActivityBuildAction buildAction, int chunkSize = 1)
+            => AddIterativeActivity(new[] { iterationTokenName }, actionNodeName, buildAction, chunkSize);
+
+        /// <summary>Adds a typed iterative activity implementation for the specified payload token names.</summary>
+        public TReturn AddIterativeActivity<TIterativeActivity>(IReadOnlyList<string> iterationTokenNames,
+            string actionNodeName, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
+            where TIterativeActivity : class, IStructuredActivityNode
+            => PayloadFlowScope.With(iterationTokenNames, nameof(iterationTokenNames),
+                () => AddIterativeActivity<Payload, TIterativeActivity>(actionNodeName, buildAction, chunkSize));
+
+        /// <summary>Adds a typed iterative activity implementation for the specified payload token names.</summary>
+        public TReturn AddIterativeActivity<TIterativeActivity>(IReadOnlyList<string> iterationTokenNames,
+            IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
+            where TIterativeActivity : class, IStructuredActivityNode
+            => PayloadFlowScope.With(iterationTokenNames, nameof(iterationTokenNames),
+                () => AddIterativeActivity<Payload, TIterativeActivity>(buildAction, chunkSize));
+
+        /// <summary>Adds a typed iterative activity implementation for the specified payload token name.</summary>
+        public TReturn AddIterativeActivity<TIterativeActivity>(string iterationTokenName, string actionNodeName,
+            IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
+            where TIterativeActivity : class, IStructuredActivityNode
+            => AddIterativeActivity<TIterativeActivity>(new[] { iterationTokenName }, actionNodeName, buildAction, chunkSize);
         #endregion
     }
 }

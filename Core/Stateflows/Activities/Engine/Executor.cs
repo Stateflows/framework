@@ -877,7 +877,8 @@ namespace Stateflows.Activities.Engine
         private ActivityContinuationFrame CreatePartitionedFrame<TToken>(ActionContext context, ActivityContinuationKind kind, bool sharedThread)
         {
             var frame = CreateFrame(context, kind);
-            var typedInput = context.InputTokens.OfTokenType<TToken>().ToArray();
+            var selectionKey = context.Node.SelectionKey ?? TokenKey.Of(typeof(TToken));
+            var typedInput = context.InputTokens.Where(selectionKey.Matches).ToArray();
             frame.RestOfInput = context.InputTokens.Except(typedInput).ToList();
             var threadId = Guid.NewGuid();
             frame.Partitions = typedInput.Partition(context.Node.ChunkSize)

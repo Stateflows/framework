@@ -249,7 +249,8 @@ internal partial class Executor
 
         IEnumerable<Task> Admit(TokenHolder[] input)
         {
-            var typed = input.OfTokenType<TToken>().ToArray();
+            var selectionKey = node.SelectionKey ?? TokenKey.Of(typeof(TToken));
+            var typed = input.Where(selectionKey.Matches).ToArray();
             var rest = input.Except(typed).ToList();
             lock (crossingScopesLock)
                 foreach (var chunk in typed.Partition(node.ChunkSize))

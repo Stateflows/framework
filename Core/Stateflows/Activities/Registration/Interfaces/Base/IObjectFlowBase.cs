@@ -550,6 +550,38 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         TReturn UseFlow<TTargetNode>(ObjectFlowBuildAction<TToken> buildAction = null)
             where TTargetNode : class, IActivityNode
             => UseFlow(ActivityNode<TTargetNode>.Name, buildAction);
+
+        /// <summary>Overrides the inherited decision flow carrying payload tokens with the specified names.</summary>
+        /// <param name="tokenNames">Names of the payload tokens carried by the inherited flow.</param>
+        /// <param name="targetNodeName">Registered name of the destination node.</param>
+        /// <param name="buildAction">Callback configuring guards and transformations of the flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        TReturn UseFlow(IReadOnlyList<string> tokenNames, string targetNodeName,
+            ObjectFlowBuildAction<Payload> buildAction = null)
+            => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => UseFlow(targetNodeName,
+                builder => buildAction?.Invoke((IObjectFlowBuilder<Payload>)builder)));
+
+        /// <summary>Overrides the inherited decision flow carrying payload tokens with the specified name.</summary>
+        /// <param name="tokenName">Name of the payload tokens carried by the inherited flow.</param>
+        /// <param name="targetNodeName">Registered name of the destination node.</param>
+        /// <param name="buildAction">Callback configuring guards and transformations of the flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        TReturn UseFlow(string tokenName, string targetNodeName,
+            ObjectFlowBuildAction<Payload> buildAction = null)
+            => UseFlow([tokenName], targetNodeName, buildAction);
+
+        /// <summary>Overrides the inherited decision flow to the node registered under the target type.</summary>
+        /// <typeparam name="TTargetNode">Target node type.</typeparam>
+        /// <param name="tokenNames">Names of the payload tokens carried by the inherited flow.</param>
+        /// <param name="buildAction">Callback configuring guards and transformations of the flow.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        TReturn UseFlow<TTargetNode>(IReadOnlyList<string> tokenNames,
+            ObjectFlowBuildAction<Payload> buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => UseFlow(tokenNames, ActivityNode<TTargetNode>.Name, buildAction);
     }
 
     /// <summary>Adds fallback typed object flows from a decision node.</summary>

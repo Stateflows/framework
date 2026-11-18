@@ -57,6 +57,10 @@ namespace Stateflows.Activities.Context.Classes
             => OutputTokens.AddRange(InputTokens.OfTokenType<TToken>()
                 .Select(token => token.CopyForExecution(IsStreamed || token.IsStreamed)));
 
+        internal void PassTokensOn(TokenKey key)
+            => OutputTokens.AddRange(InputTokens.Where(key.Matches)
+                .Select(token => token.CopyForExecution(IsStreamed || token.IsStreamed)));
+
         public void PassAllTokensOn()
             => OutputTokens.AddRange(InputTokens
                 .Select(token => token.CopyForExecution(IsStreamed || token.IsStreamed)));

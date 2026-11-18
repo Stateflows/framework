@@ -9,6 +9,8 @@ namespace Activity.IntegrationTests.Tests;
 [TestClass]
 public class PayloadOverrides : StateflowsTestClass
 {
+    private static readonly List<string> Captured = [];
+
     public class BasePayloadActivity : IActivity
     {
         public static void Build(IActivityBuilder builder) => builder
@@ -18,8 +20,25 @@ public class PayloadOverrides : StateflowsTestClass
             .AddAction("done", _ => Task.CompletedTask);
     }
 
+    public class BasePayloadNodeActivity : IActivity
+    {
+        public static void Build(IActivityBuilder builder) => builder
+            .AddInputPin(["first", "second"], pin => pin.AddFlow("decision"))
+            .AddDecision(["first", "second"], "decision", decision => decision.AddFlow("capture"))
+            .AddAction("capture", c =>
+            {
+                lock (Captured)
+                    Captured.AddRange(c.GetTokensOfType<Payload>().Select(payload => payload.Name));
+                return Task.CompletedTask;
+            });
+    }
+
     [TestInitialize]
-    public override void Initialize() => base.Initialize();
+    public override void Initialize()
+    {
+        lock (Captured) Captured.Clear();
+        base.Initialize();
+    }
 
     [TestCleanup]
     public override void Cleanup() => base.Cleanup();
@@ -28,9 +47,15 @@ public class PayloadOverrides : StateflowsTestClass
         => builder.AddPayloads(b => b
                 .AddPayload("first", _ => { })
                 .AddPayload("second", _ => { }))
-            .AddActivities(b => b.AddActivity("changed", b => b
-                .UseActivity<BasePayloadActivity>(b => b
-                    .UseAcceptEventAction("first", "receive", b => b.ChangeAcceptedEvent("second")))));
+            .AddActivities(b => b
+                .AddActivity("changed", b => b
+                    .UseActivity<BasePayloadActivity>(b => b
+                        .UseAcceptEventAction("first", "receive", b => b.ChangeAcceptedEvent("second"))))
+                .AddActivity("changed-nodes", b => b
+                    .UseActivity<BasePayloadNodeActivity>(b => b
+                        .UseInputPin(["second", "first"], pin => pin.UseFlow("decision", _ => { }))
+                        .UseDecision(["second", "first"], "decision", decision =>
+                            decision.UseFlow(["second", "first"], "capture")))));
 
     [TestMethod]
     public async Task ChangesNamedAcceptedEventWithoutLosingItsHandler()
@@ -40,5 +65,19 @@ public class PayloadOverrides : StateflowsTestClass
         var factory = ServiceProvider.GetRequiredService<IPayloadFactory>();
         Assert.AreEqual(EventStatus.NotConsumed, (await activity.SendAsync(factory.Create("first", _ => { }))).Status);
         Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(factory.Create("second", _ => { }))).Status);
+    }
+
+    [TestMethod]
+    public async Task OverridesPayloadPinsAndDecisionsByNameSet()
+    {
+        Assert.IsTrue(ActivityLocator.TryLocateActivity(new ActivityId("changed-nodes", "one"), out var activity));
+        var factory = ServiceProvider.GetRequiredService<IPayloadFactory>();
+        var result = await activity.SendAsync(new TokensInput()
+            .Add(factory.Create("first", _ => { }))
+            .Add(factory.Create("second", _ => { })));
+        Assert.AreEqual(EventStatus.Consumed, result.Status);
+
+        lock (Captured)
+            CollectionAssert.AreEquivalent(new[] { "first", "second" }, Captured.ToArray());
     }
 }

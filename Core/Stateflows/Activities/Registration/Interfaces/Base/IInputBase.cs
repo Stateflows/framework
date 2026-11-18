@@ -1,4 +1,9 @@
-﻿namespace Stateflows.Activities.Registration.Interfaces.Base
+﻿using System.Collections.Generic;
+using Stateflows.Activities.Registration.Builders;
+using Stateflows.Common;
+using Stateflows.Payloads;
+
+namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     /// <summary>Adds typed input pins to an activity graph.</summary>
     /// <typeparam name="TReturn">Fluent builder type returned after this Activity element is configured.</typeparam>
@@ -9,5 +14,17 @@
         /// <remarks>The pin name is generated as the containing scope name followed by
         /// <c>InputPin&lt;TToken&gt;.Name</c>.</remarks>
         TReturn AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction);
+
+        /// <summary>Adds an input pin for payload tokens with the specified names.</summary>
+        /// <param name="tokenNames">Payload token names admitted by the pin.</param>
+        /// <param name="buildAction">Callback configuring the pin's outgoing flows.</param>
+        TReturn AddInputPin(IReadOnlyList<string> tokenNames, System.Action<IInputPinBuilder<Payload>> buildAction)
+            => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => AddInputPin<Payload>(buildAction));
+
+        /// <summary>Adds an input pin for payload tokens with the specified name.</summary>
+        /// <param name="tokenName">Payload token name admitted by the pin.</param>
+        /// <param name="buildAction">Callback configuring the pin's outgoing flows.</param>
+        TReturn AddInputPin(string tokenName, System.Action<IInputPinBuilder<Payload>> buildAction)
+            => AddInputPin(new[] { tokenName }, buildAction);
     }
 }

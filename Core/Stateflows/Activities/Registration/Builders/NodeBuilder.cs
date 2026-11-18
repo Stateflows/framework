@@ -252,7 +252,7 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityOverrideException($"Flow targeting '{targetNodeName}' not found in overriden node '{Node.Name}'", Node.Graph.Class);
             }
             
-            buildAction(new FlowBuilder<TToken>(edge));
+            buildAction?.Invoke(new FlowBuilder<TToken>(edge));
 
             return this;
         }
@@ -272,7 +272,7 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityOverrideException($"Else flow targeting '{targetNodeName}' not found in overriden node '{Node.Name}'", Node.Graph.Class);
             }
             
-            buildAction(new FlowBuilder<TToken>(edge));
+            buildAction?.Invoke(new FlowBuilder<TToken>(edge));
 
             return this;
         }
