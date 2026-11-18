@@ -11,6 +11,18 @@ namespace Stateflows.Activities.Models
         public Type TokenType { get; set; }
         public Type TargetTokenType { get; set; }
 
+        /// <summary>Original payload names of a payload flow (D30), or <c>null</c> for a typed flow.</summary>
+        public System.Collections.Generic.IReadOnlyList<string> TokenNames { get; set; }
+
+        /// <summary>Transformed payload names (D30, R16), or <c>null</c> when the transformed token is typed.</summary>
+        public System.Collections.Generic.IReadOnlyList<string> TargetTokenNames { get; set; }
+
+        /// <summary>Selects the source tokens carried by this flow.</summary>
+        public TokenKey SourceKey => TokenKey.Of(TokenType, TokenNames);
+
+        /// <summary>Describes the tokens delivered to the target.</summary>
+        public TokenKey TargetKey => TokenKey.Of(TargetTokenType, TargetTokenNames);
+
         public Pipeline<TokenPipelineActionAsync> TokenPipeline { get; } = new Pipeline<TokenPipelineActionAsync>();
 
         public string SourceName { get; set; }

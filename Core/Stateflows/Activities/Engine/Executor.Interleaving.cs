@@ -227,9 +227,9 @@ internal partial class Executor
         if (!context.Node.AcceptsInput(input.Where(token => token.PayloadType != typeof(ControlToken))))
             throw new InvalidOperationException($"Activity scope '{context.Node.Name}' received tokens unsupported by its input pins.");
         return Task.WhenAll(context.Node.InputPins
-            .Where(pin => input.Any(token => pin.PinTokenType.IsAssignableFrom(token.ActualPayloadType)))
+            .Where(pin => input.Any(pin.PinKey!.Matches))
             .Select(pin => DoHandleNodeAsync(pin, context.Edge, context.NodeScope,
-                input.Where(token => pin.PinTokenType.IsAssignableFrom(token.ActualPayloadType)).ToArray())));
+                input.Where(pin.PinKey!.Matches).ToArray())));
     }
 
     private async Task ExecuteInterleavedPartitionsAsync<TToken>(ActionContext context, bool parallel)

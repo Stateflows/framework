@@ -70,7 +70,10 @@ public class TokenHolder<TToken> : TokenHolder
     }
 
     /// <inheritdoc />
-    public override string Name => name ??= typeof(TToken).GetReadableName(TypedElements.Tokens);
+    /// <remarks>A payload token is named after its payload.</remarks>
+    public override string Name => name ??= Payload is Payload payload
+        ? payload.Name
+        : typeof(TToken).GetReadableName(TypedElements.Tokens);
 
     /// <summary>Gets or sets the token payload.</summary>
     public TToken Payload { get; set; }

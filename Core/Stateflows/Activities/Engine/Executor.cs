@@ -1177,10 +1177,10 @@ namespace Stateflows.Activities.Engine
 
             var localWork = Task.WhenAll(
                 nodes.Where(n => n.Type != NodeType.InputPin ||
-                    input?.Any(token => n.PinTokenType.IsAssignableFrom(token.ActualPayloadType)) == true)
+                    input?.Any(token => n.PinKey!.Matches(token)) == true)
                 .Select(n => DoHandleNodeAsync(n, nodeScope.Edge, nodeScope,
                     n.Type == NodeType.InputPin
-                        ? input?.Where(token => n.PinTokenType.IsAssignableFrom(token.ActualPayloadType)).ToArray()
+                        ? input?.Where(token => n.PinKey!.Matches(token)).ToArray()
                         : null, selectionTokens)).ToArray()
             );
             var result = await CompleteStructureWorkAsync(nodeScope, Task.WhenAll(pendingCrossings.Append(localWork)));
@@ -1723,7 +1723,7 @@ namespace Stateflows.Activities.Engine
                             await Task.WhenAll(
                                 node.Edges
                                     .Where(edge => edge.Target.Type == NodeType.OutputPin || outputTokens.Any(t => t is TokenHolder<ControlToken>))
-                                    .Where(edge => outputTokens.Any(t => edge.TokenType.IsAssignableFrom(t.ActualPayloadType)) || edge.Weight == 0)
+                                    .Where(edge => outputTokens.Any(edge.SourceKey.Matches) || edge.Weight == 0)
                                     .OrderBy(edge => edge.IsElse)
                                     .Select(async edge =>
                                         (
@@ -1898,7 +1898,7 @@ namespace Stateflows.Activities.Engine
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': executing '{node.Name}'{(!inputTokens.Any() ? ", no input" : "")}");
                     if (upstreamEdge != null)
                     {
-                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.TokenType.GetTokenName() + "'")} flow from '{upstreamEdge.Source.Name}'");
+                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.SourceKey.Identifier + "'")} flow from '{upstreamEdge.Source.Name}'");
                     }
                     ReportTokens(inputTokens);  
                 }
@@ -1938,7 +1938,7 @@ namespace Stateflows.Activities.Engine
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': omitting '{node.Name}'");
                     if (upstreamEdge != null)
                     {
-                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.TokenType.GetTokenName() + "'")} flow from '{upstreamEdge.Source.Name}'");
+                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.SourceKey.Identifier + "'")} flow from '{upstreamEdge.Source.Name}'");
                     }
                     ReportTokens(streams.SelectMany(stream => stream.Tokens).Distinct().ToArray());
                     var activatedFlows = streams.Select(s => s.EdgeIdentifier).ToArray();
@@ -1946,15 +1946,14 @@ namespace Stateflows.Activities.Engine
                     ReportMissingFlows(missingFlows);
 
                     var inputTokens = streams.SelectMany(stream => stream.Tokens).ToArray();
-                    var missingRequiredTypes = node.InputTokenTypes
-                        .Where(requiredType => !inputTokens.Any(token =>
-                            requiredType.IsAssignableFrom(token.GetEffectivePayloadType())))
+                    var missingRequiredKeys = node.InputTokenKeys
+                        .Where(requiredKey => !inputTokens.Any(requiredKey.Matches))
                         .Distinct()
                         .ToArray();
-                    if (missingRequiredTypes.Length > 0)
+                    if (missingRequiredKeys.Length > 0)
                     {
-                        var missingTypeNames = missingRequiredTypes
-                            .Select(type => type.FullName ?? type.Name)
+                        var missingTypeNames = missingRequiredKeys
+                            .Select(key => key.IsPayload ? key.ToString() : key.Type.FullName ?? key.Type.Name)
                             .ToArray();
                         logger.LogWarning(
                             "Activity {ActivityName}:{ActivityInstance} skipped node {NodeName}; required input token types were not delivered: {MissingTokenTypes}.",
@@ -1998,7 +1997,7 @@ namespace Stateflows.Activities.Engine
                 Trace.WriteLine($"    Not activated incoming flows:");
                 foreach (var flow in flows)
                 {
-                    var tokenName = flow.TargetTokenType.GetTokenName();
+                    var tokenName = flow.TargetKey.Identifier;
                     if (tokenName == typeof(ControlToken).GetTokenName())
                     {
                         Trace.WriteLine($"    - control flow from '{flow.SourceName}'  ");
@@ -2085,7 +2084,7 @@ namespace Stateflows.Activities.Engine
             var edgeTokenName = edge.TokenType.GetTokenName();
 
             IEnumerable<TokenHolder> originalTokens = context.OutputTokens
-            .Where(t => edge.TokenType.IsAssignableFrom(t.ActualPayloadType))
+            .Where(edge.SourceKey.Matches)
             .Select(token => token.CopyForExecution(context.IsStreamed || token.IsStreamed))
             .ToArray();
 
