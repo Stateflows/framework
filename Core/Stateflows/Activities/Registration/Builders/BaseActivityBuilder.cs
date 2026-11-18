@@ -272,7 +272,7 @@ namespace Stateflows.Activities.Registration
             string actionNodeName,
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
             AcceptEventActionBuildAction<TEvent> buildAction = null,
-            string payloadName = null
+            IReadOnlyList<string> payloadNames = null
         )
         {
             var result = AddNode(
@@ -281,7 +281,7 @@ namespace Stateflows.Activities.Registration
                 c => actionAsync(new AcceptEventActionContext<TEvent>(c as ActionContext)),
                 b =>
                 {
-                    b.Node.PayloadName = payloadName;
+                    b.Node.PayloadNames = payloadNames;
                     buildAction?.Invoke(new AcceptEventNodeBuilder<TEvent>(b.Node, b.ActivityBuilder));
                 },
                 typeof(TEvent)

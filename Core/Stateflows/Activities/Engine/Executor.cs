@@ -397,7 +397,7 @@ namespace Stateflows.Activities.Engine
                 .Where(type => !typeof(Payload).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
-                    ? GetActiveNodes().Where(node => node.PayloadName != null).Select(node => node.PayloadName)
+                    ? GetActiveNodes().Where(node => node.PayloadNames != null).SelectMany(node => node.PayloadNames)
                     : [])
                 .Concat(BehaviorStatus == BehaviorStatus.NotInitialized
                     ? Graph.PayloadInitializerNames.Values.SelectMany(names => names)

@@ -44,7 +44,7 @@ namespace Stateflows.Activities.Models
         public Type ExceptionType { get; set; }
 
         public Type EventType { get; set; }
-        public string PayloadName { get; set; }
+        public IReadOnlyList<string> PayloadNames { get; set; }
         internal string[] EffectiveEventNames { get; set; } = [];
 
         public IEnumerable<Type> ActualEventTypes { get; set; }

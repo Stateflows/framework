@@ -60,6 +60,8 @@ namespace Action.IntegrationTests.Tests
                         .AddConsumedEvent("order")
                         .AddConsumedEvent<SomeEvent>()
                     )
+                    .AddAction("listed", async c => ReceivedNames.AddRange(c.GetTokensOfType<Payload>().Select(e => e.Name)),
+                        a => a.AddConsumedEvent(["order", "cancel"]))
                 );
         }
 
@@ -89,6 +91,34 @@ namespace Action.IntegrationTests.Tests
             CollectionAssert.AreEqual(new[] { "order" }, ReceivedNames);
             Assert.AreEqual(42, ReceivedId);
         }
+
+        [TestMethod]
+        [DataRow("order")]
+        [DataRow("cancel")]
+        public async Task EveryListedConsumedEventIsDelivered(string name)
+        {
+            var factory = ServiceProvider.GetRequiredService<IPayloadFactory>();
+            Assert.IsTrue(ActionLocator.TryLocateAction(new ActionId("listed", name), out var action));
+            Assert.AreEqual(EventStatus.Consumed, (await action.SendAsync(factory.Create(name, _ => { }))).Status);
+            CollectionAssert.AreEqual(new[] { name }, ReceivedNames);
+        }
+
+        [TestMethod]
+        public async Task ListedConsumedEventsAreVisited()
+        {
+            var visitor = new PayloadActionVisitor();
+            await ServiceProvider.GetRequiredService<IActionsRegister>().VisitActionsAsync(visitor);
+            CollectionAssert.AreEquivalent(new[] { "order", "cancel" },
+                visitor.NamedEvents.Where(e => e.ActionName == "listed").Select(e => e.EventName).ToArray());
+        }
+
+        [TestMethod]
+        [DataRow(new string[0])]
+        [DataRow(new[] { " " })]
+        [DataRow(new[] { "order", "order" })]
+        public void InvalidConsumedEventSetsAreRejected(string[] names)
+            => Assert.ThrowsExactly<ArgumentException>(() => new ServiceCollection().AddStateflows(b => b
+                .AddActions(a => a.AddAction("invalid", async c => { }, x => x.AddConsumedEvent(names)))));
 
         [TestMethod]
         public void UnregisteredConsumedEventNameFailsAtBuild()

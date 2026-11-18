@@ -110,10 +110,11 @@ namespace Stateflows.Activities.Models
             foreach (var node in AllNodes.Values.Where(node => node != null))
             {
                 node.IncomingEdges?.Clear();
-                if (node.PayloadName != null)
+                if (node.PayloadNames != null)
                 {
-                    StateflowsBuilder.Payloads.GetPayload(node.PayloadName);
-                    node.EffectiveEventNames = [node.PayloadName];
+                    foreach (var payloadName in node.PayloadNames)
+                        StateflowsBuilder.Payloads.GetPayload(payloadName);
+                    node.EffectiveEventNames = node.PayloadNames.ToArray();
                 }
                 else if (node.EventType != null && node.Type is NodeType.AcceptEventAction or NodeType.TimeEventAction or NodeType.SendEventAction or NodeType.PublishEventAction)
                 {

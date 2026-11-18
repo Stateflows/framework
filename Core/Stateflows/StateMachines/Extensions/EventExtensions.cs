@@ -33,8 +33,8 @@ namespace Stateflows.StateMachines.Extensions
         }
 
         public static bool IsAcceptedBy(this EventHolder eventHolder, Node node)
-            => node.PayloadName != null
-                ? eventHolder.BoxedPayload is Payload && eventHolder.Name == node.PayloadName
+            => node.PayloadNames != null
+                ? eventHolder.BoxedPayload is Payload && node.PayloadNames.Contains(eventHolder.Name)
                 : node.ActualEventTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType));
         
         public static bool IsAcceptedBy(this EventHolder eventHolder, Node node, Dictionary<string, Guid> nodeTimeEvents)
