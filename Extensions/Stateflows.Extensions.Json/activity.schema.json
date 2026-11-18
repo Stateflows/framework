@@ -46,6 +46,12 @@
       "uniqueItems": true,
       "items": { "type": "string", "minLength": 1 }
     },
+    "tokenNames": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
     "binding": {
       "type": "object",
       "required": ["clrType"],
@@ -77,11 +83,18 @@
     },
     "transformStage": {
       "type": "object",
-      "required": ["kind", "handler", "outputTokenType"],
+      "required": ["kind", "handler"],
+      "oneOf": [
+        { "required": ["outputTokenType"], "not": { "anyOf": [{ "required": ["outputTokenNames"] }, { "required": ["outputTokenName"] }] } },
+        { "required": ["outputTokenNames"], "not": { "anyOf": [{ "required": ["outputTokenType"] }, { "required": ["outputTokenName"] }] } },
+        { "required": ["outputTokenName"], "not": { "anyOf": [{ "required": ["outputTokenType"] }, { "required": ["outputTokenNames"] }] } }
+      ],
       "properties": {
         "kind": { "const": "transform" },
         "handler": { "$ref": "#/$defs/binding" },
-        "outputTokenType": { "type": "string", "minLength": 1 }
+        "outputTokenType": { "type": "string", "minLength": 1 },
+        "outputTokenNames": { "$ref": "#/$defs/tokenNames" },
+        "outputTokenName": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     },
@@ -124,11 +137,16 @@
     },
     "objectFlow": {
       "type": "object",
-      "required": ["kind", "target", "tokenType"],
+      "required": ["kind", "target"],
+      "oneOf": [
+        { "required": ["tokenType"], "not": { "required": ["tokenNames"] } },
+        { "required": ["tokenNames"], "not": { "required": ["tokenType"] } }
+      ],
       "properties": {
         "kind": { "const": "object" },
         "target": { "type": "string", "minLength": 1 },
         "tokenType": { "type": "string", "minLength": 1 },
+        "tokenNames": { "$ref": "#/$defs/tokenNames" },
         "weight": { "type": "integer", "minimum": 0, "default": 1 },
         "pipeline": { "$ref": "#/$defs/flowPipeline" }
       },
@@ -136,11 +154,16 @@
     },
     "elseObjectFlow": {
       "type": "object",
-      "required": ["kind", "target", "tokenType"],
+      "required": ["kind", "target"],
+      "oneOf": [
+        { "required": ["tokenType"], "not": { "required": ["tokenNames"] } },
+        { "required": ["tokenNames"], "not": { "required": ["tokenType"] } }
+      ],
       "properties": {
         "kind": { "const": "elseObject" },
         "target": { "type": "string", "minLength": 1 },
         "tokenType": { "type": "string", "minLength": 1 },
+        "tokenNames": { "$ref": "#/$defs/tokenNames" },
         "weight": { "type": "integer", "minimum": 0, "default": 1 },
         "pipeline": { "$ref": "#/$defs/transformPipeline" }
       },
@@ -198,10 +221,15 @@
             { "$ref": "#/$defs/nodeBase" },
             {
               "type": "object",
-              "required": ["kind", "tokenType"],
+              "required": ["kind"],
+              "oneOf": [
+                { "required": ["tokenType"], "not": { "required": ["tokenNames"] } },
+                { "required": ["tokenNames"], "not": { "required": ["tokenType"] } }
+              ],
               "properties": {
                 "kind": { "const": "inputPin" },
-                "tokenType": { "type": "string", "minLength": 1 }
+                "tokenType": { "type": "string", "minLength": 1 },
+                "tokenNames": { "$ref": "#/$defs/tokenNames" }
               },
               "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
             }
@@ -213,10 +241,15 @@
             { "$ref": "#/$defs/nodeBase" },
             {
               "type": "object",
-              "required": ["kind", "tokenType"],
+              "required": ["kind"],
+              "oneOf": [
+                { "required": ["tokenType"], "not": { "required": ["tokenNames"] } },
+                { "required": ["tokenNames"], "not": { "required": ["tokenType"] } }
+              ],
               "properties": {
                 "kind": { "const": "outputPin" },
-                "tokenType": { "type": "string", "minLength": 1 }
+                "tokenType": { "type": "string", "minLength": 1 },
+                "tokenNames": { "$ref": "#/$defs/tokenNames" }
               },
               "not": {
                 "anyOf": [
@@ -270,11 +303,17 @@
               "properties": {
                 "kind": { "const": "decision" },
                 "mode": { "enum": ["control", "object"] },
-                "tokenType": { "type": "string", "minLength": 1 }
+                "tokenType": { "type": "string", "minLength": 1 },
+                "tokenNames": { "$ref": "#/$defs/tokenNames" }
               },
               "if": { "properties": { "mode": { "const": "object" } } },
-              "then": { "required": ["tokenType"] },
-              "else": { "not": { "required": ["tokenType"] } },
+              "then": {
+                "oneOf": [
+                  { "required": ["tokenType"], "not": { "required": ["tokenNames"] } },
+                  { "required": ["tokenNames"], "not": { "required": ["tokenType"] } }
+                ]
+              },
+              "else": { "not": { "anyOf": [{ "required": ["tokenType"] }, { "required": ["tokenNames"] }] } },
               "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
             }
           ],
@@ -396,17 +435,40 @@
             { "$ref": "#/$defs/nodeBase" },
             {
               "type": "object",
-              "required": ["kind", "name", "nodes", "iterationTokenType"],
+              "required": ["kind", "name", "nodes"],
               "properties": {
                 "kind": { "enum": ["parallel", "iterative"] },
                 "nodes": { "$ref": "#/$defs/nodes" },
                 "definitions": { "$ref": "#/$defs/bindings" },
                 "iterationTokenType": { "type": "string", "minLength": 1 },
+                "iterationTokenNames": { "$ref": "#/$defs/tokenNames" },
+                "parallelizationTokenNames": { "$ref": "#/$defs/tokenNames" },
                 "chunkSize": { "type": "integer", "minimum": 1, "default": 1 },
                 "maxConcurrency": { "type": "integer", "default": -1, "anyOf": [{ "const": -1 }, { "minimum": 1 }] }
               },
-              "if": { "properties": { "kind": { "const": "iterative" } } },
-              "then": { "not": { "required": ["maxConcurrency"] } }
+              "allOf": [
+                {
+                  "if": { "properties": { "kind": { "const": "iterative" } }, "required": ["kind"] },
+                  "then": {
+                    "oneOf": [
+                      { "required": ["iterationTokenType"], "not": { "required": ["iterationTokenNames"] } },
+                      { "required": ["iterationTokenNames"], "not": { "required": ["iterationTokenType"] } }
+                    ],
+                    "not": { "required": ["parallelizationTokenNames"] }
+                  },
+                  "else": {
+                    "oneOf": [
+                      { "required": ["iterationTokenType"], "not": { "required": ["parallelizationTokenNames"] } },
+                      { "required": ["parallelizationTokenNames"], "not": { "required": ["iterationTokenType"] } }
+                    ],
+                    "not": { "required": ["iterationTokenNames"] }
+                  }
+                },
+                {
+                  "if": { "properties": { "kind": { "const": "iterative" } }, "required": ["kind"] },
+                  "then": { "not": { "required": ["maxConcurrency"] } }
+                }
+              ]
             }
           ],
           "unevaluatedProperties": false

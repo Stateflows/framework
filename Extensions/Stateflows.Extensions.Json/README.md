@@ -613,36 +613,44 @@ The output token alias declares the transformation's result type and becomes the
 stages and the destination. Control flows accept control guards only; else flows cannot contain
 guards. Weights default to one and must be nonnegative.
 
-Use `inputPin` and `outputPin` to declare typed object boundaries in an Activity scope, including
-structured, parallel, and iterative scopes. Each requires a host-registered `tokenType` alias.
-An input pin routes only object flows of its declared token type; its flow may use the same guard
-and transformation pipeline as other object flows. Output pins are object-flow targets and accept
-tokens compatible with their declared type. Input pin names are generated as
-`{parentName}.{InputPin<TToken>.Name}`; an optional input-pin `name` is only a local JSON alias,
-not the registered node name. Output pins default to `OutputPin<TToken>.Name`; set `name` to use a
-custom globally unique registered name, and target that pin by the supplied name in flows.
-`OutputPin<TToken>` target markers refer only to the default name. Multiple pins with different
-token types can be declared in a scope.
+Use `inputPin` and `outputPin` to declare typed or payload object boundaries in an Activity scope,
+including structured, parallel, and iterative scopes. Typed pins use a host-registered `tokenType`
+alias. Payload pins instead use a nonempty `tokenNames` list of payloads registered through
+`AddPayloads`; the two selectors are mutually exclusive. Object flows follow the same rule with
+`tokenType` or `tokenNames`. Input pins route only their declared token names; output pins are
+object-flow targets and accept compatible names. Input pin names are generated from the declared
+token set; an optional input-pin `name` is only a local JSON alias, not the registered node name.
+Output pins default to a name derived from their token selector; set `name` to use a custom globally
+unique registered name, and target that pin by the supplied name in flows.
+
+Object-flow transformations accept `outputTokenType` for typed output or `outputTokenNames` for
+payload output. A single `outputTokenName` is shorthand for a one-name set. These are mutually
+exclusive; a payload transformation must declare its output names, and producing a name outside the
+declared set fails the flow.
+
+Object decisions use `tokenType` or `tokenNames`. Iterative scopes use `iterationTokenType` or
+`iterationTokenNames`; parallel scopes use `iterationTokenType` or `parallelizationTokenNames`.
+Each pair is mutually exclusive, and all referenced payload names must already be registered.
 
 ```json
 {
   "kind": "structured",
   "name": "normalize",
-  "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "validated" }],
+  "flows": [{ "kind": "object", "tokenNames": ["order.validated"], "target": "validated" }],
   "nodes": [
     {
       "kind": "inputPin",
       "name": "incomingOrder",
-      "tokenType": "tokens.order",
-      "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "validate" }]
+      "tokenNames": ["order.submitted"],
+      "flows": [{ "kind": "object", "tokenNames": ["order.submitted"], "target": "validate" }]
     },
     {
       "kind": "action",
       "name": "validate",
       "implementation": { "clrType": "nodes.validate" },
-      "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "outgoingOrder" }]
+      "flows": [{ "kind": "object", "tokenNames": ["order.validated"], "target": "outgoingOrder" }]
     },
-    { "kind": "outputPin", "name": "outgoingOrder", "tokenType": "tokens.order" }
+    { "kind": "outputPin", "name": "outgoingOrder", "tokenNames": ["order.validated"] }
   ]
 }
 ```

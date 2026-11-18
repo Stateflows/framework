@@ -7,8 +7,10 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Json;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
+using Stateflows.Common.Attributes;
 using Stateflows.Common.Json;
 using Stateflows.Entities.Enums;
+using Stateflows.Payloads;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests.Json;
@@ -23,6 +25,7 @@ public class JsonExecutionTests : StateflowsTestClass
     {
         public ConcurrentQueue<string> Entries { get; } = new();
         public ConcurrentQueue<int> Tokens { get; } = new();
+        public ConcurrentQueue<string> Payloads { get; } = new();
         public TaskCompletionSource<int> Received { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
@@ -55,6 +58,26 @@ public class JsonExecutionTests : StateflowsTestClass
 
     private static JObject Done() => new() { ["kind"] = "final", ["name"] = "done" };
 
+    private static JObject PayloadDocument(string name, string outputName)
+    {
+        var input = new JObject
+        {
+            ["kind"] = "inputPin",
+            ["tokenNames"] = new JArray("json-input"),
+            ["flows"] = new JArray(new JObject
+            {
+                ["kind"] = "object", ["target"] = "consume", ["tokenNames"] = new JArray("json-input"),
+                ["pipeline"] = new JArray(new JObject
+                {
+                    ["kind"] = "transform", ["outputTokenNames"] = new JArray("json-output"),
+                    ["handler"] = Binding("payloadTransform", outputName)
+                })
+            })
+        };
+        return Document(name, Initial("done"), input,
+            Node("consume", "payloadConsumer", null, Flow("control", "done")), Done());
+    }
+
     [TestInitialize]
     public override void Initialize() => base.Initialize();
 
@@ -75,9 +98,15 @@ public class JsonExecutionTests : StateflowsTestClass
             .AddType<Receive>("receive").AddType<Message>("message")
             .AddType<Send>("send").AddType<Publish>("publish").AddType<Forward>("forward")
             .AddType<Throw>("throw").AddType<Handle>("handle").AddType<InvalidOperationException>("exception")
+            .AddType<PayloadConsumer>("payloadConsumer")
+            .AddType<PayloadTransform>("payloadTransform")
             .AddType<DualConfiguration>("dual")
             .AddType<int>("int").AddType<string>("string");
 
+        builder.AddPayloads(events => events
+            .AddPayload("json-input", payload => payload.AddField("value", FieldType.Int32))
+            .AddPayload("json-output", payload => payload.AddField("value", FieldType.Int32))
+            .AddPayload("json-other", payload => payload.AddField("value", FieldType.Int32)));
         builder.AddActivities(activities =>
         {
             Register(Document("configured", Initial("first"),
@@ -200,6 +229,9 @@ public class JsonExecutionTests : StateflowsTestClass
             var dual = Node("dual", "dual", 7, Flow("control", "done"));
             dual["implementation"]!["configurationType"] = "int";
             Register(Document("dual", Initial("dual"), dual, Done()));
+
+            Register(PayloadDocument("payload-tokens", "json-output"));
+            Register(PayloadDocument("payload-token-outside", "json-other"));
 
             foreach (var guard in new[] { true, false })
             {
@@ -331,6 +363,30 @@ public class JsonExecutionTests : StateflowsTestClass
     }
 
     [TestMethod]
+    public async Task JsonDefinedPayloadPinRoutesNamedTokensEndToEnd()
+    {
+        Assert.IsTrue(ActivityLocator.TryLocateActivity(new ActivityId("payload-tokens", "instance"), out var activity));
+        var payloadFactory = ServiceProvider.GetRequiredService<IPayloadFactory>();
+        var result = await activity.SendAsync(new TokensInput().Add(
+            payloadFactory.Create("json-input", payload => payload.Set("value", 41))));
+
+        Assert.AreEqual(EventStatus.Consumed, result.Status);
+        CollectionAssert.AreEqual(new[] { "json-output:41" }, trace.Payloads.ToArray());
+    }
+
+    [TestMethod]
+    public async Task JsonTransformationRejectsPayloadNamesOutsideItsDeclaredSet()
+    {
+        Assert.IsTrue(ActivityLocator.TryLocateActivity(new ActivityId("payload-token-outside", "instance"), out var activity));
+        var payloadFactory = ServiceProvider.GetRequiredService<IPayloadFactory>();
+        var result = await activity.SendAsync(new TokensInput().Add(
+            payloadFactory.Create("json-input", payload => payload.Set("value", 41))));
+
+        Assert.AreEqual(EventStatus.Failed, result.Status);
+        Assert.IsEmpty(trace.Payloads);
+    }
+
+    [TestMethod]
     public async Task ForkAndJoinExecuteBothBranches()
     {
         await Run("fork-join");
@@ -403,6 +459,25 @@ public class JsonExecutionTests : StateflowsTestClass
             foreach (var value in input) trace.Tokens.Enqueue(value);
             return Task.CompletedTask;
         }
+    }
+
+    public sealed class PayloadConsumer(Trace trace, [TokenName("json-output")] IInputTokens input) : IActionNode
+    {
+        public Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            foreach (var payload in input)
+                trace.Payloads.Enqueue($"{payload.Name}:{payload.Get<int>("value")}");
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class PayloadTransform(IPayloadFactory payloadFactory) : IFlowTransformation<Payload, Payload>, IConfigurable<string>
+    {
+        public string Configuration { private get; set; } = "";
+
+        public Task<Payload> TransformAsync(Payload token)
+            => Task.FromResult(payloadFactory.Create(Configuration, payload =>
+                payload.Set("value", token.Get<int>("value"))));
     }
 
     public sealed class IntGuard(Trace trace) : IFlowGuard<int>, IConfigurable<bool>
