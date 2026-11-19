@@ -3,6 +3,14 @@
 Status: design decisions approved as recorded below; implementation pending.
 No framework or application implementation changes.
 
+## Implementation checkpoints
+
+- Baseline committed: approved plan and red regression tests.
+- Startup validation implemented: opt-in builder API, manual event/token types,
+  shared Newtonsoft contract analysis, samples, existing visitors and hosted/
+  Orleans startup hooks. Nine focused validation tests pass.
+- Dispatch/interception/inbox implementation and broader coverage remain pending.
+
 Regression baseline now lives in
 `Tests\Orleans.IntegrationTests\EventSerializationRegressionTests.cs` and
 `Tests\Orleans.IntegrationTests\OwnerSendSerializationRegressionTests.cs`.
@@ -711,8 +719,25 @@ transaction, staging and streaming suites.
 
 ## Visitor coverage gaps
 
-Populate this section during implementation by checking existing visitor
-callbacks against the event usages listed in section 1. No specific gaps have
-been established yet; do not interpret this as confirmation of complete coverage.
-For each gap, record the affected usage, information unavailable through current
-callbacks and verification limitation. Do not change visitor APIs to close it.
+Existing visitor limitations (APIs deliberately unchanged):
+
+- Action visitors expose consumed events/tokens through CustomEventAddedAsync
+  but not ProducedEventTypes/ProducedTokenTypes. Declare produced payloads with
+  AddEvent/AddToken in the validation callback.
+- Arbitrary sends/publications inside user code are not discoverable; add them
+  manually. This includes concrete values held in object/interface members.
+- Activity visitors expose pins, flows, transformations and explicit event
+  nodes, but not every internal node input/output declaration or persisted
+  runtime checkpoint payload type. Declare additional contracts manually.
+- Resolved type-mapper concrete expansions are not exposed consistently by
+  visitor callbacks; the validator does not invoke mapping callbacks as a
+  workaround. Declare concrete variants manually.
+- Entity visitors expose field/projection templates and mutation/initializer
+  payloads, not every generated transport wrapper or runtime implementation of
+  projection interfaces. Opaque contracts warn; supply concrete types/samples.
+- Deferral-specific usage locations and built-in/header transport inventories
+  are not exhaustively exposed. No complete-coverage claim is made.
+
+Discovery validates all usages surfaced by the implemented callbacks, including
+separately registered embedded behaviors. Missing metadata is not filled by
+direct model inspection or registration changes.

@@ -28,10 +28,10 @@ public sealed class OwnerSendSerializationRegressionTests
     {
         using var host = contract switch
         {
-            "ambiguous" => CreateHost<DetachedFailure>(_ => Task.CompletedTask),
-            "unmatched" => CreateHost<EventSerializationRegressionTests.UnmatchedFailure>(_ => Task.CompletedTask),
-            "annotated-unmatched" => CreateHost<EventSerializationRegressionTests.AnnotatedUnmatchedFailure>(_ => Task.CompletedTask),
-            "nested-unmatched" => CreateHost<EventSerializationRegressionTests.NestedFailure>(_ => Task.CompletedTask),
+            "ambiguous" => CreateHost<DetachedFailure>(_ => Task.CompletedTask, validate: true),
+            "unmatched" => CreateHost<EventSerializationRegressionTests.UnmatchedFailure>(_ => Task.CompletedTask, validate: true),
+            "annotated-unmatched" => CreateHost<EventSerializationRegressionTests.AnnotatedUnmatchedFailure>(_ => Task.CompletedTask, validate: true),
+            "nested-unmatched" => CreateHost<EventSerializationRegressionTests.NestedFailure>(_ => Task.CompletedTask, validate: true),
             _ => throw new ArgumentOutOfRangeException(nameof(contract))
         };
         Exception? startupFailure = null;
@@ -45,7 +45,8 @@ public sealed class OwnerSendSerializationRegressionTests
         }
         finally
         {
-            await host.StopAsync().WaitAsync(Deadline);
+            if (startupFailure == null)
+                await host.StopAsync().WaitAsync(Deadline);
         }
 
         Assert.IsNotNull(startupFailure, "A defective registered event must fail startup.");
@@ -136,7 +137,7 @@ public sealed class OwnerSendSerializationRegressionTests
 
     private static IHost CreateHost<T>(
         Stateflows.Actions.Registration.ActionDelegateAsync effect,
-        Action<T>? onReceived = null, FailureLogs? logs = null)
+        Action<T>? onReceived = null, FailureLogs? logs = null, bool validate = false)
     {
         var listeners = new[] { new TcpListener(IPAddress.Loopback, 0), new TcpListener(IPAddress.Loopback, 0) };
         int[] ports;
@@ -159,7 +160,10 @@ public sealed class OwnerSendSerializationRegressionTests
                 if (logs != null)
                     logging.AddProvider(logs);
             })
-            .ConfigureServices(services => services.AddStateflows(builder => builder
+            .ConfigureServices(services => services.AddStateflows(builder =>
+            {
+                if (validate) builder.AddStartupSerializationValidation();
+                builder
                 .AddStateMachines(machines => machines.AddStateMachine("owner-send-regression", machine => machine
                     .AddInitialState("ready", state => state
                         .AddInternalTransition<Trigger>(transition => transition
@@ -167,7 +171,8 @@ public sealed class OwnerSendSerializationRegressionTests
                         .AddInternalTransition<T>(transition => transition.AddEffect(context =>
                         {
                             onReceived?.Invoke(context.Event);
-                        })))))))
+                        })))));
+            }))
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(ports[0], ports[1], clusterId: cluster, serviceId: cluster)
                 .AddMemoryGrainStorageAsDefault()

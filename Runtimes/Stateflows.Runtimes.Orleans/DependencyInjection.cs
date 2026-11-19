@@ -57,6 +57,8 @@ public static class DependencyInjection
 
         builder.AddStartupTask(async (serviceProvider, cancellationToken) =>
         {
+            if (serviceProvider.GetService<StartupSerializationValidator>() is { } validator)
+                await validator.ValidateAsync();
             await using var scope = serviceProvider.CreateAsyncScope();
             var scopedServices = scope.ServiceProvider;
             var catalog = scopedServices.GetRequiredService<LocalBehaviorCatalog>();

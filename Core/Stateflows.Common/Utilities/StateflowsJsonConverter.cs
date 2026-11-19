@@ -10,6 +10,9 @@ namespace Stateflows.Common.Utilities
     /// <remarks>Polymorphic operations include CLR type metadata and are intended for trusted Stateflows data, not untrusted JSON.</remarks>
     public static class StateflowsJsonConverter
     {
+        internal static JsonSerializer CreatePolymorphicSerializer()
+            => JsonSerializer.CreateDefault(PolymorphicSettings);
+
         private static readonly JsonSerializerSettings PolymorphicCamelSettings = new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All,
