@@ -689,15 +689,13 @@ public sealed partial class BehaviorNotificationTests
         public bool HasContext(BehaviorId id)
             => states.Any(p => p.Key.StateName == "Stateflows.BehaviorContext" &&
                 p.Key.GrainId.Key.ToString() == GetBehaviorGrainKey(id) &&
-                !string.IsNullOrEmpty(TransactionalStorageTestHelpers.GetCommittedContextState(
-                    serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(p.Value.Data))?.Payload));
+                !string.IsNullOrEmpty(serializer.Deserialize<BehaviorContextState>(p.Value.Data)?.Payload));
 
         public Stateflows.Common.Context.StateflowsContext GetContext(BehaviorId id)
         {
             var stored = states.Single(p => p.Key.StateName == "Stateflows.BehaviorContext" &&
                 p.Key.GrainId.Key.ToString() == GetBehaviorGrainKey(id)).Value;
-            var committed = TransactionalStorageTestHelpers.GetCommittedContextState(
-                serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(stored.Data));
+            var committed = serializer.Deserialize<BehaviorContextState>(stored.Data);
             return StateflowsJsonConverter.DeserializeObject<Stateflows.Common.Context.StateflowsContext>(
                 committed!.Payload)!;
         }
@@ -709,10 +707,9 @@ public sealed partial class BehaviorNotificationTests
             var context = GetContext(id);
             update(context);
             var stored = states[key];
-            var record = serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(stored.Data)!;
-            var committed = TransactionalStorageTestHelpers.GetCommittedContextState(record)!;
+            var committed = serializer.Deserialize<BehaviorContextState>(stored.Data)!;
             committed.Payload = StateflowsJsonConverter.SerializePolymorphicObject(context);
-            states[key] = (serializer.Serialize(record), Guid.NewGuid().ToString("N"));
+            states[key] = (serializer.Serialize(committed), Guid.NewGuid().ToString("N"));
         }
 
         public Task ReadStateAsync<T>(string stateName, GrainId grainId, IGrainState<T> grainState)
@@ -744,7 +741,6 @@ public sealed partial class BehaviorNotificationTests
             {
                 var data = serializer.Serialize(grainState.State);
                 var mode = 0;
-                var committedAdvanced = false;
                 if (stateName == "Stateflows.Notifications")
                 {
                     Interlocked.Increment(ref notificationsWrites);
@@ -752,18 +748,8 @@ public sealed partial class BehaviorNotificationTests
                 }
                 else if (stateName == "Stateflows.BehaviorContext")
                 {
-                    // Orleans transactions also persist metadata-only records; only writes carrying a new transactional
-                    // state version (prepared or committed) count as behavior writes and are eligible for fault injection.
-                    var previous = states.TryGetValue((stateName, grainId), out var stored)
-                        ? serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(stored.Data)
-                        : null;
-                    var next = serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(data);
-                    if (TransactionalStorageTestHelpers.GetLatestSequenceId(next) > TransactionalStorageTestHelpers.GetLatestSequenceId(previous))
-                    {
-                        Interlocked.Increment(ref contextWrites);
-                        mode = Interlocked.Exchange(ref contextFailureMode, 0);
-                    }
-                    committedAdvanced = (next?.CommittedSequenceId ?? 0) > (previous?.CommittedSequenceId ?? 0);
+                    Interlocked.Increment(ref contextWrites);
+                    mode = Interlocked.Exchange(ref contextFailureMode, 0);
                 }
 
                 if (mode == 1)
@@ -773,9 +759,8 @@ public sealed partial class BehaviorNotificationTests
 
                 var eTag = Guid.NewGuid().ToString("N");
                 states[(stateName, grainId)] = (data, eTag);
-                if (committedAdvanced &&
-                    TransactionalStorageTestHelpers.GetCommittedContextState(
-                        serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(data)) is { } committed)
+                if (stateName == "Stateflows.BehaviorContext" &&
+                    serializer.Deserialize<BehaviorContextState>(data) is { } committed)
                 {
                     ContextCommits.Enqueue(committed);
                 }

@@ -25,7 +25,7 @@ public sealed class ActivityInspectionTests
     [TestMethod]
     [DataRow("cold")]
     [DataRow("initialized")]
-    [DataRow("transactional")]
+    [DataRow("regular")]
     [DataRow("streaming")]
     [Timeout(60_000)]
     public async Task PlantUmlRequestsResolveInspectionInNewAndReusedSessions(string state)
@@ -39,7 +39,7 @@ public sealed class ActivityInspectionTests
                 .CreateBehavior(new ActivityId(ActivityName, state));
             if (state == "initialized")
                 Assert.AreEqual(EventStatus.Initialized, (await behavior.SendAsync(new Initialize())).Status);
-            if (state == "transactional")
+            if (state == "regular")
             {
                 probe.Gate(state).TrySetResult();
                 Assert.AreEqual(EventStatus.Consumed, (await behavior.SendAsync(new TokensInput().Add(1))).Status);

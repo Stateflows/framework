@@ -1,6 +1,6 @@
 namespace Stateflows;
 
-internal sealed class TransactionWorkTracker
+internal sealed class ExecutionWorkTracker
 {
     private readonly object sync = new();
     private int count;
@@ -33,9 +33,9 @@ internal sealed class TransactionWorkTracker
         }
     }
 
-    private sealed class Lease(TransactionWorkTracker owner) : IDisposable
+    private sealed class Lease(ExecutionWorkTracker owner) : IDisposable
     {
-        private TransactionWorkTracker? current = owner;
+        private ExecutionWorkTracker? current = owner;
 
         public void Dispose()
         {

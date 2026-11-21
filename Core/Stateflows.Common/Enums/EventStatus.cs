@@ -58,10 +58,6 @@
         /// <summary>
         /// Input was admitted to a live stream; this does not indicate that its work has completed.
         /// </summary>
-        Accepted,
-        /// <summary>
-        /// Event processing was aborted because its transaction did not commit.
-        /// </summary>
-        Aborted
+        Accepted
     }
 }

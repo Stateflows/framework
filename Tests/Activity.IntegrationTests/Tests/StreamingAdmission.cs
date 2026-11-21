@@ -85,17 +85,17 @@ public sealed class StreamingAdmission
     public void TokenRoutingCopiesKeepIndependentProvenance()
     {
         var source = new TokenHolder<int> { Payload = 42 };
-        var transactionalRoute = source.CopyForExecution(false);
+        var regularRoute = source.CopyForExecution(false);
         var streamedRoute = source.CopyForExecution(true);
 
-        Assert.AreEqual(source.Id, transactionalRoute.Id);
+        Assert.AreEqual(source.Id, regularRoute.Id);
         Assert.AreEqual(source.Id, streamedRoute.Id);
-        Assert.AreNotSame(source, transactionalRoute);
-        Assert.AreNotSame(transactionalRoute, streamedRoute);
+        Assert.AreNotSame(source, regularRoute);
+        Assert.AreNotSame(regularRoute, streamedRoute);
         Assert.IsFalse(source.IsStreamed);
-        Assert.IsFalse(transactionalRoute.IsStreamed);
+        Assert.IsFalse(regularRoute.IsStreamed);
         Assert.IsTrue(streamedRoute.IsStreamed);
-        Assert.AreNotEqual(transactionalRoute.IsStreamed, streamedRoute.IsStreamed);
+        Assert.AreNotEqual(regularRoute.IsStreamed, streamedRoute.IsStreamed);
         Assert.AreEqual(42, ((TokenHolder<int>)streamedRoute).Payload);
     }
 
@@ -165,7 +165,7 @@ public sealed class StreamingAdmission
     }
 
     [TestMethod]
-    public void StreamingAdmissionDoesNotRecolorAnOutstandingRegularTransaction()
+    public void StreamingAdmissionDoesNotRecolorAnOutstandingTransactionalInvocation()
     {
         var root = NewRoot();
         var thread = Guid.NewGuid();
@@ -174,16 +174,16 @@ public sealed class StreamingAdmission
         flow.Consume(new ControlToken().ToTokenHolder());
         root.GetOutputTokens("output", thread).Add(17.ToTokenHolder());
 
-        var transaction = root.BeginInvocationProvenance(false, trackTransaction: true, callRoot: true);
+        var invocation = root.BeginInvocationProvenance(false, trackTransactionalInvocation: true, callRoot: true);
         root.BeginStreamingBusyPeriod();
-        Assert.AreEqual(1, root.OutstandingTransactions);
+        Assert.AreEqual(1, root.OutstandingTransactionalInvocations);
         Assert.IsFalse(root.IsCurrentInvocationStreamed);
         Assert.IsFalse(flow.IsStreamed);
         Assert.IsFalse(flow.Tokens.Single().IsStreamed);
 
-        transaction.Dispose();
-        transaction.Dispose();
-        Assert.AreEqual(0, root.OutstandingTransactions);
+        invocation.Dispose();
+        invocation.Dispose();
+        Assert.AreEqual(0, root.OutstandingTransactionalInvocations);
         Assert.IsTrue(flow.IsStreamed);
         Assert.IsTrue(flow.Tokens.Single().IsStreamed);
         Assert.IsTrue(root.GetOutputTokens("output", thread).Single().IsStreamed);
@@ -194,18 +194,18 @@ public sealed class StreamingAdmission
     }
 
     [TestMethod]
-    public void StreamedInvocationDoesNotOwnOrCloseTheRegularTransaction()
+    public void StreamedInvocationDoesNotOwnOrCloseTheTransactionalInvocation()
     {
         var root = NewRoot();
-        using var regular = root.BeginInvocationProvenance(false, trackTransaction: true, callRoot: true);
+        using var transactional = root.BeginInvocationProvenance(false, trackTransactionalInvocation: true, callRoot: true);
         root.BeginStreamingBusyPeriod();
-        using (root.BeginInvocationProvenance(true, trackTransaction: true, callRoot: true))
+        using (root.BeginInvocationProvenance(true, trackTransactionalInvocation: true, callRoot: true))
         {
-            Assert.AreEqual(1, root.OutstandingTransactions);
+            Assert.AreEqual(1, root.OutstandingTransactionalInvocations);
             Assert.IsTrue(root.IsCurrentInvocationStreamed);
             Assert.AreEqual(true, root.IsCurrentCallStreamed);
         }
-        Assert.AreEqual(1, root.OutstandingTransactions);
+        Assert.AreEqual(1, root.OutstandingTransactionalInvocations);
         Assert.IsFalse(root.IsCurrentInvocationStreamed);
         Assert.AreEqual(false, root.IsCurrentCallStreamed);
     }
@@ -217,7 +217,7 @@ public sealed class StreamingAdmission
         root.BeginStreamingBusyPeriod();
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var regular = root.BeginInvocationProvenance(false, trackTransaction: true, callRoot: true);
+        using var transactional = root.BeginInvocationProvenance(false, trackTransactionalInvocation: true, callRoot: true);
         var streaming = Task.Run(async () =>
         {
             using var invocation = root.BeginInvocationProvenance(true, callRoot: true);
@@ -231,7 +231,7 @@ public sealed class StreamingAdmission
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
             Assert.IsFalse(root.IsCurrentInvocationStreamed);
             Assert.AreEqual(false, root.IsCurrentCallStreamed);
-            Assert.AreEqual(1, root.OutstandingTransactions);
+            Assert.AreEqual(1, root.OutstandingTransactionalInvocations);
         }
         finally
         {
@@ -242,7 +242,7 @@ public sealed class StreamingAdmission
     }
 
     [TestMethod]
-    public void EndingStreamingBusyPeriodRestoresTransactionalMarking()
+    public void EndingStreamingBusyPeriodRestoresRegularMarking()
     {
         var root = NewRoot();
         var flow = root.GetStream("idle", Guid.NewGuid());

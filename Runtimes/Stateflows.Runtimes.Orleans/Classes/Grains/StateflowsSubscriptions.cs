@@ -140,7 +140,6 @@ internal class StateflowsSubscriptions(
         state.Subscriptions ??= [];
         state.Pending ??= [];
         state.LatestRetained ??= [];
-        state.PublicationWatermarks ??= [];
     }
 
     private string GetBehaviorGrainKey(OrleansBehaviorId behaviorId)
@@ -169,23 +168,8 @@ internal class StateflowsSubscriptions(
 
     #region Publication
 
-    public Task PublishAsync(OrleansEventHolder[] notifications)
-        => PublishCoreAsync(notifications);
-
-    public Task PublishOutboxAsync(string sourceKey, long sequence, OrleansEventHolder[] notifications)
+    public async Task PublishAsync(OrleansEventHolder[] notifications)
     {
-        ArgumentException.ThrowIfNullOrEmpty(sourceKey);
-        if (sequence <= 0 || notifications == null || notifications.Length == 0 ||
-            notifications.Any(notification => string.IsNullOrEmpty(notification.Name)))
-            throw new ArgumentException("An outbox publication requires a positive sequence and named notifications.");
-        return PublishCoreAsync(notifications, sourceKey, sequence);
-    }
-
-    private async Task PublishCoreAsync(OrleansEventHolder[] notifications, string? sourceKey = null, long sequence = 0)
-    {
-        if (sourceKey != null && State.PublicationWatermarks.TryGetValue(sourceKey, out var accepted) && accepted >= sequence)
-            return;
-
         if (notifications == null || notifications.Length == 0)
         {
             return;
@@ -198,8 +182,6 @@ internal class StateflowsSubscriptions(
             : NotificationsState.Collections.None;
         if (notifications.Any(n => n.Retained))
             collections |= NotificationsState.Collections.LatestRetained;
-        if (sourceKey != null)
-            collections |= NotificationsState.Collections.PublicationWatermarks;
         var next = collections != NotificationsState.Collections.None
             ? State.Clone(collections)
             : null;
@@ -257,9 +239,6 @@ internal class StateflowsSubscriptions(
         {
             if (keepHistory)
                 PruneHistory(next, nowUtc);
-            if (sourceKey != null)
-                next.PublicationWatermarks[sourceKey] = sequence;
-
             // Register first: an orphan reminder is harmless, committed deliveries without a reminder are not
             await EnsureReminderAsync(next);
             await CommitAsync(next);

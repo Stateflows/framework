@@ -37,7 +37,7 @@ public sealed partial class BehaviorNotificationTests
     }
 
     [TestMethod]
-    public async Task PublicationFailureKeepsSuccessfulResultAndRetriesFromOutboxReminder()
+    public async Task PublicationFailureFailsTheTurn()
     {
         var filter = new PublicationPersistenceFilter { Reject = true };
         using var host = CreateHost(GetFreeTcpPorts(2), filter);
@@ -49,17 +49,9 @@ public sealed partial class BehaviorNotificationTests
             using var behavior = await LocateBehaviorAsync(
                 scope.ServiceProvider.GetRequiredService<IBehaviorLocator>(), id, WatchTimeout);
             filter.Release.TrySetResult();
-            Assert.AreEqual(EventStatus.Consumed,
+            Assert.AreEqual(EventStatus.Failed,
                 (await behavior.SendAsync(new PublishCustomNotification { TimeToLive = 300 }).WaitAsync(WatchTimeout)).Status);
             Assert.IsFalse((await behavior.GetNotificationsAsync<CustomNotification>(DateTime.MinValue)).Any());
-            filter.Reject = false;
-            var client = host.Services.GetRequiredService<IClusterClient>();
-            await client.GetGrain<IBehaviorGrain>(GetBehaviorGrainKey(id))
-                .ReceiveReminder(StateflowsBehavior.OutboxReminderName, default);
-            Assert.AreEqual(BehaviorStatus.Initialized,
-                (await behavior.RequestAsync(new BehaviorInfoRequest()).WaitAsync(WatchTimeout)).Response.BehaviorStatus,
-                "Post-commit publication failure cannot roll back initialization.");
-            Assert.AreEqual(1, (await behavior.GetNotificationsAsync<CustomNotification>(DateTime.MinValue)).Count());
         }
         finally
         {
@@ -77,7 +69,7 @@ public sealed partial class BehaviorNotificationTests
         public async Task Invoke(IIncomingGrainCallContext context)
         {
             if (context.Grain is ISubscriptionsGrain &&
-                context.InterfaceMethod.Name is nameof(ISubscriptionsGrain.PublishAsync) or nameof(ISubscriptionsGrain.PublishOutboxAsync))
+                context.InterfaceMethod.Name == nameof(ISubscriptionsGrain.PublishAsync))
             {
                 Entered.TrySetResult();
                 await Release.Task;

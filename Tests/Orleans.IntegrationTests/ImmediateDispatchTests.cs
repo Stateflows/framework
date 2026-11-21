@@ -17,7 +17,6 @@ public sealed partial class BehaviorNotificationTests
     [TimeToLive(300)]
     public sealed record HeaderProgress(int Value);
 
-    [ImmediatePublish]
     [TimeToLive(300)]
     public sealed record AttributeProgress(int Value);
 
@@ -40,10 +39,7 @@ public sealed partial class BehaviorNotificationTests
                         transition.AddEffect(async c =>
                         {
                             c.Behavior.Publish(new DeferredNotice(1));
-                            c.Behavior.Publish(new HeaderProgress(2), new Dictionary<string, EventHeader>
-                            {
-                                ["dispatch"] = new ImmediatePublish()
-                            });
+                            c.Behavior.Publish(new HeaderProgress(2));
                             c.Behavior.Publish(new AttributeProgress(3));
                             probe.Entered.TrySetResult();
                             await probe.Release.Task;
@@ -68,7 +64,7 @@ public sealed partial class BehaviorNotificationTests
     [DataRow(false, true)]
     [DataRow(true, false)]
     [DataRow(true, true)]
-    public async Task ImmediateNotificationsArriveDuringExecutionWhileDefaultsWaitForCommit(bool orleans, bool fail)
+    public async Task AllNotificationsArriveDuringExecutionEvenWhenTurnFails(bool orleans, bool fail)
     {
         var probe = new DispatchProbe();
         var storage = new FaultingNotificationsStorage();
@@ -99,8 +95,10 @@ public sealed partial class BehaviorNotificationTests
             await probe.Entered.Task.WaitAsync(WatchTimeout);
             Assert.AreEqual(2, await header.Task.WaitAsync(WatchTimeout));
             Assert.AreEqual(3, await attribute.Task.WaitAsync(WatchTimeout));
+            Assert.AreEqual(1, await deferred.Task.WaitAsync(WatchTimeout));
             Assert.IsFalse(send.IsCompleted, "Progress must arrive while execution is still blocked.");
-            Assert.IsFalse(deferred.Task.IsCompleted, "Default publication must wait for commit.");
+            Assert.IsFalse(await committedAtDispatch.Task.WaitAsync(WatchTimeout),
+                "Publication must not wait for publisher persistence.");
             if (orleans)
                 Assert.IsFalse(storage.HasContext(behavior.Id), "Immediate dispatch must precede publisher persistence.");
 
@@ -109,19 +107,14 @@ public sealed partial class BehaviorNotificationTests
                 (await send.WaitAsync(WatchTimeout)).Status);
             if (!fail)
             {
-                Assert.AreEqual(1, await deferred.Task.WaitAsync(WatchTimeout));
-                Assert.IsTrue(await committedAtDispatch.Task.WaitAsync(WatchTimeout),
-                    "Default notifications must not be visible before durable publisher state.");
                 if (orleans)
                     Assert.AreEqual(BehaviorStatus.Initialized, storage.GetContext(behavior.Id).Status);
             }
 
-            Assert.AreEqual(fail ? 0 : 1,
+            Assert.AreEqual(1,
                 (await behavior.GetNotificationsAsync<DeferredNotice>(DateTime.MinValue)).Count());
             Assert.AreEqual(1, (await behavior.GetNotificationsAsync<HeaderProgress>(DateTime.MinValue)).Count());
             Assert.AreEqual(1, (await behavior.GetNotificationsAsync<AttributeProgress>(DateTime.MinValue)).Count());
-            if (fail)
-                Assert.IsFalse(deferred.Task.IsCompleted);
         }
         finally
         {
@@ -131,7 +124,7 @@ public sealed partial class BehaviorNotificationTests
     }
 
     [TestMethod]
-    public async Task CommitFailureDiscardsDefaultsButCannotRetractImmediateNotifications()
+    public async Task CommitFailureCannotRetractNotifications()
     {
         var probe = new DispatchProbe();
         var storage = new FaultingNotificationsStorage();
@@ -146,10 +139,10 @@ public sealed partial class BehaviorNotificationTests
             await probe.Entered.Task.WaitAsync(WatchTimeout);
             storage.FailNextContextWrite(false);
             probe.Release.TrySetResult();
-            await TransactionalStorageTestHelpers.AssertTransactionCommitFailureAsync(
+            await StorageTestHelpers.AssertCommitFailureAsync(
                 () => send.WaitAsync(WatchTimeout), "Injected notifications storage write failure.");
             Assert.IsFalse(storage.HasContext(behavior.Id));
-            Assert.IsFalse((await behavior.GetNotificationsAsync<DeferredNotice>(DateTime.MinValue)).Any());
+            Assert.AreEqual(1, (await behavior.GetNotificationsAsync<DeferredNotice>(DateTime.MinValue)).Count());
             Assert.AreEqual(1, (await behavior.GetNotificationsAsync<HeaderProgress>(DateTime.MinValue)).Count());
             Assert.AreEqual(1, (await behavior.GetNotificationsAsync<AttributeProgress>(DateTime.MinValue)).Count());
         }

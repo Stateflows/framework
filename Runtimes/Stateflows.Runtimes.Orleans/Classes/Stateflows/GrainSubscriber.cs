@@ -6,7 +6,6 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 using Stateflows.Interfaces;
-using Stateflows.Storage;
 
 namespace Stateflows;
 
@@ -50,36 +49,26 @@ public class GrainSubscriber(
                 notification.Retained = retainAttribute != null || notificationHeaders.Values.OfType<Retain>().FirstOrDefault() != null;
                 notification.TimeToLive = ttlAttribute?.SecondsToLive ?? notificationHeaders.Values.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0;
 
-                var immediately = Attribute.IsDefined(notification.PayloadType, typeof(ImmediatePublishAttribute)) ||
-                    notificationHeaders.Values.Any(header => header is ImmediatePublish);
-                return (Notification: (OrleansEventHolder)notification, Immediately: immediately);
+                return (OrleansEventHolder)notification;
             })
             .ToArray()
         );
         
         var notificationsGrain = await GetSubscriptionsGrain(publisherBehaviorId);
-        foreach (var group in orleansEventHolders.GroupBy(notification => notification.Immediately))
+        async Task PublishAsync()
         {
-            var batch = group.Select(notification => notification.Notification).ToArray();
-            if (!group.Key && !PublicationScope.IsImmediate && OutboxPublicationScope.TryEnqueue(
-                    StateflowsGrainKeys.ForBehavior(tenantProvider.GetCurrentTenantId(), publisherBehaviorId), batch))
-                continue;
-
-            async Task PublishAsync()
+            try
             {
-                try
-                {
-                    await notificationsGrain.PublishAsync(batch);
-                }
-                catch
-                {
-                    StateflowsOrleansDiagnostics.PublicationFailed("publish");
-                    throw;
-                }
+                await notificationsGrain.PublishAsync(orleansEventHolders);
             }
-            if (!PublicationScope.TryDispatch(PublishAsync, group.Key || PublicationScope.IsImmediate))
-                await PublishAsync();
+            catch
+            {
+                StateflowsOrleansDiagnostics.PublicationFailed("publish");
+                throw;
+            }
         }
+        if (!PublicationScope.TryDispatch(PublishAsync))
+            await PublishAsync();
     }
 
     public async Task SubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)

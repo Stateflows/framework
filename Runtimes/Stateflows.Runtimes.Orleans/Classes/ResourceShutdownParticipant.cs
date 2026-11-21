@@ -5,13 +5,13 @@ namespace Stateflows;
 
 /// <summary>
 /// Releases resource permit waiters as soon as the silo starts stopping: they return <see cref="Stateflows.Common.EventStatus.Overloaded"/>
-/// so callers can retry on another silo. Accepted executions, transaction finalization and stream pumps complete before
+/// so callers can retry on another silo. Accepted executions and stream pumps complete before
 /// the silo proceeds to deactivate grains, so their persistence, publication and reminder calls still reach live grains.
 /// Draining is bounded by the silo stop cancellation (graceful shutdown timeout).
 /// </summary>
 internal sealed class ResourceShutdownParticipant(
     IStateflowsResources resources,
-    TransactionWorkTracker transactions,
+    ExecutionWorkTracker executions,
     ILogger<ResourceShutdownParticipant> logger
 ) : ILifecycleParticipant<ISiloLifecycle>
 {
@@ -28,9 +28,9 @@ internal sealed class ResourceShutdownParticipant(
     {
         var waiting = resources.Resources.Sum(resource => resource.WaitingExecutionsCount);
         logger.LogInformation(
-            "Silo is stopping: rejecting {Waiting} waiting Stateflows executions; draining {Running} execution and transaction work leases.",
+            "Silo is stopping: rejecting {Waiting} waiting Stateflows executions; draining {Running} execution work leases.",
             waiting, RunningCount());
-        transactions.BeginShutdown();
+        executions.BeginShutdown();
         resources.BeginShutdown();
 
         try
@@ -40,14 +40,14 @@ internal sealed class ResourceShutdownParticipant(
                 await Task.Delay(PollInterval, cancellationToken);
             }
 
-            logger.LogInformation("Silo is stopping: all Stateflows executions and transaction work completed.");
+            logger.LogInformation("Silo is stopping: all Stateflows execution work completed.");
         }
         catch (OperationCanceledException)
         {
-            logger.LogWarning("Silo is stopping: {Running} Stateflows execution and transaction work leases remained when the shutdown timeout elapsed.", RunningCount());
+            logger.LogWarning("Silo is stopping: {Running} Stateflows execution work leases remained when the shutdown timeout elapsed.", RunningCount());
         }
     }
 
     private int RunningCount()
-        => resources.Resources.Sum(resource => resource.BehaviorExecutionsCount) + transactions.Count;
+        => resources.Resources.Sum(resource => resource.BehaviorExecutionsCount) + executions.Count;
 }

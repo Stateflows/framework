@@ -24,11 +24,6 @@ internal class AIAgentContext(IBehaviorContext functionContext, IInput input, IO
         functionContext.Send(@event, headers);
     }
 
-    public void StageSending<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
-    {
-        functionContext.StageSending(@event, headers);
-    }
-
     public void PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers = null)
     {
         functionContext.PublishRange(notifications, headers);

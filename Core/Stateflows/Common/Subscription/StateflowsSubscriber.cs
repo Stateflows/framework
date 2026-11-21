@@ -49,8 +49,6 @@ namespace Stateflows.Common.Subscription
 
                 await commonInterceptor.NotificationPublishedAsync(context, notificationEvent, notificationHeaders);
 
-                var immediately = Attribute.IsDefined(eventHolder.PayloadType, typeof(ImmediatePublishAttribute)) ||
-                    notificationHeaders.Values.Any(header => header is ImmediatePublish);
                 var snapshot = StateflowsJsonConverter.Clone(eventHolder);
                 var subscribers = senderContext.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds)
                     ? behaviorIds.ToArray()
@@ -65,7 +63,7 @@ namespace Stateflows.Common.Subscription
                     await notificationsHub.PublishAsync(snapshot);
                 }
 
-                if (!PublicationScope.TryDispatch(DispatchAsync, immediately))
+                if (!PublicationScope.TryDispatch(DispatchAsync))
                     await DispatchAsync();
             }
         }

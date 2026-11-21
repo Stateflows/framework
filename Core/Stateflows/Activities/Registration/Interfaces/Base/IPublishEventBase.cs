@@ -78,8 +78,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                 {
                     builder.SetPublishScope(TPublishEventAction.PublishScope)
                         .SetTimeToLive(TPublishEventAction.TimeToLive)
-                        .SetRetain(TPublishEventAction.Retain)
-                        .SetImmediatePublish(TPublishEventAction.ImmediatePublish);
+                        .SetRetain(TPublishEventAction.Retain);
                     buildAction?.Invoke(builder);
                 }
             );

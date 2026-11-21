@@ -72,7 +72,7 @@ internal static class ActivityPinEndpoints
             if (!implicitInitialization) headers[nameof(NoImplicitInitialization)] = new NoImplicitInitialization();
             if (sendAsStream) headers[nameof(Stateflows.Common.Stream)] = new Stateflows.Common.Stream();
             var result = await behavior.SendAsync(new TokensInput<TToken>().AddRange(payload.Tokens), headers);
-            // Admission must not be followed by a status request that queues behind executing transactional work.
+            // Admission must not be followed by a status request that queues behind regular work.
             if (sendAsStream)
                 return StructuralJson.SerializeObject(new ResponseBody(result, [], [], new Dictionary<string, object>
                 {

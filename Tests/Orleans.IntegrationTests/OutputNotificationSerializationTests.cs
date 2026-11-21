@@ -27,7 +27,7 @@ public sealed class OutputNotificationSerializationTests
         source.Retained = true;
         source.TimeToLive = 37;
         source.SentAt = DateTime.Now;
-        source.Headers[nameof(ImmediatePublish)] = new ImmediatePublish();
+        source.Headers[nameof(TimeToLive)] = new TimeToLive(37);
         OrleansEventHolder transport = source;
         EventHolder restored = transport;
         Assert.IsInstanceOfType<EventHolder<T>>(restored);
@@ -37,7 +37,7 @@ public sealed class OutputNotificationSerializationTests
         Assert.AreEqual(source.SentAt, restored.SentAt);
         Assert.IsTrue(restored.Retained);
         Assert.AreEqual(37, restored.TimeToLive);
-        Assert.IsInstanceOfType<ImmediatePublish>(restored.Headers[nameof(ImmediatePublish)]);
+        Assert.IsInstanceOfType<TimeToLive>(restored.Headers[nameof(TimeToLive)]);
         if (payload is IOutput output)
             Assert.AreEqual(output.Value, ((EventHolder<T>)restored).Payload is IOutput result ? result.Value : -1);
         else

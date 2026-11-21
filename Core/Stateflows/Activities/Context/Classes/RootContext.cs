@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +30,7 @@ namespace Stateflows.Activities.Context.Classes
         [JsonIgnore]
         private readonly AsyncLocal<InvocationProvenance?> invocationProvenance = new();
         [JsonIgnore]
-        private int outstandingTransactions;
+        private int outstandingTransactionalInvocations;
         private int streamingBusyPeriod;
         [JsonIgnore]
         private int pauseAfterFiring;
@@ -167,25 +167,24 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         /// <summary>
-        /// Opens an invocation provenance frame. A tracked transactional frame represents a regular transaction
-        /// admitted into a live session; while any such transaction is outstanding its idle tokens keep their
-        /// transactional color, and the marking is recolored as streamed once the last transaction closes.
+        /// Opens an invocation provenance frame. While a tracked transactional invocation is outstanding, its idle tokens
+        /// keep transactional provenance; the marking is recolored as streamed once the last invocation closes.
         /// </summary>
-        internal InvocationProvenanceScope BeginInvocationProvenance(bool streamed, bool trackTransaction = false, bool callRoot = false)
+        internal InvocationProvenanceScope BeginInvocationProvenance(bool streamed, bool trackTransactionalInvocation = false, bool callRoot = false)
         {
             var previous = invocationProvenance.Value;
             var current = new InvocationProvenance(streamed, previous, callRoot);
             invocationProvenance.Value = current;
-            var tracked = trackTransaction && !streamed;
+            var tracked = trackTransactionalInvocation && !streamed;
             if (tracked)
-                Interlocked.Increment(ref outstandingTransactions);
+                Interlocked.Increment(ref outstandingTransactionalInvocations);
             var modeScope = Context.PushExecutionMode(IsCurrentInvocationStreamed
                 ? ExecutionMode.Streamed : ExecutionMode.Transactional);
             return new InvocationProvenanceScope(this, current, previous, tracked, modeScope);
         }
 
         /// <summary>
-        /// Whether the runtime call (regular transaction, streamed admission or handed-off streamed work) that owns
+        /// Whether the runtime call (transactional invocation, streamed admission or handed-off streamed work) that owns
         /// the current asynchronous flow is streamed; <c>null</c> outside of a session call.
         /// </summary>
         [JsonIgnore]
@@ -218,31 +217,31 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         [JsonIgnore]
-        internal int OutstandingTransactions => System.Threading.Volatile.Read(ref outstandingTransactions);
+        internal int OutstandingTransactionalInvocations => System.Threading.Volatile.Read(ref outstandingTransactionalInvocations);
 
         [JsonIgnore]
         internal bool IsStreamingBusyPeriod => System.Threading.Volatile.Read(ref streamingBusyPeriod) != 0;
 
         /// <summary>
-        /// Marks the start of a streaming busy period. Work owned by an outstanding regular transaction keeps its
-        /// transactional color; idle marking is recolored immediately only when no transaction is outstanding.
+        /// Marks the start of a streaming busy period. Work owned by an outstanding transactional invocation keeps its
+        /// provenance; idle marking is recolored immediately only when no transactional invocation is outstanding.
         /// </summary>
         internal void BeginStreamingBusyPeriod()
         {
-            if (Interlocked.Exchange(ref streamingBusyPeriod, 1) == 0 && OutstandingTransactions == 0)
+            if (Interlocked.Exchange(ref streamingBusyPeriod, 1) == 0 && OutstandingTransactionalInvocations == 0)
                 RecolorMarkingAsStreamed();
         }
 
-        /// <summary>Ends the streaming busy period; the persisted marking returns to ordinary transactional semantics.</summary>
+        /// <summary>Ends the streaming busy period; the persisted marking returns to transactional provenance.</summary>
         internal void EndStreamingBusyPeriod()
         {
             Interlocked.Exchange(ref streamingBusyPeriod, 0);
             RecolorMarking(false);
         }
 
-        private void CloseTransaction()
+        private void CloseRegularInvocation()
         {
-            if (Interlocked.Decrement(ref outstandingTransactions) == 0 && IsStreamingBusyPeriod)
+            if (Interlocked.Decrement(ref outstandingTransactionalInvocations) == 0 && IsStreamingBusyPeriod)
                 RecolorMarkingAsStreamed();
         }
 
@@ -272,7 +271,7 @@ namespace Stateflows.Activities.Context.Classes
                 context.invocationProvenance.Value = previous;
                 modeScope.Dispose();
                 if (tracked)
-                    context.CloseTransaction();
+                    context.CloseRegularInvocation();
             }
         }
 

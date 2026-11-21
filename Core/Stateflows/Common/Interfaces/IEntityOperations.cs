@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Entities;
 
@@ -27,27 +26,6 @@ public interface IEntityOperations<TReturn>
         where TTemplate : class
         =>  TryMutateAsync<TMutationEvent>(Entity<TTemplate>.Name, mutationEvent, headers);
 
-    /// <summary>Sends a mutation event to a related entity by its registered name, joining the sender's active transaction.</summary>
-    /// <remarks>Supported by the Orleans runtime. Requires an ambient transaction.</remarks>
-    /// <inheritdoc cref="TryMutateAsync{TMutationEvent}(string, TMutationEvent, IDictionary{string, EventHeader}?)"/>
-    Task<bool> TryMutateTransactionallyAsync<TMutationEvent>(string entityName, TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers = null)
-    {
-        headers ??= new Dictionary<string, EventHeader>();
-        if (!headers.Values.Any(header => header is JoinTransaction))
-        {
-            headers[nameof(JoinTransaction)] = new JoinTransaction();
-        }
-
-        return TryMutateAsync(entityName, mutationEvent, headers);
-    }
-
-    /// <summary>Sends a mutation event to the entity identified by its template type, joining the sender's active transaction.</summary>
-    /// <remarks>Supported by the Orleans runtime. Requires an ambient transaction.</remarks>
-    /// <inheritdoc cref="TryMutateAsync{TTemplate, TMutationEvent}(TMutationEvent, IDictionary{string, EventHeader}?)"/>
-    Task<bool> TryMutateTransactionallyAsync<TTemplate, TMutationEvent>(TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers = null)
-        where TTemplate : class
-        => TryMutateTransactionallyAsync(Entity<TTemplate>.Name, mutationEvent, headers);
-
     /// <summary>Requests a projection from an entity by its registered name.</summary>
     /// <typeparam name="TProjection">The projection value type.</typeparam>
     /// <param name="entityName">The registered entity name.</param>
@@ -63,27 +41,6 @@ public interface IEntityOperations<TReturn>
     Task<(bool Success, TProjection Projection)> TryGetProjectionAsync<TTemplate, TProjection>(IDictionary<string, EventHeader>? headers = null)
         where TTemplate : class
         => TryGetProjectionAsync<TProjection>(Entity<TTemplate>.Name, headers);
-
-    /// <summary>Requests a projection from an entity by its registered name, joining the sender's active transaction.</summary>
-    /// <remarks>Supported by the Orleans runtime. Requires an ambient transaction.</remarks>
-    /// <inheritdoc cref="TryGetProjectionAsync{TProjection}(string, IDictionary{string, EventHeader}?)"/>
-    Task<(bool Success, TProjection Projection)> TryGetProjectionTransactionallyAsync<TProjection>(string entityName, IDictionary<string, EventHeader>? headers = null)
-    {
-        headers ??= new Dictionary<string, EventHeader>();
-        if (!headers.Values.Any(header => header is JoinTransaction))
-        {
-            headers[nameof(JoinTransaction)] = new JoinTransaction();
-        }
-
-        return TryGetProjectionAsync<TProjection>(entityName, headers);
-    }
-
-    /// <summary>Requests a projection from the entity identified by its template type, joining the sender's active transaction.</summary>
-    /// <remarks>Supported by the Orleans runtime. Requires an ambient transaction.</remarks>
-    /// <inheritdoc cref="TryGetProjectionAsync{TTemplate, TProjection}(IDictionary{string, EventHeader}?)"/>
-    Task<(bool Success, TProjection Projection)> TryGetProjectionTransactionallyAsync<TTemplate, TProjection>(IDictionary<string, EventHeader>? headers = null)
-        where TTemplate : class
-        => TryGetProjectionTransactionallyAsync<TProjection>(Entity<TTemplate>.Name, headers);
 
     /// <summary>Sets a field on an entity by its registered name.</summary>
     /// <typeparam name="TFieldType">The field value type.</typeparam>
@@ -105,27 +62,6 @@ public interface IEntityOperations<TReturn>
         where TTemplate : class
         => TrySetFieldAsync<TFieldType>(Entity<TTemplate>.Name, fieldName, fieldValue, headers);
 
-    /// <summary>Sets a field on an entity by its registered name, joining the sender's active transaction.</summary>
-    /// <remarks>Supported by the Orleans runtime. Requires an ambient transaction.</remarks>
-    /// <inheritdoc cref="TrySetFieldAsync{TFieldType}(string, string, TFieldType, IDictionary{string, EventHeader}?)"/>
-    Task<bool> TrySetFieldTransactionallyAsync<TFieldType>(string entityName, string fieldName, TFieldType fieldValue, IDictionary<string, EventHeader>? headers = null)
-    {
-        headers ??= new Dictionary<string, EventHeader>();
-        if (!headers.Values.Any(header => header is JoinTransaction))
-        {
-            headers[nameof(JoinTransaction)] = new JoinTransaction();
-        }
-
-        return TrySetFieldAsync(entityName, fieldName, fieldValue, headers);
-    }
-
-    /// <summary>Sets a field on the entity identified by its template type, joining the sender's active transaction.</summary>
-    /// <remarks>Supported by the Orleans runtime. Requires an ambient transaction.</remarks>
-    /// <inheritdoc cref="TrySetFieldAsync{TTemplate, TFieldType}(string, TFieldType, IDictionary{string, EventHeader}?)"/>
-    Task<bool> TrySetFieldTransactionallyAsync<TTemplate, TFieldType>(string fieldName, TFieldType fieldValue, IDictionary<string, EventHeader>? headers = null)
-        where TTemplate : class
-        => TrySetFieldTransactionallyAsync(Entity<TTemplate>.Name, fieldName, fieldValue, headers);
-
     /// <summary>Reads a field from an entity by its registered name.</summary>
     /// <typeparam name="TFieldType">The expected field value type.</typeparam>
     /// <param name="entityName">The registered entity name.</param>
@@ -145,24 +81,4 @@ public interface IEntityOperations<TReturn>
         where TTemplate : class
         => TryGetFieldAsync<TFieldType>(Entity<TTemplate>.Name, fieldName, headers);
 
-    /// <summary>Reads a field from an entity by its registered name, joining the sender's active transaction.</summary>
-    /// <remarks>Supported by the Orleans runtime. Requires an ambient transaction.</remarks>
-    /// <inheritdoc cref="TryGetFieldAsync{TFieldType}(string, string, IDictionary{string, EventHeader}?)"/>
-    Task<(bool Success, TFieldType Field)> TryGetFieldTransactionallyAsync<TFieldType>(string entityName, string fieldName, IDictionary<string, EventHeader>? headers = null)
-    {
-        headers ??= new Dictionary<string, EventHeader>();
-        if (!headers.Values.Any(header => header is JoinTransaction))
-        {
-            headers[nameof(JoinTransaction)] = new JoinTransaction();
-        }
-
-        return TryGetFieldAsync<TFieldType>(entityName, fieldName, headers);
-    }
-
-    /// <summary>Reads a field from the entity identified by its template type, joining the sender's active transaction.</summary>
-    /// <remarks>Supported by the Orleans runtime. Requires an ambient transaction.</remarks>
-    /// <inheritdoc cref="TryGetFieldAsync{TTemplate, TFieldType}(string, IDictionary{string, EventHeader}?)"/>
-    Task<(bool Success, TFieldType Field)> TryGetFieldTransactionallyAsync<TTemplate, TFieldType>(string fieldName, IDictionary<string, EventHeader>? headers = null)
-        where TTemplate : class
-        => TryGetFieldTransactionallyAsync<TFieldType>(Entity<TTemplate>.Name, fieldName, headers);
 }

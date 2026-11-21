@@ -27,7 +27,6 @@ namespace Stateflows.Activities.Models
         public PublishScope PublishScope { get; set; } = PublishScope.Self;
         public int TimeToLive { get; set; }
         public bool Retain { get; set; }
-        public bool ImmediatePublish { get; set; }
         public IEnumerable<Node> InputPins => Nodes.Values.Where(node => node.Type == NodeType.InputPin);
         public IEnumerable<Node> OutputPins => Nodes.Values.Where(node => node.IsOutputPin);
 

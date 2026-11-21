@@ -50,10 +50,6 @@ internal sealed class NotificationsState
     [Id(6)]
     public Dictionary<string, long> LatestRetained { get; set; } = [];
 
-    // One watermark per source behavior, independent of history TTL/pruning.
-    [Id(7)]
-    public Dictionary<string, long> PublicationWatermarks { get; set; } = [];
-
     [Flags]
     internal enum Collections
     {
@@ -62,7 +58,6 @@ internal sealed class NotificationsState
         Subscriptions = 2,
         Pending = 4,
         LatestRetained = 8,
-        PublicationWatermarks = 16,
     }
 
     // Unselected collections are shared and must not be mutated by the candidate.
@@ -85,8 +80,6 @@ internal sealed class NotificationsState
             LegacyMigrated = LegacyMigrated,
             LatestRetained = collections.HasFlag(Collections.LatestRetained)
                 ? new Dictionary<string, long>(LatestRetained) : LatestRetained,
-            PublicationWatermarks = collections.HasFlag(Collections.PublicationWatermarks)
-                ? new Dictionary<string, long>(PublicationWatermarks) : PublicationWatermarks,
         };
 }
 

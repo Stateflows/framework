@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Classes;
 
 namespace Stateflows.Common.Engine
 {
@@ -24,13 +23,12 @@ namespace Stateflows.Common.Engine
             BehaviorId id,
             List<Exception> exceptions,
             Func<ContextExecution, Task<EventStatus>> executeAsync,
-            bool nonTransactional = false)
+            bool streamed = false)
         {
             var exceptionCount = exceptions.Count;
             ContextExecution? execution = null;
             using var pendingTasks = new PendingTasksScope();
             using var publications = PublicationScope.IsRuntimeOwned ? null : new PublicationScope();
-            using var staging = StagingBag.IsActive ? null : new StagingBag(() => nonTransactional);
             try
             {
                 var stored = await storage.HydrateAsync(id);
@@ -53,7 +51,7 @@ namespace Stateflows.Common.Engine
 
                 if (failed)
                 {
-                    if (nonTransactional)
+                    if (streamed)
                     {
                         execution.Context.LastExecutedAt = DateTime.Now;
                         await storage.DehydrateAsync(execution.Context);
@@ -67,16 +65,12 @@ namespace Stateflows.Common.Engine
                     await storage.DehydrateAsync(execution.Context);
                 }
 
-                staging?.DispatchAfterCommit();
-                if (publications != null)
-                    await publications.FlushAsync();
-
                 return result;
             }
             catch (Exception exception)
             {
                 exceptions.Add(exception);
-                if (nonTransactional && execution != null)
+                if (streamed && execution != null)
                 {
                     try
                     {

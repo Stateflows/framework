@@ -38,7 +38,7 @@ public sealed class ConfigureWorkflowAction(
     {
         @event.Settings.Validate(limits);
         if (execution.ExecutionMode != ExecutionMode.Transactional || execution.ExecutionTriggerId == null)
-            throw new InvalidOperationException("Workflow controls must be delivered transactionally, without a Stream header.");
+            throw new InvalidOperationException("Workflow controls must use transactional execution, without a Stream header.");
         var current = await activity.Values.GetOrDefaultAsync<WorkflowState>(LoadActivity.SettingsKey)
             ?? throw new InvalidOperationException("Workflow settings have not been initialized.");
         var revision = current.Revision + 1;

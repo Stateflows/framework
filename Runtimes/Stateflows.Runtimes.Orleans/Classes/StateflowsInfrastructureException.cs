@@ -1,6 +1,5 @@
 using Orleans;
 using Orleans.Runtime;
-using Orleans.Transactions;
 
 namespace Stateflows;
 
@@ -10,16 +9,4 @@ namespace Stateflows;
 [GenerateSerializer]
 public sealed class StateflowsInfrastructureException(string message, Exception innerException)
     : OrleansException(message, innerException)
-{
-    internal static Exception? GetFailure(Exception? exception)
-    {
-        while (exception is OrleansTransactionAbortedException && exception.InnerException != null)
-            exception = exception.InnerException;
-        return exception switch
-        {
-            StateflowsInfrastructureException failure => failure,
-            OrleansTransactionException failure when failure is not OrleansTransactionAbortedException => failure,
-            _ => null
-        };
-    }
-}
+;

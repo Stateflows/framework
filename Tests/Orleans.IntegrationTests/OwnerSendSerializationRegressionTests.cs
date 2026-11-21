@@ -61,16 +61,14 @@ public sealed class OwnerSendSerializationRegressionTests
     }
 
     [TestMethod]
-    public async Task OwnerSendRuntimeSerializationFailureIsLoggedWithoutBlockingEffect()
+    public async Task OwnerSendRuntimeSerializationFailureIsReportedWithoutBlockingEffect()
     {
-        var effectReturned = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var received = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var logs = new FailureLogs();
         using var host = CreateHost<RuntimeFailure>(context =>
         {
             Assert.IsTrue(context.TryGetOwnerBehaviorContext(out var owner));
             owner.Send(new RuntimeFailure());
-            effectReturned.TrySetResult();
             return Task.CompletedTask;
         }, _ => received.TrySetResult(), logs);
         await host.StartAsync().WaitAsync(Deadline);
@@ -84,13 +82,10 @@ public sealed class OwnerSendSerializationRegressionTests
 
             Assert.AreEqual(EventStatus.Consumed,
                 (await behavior.SendAsync(new Trigger()).WaitAsync(Deadline)).Status);
-            await effectReturned.Task.WaitAsync(Deadline);
-            // Shutdown drains the action's work before checking for error reports.
-            await host.StopAsync().WaitAsync(Deadline);
             Assert.IsFalse(received.Task.IsCompleted);
-            Assert.IsTrue(logs.Errors.Any(entry =>
-                entry.Contains(nameof(RuntimeFailure), StringComparison.Ordinal) &&
-                entry.Contains("Injected serialization failure", StringComparison.Ordinal)),
+            var failureLog = await logs.FailureLogged.Task.WaitAsync(Deadline);
+            Assert.IsTrue(failureLog.Contains(nameof(RuntimeFailure), StringComparison.Ordinal) &&
+                failureLog.Contains("Injected serialization failure", StringComparison.Ordinal),
                 "A detached owner-send failure must log the event type and original error.");
         }
         finally
@@ -209,10 +204,11 @@ public sealed class OwnerSendSerializationRegressionTests
     private sealed class FailureLogs : ILoggerProvider
     {
         public ConcurrentQueue<string> Errors { get; } = new();
-        public ILogger CreateLogger(string categoryName) => new Logger(Errors);
+        public TaskCompletionSource<string> FailureLogged { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public ILogger CreateLogger(string categoryName) => new Logger(this);
         public void Dispose() { }
 
-        private sealed class Logger(ConcurrentQueue<string> errors) : ILogger
+        private sealed class Logger(FailureLogs owner) : ILogger
         {
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
             public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Error;
@@ -220,7 +216,13 @@ public sealed class OwnerSendSerializationRegressionTests
                 TState state, Exception? exception, Func<TState, Exception?, string> formatter)
             {
                 if (IsEnabled(logLevel))
-                    errors.Enqueue($"{formatter(state, exception)} {exception}");
+                {
+                    var message = $"{formatter(state, exception)} {exception}";
+                    owner.Errors.Enqueue(message);
+                    if (message.Contains(nameof(RuntimeFailure), StringComparison.Ordinal) &&
+                        message.Contains("Injected serialization failure", StringComparison.Ordinal))
+                        owner.FailureLogged.TrySetResult(message);
+                }
             }
         }
     }

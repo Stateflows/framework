@@ -62,12 +62,6 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        public IPublishEventActionBuilder SetImmediatePublish(bool immediatePublish)
-        {
-            Node.ImmediatePublish = immediatePublish;
-            return this;
-        }
-
         public IActionBuilder AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction = null)
         {
             var edge = AddFlowInternal<ControlToken>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));

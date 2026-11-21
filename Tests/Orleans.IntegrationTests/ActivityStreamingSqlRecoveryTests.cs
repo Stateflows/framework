@@ -47,6 +47,7 @@ public sealed class ActivityStreamingSqlRecoveryTests
                     StreamHeader).WaitAsync(Deadline)).Status);
             await cluster.Probe.WaitForAsync(() =>
                 cluster.Probe.CountOf("second:0") == 1 && cluster.Probe.Active > 0);
+            Assert.AreEqual(1, cluster.Probe.CountOf("initialize"), "Cold stream initialization must run once.");
             Assert.AreEqual(1, cluster.Probe.CountOf("second:0"),
                 "The checkpoint must include output from an already completed partition.");
             Assert.AreEqual(0, cluster.Probe.CountOf("after"));
@@ -71,6 +72,7 @@ public sealed class ActivityStreamingSqlRecoveryTests
             Assert.AreEqual(0, cluster.Probe.Active);
             Assert.AreEqual(0, cluster.Probe.CountOf("after"), "Aggregate output is still suspended.");
             Assert.AreEqual(0, cluster.Probe.CountOf("finalize"));
+            Assert.AreEqual(1, cluster.Probe.CountOf("initialize"), "Checkpointing must not reinitialize the Activity.");
             Assert.AreEqual(1, cluster.Probe.CountOf("first:1"),
                 "At least one started partition must survive as a continuation.");
             for (var value = 1; value <= concurrency; value++)
@@ -87,6 +89,7 @@ public sealed class ActivityStreamingSqlRecoveryTests
             "The checkpoint must be committed to real SQL Server storage before stopping the host.");
         var snapshot = cluster.Probe.Snapshot();
         await cluster.StopAsync(first);
+        Assert.AreEqual(1, cluster.Probe.CountOf("initialize"), "Shutdown must not reinitialize the Activity.");
         CollectionAssert.AreEquivalent(snapshot, cluster.Probe.Snapshot(),
             "Shutdown must not resume checkpointed work.");
 
@@ -97,11 +100,13 @@ public sealed class ActivityStreamingSqlRecoveryTests
         {
             var status = recovered.GetStatusAsync();
             await cluster.Probe.WaitForAsync(() => cluster.Probe.Active > 0);
+            Assert.AreEqual(1, cluster.Probe.CountOf("initialize"), "Recovery must resume the initialized Activity.");
             Assert.AreEqual(0, cluster.Probe.CountOf("finalize"),
                 "The recovered invocation must wait for its queued partitions.");
             cluster.Probe.RecoveredRelease.TrySetResult();
             await status.WaitAsync(Deadline);
             await cluster.Probe.Completed.Task.WaitAsync(Deadline);
+            Assert.AreEqual(1, cluster.Probe.CountOf("initialize"), "Completed recovery must not reinitialize the Activity.");
             Assert.AreEqual(EventStatus.Consumed,
                 (await recovered.SendAsync(new ActivityCheckpoint()).WaitAsync(Deadline)).Status);
         }

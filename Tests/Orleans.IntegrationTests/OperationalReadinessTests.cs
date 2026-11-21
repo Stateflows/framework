@@ -388,33 +388,24 @@ public sealed class OperationalReadinessTests
         var publisherClass = new BehaviorClass(BehaviorType.StateMachine, TestEnvironment.Publisher);
 
         env.Storage.FailWrites("Stateflows.BehaviorContext", 1);
-        await TransactionalStorageTestHelpers.AssertTransactionCommitFailureAsync(
+        await StorageTestHelpers.AssertCommitFailureAsync(
             () => env.Send(host, new BehaviorId(machineClass, "persistence"), new Initialize()), "Expected Stateflows.BehaviorContext storage failure.");
         Assert.AreEqual(1L, counters.Sum("stateflows.orleans.persistence.failures", ("state", "Stateflows.BehaviorContext"), ("behavior.class", machineClass.ToString())));
 
         env.Reminders.FailUpserts(1);
-        await TransactionalStorageTestHelpers.AssertInfrastructureFailureAsync(
+        await StorageTestHelpers.AssertInfrastructureFailureAsync(
             () => env.Send(host, new BehaviorId(timedClass, "reminder"), new Initialize()), "Expected reminder registration failure.");
         Assert.AreEqual(1L, counters.Sum("stateflows.orleans.reminder.failures", ("operation", "register"), ("behavior.class", timedClass.ToString())));
 
         env.Storage.FailWrites("Stateflows.BehaviorInstances", 1);
-        await TransactionalStorageTestHelpers.AssertInfrastructureFailureAsync(
+        await StorageTestHelpers.AssertInfrastructureFailureAsync(
             () => env.Send(host, new BehaviorId(machineClass, "index"), new Initialize()), "Expected Stateflows.BehaviorInstances storage failure.");
         Assert.AreEqual(1L, counters.Sum("stateflows.orleans.index.failures", ("operation", "add"), ("behavior.class", machineClass.ToString())));
         Assert.IsTrue(counters.Sum("stateflows.orleans.persistence.failures", ("state", "Stateflows.BehaviorInstances")) >= 1);
 
-        var outboxReminderId = new BehaviorId(publisherClass, "outbox-reminder");
-        env.Reminders.FailUpserts(1);
-        await TransactionalStorageTestHelpers.AssertInfrastructureFailureAsync(
-            () => env.Send(host, outboxReminderId, new Initialize()), "Expected reminder registration failure.");
-        Assert.IsNull(env.Storage.GetContext(outboxReminderId),
-            "Outbox wakeup registration must succeed before publisher state and publications commit.");
-        Assert.AreEqual(1L, counters.Sum("stateflows.orleans.reminder.failures", ("operation", "outbox-register"),
-            ("behavior.class", publisherClass.ToString())));
-
         env.Storage.FailWrites("Stateflows.Notifications", 1);
-        Assert.AreEqual(EventStatus.Initialized, (await env.Send(host, new BehaviorId(publisherClass, "publication"), new Initialize())).Status);
-        Assert.IsTrue(counters.Sum("stateflows.orleans.publication.failures", ("operation", "outbox")) >= 1);
+        Assert.AreEqual(EventStatus.Failed, (await env.Send(host, new BehaviorId(publisherClass, "publication"), new Initialize())).Status);
+        Assert.IsTrue(counters.Sum("stateflows.orleans.publication.failures", ("operation", "publish")) >= 1);
         Assert.IsTrue(counters.Sum("stateflows.orleans.persistence.failures", ("state", "Stateflows.Notifications")) >= 1);
 
         foreach (var (behaviorClass, instance) in new[] { (machineClass, "persistence"), (timedClass, "reminder"), (machineClass, "index") })
@@ -422,8 +413,7 @@ public sealed class OperationalReadinessTests
             Assert.AreEqual(EventStatus.Initialized, (await env.Send(host, new BehaviorId(behaviorClass, instance), new Initialize())).Status,
                 $"{behaviorClass.Name}/{instance} must succeed when retried.");
         }
-        Assert.AreEqual(BehaviorStatus.Initialized, env.Storage.GetContext(new BehaviorId(publisherClass, "publication"))!.Status,
-            "Publication failure happens after the publisher's commit and cannot undo it.");
+        Assert.IsNull(env.Storage.GetContext(new BehaviorId(publisherClass, "publication")));
     }
 
     #endregion
@@ -531,7 +521,7 @@ public sealed class OperationalReadinessTests
         var id = new BehaviorId(BehaviorType.StateMachine, TestEnvironment.Machine, "index-failure");
 
         env.Storage.FailWrites("Stateflows.BehaviorInstances", 1);
-        await TransactionalStorageTestHelpers.AssertInfrastructureFailureAsync(
+        await StorageTestHelpers.AssertInfrastructureFailureAsync(
             () => env.Send(host, id, new Initialize()), "Expected Stateflows.BehaviorInstances storage failure.");
         Assert.IsNull(env.Storage.GetContext(id), "State must not be committed without its index entry.");
         Assert.AreEqual(0, (await env.ListAsync(host, id.BehaviorClass)).Length);
@@ -1010,9 +1000,7 @@ public sealed class OperationalReadinessTests
 
         public Task WriteStateAsync<T>(string stateName, GrainId grainId, IGrainState<T> grainState)
         {
-            // Orleans transactions also persist metadata-only records; behavior faults target new state versions only.
-            if (stateName != "Stateflows.BehaviorContext" || inner.IsNewContextVersion(grainId, grainState.State))
-                ThrowIfRequested(stateName);
+            ThrowIfRequested(stateName);
             return inner.WriteStateAsync(stateName, grainId, grainState);
         }
 

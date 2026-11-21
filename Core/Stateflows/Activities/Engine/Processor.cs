@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -62,7 +62,7 @@ namespace Stateflows.Activities.Engine
             if (eventHolder.Headers.Values.Any(header => header is StreamedActivityExecution or ActivitySessionExecution))
             {
                 // Provenance classifies the source of the event, not its delivery: events delivered by the live stream
-                // pump with a transactional source (live time events) run as regular transactions.
+                // pump with a transactional source (live time events) run as transactional invocations.
                 var streamed = eventHolder.Headers.Values.OfType<StreamedActivityExecution>().Any(header => !header.TransactionalSource);
                 return ExecuteInActivitySessionAsync(id, eventHolder, streamed, exceptions);
             }
@@ -105,7 +105,7 @@ namespace Stateflows.Activities.Engine
             var exceptionCount = exceptions.Count;
             using var pendingTasks = new PendingTasksScope();
             using var executionTrigger = session.Context.Context.PushExecutionTriggerHolder(eventHolder);
-            using var invocationProvenance = session.Context.BeginInvocationProvenance(streamed, trackTransaction: true, callRoot: true);
+            using var invocationProvenance = session.Context.BeginInvocationProvenance(streamed, trackTransactionalInvocation: true, callRoot: true);
             try
             {
                 EventStatus result;
@@ -279,8 +279,8 @@ namespace Stateflows.Activities.Engine
         }
 
         /// <summary>
-        /// Hands a firing that a regular transaction routed into streamed (mixed) work to the runtime, so the
-        /// regular transaction closes without awaiting it. The work runs with streamed provenance and its own
+        /// Hands a firing that a transactional invocation routed into streamed (mixed) work to the runtime, so the
+        /// transactional invocation closes without awaiting it. The work runs with streamed provenance and its own
         /// pending-task ownership; the live marking is dehydrated to the runtime after it completes.
         /// </summary>
         private bool HostStreamedSessionWork(BehaviorId id, ActivitySession session, Func<Task> work)

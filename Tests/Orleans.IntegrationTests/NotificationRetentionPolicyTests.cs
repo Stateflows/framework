@@ -10,46 +10,6 @@ namespace Orleans.IntegrationTests;
 public sealed partial class BehaviorNotificationTests
 {
     [TestMethod]
-    [DataRow(false)]
-    [DataRow(true)]
-    [Timeout(30_000)]
-    public async Task TransientOutboxAcceptancePreservesHistoryAndDeduplicatesAfterStorageFailure(bool commitBeforeFailure)
-    {
-        var storage = new FaultingNotificationsStorage();
-        using var host = CreateDeliveryScenarioHost(GetFreeTcpPorts(2), new NotificationDeliveryCallFilter(),
-            Channel.CreateUnbounded<int>().Writer, storage);
-        await host.StartAsync();
-        try
-        {
-            var publisher = new BehaviorId(BehaviorType.StateMachine, "self-subscribing-machine", "transient-outbox-copy");
-            var subscriptions = GetSubscriptions(host.Services, publisher);
-            var retained = CreateNotification(new CustomNotification { Text = "retained" }, publisher, true, 0);
-            await subscriptions.PublishAsync([retained]);
-            var transient = CreateNotification(new CustomNotification { Text = "transient" }, publisher, timeToLive: 0);
-            var source = GetBehaviorGrainKey(publisher);
-            storage.FailNextNotificationsWrite(commitBeforeFailure);
-            await Assert.ThrowsExactlyAsync<OrleansException>(
-                () => subscriptions.PublishOutboxAsync(source, 1, [transient]));
-
-            await host.Services.GetRequiredService<IGrainFactory>().GetGrain<IManagementGrain>(0)
-                .ForceActivationCollection(TimeSpan.Zero);
-            await subscriptions.PublishOutboxAsync(source, 1, [transient]);
-            var writes = storage.NotificationsWrites;
-            await subscriptions.PublishOutboxAsync(source, 1, [transient]);
-
-            var persisted = storage.GetNotificationsState(publisher);
-            Assert.AreEqual(1L, persisted.PublicationWatermarks[source]);
-            Assert.AreEqual(retained.Id, persisted.History.Single().Notification.Id);
-            Assert.AreEqual(writes, storage.NotificationsWrites,
-                "Replaying an accepted transient outbox publication must not write state again.");
-        }
-        finally
-        {
-            await host.StopAsync();
-        }
-    }
-
-    [TestMethod]
     [Timeout(30_000)]
     public async Task ActivationPrunesLegacyTransientHistoryAndSupersededRetainedRetries()
     {

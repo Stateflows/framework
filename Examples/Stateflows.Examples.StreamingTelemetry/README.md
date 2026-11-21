@@ -163,7 +163,7 @@ HTTP transport. They are not interchangeable.
 ## 3. Compare ordinary input
 
 Submit the same shape with `sendAsStream=false` or omit the option. The POST waits
-for its transactional work to finish. Its output notifications show
+for its regular work to finish. Its output notifications show
 `executionMode: "Transactional"` and a non-null trigger ID. The same output SSE
 connections observe both modes.
 

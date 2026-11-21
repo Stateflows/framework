@@ -14,8 +14,6 @@ namespace Stateflows.Activities
         static virtual int TimeToLive => 0;
         /// <summary>Gets whether the latest notification is retained.</summary>
         static virtual bool Retain => false;
-        /// <summary>Gets whether publication bypasses the current turn's commit.</summary>
-        static virtual bool ImmediatePublish => false;
         /// <summary>Creates the notifications to publish when this node executes.</summary>
         Task<IEnumerable<TEvent>> GenerateEventsAsync();
     }

@@ -4,7 +4,6 @@ using Stateflows.Common;
 namespace Stateflows.Activities.Streams;
 
 /// <summary>Reports an unhandled failure in one admitted Activity stream event.</summary>
-[ImmediatePublish]
 public sealed class ActivityStreamFailure
 {
     /// <summary>The Activity instance whose streamed execution failed.</summary>

@@ -231,7 +231,7 @@ public sealed class LoadTests
 
     [TestMethod]
     [Timeout(60_000)]
-    public async Task StreamingRunThrottlesSteersTransactionallyDrainsAndRestarts()
+    public async Task StreamingRunThrottlesSteersDrainsAndRestarts()
     {
         await using var factory = CreateFactory();
         using var http = factory.CreateClient();
@@ -313,7 +313,7 @@ public sealed class LoadTests
 
     [TestMethod]
     [Timeout(60_000)]
-    public async Task ZeroWorkBatchCanSwitchToSyntheticWorkAndBackTransactionally()
+    public async Task ZeroWorkBatchCanSwitchToSyntheticWorkAndBack()
     {
         await using var factory = CreateFactory();
         using var http = factory.CreateClient();

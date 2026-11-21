@@ -92,7 +92,7 @@ snapshot, without creating per-token tasks or deserializing settings per token.
 Every token still traverses the actual Activity flows and terminal sinks.
 
 Workflow controls use `SendAsync(new ConfigureWorkflow(...))` **without** a Stream
-header. The typed accept-event action validates the settings, verifies transactional
+header. The typed accept-event action validates the settings, verifies regular
 execution metadata, updates one immutable settings/revision value, and records an
 acknowledgment. The UI reports success only after the send returns `Consumed`. CPU/delay/allocation are
 captured when each worker starts; routing reads the latest priority setting after
@@ -201,7 +201,7 @@ GC mode, and hardware affect the result. The target rate is not the measured thr
 
 Coverage includes profile shapes and bounds, accounting and stale/duplicate
 completion isolation, bounded history, dynamic worker limits/cancellation, real
-Orleans streaming, in-flight transactional steering, pause/resume, drain,
+Orleans streaming, in-flight regular steering, pause/resume, drain,
 emergency stop, restart, and invalid controls.
 Additional cases cover preset isolation, overload admission waiting/cancellation,
-and transactional transitions between zero-work and synthetic processing.
+and regular transitions between zero-work and synthetic processing.

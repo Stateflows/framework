@@ -10,60 +10,45 @@ internal sealed class PublicationScope : IDisposable
 {
     private static readonly AsyncLocal<PublicationScope?> Current = new();
     private readonly PublicationScope? previous;
-    private readonly ConcurrentQueue<Func<Task>> deferred = new();
     private readonly ConcurrentQueue<Task> immediate = new();
+    private readonly object sync = new();
+    private Task tail = Task.CompletedTask;
     private readonly bool runtimeOwned;
     private readonly Func<bool>? dispatchGuard;
-    private readonly Func<bool>? dispatchImmediatelyWhen;
 
     public static bool IsRuntimeOwned => Current.Value?.runtimeOwned == true;
-    public static bool IsImmediate => Current.Value?.IsImmediateNow == true;
-
-    private bool IsImmediateNow => dispatchImmediatelyWhen?.Invoke() == true;
 
     public PublicationScope(
         bool runtimeOwned = false,
-        Func<bool>? dispatchGuard = null,
-        Func<bool>? dispatchImmediatelyWhen = null)
+        Func<bool>? dispatchGuard = null)
     {
         this.runtimeOwned = runtimeOwned;
         this.dispatchGuard = dispatchGuard;
-        this.dispatchImmediatelyWhen = dispatchImmediatelyWhen;
         previous = Current.Value;
         Current.Value = this;
     }
 
-    public static bool TryDispatch(Func<Task> publish, bool immediately)
+    public static bool TryDispatch(Func<Task> publish)
     {
         if (Current.Value is not { } scope)
             return false;
 
-        if (immediately || scope.IsImmediateNow)
+        lock (scope.sync)
         {
-            // Publish has a synchronous public API. Never block an Orleans turn waiting for a grain RPC.
-            scope.immediate.Enqueue(Task.Run(async () =>
+            var previous = scope.tail;
+            // Publish has a synchronous public API. Preserve ordering without blocking the behavior turn.
+            scope.tail = Task.Run(async () =>
             {
+                await previous.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
                 if (scope.dispatchGuard?.Invoke() != false)
                     await publish();
-            }));
-        }
-        else
-        {
-            scope.deferred.Enqueue(publish);
+            });
+            scope.immediate.Enqueue(scope.tail);
         }
         return true;
     }
 
     public Task WaitForImmediateAsync() => Task.WhenAll(immediate.ToArray());
-
-    public async Task FlushAsync()
-    {
-        while (deferred.TryDequeue(out var publish))
-        {
-            if (dispatchGuard?.Invoke() != false)
-                await publish();
-        }
-    }
 
     public void Dispose() => Current.Value = previous;
 }

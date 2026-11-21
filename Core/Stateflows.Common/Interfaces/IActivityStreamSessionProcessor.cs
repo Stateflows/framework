@@ -32,6 +32,6 @@ public interface IActivityStreamSessionProcessor
 
     Task EndActivitySessionAsync(BehaviorId id, bool persist = true);
 
-    /// <summary>Registers (or removes, when null) the runtime host that runs streamed work handed off by a regular transaction; the host returns false when it cannot accept work.</summary>
+    /// <summary>Registers (or removes, when null) the runtime host that runs streamed work handed off by a transactional invocation; the host returns false when it cannot accept work.</summary>
     void SetActivitySessionWorkHost(BehaviorId id, Func<Func<Task>, bool> host);
 }

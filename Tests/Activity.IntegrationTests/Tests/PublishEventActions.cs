@@ -27,12 +27,11 @@ public sealed class PublishEventActions : StateflowsTestClass
             .AddActivity("publish-overridden", activity => activity
                 .AddInitial(initial => initial.AddControlFlow<PublishMany>())
                 .AddPublishEventAction<Notice, PublishMany>(node => node
-                    .SetTimeToLive(0).SetRetain(false).SetImmediatePublish(false)))
+                    .SetTimeToLive(0).SetRetain(false)))
             .AddActivity("publish-related", activity => activity
                 .AddInitial(initial => initial.AddControlFlow<PublishMany>())
                 .AddPublishEventAction<Notice, PublishMany>(node => node
-                    .SetPublishScope(PublishScope.Self | PublishScope.Parent | PublishScope.Owner)
-                    .SetImmediatePublish(false)))
+                    .SetPublishScope(PublishScope.Self | PublishScope.Parent | PublishScope.Owner)))
             .AddActivity("publish-none", activity => activity
                 .AddInitial(initial => initial.AddControlFlow<PublishNone>())
                 .AddPublishEventAction<Notice, PublishNone>())
@@ -67,8 +66,7 @@ public sealed class PublishEventActions : StateflowsTestClass
         await activity.SendAsync(new Initialize());
         await watcher.WaitForDeliveryAsync();
         CollectionAssert.AreEquivalent(new[] { 1, 2 }, notices.Cast<EventHolder<Notice>>().Select(n => n.Payload.Value).ToArray());
-        Assert.IsTrue(notices.All(n => n.Retained && n.TimeToLive == 37 &&
-            n.Headers.Values.Any(header => header is ImmediatePublish)));
+        Assert.IsTrue(notices.All(n => n.Retained && n.TimeToLive == 37));
         Assert.AreEqual(1, (await activity.GetOutputAsync<Notice>()).Count(),
             "Immediate publications can be dispatched concurrently, but retain only one notification.");
     }
@@ -82,8 +80,7 @@ public sealed class PublishEventActions : StateflowsTestClass
         await activity.SendAsync(new Initialize());
         await watcher.WaitForDeliveryAsync();
         Assert.AreEqual(2, notices.Count);
-        Assert.IsTrue(notices.All(n => !n.Retained && n.TimeToLive == 0 &&
-            !n.Headers.Values.Any(header => header is ImmediatePublish)));
+        Assert.IsTrue(notices.All(n => !n.Retained && n.TimeToLive == 0));
         Assert.AreEqual(0, (await activity.GetOutputAsync<Notice>()).Count());
     }
 
@@ -236,7 +233,6 @@ public sealed class PublishEventActions : StateflowsTestClass
         Assert.AreEqual(PublishScope.None, output.PublishScope);
         Assert.AreEqual(NodeOptions.None, output.Options);
         Assert.IsFalse(output.Retain);
-        Assert.IsFalse(output.ImmediatePublish);
         Assert.AreEqual(0, output.TimeToLive);
         Assert.AreEqual(NodeType.OutputPin, graph.Nodes.Values.Single(node => node.Name == "scope").OutputPins.Single().Type);
     }
@@ -248,7 +244,6 @@ public sealed class PublishEventActions : StateflowsTestClass
         public static PublishScope PublishScope => PublishScope.Self;
         public static int TimeToLive => 37;
         public static bool Retain => true;
-        public static bool ImmediatePublish => true;
         public Task<IEnumerable<Notice>> GenerateEventsAsync()
             => Task.FromResult<IEnumerable<Notice>>([new(1), new(2)]);
     }

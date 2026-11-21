@@ -13,8 +13,6 @@ public interface IPublishEventActionBuilder : IControlFlowBase<IPublishEventActi
     IPublishEventActionBuilder SetTimeToLive(int secondsToLive);
     /// <summary>Sets whether the latest notification of each type is retained.</summary>
     IPublishEventActionBuilder SetRetain(bool retain);
-    /// <summary>Sets whether publication bypasses the current turn's commit.</summary>
-    IPublishEventActionBuilder SetImmediatePublish(bool immediatePublish);
 }
 
 /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>

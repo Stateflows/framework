@@ -8,7 +8,7 @@ namespace Stateflows.Common
     {
         /// <summary>
         /// Waits for watch callbacks queued by publications completed before this call.
-        /// Call after sending an event to include its committed notifications in an HTTP response.
+        /// Call after sending an event to include its published notifications in an HTTP response.
         /// </summary>
         /// <remarks>
         /// Delivery is best-effort, without retries. Call outside behavior processing and watch callbacks

@@ -76,7 +76,7 @@ namespace Stateflows.Activities.Engine
             {
                 if (!crossingScopes.TryGetValue((node, scope), out var activation))
                 {
-                    // Anchored active structures survive transactional executor hydration. Resume their existing
+                    // Anchored active structures survive regular executor hydration. Resume their existing
                     // execution path, just as an accepted event does; a pending offer never starts a new structure.
                     if (node.Anchored && HasSingleAnchoredInvocation(node) && Context.NodeThreads.ContainsKey(node.Identifier))
                     {
@@ -156,10 +156,10 @@ namespace Stateflows.Activities.Engine
         }
 
         /// <summary>
-        /// Coordinates the mixed handoff of a regular transaction whose firing inside a structural continuation
-        /// (structured, iterative or parallel scope) routes into streamed (mixed) work. The transactional part of the
+        /// Coordinates the mixed handoff of a transactional invocation whose firing inside a structural continuation
+        /// (structured, iterative or parallel scope) routes into streamed (mixed) work. The regular part of the
         /// call unwinds like a checkpoint pause, recording the suspended frames, and the continuation is resumed by
-        /// the runtime host as streamed work only after the transaction has unwound.
+        /// the runtime host as streamed work only after the invocation has unwound.
         /// </summary>
         private sealed class HandoffCoordinator
         {
@@ -192,7 +192,7 @@ namespace Stateflows.Activities.Engine
         /// </summary>
         internal bool SessionOwned { get; set; }
 
-        /// <summary>Runtime host for streamed work handed off by a regular transaction (mixed acceptance); returns false when unavailable.</summary>
+        /// <summary>Runtime host for streamed work handed off by a transactional invocation (mixed acceptance); returns false when unavailable.</summary>
         internal Func<Func<Task>, bool> StreamedWorkHost { get; set; }
 
         private sealed class ResumePlan(IEnumerable<ReadyActivityFiring> firings, IEnumerable<ActivityContinuationFrame> frames)
@@ -1569,7 +1569,7 @@ namespace Stateflows.Activities.Engine
                 // tokens do not color it, the provenance of the event does.
                 IsStreamed = (resumeFrame?.IsStreamed ?? false) ||
                     Context.IsStreamingExecution ||
-                    // A data store immediately converts transactional arrivals and retained outputs to streamed work
+                    // A data store immediately converts regular arrivals and retained outputs to streamed work
                     // during a streaming busy period.
                     (node.Type == NodeType.DataStore && Context.IsStreamingBusyPeriod) ||
                     (!InteractiveNodeTypes.Contains(node.Type) &&
@@ -1788,15 +1788,15 @@ namespace Stateflows.Activities.Engine
         }
 
         /// <summary>
-        /// Mixed acceptance handoff: when a transactional root-level firing routes into a successor whose input
-        /// already holds streamed tokens, that successor fires as streamed work. The regular transaction's
+        /// Mixed acceptance handoff: when a regular root-level firing routes into a successor whose input
+        /// already holds streamed tokens, that successor fires as streamed work. The transactional invocation's
         /// responsibility ends at the handoff, so the firing is given to the runtime host instead of awaited.
         /// </summary>
         private HashSet<Node> TryHandOffMixedSuccessors(IGrouping<Node, Edge>[] nodes, NodeScope nodeScope)
         {
             var handedOff = new HashSet<Node>();
             var host = StreamedWorkHost;
-            // Only a regular transaction hands off; streamed calls already own their streamed successors.
+            // Only a transactional invocation hands off; streamed calls already own their streamed successors.
             if (host == null || currentFrame.Value != null || Context.IsCurrentCallStreamed != false)
                 return handedOff;
 
@@ -1819,7 +1819,7 @@ namespace Stateflows.Activities.Engine
             if (target.Type is NodeType.OutputPin or NodeType.Final)
                 return false;
 
-            // A data store converts transactional arrivals to streamed work during a streaming busy period.
+            // A data store converts regular arrivals to streamed work during a streaming busy period.
             if (target.Type == NodeType.DataStore && Context.IsStreamingBusyPeriod)
                 return true;
 
@@ -1831,8 +1831,8 @@ namespace Stateflows.Activities.Engine
         }
 
         /// <summary>
-        /// Streamed continuation of structural frames handed off by a regular transaction; starts only after the
-        /// transaction has unwound (and recorded its frames). Under an active checkpoint barrier the frames stay
+        /// Streamed continuation of structural frames handed off by a transactional invocation; starts only after the
+        /// invocation has unwound (and recorded its frames). Under an active checkpoint barrier the frames stay
         /// recorded and are resumed by the checkpoint recovery instead.
         /// </summary>
         private async Task ContinueHandedOffFramesAsync(HandoffCoordinator coordinator)

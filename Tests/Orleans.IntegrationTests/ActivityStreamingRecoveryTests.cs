@@ -13,7 +13,7 @@ using Stateflows.Common.Interfaces;
 namespace Orleans.IntegrationTests;
 
 /// <summary>
-/// Durable checkpoint recovery across a real deactivation/reactivation and mixed transaction handoff of the
+/// Durable checkpoint recovery across a real deactivation/reactivation and mixed invocation handoff of the
 /// activation-owned Orleans Activity streaming session.
 /// </summary>
 [TestClass]
@@ -360,7 +360,7 @@ public sealed class ActivityStreamingRecoveryTests
             await probe.WaitForCountAsync("mixed", "keepalive", 1);
             Assert.AreEqual(0, probe.Get("mixed", "join"), "The join waits for its regular contribution.");
 
-            // The regular event's transactional responsibility ends at the mixed acceptance.
+            // The regular event's responsibility ends at the mixed acceptance.
             var regular = await behavior.SendAsync(new HandoffEvent()).WaitAsync(TimeSpan.FromSeconds(10));
             Assert.AreEqual(EventStatus.Consumed, regular.Status);
             Assert.AreEqual(1, probe.Get("mixed", "accept"));

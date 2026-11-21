@@ -993,7 +993,7 @@ internal sealed partial class BoundActivityDocument(
     private static void ConfigurePublication<TEvent, TNode>(IPublishEventActionBuilder builder)
         where TNode : class, IPublishEventActionNode<TEvent>
         => builder.SetPublishScope(TNode.PublishScope).SetTimeToLive(TNode.TimeToLive)
-            .SetRetain(TNode.Retain).SetImmediatePublish(TNode.ImmediatePublish);
+            .SetRetain(TNode.Retain);
 
     private static async Task<IEnumerable<TEvent>> GeneratePublishEvent<TEvent, TNode>(ClrBinding binding, IActionContext context)
         where TNode : class, IPublishEventActionNode<TEvent>

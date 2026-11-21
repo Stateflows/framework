@@ -242,8 +242,6 @@ namespace Stateflows.Activities.Registration
                     };
                     if (publicationNode.Retain)
                         headers[nameof(Retain)] = new Retain();
-                    if (publicationNode.ImmediatePublish)
-                        headers[nameof(ImmediatePublish)] = new ImmediatePublish();
                     if (publicationNode.PublishScope.HasFlag(PublishScope.Self))
                         c.Behavior.PublishRange(events, headers);
                     if (publicationNode.PublishScope.HasFlag(PublishScope.Parent) &&

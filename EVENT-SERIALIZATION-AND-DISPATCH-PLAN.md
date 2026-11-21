@@ -71,7 +71,7 @@ The normal Orleans path is:
 
 Therefore an event can fail in core cloning before any grain call. Adding Orleans
 `GenerateSerializer`/`Id` attributes to application events does not fix that.
-`StateflowsJsonConverter` also supports legacy storage, staged sends and embedded
+`StateflowsJsonConverter` also supports legacy storage and embedded
 behavior trigger cloning, so the shared validation belongs in core/Common.
 
 Relevant implementation:
@@ -455,9 +455,8 @@ never silently await processing or fake acknowledgement.
 - Reject `DispatchAndReturn + JoinTransaction`: dispatch-only cannot promise
   processing/commit in a transaction that its sender is waiting to finish.
   Suppress ambient transaction propagation for independent admission.
-- `StageSending` retains after-commit semantics. Its dispatch acknowledgement
-  cannot be awaited before source commit; do not disguise staging as dispatch.
-  Use the existing staging/outbox mechanism for source-commit coupling.
+- `StageSending` and its staging infrastructure have been removed; source-commit
+  coupling is not provided by the dispatch API.
 - Initially reject `DispatchAndReturn + Stream` explicitly. Preserve existing
   `Accepted` stream semantics rather than invent precedence between two
   admission protocols.
@@ -670,8 +669,8 @@ await target processing, and do not silently swallow exceptions to keep it green
 - Same-silo and two-silo cases, reactivation, shutdown and admission timeout
   uncertainty; validate documented volatile-admission and possible crash-loss
   semantics without assuming persistent recovery.
-- JoinTransaction/Stream combinations fail explicitly; existing staged sends,
-  stream Accepted behavior, transactions and behavior without either opt-in remain intact.
+- JoinTransaction/Stream combinations fail explicitly; stream Accepted behavior,
+  transactions and behavior without either opt-in remain intact.
 - Dispatch-only requests return Dispatched and an absent/default response using
   the existing result contract; do not wait for or synthesize a reply.
 - Minimal APIs return 202 without waiting for processing via metadata queries.
@@ -679,7 +678,7 @@ await target processing, and do not silently swallow exceptions to keep it green
 
 Use completion gates for timing assertions, not a latency-only proxy or sleeps.
 Run focused Common/core/Orleans tests first, then directly affected HTTP/client,
-transaction, staging and streaming suites.
+transaction and streaming suites.
 
 ## Approved review decisions
 

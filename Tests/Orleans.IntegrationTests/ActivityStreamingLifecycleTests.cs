@@ -70,7 +70,7 @@ public sealed class ActivityStreamingLifecycleTests
         });
 
         // Introduce the marker into live state only; regular calls may legitimately serialize the committed
-        // baseline to persist receipts or an outbox, but must never serialize the concurrently executing marking.
+        // baseline to persist receipts, but must never serialize the concurrently executing marking.
         Assert.AreEqual(EventStatus.Accepted,
             (await behavior.SendAsync(new TokensInput().Add(new SerializationMarker()).Add("hold"), StreamHeader)
                 .WaitAsync(Limit)).Status);
@@ -221,7 +221,7 @@ public sealed class ActivityStreamingLifecycleTests
 
     [TestMethod]
     [Timeout(45_000)]
-    public async Task RegularTransactionsRunOneAtATimeInFifoOrderWhileStreamRemainsLive()
+    public async Task RegularCallsRunOneAtATimeInFifoOrderWhileStreamRemainsLive()
     {
         var probe = new LifecycleProbe();
         await using var cluster = await LifecycleCluster.StartAsync(probe, activities => activities
@@ -262,24 +262,21 @@ public sealed class ActivityStreamingLifecycleTests
         await probe.Signal("regular:1").Task.WaitAsync(Limit);
         var second = behavior.SendAsync(new TokensInput().Add(2));
         await AssertStillPendingAsync(probe.Signal("regular:2").Task,
-            "The second regular firing must not enter while the first transaction owns its gate.");
-        // Both later calls are dispatched before the first gate opens. The publication of the first
-        // transaction is a commit witness; the second must not publish or enter its action before it.
-        Assert.IsFalse(notices.Reader.TryRead(out _));
+            "The second regular firing must not enter while the first call owns its gate.");
+        Assert.AreEqual(1, await ReadNoticeAsync(notices));
         Assert.IsFalse(second.IsCompleted);
         probe.Gate("regular:1").TrySetResult();
         Assert.AreEqual(EventStatus.Consumed, (await first.WaitAsync(Limit)).Status);
-        Assert.AreEqual(1, await ReadNoticeAsync(notices));
         await probe.Signal("regular:2").Task.WaitAsync(Limit);
         Assert.IsFalse(second.IsCompleted);
         Assert.IsFalse(probe.Signal("stream-completed").Task.IsCompleted,
-            "A regular transaction must not wait for unrelated streamed work to exhaust.");
+            "A regular call must not wait for unrelated streamed work to exhaust.");
         probe.Gate("regular:2").TrySetResult();
         Assert.AreEqual(EventStatus.Consumed, (await second.WaitAsync(Limit)).Status);
         Assert.AreEqual(2, await ReadNoticeAsync(notices));
         CollectionAssert.AreEqual(new[] { 1, 2 }, probe.Order.ToArray());
         CollectionAssert.AreEqual(new[] { 1, 1 }, probe.RegularConcurrency.ToArray(),
-            "Node reentrancy must not allow overlapping regular transactions.");
+            "Node reentrancy must not allow overlapping regular calls.");
     }
 
     [TestMethod]
@@ -372,7 +369,7 @@ public sealed class ActivityStreamingLifecycleTests
 
     [TestMethod]
     [Timeout(45_000)]
-    public async Task QueuedFinalizeWaitsEarlierRegularTransactionThenCancelsStreamRatherThanNaturalDrain()
+    public async Task QueuedFinalizeWaitsEarlierRegularCallThenCancelsStreamRatherThanNaturalDrain()
     {
         var probe = new LifecycleProbe();
         await using var cluster = await LifecycleCluster.StartAsync(probe, activities => activities
@@ -413,7 +410,7 @@ public sealed class ActivityStreamingLifecycleTests
         await probe.Signal("regular-started").Task.WaitAsync(Limit);
         var finalize = behavior.SendAsync(new Finalize { Mode = FinalizationMode.Queued });
         await AssertStillPendingAsync(probe.Signal("stream-cancelled").Task,
-            "Queued finalization must not cancel streamed scopes ahead of the earlier regular transaction.");
+            "Queued finalization must not cancel streamed scopes ahead of the earlier transactional invocation.");
         Assert.IsFalse(finalize.IsCompleted);
         Assert.IsFalse(probe.Signal("stream-cancelled").Task.IsCompleted);
         probe.Gate("regular").TrySetResult();
@@ -423,7 +420,7 @@ public sealed class ActivityStreamingLifecycleTests
         Assert.AreEqual(EventStatus.Consumed, (await finalize.WaitAsync(Limit)).Status);
         await probe.Signal("finalized").Task.WaitAsync(Limit);
         CollectionAssert.AreEqual(new[] { 1, 2 }, probe.Order.ToArray(),
-            "Queued finalization must follow the earlier transaction, not interrupt it.");
+            "Queued finalization must follow the earlier invocation, not interrupt it.");
         Assert.IsFalse(probe.Signal("stream-naturally-ended").Task.IsCompleted,
             "Finalization must cancel the infinite streamed action, not await natural stream exhaustion.");
     }
@@ -506,7 +503,7 @@ public sealed class ActivityStreamingLifecycleTests
                         break;
                     case 1:
                         await context.Behavior.Values.SetAsync("value", 99);
-                        throw new InvalidOperationException("Expected regular transaction failure.");
+                        throw new InvalidOperationException("Expected transactional invocation failure.");
                     case 2:
                         var (found, value) = await context.Behavior.Values.TryGetAsync<int>("value");
                         probe.ObservedValue = found ? value : -1;

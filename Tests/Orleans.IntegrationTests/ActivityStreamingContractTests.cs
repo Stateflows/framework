@@ -15,7 +15,7 @@ namespace Orleans.IntegrationTests;
 
 /// <summary>
 /// Provenance contracts of the activation-owned Orleans Activity session: a regular event already running shares the
-/// live network with a joining stream, transactional event sources stay transactional when delivered by the live
+/// live network with a joining stream, regular event sources retain their provenance when delivered by the live
 /// timer pump, and mixed acceptance inside structured/iterative/parallel scopes hands off like a flat graph.
 /// </summary>
 [TestClass]
@@ -145,17 +145,19 @@ public sealed class ActivityStreamingContractTests
 
         Assert.AreEqual("10", probe.Recorded("a:observed"),
             "The streamed firing runs in the same live network and observes the running regular firing's write.");
-        Assert.AreEqual(11, await notices.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)),
-            "A streamed firing publishes immediately.");
-        Assert.IsFalse(notices.Reader.TryRead(out _), "The regular firing's publication stays deferred to its call.");
-        Assert.IsFalse(regular.IsCompleted, "The regular call is still owned by its gated transactional firing.");
+        var firstNotices = new[]
+        {
+            await notices.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)),
+            await notices.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10))
+        };
+        CollectionAssert.AreEquivalent(new[] { 10, 11 }, firstNotices,
+            "Both regular and streamed firings publish during execution.");
+        Assert.IsFalse(regular.IsCompleted, "The regular call is still owned by its gated firing.");
         Assert.AreEqual(bool.FalseString, probe.Recorded("a:streamed:10"), "A pure regular firing keeps its provenance.");
         Assert.AreEqual(bool.TrueString, probe.Recorded("a:streamed:11"));
 
         probe.Gate("a:10").TrySetResult();
         Assert.AreEqual(EventStatus.Consumed, (await regular.WaitAsync(TimeSpan.FromSeconds(10))).Status);
-        Assert.AreEqual(10, await notices.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)),
-            "The regular publication is committed when the regular call completes.");
         Assert.AreEqual(0, probe.Get("a", "stream-done"), "The streamed firing is still live after the regular call.");
         Assert.AreEqual(bool.FalseString, probe.Recorded("a:streamed:10"));
 
@@ -166,7 +168,7 @@ public sealed class ActivityStreamingContractTests
 
     [TestMethod]
     [Timeout(60_000)]
-    public async Task LiveTimerEventSourceStaysTransactionalDuringStream()
+    public async Task LiveTimerEventSourceStaysRegularDuringStream()
     {
         var probe = new ContractProbe();
         await using var cluster = await ContractCluster.StartAsync(probe, activities => activities
@@ -203,12 +205,9 @@ public sealed class ActivityStreamingContractTests
         Assert.AreEqual(bool.TrueString, probe.Recorded("a:work-streamed"));
         Assert.AreEqual(bool.FalseString, probe.Recorded("a:timer-streamed"),
             "A time event delivered by the live timer pump is a transactional source.");
-        await Task.Delay(200);
-        Assert.IsFalse(notices.Reader.TryRead(out _),
-            "The transactional timer firing defers its publication until it completes successfully.");
-
+        Assert.AreEqual(1, await notices.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)),
+            "The timer publishes while its execution is still running.");
         probe.Gate("a:timer").TrySetResult();
-        Assert.AreEqual(1, await notices.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)));
         probe.Gate("a:work").TrySetResult();
     }
 
@@ -290,7 +289,7 @@ public sealed class ActivityStreamingContractTests
             Assert.AreEqual(1, probe.Get(key, "initialize"), $"{activity}: the scope is initialized once.");
             Assert.AreEqual(0, probe.Get(key, "finalize"), $"{activity}: the handed-off scope is still live.");
             Assert.AreEqual(1, probe.Get(key, $"pure:{input[0]}"),
-                $"{activity}: the pure transactional branch completes within the regular call.");
+                $"{activity}: the pure regular branch completes within the regular call.");
             Assert.AreEqual(0, probe.Get(key, "keepalive-done"), $"{activity}: the pure streamed branch remains live.");
 
             await probe.WaitForCountAsync(key, "b", 1);

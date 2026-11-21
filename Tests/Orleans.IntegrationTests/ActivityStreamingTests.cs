@@ -298,7 +298,7 @@ public sealed class ActivityStreamingTests
                                         {
                                             await context.Behavior.Values.SetAsync("failed-regular-effect", true);
                                             await probe.FailedPublicationGate.Task;
-                                            throw new InvalidOperationException("Regular streamed-session event failed.");
+                                            throw new InvalidOperationException("Transactional streamed-session event failed.");
                                         }
                                         else if (value == 4)
                                             await probe.MixedPublicationGate.Task;
@@ -610,18 +610,17 @@ public sealed class ActivityStreamingTests
 
             var deferredSuccess = publicationBehavior.SendAsync(new TokensInput().Add(2));
             await probe.PublicationStartedFor(2).Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.IsFalse(receivedNotices.Reader.TryRead(out _),
-                "A regular-only firing must retain its publication until its transactional call completes.");
+            Assert.AreEqual(2, await receivedNotices.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)),
+                "A regular firing publishes before it completes.");
             probe.RegularPublicationGate.TrySetResult();
             Assert.AreEqual(EventStatus.Consumed, (await deferredSuccess.WaitAsync(TimeSpan.FromSeconds(10))).Status);
-            Assert.AreEqual(2, await receivedNotices.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)));
 
             var deferredFailure = publicationBehavior.SendAsync(new TokensInput().Add(3));
             await probe.PublicationStartedFor(3).Task.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.AreEqual(3, await receivedNotices.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)),
+                "A failed firing cannot retract a published notification.");
             probe.FailedPublicationGate.TrySetResult();
             Assert.AreEqual(EventStatus.Failed, (await deferredFailure.WaitAsync(TimeSpan.FromSeconds(10))).Status);
-            Assert.IsFalse(receivedNotices.Reader.TryRead(out _),
-                "A publication staged by a failed regular-only firing must be discarded.");
 
             Assert.AreEqual(EventStatus.Accepted, (await publicationBehavior.SendAsync(new TokensInput().Add(4),
                 new Dictionary<string, EventHeader> { [nameof(Stateflows.Common.Stream)] = new Stateflows.Common.Stream() })

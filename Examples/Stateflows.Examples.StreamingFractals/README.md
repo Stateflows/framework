@@ -183,7 +183,7 @@ delivery only, without notification history or subscription retries.
 | `POST /api/sessions/{id}/stop` | Immediate Activity finalization, including cancellation, followed by reset. |
 | `GET /api/sessions/{id}/diagram` | PlantUML text for the started Activity. |
 
-Omit `sendAsStream` to compare ordinary transactional input: the POST waits for
+Omit `sendAsStream` to compare ordinary regular input: the POST waits for
 processing and results report `Transactional`, rather than `Streamed`.
 `sendAsStream` selects execution semantics; `stream=true` selects SSE transport.
 

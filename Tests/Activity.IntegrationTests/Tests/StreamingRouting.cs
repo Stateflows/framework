@@ -182,7 +182,7 @@ public sealed class StreamingRouting
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
-    public async Task ControlOnlyStreamedInputColorsAJoinWithTransactionalObjectInputs(bool streamedControl)
+    public async Task ControlOnlyStreamedInputColorsAJoinWithRegularObjectInputs(bool streamedControl)
     {
         bool? observed = null;
         var received = Array.Empty<int>();

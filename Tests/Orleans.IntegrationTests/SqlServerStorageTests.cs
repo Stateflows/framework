@@ -131,10 +131,10 @@ public sealed class SqlServerStorageTests
                     $"{r.GrainType} [{r.Extension}] v{r.Version} {r.PayloadLength}B " +
                     (r.Payload == null ? "" : System.Text.Encoding.UTF8.GetString(r.Payload, 0, (int)Math.Min(120, r.Payload.Length))))));
 
-        var rejected = await Assert.ThrowsAsync<Orleans.Transactions.OrleansTransactionException>(() =>
+        var rejected = await Assert.ThrowsAsync<Exception>(() =>
             cluster.SendAsync(host, machineId, new StorePayload { Payload = new SqlPayload { Text = "lost" } }));
         Assert.IsTrue(rejected.ToString().Contains(nameof(Orleans.Storage.InconsistentStateException), StringComparison.Ordinal),
-            "The transaction failure must preserve the SQL storage version-conflict cause.");
+            "The persistence failure must preserve the SQL storage version-conflict cause.");
 
         Assert.AreEqual("idle", await cluster.CurrentStateAsync(host, machineId),
             "The failed execution must not leak into the reloaded state.");
@@ -357,46 +357,6 @@ public sealed class SqlServerStorageTests
 
         public async Task<SqlPayload?> ReadPayloadAsync()
             => await Payloads.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(1));
-    }
-
-    [TestMethod]
-    [Timeout(180_000)]
-    public async Task PublisherOutboxRecoversFromSqlReminderAfterFullClusterRestart()
-    {
-        await using var cluster = new SqlCluster();
-        var instance = cluster.NewInstance();
-        var publisherId = new BehaviorId(BehaviorType.StateMachine, Publisher, instance);
-        var subscriberId = new BehaviorId(BehaviorType.StateMachine, Subscriber, instance);
-        var first = await cluster.StartHostAsync(new RejectOutboxFilter());
-        Assert.AreEqual(EventStatus.Initialized, (await cluster.SendAsync(first, subscriberId, new Initialize())).Status);
-        Assert.AreEqual(EventStatus.Consumed, (await cluster.SendAsync(first, subscriberId, new SubscribeTo { Instance = instance })).Status);
-        Assert.AreEqual(EventStatus.Consumed, (await cluster.SendAsync(first, publisherId, new PublishValue { Value = 37 })).Status);
-        Assert.IsFalse(cluster.Probe.Contains($"received:{instance}"), "Acceptance is blocked before any delivery.");
-        Assert.IsTrue((await SqlServerTestDatabase.GetReminderRowsAsync(cluster.ServiceId))
-            .Any(r => r.ReminderName == StateflowsBehavior.OutboxReminderName));
-        await cluster.StopHostAsync(first);
-
-        var second = await cluster.StartHostAsync();
-        // No call to the publisher: only the persisted outbox reminder can initiate recovery.
-        Assert.AreEqual(37, await cluster.Probe.ReadAsync($"received:{instance}", Timeout));
-        using var publisher = second.Services.GetRequiredService<IBehaviorFactory>().CreateBehavior(publisherId);
-        var history = (await publisher.GetNotificationsAsync<ValueNotification>(DateTime.MinValue)).ToArray();
-        CollectionAssert.AreEqual(new[] { 37 }, history.Select(n => n.Value).ToArray());
-        await WaitUntilAsync(async () => !(await SqlServerTestDatabase.GetReminderRowsAsync(cluster.ServiceId))
-            .Any(r => r.ReminderName == StateflowsBehavior.OutboxReminderName), "Recovered outboxes must remove their SQL reminders.");
-        await Task.Delay(ReminderPeriod + ReminderPeriod);
-        Assert.IsFalse(cluster.Probe.Contains($"received:{instance}"), "Recovery must not duplicate subscriber execution.");
-    }
-
-    private sealed class RejectOutboxFilter : IIncomingGrainCallFilter
-    {
-        public Task Invoke(IIncomingGrainCallContext context)
-        {
-            if (context.Grain is ISubscriptionsGrain &&
-                context.InterfaceMethod.Name == nameof(ISubscriptionsGrain.PublishOutboxAsync))
-                throw new InvalidOperationException("Injected outage before durable subscription acceptance.");
-            return context.Invoke();
-        }
     }
 
     private sealed class SqlCluster : IAsyncDisposable

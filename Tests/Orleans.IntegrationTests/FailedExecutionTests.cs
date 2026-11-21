@@ -142,7 +142,7 @@ public sealed class FailedExecutionTests
                 : behavior.SendAsync(new Mutate());
 
             if (mode is FailureMode.Write or FailureMode.Clear)
-                await TransactionalStorageTestHelpers.AssertTransactionCommitFailureAsync(send, "Expected storage failure.");
+                await StorageTestHelpers.AssertCommitFailureAsync(send, "Expected storage failure.");
             else
                 Assert.AreEqual(EventStatus.Failed, (await send()).Status);
             Assert.IsFalse(storage.RejectNextWrite, "The execution must reach the rejected storage write.");
@@ -508,27 +508,18 @@ public sealed class FailedExecutionTests
         public Task WriteStateAsync<T>(string stateName, GrainId grainId, IGrainState<T> grainState)
         {
             var data = serializer.Serialize(grainState.State);
-            var committedAdvanced = false;
             if (stateName == "Stateflows.BehaviorContext")
             {
-                var previous = states.TryGetValue((stateName, grainId), out var stored)
-                    ? serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(stored.Data)
-                    : null;
-                var next = serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(data);
-                // Only writes carrying a new prepared/committed behavior version are targeted, not metadata-only writes.
-                if (RejectNextWrite &&
-                    TransactionalStorageTestHelpers.GetLatestSequenceId(next) > TransactionalStorageTestHelpers.GetLatestSequenceId(previous))
+                if (RejectNextWrite)
                 {
                     RejectNextWrite = false;
                     throw new InvalidOperationException("Expected storage failure.");
                 }
-                committedAdvanced = (next?.CommittedSequenceId ?? 0) > (previous?.CommittedSequenceId ?? 0);
             }
             var eTag = Guid.NewGuid().ToString("N");
             states[(stateName, grainId)] = (data, eTag);
-            if (committedAdvanced &&
-                TransactionalStorageTestHelpers.GetCommittedContextState(
-                    serializer.Deserialize<Orleans.Transactions.TransactionalStateRecord<BehaviorContextState>>(data)) is { } context)
+            if (stateName == "Stateflows.BehaviorContext" &&
+                serializer.Deserialize<BehaviorContextState>(data) is { } context)
             {
                 ContextSnapshot = context.Payload;
             }
