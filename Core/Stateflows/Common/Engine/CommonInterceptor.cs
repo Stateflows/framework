@@ -45,27 +45,9 @@ namespace Stateflows.Common.Engine
             }
         }
 
-        public bool BeforeExecute(string tenantId)
-        {
-            var result = true;
-            foreach (var interceptor in tenantInterceptors)
-            {
-                if (!interceptor.BeforeExecute(tenantId))
-                {
-                    result = false;
-                }
-            }
-
-            return result;
-        }
-
-        public void AfterExecute(string tenantId)
-        {
-            foreach (var interceptor in tenantInterceptors.Reverse())
-            {
-                interceptor.AfterExecute(tenantId);
-            }
-        }
+        public Task ExecuteAsync(string tenantId, Func<Task> next)
+            => AsyncAroundPipeline.RunAsync(tenantInterceptors.ToArray(), next,
+                (interceptor, inner) => interceptor.ExecuteAsync(tenantId, inner));
 
         public async Task NotificationPublishedAsync<TNotification>(IBehaviorActionContext context, TNotification notification, IDictionary<string, EventHeader> headers)
         {

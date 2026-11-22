@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.Common
 {
-    /// <summary>Describes the outcome of processing an event for a behavior.</summary>
+    /// <summary>Describes the outcome of dispatching or processing an event for a behavior.</summary>
     public enum EventStatus
     {
         /// <summary>
@@ -58,6 +58,10 @@
         /// <summary>
         /// Input was admitted to a live stream; this does not indicate that its work has completed.
         /// </summary>
-        Accepted
+        Accepted,
+        /// <summary>
+        /// Event dispatch was started; this does not indicate that its processing has completed.
+        /// </summary>
+        Dispatched
     }
 }

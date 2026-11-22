@@ -16,7 +16,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task ExecuteAsync(SomeEvent @event, CancellationToken cancellationToken)
         {
             Behaviors.eventConsumed = value;// await parentContext.TryGetProjectionAsync<bool>() is (true, true);
-            context.Send(new SomeNotification());
+            await context.DispatchAsync(new SomeNotification());
         }
     }
 
@@ -94,7 +94,7 @@ namespace StateMachine.IntegrationTests.Tests
                                     .AddTransition<SomeEvent>("stateB")
                                 )
                                 .AddState("stateB", b => b
-                                    .AddOnEntry(c => c.Behavior.Send(new SomeNotification()))
+                                    .AddOnEntry(c => c.Behavior.DispatchAsync(new SomeNotification()))
                                 )
                             )
                             .AddTransition<SomeNotification>("state2")
@@ -132,7 +132,7 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddTransition<SomeEvent>("stateB")
                         )
                         .AddState("stateB", b => b
-                            .AddOnEntry(c => c.Behavior.Send(new SomeNotification()))
+                            .AddOnEntry(c => c.Behavior.DispatchAsync(new SomeNotification()))
                         )
                     )
 
@@ -260,7 +260,7 @@ namespace StateMachine.IntegrationTests.Tests
                                             eventConsumed = true;
                                             if (c.TryGetOwnerBehaviorContext(out var ownerBehavior))
                                             {
-                                                ownerBehavior.Send(new SomeNotification());
+                                                await ownerBehavior.DispatchAsync(new SomeNotification());
                                             }
                                         }
                                     )
@@ -318,7 +318,7 @@ namespace StateMachine.IntegrationTests.Tests
                             async c =>
                             {
                                 eventConsumed = true;
-                                c.Behavior.Send(new SomeNotification());
+                                await c.Behavior.DispatchAsync(new SomeNotification());
                             }
                         )
                     )

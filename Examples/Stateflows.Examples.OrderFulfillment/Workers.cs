@@ -88,9 +88,9 @@ public abstract class OperationWorker(
         var failure = await simulator.SimulateAsync(Owner, operation, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         if (failure is null)
-            Owner.Send(new StepSucceeded(operation));
+            await Owner.DispatchAsync(new StepSucceeded(operation));
         else
-            Owner.Send(new StepFailed(operation, failure));
+            await Owner.DispatchAsync(new StepFailed(operation, failure));
     }
 }
 
@@ -121,14 +121,14 @@ public sealed class CompensateOrderAction(IOwnerBehaviorContext owner, IOrderSim
             var failure = await simulator.SimulateAsync(owner, operation, cancellationToken);
             if (failure is not null)
             {
-                owner.Send(new CompensationFailed(failure));
+                await owner.DispatchAsync(new CompensationFailed(failure));
                 return;
             }
 
             await OrderData.MutateAsync(owner, new StepApplied(operation));
         }
 
-        owner.Send(new CompensationFinished());
+        await owner.DispatchAsync(new CompensationFinished());
     }
 }
 
@@ -192,7 +192,7 @@ public sealed class StoreInvoice(IOwnerBehaviorContext owner, IInputTokens<Invoi
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         await OrderData.MutateAsync(owner, new InvoiceIssued(invoices.Single()));
-        owner.Send(new InvoiceReady());
+        await owner.DispatchAsync(new InvoiceReady());
     }
 }
 

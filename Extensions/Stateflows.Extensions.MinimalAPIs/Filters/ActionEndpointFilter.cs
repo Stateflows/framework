@@ -57,7 +57,7 @@ internal class ActionEndpointFilter(
 
         var result = await next(context);
 
-        await behaviorContext.CompletePendingSendsAsync();
+        await behaviorContext.CompletePendingDispatchesAsync();
 
         return result;
     }

@@ -23,7 +23,7 @@ internal class CompletionNotification : StateMachineInterceptor
                 status is EventStatus.Consumed or EventStatus.Initialized
             )
             {
-                context.Behavior.Send(new Completion());
+                await context.Behavior.DispatchAsync(new Completion());
             }
         }
 

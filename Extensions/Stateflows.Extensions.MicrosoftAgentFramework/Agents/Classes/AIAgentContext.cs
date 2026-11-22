@@ -19,10 +19,8 @@ internal class AIAgentContext(IBehaviorContext functionContext, IInput input, IO
 
     public IContextValues Values => functionContext.Values;
 
-    public void Send<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
-    {
-        functionContext.Send(@event, headers);
-    }
+    public Task<SendResult> DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
+        => functionContext.DispatchAsync(@event, headers);
 
     public void PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers = null)
     {

@@ -392,6 +392,9 @@ public sealed class StreamingAdmission
                 : Task.FromException<SendResult>(Failure);
         }
 
+        public Task<SendResult> DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
+            => Task.FromResult(new SendResult(EventStatus.Dispatched, new EventValidation(true)));
+
         public Task<RequestResult<T>> RequestAsync<T>(IRequest<T> request, IDictionary<string, EventHeader>? headers = null)
             => throw new InvalidOperationException("StreamInputAsync must send, not request.");
         public Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction, IDictionary<string, EventHeader>? headers = null)

@@ -24,6 +24,14 @@ namespace Stateflows.Common
         /// <param name="headers">Optional metadata attached to this delivery.</param>
         /// <returns>The asynchronous send result, including delivery status and validation information.</returns>
         Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null);
+
+        /// <summary>Starts dispatch of an event and returns after client interceptors have completed.</summary>
+        /// <typeparam name="TEvent">The event payload type.</typeparam>
+        /// <param name="event">The event to dispatch.</param>
+        /// <param name="headers">Optional metadata attached to this delivery.</param>
+        /// <returns><see cref="EventStatus.Dispatched"/> when dispatch starts, or <see cref="EventStatus.Undelivered"/> if an interceptor short-circuits it.</returns>
+        /// <remarks>The returned task does not wait for event processing to finish.</remarks>
+        Task<SendResult> DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null);
         
         /// <summary>Sends a request and awaits its typed response.</summary>
         /// <typeparam name="TResponseEvent">The expected response payload type.</typeparam>

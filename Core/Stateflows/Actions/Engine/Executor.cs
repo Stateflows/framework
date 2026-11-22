@@ -200,7 +200,7 @@ namespace Stateflows.Actions.Engine
 
                     Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
 
-                    HandleGuardRequest(eventHolder, context);
+                    await HandleGuardRequestAsync(eventHolder, context);
                 }
                 finally
                 {
@@ -215,7 +215,7 @@ namespace Stateflows.Actions.Engine
             return result;
         }
 
-        private static void HandleGuardRequest<TEvent>(EventHolder<TEvent> eventHolder, ActionDelegateContext context)
+        private static async Task HandleGuardRequestAsync<TEvent>(EventHolder<TEvent> eventHolder, ActionDelegateContext context)
         {
             var guardRequest = context.Headers.Values.OfType<TransitionGuardRequest>().FirstOrDefault();
             if (guardRequest != null)
@@ -233,7 +233,7 @@ namespace Stateflows.Actions.Engine
                         GuardIdentifier = guardRequest.GuardIdentifier
                     };
 
-                    parentBehaviorContext.Send(eventHolder.Payload, headers);
+                    await parentBehaviorContext.DispatchAsync(eventHolder.Payload, headers);
                 }
                         
                 var behaviorId = context.RootContext.Context.ContextOwnerId.Value;

@@ -35,6 +35,9 @@ namespace Stateflows.MAF.AIAgents.Classes
         public Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => Behavior.SendAsync(@event, headers);
 
+        public Task<SendResult> DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
+            => Behavior.DispatchAsync(@event, headers);
+
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader>? headers = null)
             => Behavior.RequestAsync(request, headers);
 

@@ -16,8 +16,7 @@ public class OrthogonalBehaviors : StateflowsTestClass
     {
         public Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            parent.Send(new Executed());
-            return Task.CompletedTask;
+            return parent.DispatchAsync(new Executed());
         }
     }
 
@@ -28,8 +27,7 @@ public class OrthogonalBehaviors : StateflowsTestClass
             .AddAction("execute", c =>
             {
                 Assert.IsTrue(c.TryGetParentBehaviorContext(out var parent));
-                parent.Send(new Executed());
-                return Task.CompletedTask;
+                return parent.DispatchAsync(new Executed());
             });
     }
 
@@ -107,8 +105,7 @@ public class OrthogonalBehaviors : StateflowsTestClass
             "action" => builder.AddDoAction(c =>
             {
                 Assert.IsTrue(c.TryGetParentBehaviorContext(out var parent));
-                parent.Send(new Executed());
-                return Task.CompletedTask;
+                return parent.DispatchAsync(new Executed());
             }),
             "typed-action" => builder.AddDoAction<DoAction>(),
             "activity" => builder.AddDoActivity(DoActivity.Build),
@@ -122,8 +119,7 @@ public class OrthogonalBehaviors : StateflowsTestClass
             "action" => builder.AddDoAction(c =>
             {
                 Assert.IsTrue(c.TryGetParentBehaviorContext(out var parent));
-                parent.Send(new Executed());
-                return Task.CompletedTask;
+                return parent.DispatchAsync(new Executed());
             }),
             "typed-action" => builder.AddDoAction<DoAction>(),
             "activity" => builder.AddDoActivity(DoActivity.Build),

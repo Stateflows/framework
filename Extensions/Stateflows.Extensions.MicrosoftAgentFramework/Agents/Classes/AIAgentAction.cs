@@ -74,7 +74,7 @@ internal class AIAgentAction(
                 tools.AddRange(agenticTransitions
                     .Select(agenticTransition =>
                         AIFunctionFactory.Create(
-                            () => OwnerBehaviorContext?.Send(new AgenticTransition()
+                            () => OwnerBehaviorContext?.DispatchAsync(new AgenticTransition()
                             {
                                 TransitionMarker = agenticTransition.GetValueOrDefault(AIAgentConstants.GuardValue) as string
                             }),

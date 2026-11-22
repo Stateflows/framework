@@ -160,7 +160,7 @@ public static class StateBuilderExtensions
     public static IAgenticStateBuilder AddAgenticReaction<TEvent>(this IAgenticStateBuilder stateBuilder, Func<IEventContext<TEvent>, AgenticMessage> agenticMessageFactory, InternalTransitionBuildAction<TEvent>? transitionBuildAction = null)
         => new AgenticStateBuilder(stateBuilder.AddInternalTransition<TEvent>(b =>
         {
-            b.AddEffect(c => c.Behavior.Send(agenticMessageFactory(c)));
+            b.AddEffect(c => c.Behavior.DispatchAsync(agenticMessageFactory(c)));
             
             transitionBuildAction?.Invoke(b);
         }));

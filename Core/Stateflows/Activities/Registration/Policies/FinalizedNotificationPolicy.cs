@@ -12,7 +12,7 @@ internal class FinalizedNotification : ActivityObserver
         await next();
         if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
         {
-            parentBehaviorContext.Send(new DoActivityFinalized());
+            await parentBehaviorContext.DispatchAsync(new DoActivityFinalized());
         }
     }
 }

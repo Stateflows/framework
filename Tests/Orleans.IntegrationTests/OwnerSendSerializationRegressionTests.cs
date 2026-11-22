@@ -65,11 +65,10 @@ public sealed class OwnerSendSerializationRegressionTests
     {
         var received = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var logs = new FailureLogs();
-        using var host = CreateHost<RuntimeFailure>(context =>
+        using var host = CreateHost<RuntimeFailure>(async context =>
         {
             Assert.IsTrue(context.TryGetOwnerBehaviorContext(out var owner));
-            owner.Send(new RuntimeFailure());
-            return Task.CompletedTask;
+            await owner.DispatchAsync(new RuntimeFailure());
         }, _ => received.TrySetResult(), logs);
         await host.StartAsync().WaitAsync(Deadline);
         try
@@ -106,11 +105,10 @@ public sealed class OwnerSendSerializationRegressionTests
     private static async Task<T> SendFromEffectAsync<T>(Func<T> createEvent)
     {
         var received = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var host = CreateHost<T>(context =>
+        using var host = CreateHost<T>(async context =>
         {
             Assert.IsTrue(context.TryGetOwnerBehaviorContext(out var owner));
-            owner.Send(createEvent());
-            return Task.CompletedTask;
+            await owner.DispatchAsync(createEvent());
         }, payload => received.TrySetResult(payload));
         await host.StartAsync().WaitAsync(Deadline);
         try

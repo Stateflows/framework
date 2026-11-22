@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
@@ -37,25 +34,17 @@ namespace Stateflows.Common.Tenant
         public async Task ExecuteByTenantAsync(string tenantId, Func<Task> tenantAction)
         {
             TenantAccessor.CurrentTenantId = tenantId;
-
-            if (Interceptor.BeforeExecute(tenantId))
+            try
             {
-                try
-                {
-                    try
-                    {
-                        await tenantAction();
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(TenantExecutor).FullName, nameof(ExecuteByTenantsAsync), e);
-                    }
-                }
-                finally
-                {
-                    Interceptor.AfterExecute(tenantId);
-                    TenantAccessor.CurrentTenantId = null;
-                }
+                await Interceptor.ExecuteAsync(tenantId, tenantAction);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(TenantExecutor).FullName, nameof(ExecuteByTenantAsync), e);
+            }
+            finally
+            {
+                TenantAccessor.CurrentTenantId = null;
             }
         }
     }

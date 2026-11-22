@@ -29,7 +29,7 @@ internal class CompletionNotification : ActionInterceptor
                     context.TryGetParentBehaviorContext(out var parentBehaviorContext)
                 )
                 {
-                    parentBehaviorContext.Send(new Completion());
+                    await parentBehaviorContext.DispatchAsync(new Completion());
                 }
             }
         }

@@ -22,7 +22,7 @@ namespace Stateflows.Actions
             var stateflowsContext = ((BaseContext)context).Context;
             if (stateflowsContext.Stored)
             {
-                context.Behavior.Send(new Reset() { Mode = resetMode });
+                await context.Behavior.DispatchAsync(new Reset() { Mode = resetMode });
             }
             else
             {

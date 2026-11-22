@@ -123,6 +123,8 @@ public class BehaviorOperationObservation : StateflowsTestClass
             => value is EventHolder holder && Equals(holder.BoxedPayload, "target-failure")
                 ? Task.FromException<SendResult>(new InvalidOperationException("target failed"))
                 : Task.FromResult(new SendResult(EventStatus.Consumed, new EventValidation(true)));
+        public Task<SendResult> DispatchAsync<T>(T value, IDictionary<string, EventHeader>? headers = null)
+            => Task.FromResult(new SendResult(EventStatus.Dispatched, new EventValidation(true)));
         public Task<RequestResult<T>> RequestAsync<T>(IRequest<T> request, IDictionary<string, EventHeader>? headers = null)
         {
             object? value = request switch
@@ -177,7 +179,7 @@ public class BehaviorOperationObservation : StateflowsTestClass
                 await located.SendAsync("located");
                 await located.GetStatusAsync();
             }
-            context.Behavior.Send("fire-and-forget");
+            await context.Behavior.DispatchAsync("fire-and-forget");
         }));
         builder.AddActions(actions => actions.AddAction("recipient", _ => Task.CompletedTask));
         builder.AddActions(actions => actions
@@ -225,7 +227,7 @@ public class BehaviorOperationObservation : StateflowsTestClass
                 Assert.IsTrue(context.TryLocateBehavior(target, out var behavior));
                 var delayed = behavior.SendAsync("delayed");
                 await log.SendBlocked.Task.WaitAsync(TimeSpan.FromSeconds(10));
-                context.Behavior.Send("fire-and-forget");
+                await context.Behavior.DispatchAsync("fire-and-forget");
                 await delayed;
             }));
     }

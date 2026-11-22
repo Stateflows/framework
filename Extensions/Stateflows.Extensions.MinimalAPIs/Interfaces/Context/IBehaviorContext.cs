@@ -3,7 +3,7 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Extensions.MinimalAPIs.Interfaces
 {
-    /// <summary>Provides behavior identity, messaging, subscriptions, Entity access, and dependency injection in a custom endpoint.</summary>
+    /// <summary>Provides behavior identity, event dispatch, subscriptions, Entity access, and dependency injection in a custom endpoint.</summary>
     public interface IBehaviorContext :
         ISends<IBehaviorContext>,
         ISubscriptions<IBehaviorContext>,

@@ -23,7 +23,7 @@ internal class CompletionNotification : ActivityInterceptor
                 parentBehaviorContext.Id.Type == BehaviorType.StateMachine
             )
             {
-                parentBehaviorContext.Send(new Completion());
+                await parentBehaviorContext.DispatchAsync(new Completion());
             // }
             // var stateflowsContext = ((IRootContext)context).Context.Context;
             // if (

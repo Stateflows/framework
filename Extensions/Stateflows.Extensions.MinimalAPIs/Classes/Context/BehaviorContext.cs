@@ -8,12 +8,12 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 /// <summary>
 /// Endpoint-side view of a behavior. It never hydrates nor persists behavior state;
-/// every operation is a message sent to the behavior (or its entity).
+/// every operation is a message dispatched to the behavior (or its entity).
 /// </summary>
 public class BehaviorContext : IBehaviorContext
 {
     private readonly IBehaviorLocator locator;
-    private readonly List<Task> pendingSends = new();
+    private readonly List<Task> pendingDispatches = new();
 
     internal BehaviorContext(BehaviorId id, IBehaviorLocator locator, IServiceProvider serviceProvider)
     {
@@ -32,29 +32,33 @@ public class BehaviorContext : IBehaviorContext
     /// <inheritdoc/>
     public IServiceProvider ServiceProvider { get; }
 
-    /// <summary>Queues a message to the addressed behavior for completion by the endpoint filter.</summary>
+    /// <summary>Dispatches a message to the addressed behavior and tracks interceptor completion for the endpoint filter.</summary>
     /// <typeparam name="TEvent">Event payload type.</typeparam>
-    /// <param name="event">Event to send.</param>
+    /// <param name="event">Event to dispatch.</param>
     /// <param name="headers">Optional delivery headers.</param>
     /// <remarks>No message is sent if the behavior locator cannot resolve the address.</remarks>
-    public void Send<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
+    public Task<SendResult> DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
     {
         if (locator.TryLocateBehavior(Id, out var behavior))
         {
-            lock (pendingSends)
+            var dispatch = behavior.DispatchAsync(@event, headers);
+            lock (pendingDispatches)
             {
-                pendingSends.Add(behavior.SendAsync(@event, headers));
+                pendingDispatches.Add(dispatch);
             }
+            return dispatch;
         }
+
+        return Task.FromResult(new SendResult(EventStatus.Undelivered, new EventValidation(true)));
     }
 
-    internal async Task CompletePendingSendsAsync()
+    internal async Task CompletePendingDispatchesAsync()
     {
         Task[] tasks;
-        lock (pendingSends)
+        lock (pendingDispatches)
         {
-            tasks = pendingSends.ToArray();
-            pendingSends.Clear();
+            tasks = pendingDispatches.ToArray();
+            pendingDispatches.Clear();
         }
 
         await Task.WhenAll(tasks);

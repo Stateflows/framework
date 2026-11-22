@@ -84,6 +84,9 @@ public sealed class BehaviorFactoryTests
         public Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => throw new NotSupportedException();
 
+        public Task<SendResult> DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
+            => throw new NotSupportedException();
+
         public Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(
             IRequest<TResponseEvent> request,
             IDictionary<string, EventHeader>? headers = null)

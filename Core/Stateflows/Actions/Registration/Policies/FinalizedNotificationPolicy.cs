@@ -19,7 +19,7 @@ internal class FinalizedNotification : ActionObserver
             context.TryGetParentBehaviorContext(out var parentBehaviorContext)
         )
         {
-            parentBehaviorContext.Send(new DoActionFinalized());
+            await parentBehaviorContext.DispatchAsync(new DoActionFinalized());
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace Stateflows.Common;
 
 /// <summary>Internal dispatch bridge used by framework-provided behavior handles.</summary>
-public interface IBehaviorDispatchObserver
+internal interface IBehaviorDispatchObserver
 {
     /// <summary>Routes an awaited send through the active behavior observation scope, if any.</summary>
     /// <param name="targetBehaviorId">The intended recipient instance.</param>

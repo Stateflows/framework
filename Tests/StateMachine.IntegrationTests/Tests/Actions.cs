@@ -27,7 +27,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (ProcessId == 42)
             {
-                BehaviorContext.Send(new SomeEvent());
+                return BehaviorContext.DispatchAsync(new SomeEvent());
             }
             
             return Task.CompletedTask;
@@ -111,7 +111,7 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddOnEntryAction(async c =>
                             {
                                 if (c.TryGetParentBehaviorContext(out var parentBehaviorContext))
-                                    parentBehaviorContext.Send(new SomeEvent());
+                                    await parentBehaviorContext.DispatchAsync(new SomeEvent());
                             })
                             .AddTransition<SomeEvent>("final")
                         )

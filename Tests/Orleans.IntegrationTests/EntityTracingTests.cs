@@ -387,15 +387,14 @@ public sealed class EntityTracingTests
 
     public sealed class RestoreRemoteParentInterceptor : IStateflowsClientInterceptor
     {
-        public bool BeforeDispatchEvent(EventHolder eventHolder)
+        public async Task DispatchEventAsync<TEvent>(BehaviorId targetBehaviorId, TEvent @event,
+            IDictionary<string, EventHeader> headers, Func<Task> next)
         {
             // Simulate a transport-supplied context after the standard client interceptor propagates ambient context.
-            if (eventHolder.Headers.Remove("EntityTracingRemoteParent", out var remote))
-                eventHolder.Headers[nameof(ActivityHeader)] = remote;
-            return true;
+            if (headers.Remove("EntityTracingRemoteParent", out var remote))
+                headers[nameof(ActivityHeader)] = remote;
+            await next();
         }
-
-        public void AfterDispatchEvent(EventHolder eventHolder) { }
     }
 
     private sealed class TracerLogs : ILoggerProvider

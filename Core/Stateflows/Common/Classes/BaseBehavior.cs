@@ -114,6 +114,24 @@ namespace Stateflows.Common.Classes
             }
         }
 
+        public Task<SendResult> DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
+        {
+            _ = ObserveDispatchAsync(SendAsync(@event, headers));
+            return Task.FromResult(new SendResult(EventStatus.Dispatched, new EventValidation(true)));
+        }
+
+        private async Task ObserveDispatchAsync(Task<SendResult> dispatch)
+        {
+            try
+            {
+                await dispatch;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Dispatch processing failed for {BehaviorId}.", Id);
+            }
+        }
+
         [DebuggerHidden]
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader> headers = null)
         {

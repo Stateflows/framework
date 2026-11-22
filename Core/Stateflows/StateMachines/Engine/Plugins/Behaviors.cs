@@ -42,7 +42,7 @@ namespace Stateflows.StateMachines.Engine
 
                             if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
                             {
-                                parentBehaviorContext.Send(context.Event, headers);
+                                await parentBehaviorContext.DispatchAsync(context.Event, headers);
                             };
                         }
                     }

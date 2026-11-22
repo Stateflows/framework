@@ -1,14 +1,19 @@
-﻿namespace Stateflows.Common
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace Stateflows.Common
 {
-    /// <summary>Intercepts event dispatch initiated by a Stateflows client.</summary>
+    /// <summary>Wraps event dispatch initiated by a Stateflows client.</summary>
     public interface IStateflowsClientInterceptor
     {
-        /// <summary>Runs before an event is dispatched to its target behavior.</summary>
-        /// <param name="eventHolder">The event envelope being dispatched.</param>
-        /// <returns><see langword="true"/> to continue dispatch; <see langword="false"/> to cancel it.</returns>
-        bool BeforeDispatchEvent(EventHolder eventHolder);
-        /// <summary>Runs after an event dispatch attempt completes.</summary>
-        /// <param name="eventHolder">The event envelope that was dispatched.</param>
-        void AfterDispatchEvent(EventHolder eventHolder);
+        /// <summary>Wraps dispatch of an event to its target behavior.</summary>
+        /// <typeparam name="TEvent">The event payload type.</typeparam>
+        /// <param name="targetBehaviorId">The intended recipient behavior.</param>
+        /// <param name="event">The event payload.</param>
+        /// <param name="headers">The event's mutable delivery headers.</param>
+        /// <param name="next">Starts the remaining interceptors and dispatch, then completes without waiting for processing to finish; await it at most once to continue.</param>
+        Task DispatchEventAsync<TEvent>(BehaviorId targetBehaviorId, TEvent @event,
+            IDictionary<string, EventHeader> headers, Func<Task> next);
     }
 }

@@ -210,6 +210,33 @@ public class GrainBehavior :
         }
     }
 
+    public async Task<SendResult> DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null)
+    {
+        var eventHolder = @event.ToTypedEventHolder(headers);
+        var observer = BehaviorDispatchAmbient.Current;
+        return observer == null ? await DispatchCoreAsync() : await observer.SendAsync(Id, eventHolder, DispatchCoreAsync);
+
+        Task<SendResult> DispatchCoreAsync()
+        {
+            OrleansEventHolder envelope = eventHolder;
+            envelope.IsRequest = false;
+            _ = ObserveDispatchAsync(ProcessAsync(envelope, envelope.Headers.ContainsKey(nameof(Stateflows.Common.Stream))));
+            return Task.FromResult(new SendResult(EventStatus.Dispatched, new EventValidation(true)));
+        }
+    }
+
+    private async Task ObserveDispatchAsync(Task dispatch)
+    {
+        try
+        {
+            await dispatch;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Dispatch processing failed for {BehaviorId}.", Id);
+        }
+    }
+
     public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IDictionary<string, EventHeader>? headers = null)
     {
         var eventHolder = request.ToTypedEventHolder(headers);

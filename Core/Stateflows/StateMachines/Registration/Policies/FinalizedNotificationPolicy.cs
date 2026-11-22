@@ -12,7 +12,7 @@ internal class FinalizedNotification : StateMachineObserver
         var stateflowsContext = ((IRootContext)context).Context.Context;
         if (stateflowsContext.ContextParentId != null)
         {
-            context.Behavior.Send(new SubmachineFinalized());
+            await context.Behavior.DispatchAsync(new SubmachineFinalized());
         }
     }
 }

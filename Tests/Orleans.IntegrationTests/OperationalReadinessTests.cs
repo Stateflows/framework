@@ -612,7 +612,7 @@ public sealed class OperationalReadinessTests
                                 }));
                                 e.AddPost("/go", (IStateEndpointContext context) =>
                                 {
-                                    context.Behavior.Send(new Work());
+                                    context.Behavior.DispatchAsync(new Work());
                                     return Results.Accepted();
                                 });
                             }))

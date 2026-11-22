@@ -20,7 +20,7 @@ internal class ResetObserver : StateMachineObserver
         var stateflowsContext = (context as IRootContext).Context.Context;
         if (stateflowsContext.Stored)
         {
-            context.Behavior.Send(new Reset() { Mode = resetMode });
+            await context.Behavior.DispatchAsync(new Reset() { Mode = resetMode });
         }
         else
         {

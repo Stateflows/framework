@@ -54,9 +54,6 @@ namespace Stateflows.StateMachines.Context.Classes
             return false;
         }
 
-        // public void Send<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
-        //     => _ = Context.SendAsync(@event, headers);
-        //
         // private void Publish<TNotification>(BehaviorId behaviorId, TNotification notification, IDictionary<string, EventHeader> headers = null)
         // {
         //     Subscriber.PublishAsync(behaviorId, notification, Context.Context, headers).GetAwaiter().GetResult();
@@ -170,24 +167,27 @@ namespace Stateflows.StateMachines.Context.Classes
         Task ISubscriptions<IOwnerBehaviorContext>.UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             => UnsubscribeAsync<TNotification>(Context.Context.ContextOwnerId!.Value, behaviorId);
 
-        private void Send<TEvent>(BehaviorId behaviorId, TEvent @event, IDictionary<string, EventHeader>? headers = null)
+        private Task<SendResult> DispatchAsync<TEvent>(BehaviorId behaviorId, TEvent @event, IDictionary<string, EventHeader>? headers = null)
         {
             var envelope = @event.ToTypedEventHolder(headers);
+            Task<SendResult>? dispatch = null;
             BehaviorObservation.Dispatch(behaviorId, envelope, observation =>
             {
                 observation.Dispatched = TryLocateBehavior(behaviorId, out var behavior);
                 if (observation.Dispatched == true)
-                    _ = SendOperations.SendAsync(behavior, envelope);
+                    dispatch = behavior.DispatchAsync(envelope);
             });
+
+            return dispatch ?? Task.FromResult(new SendResult(EventStatus.Undelivered, new EventValidation(true)));
         }
 
-        void ISends<IBehaviorContext>.Send<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers)
-            => Send<TEvent>(Id, @event, headers);
+        Task<SendResult> ISends<IBehaviorContext>.DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers)
+            => DispatchAsync<TEvent>(Id, @event, headers);
 
-        void ISends<IParentBehaviorContext>.Send<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers)
-            => Send<TEvent>(Context.Context.ContextParentId!.Value, @event, headers);
+        Task<SendResult> ISends<IParentBehaviorContext>.DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers)
+            => DispatchAsync<TEvent>(Context.Context.ContextParentId!.Value, @event, headers);
 
-        void ISends<IOwnerBehaviorContext>.Send<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers)
-            => Send<TEvent>(Context.Context.ContextOwnerId!.Value, @event, headers);
+        Task<SendResult> ISends<IOwnerBehaviorContext>.DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers)
+            => DispatchAsync<TEvent>(Context.Context.ContextOwnerId!.Value, @event, headers);
     }
 }

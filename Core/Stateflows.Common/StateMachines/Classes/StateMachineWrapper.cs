@@ -25,6 +25,10 @@ namespace Stateflows.Common.StateMachines.Classes
             => Behavior.SendAsync(@event, headers);
 
         [DebuggerHidden]
+        public Task<SendResult> DispatchAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
+            => Behavior.DispatchAsync(@event, headers);
+
+        [DebuggerHidden]
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader> headers = null)
             => Behavior.RequestAsync(request, headers);
 
