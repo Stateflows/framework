@@ -154,15 +154,15 @@ reference them. Names are resolved against the host's event registry during beha
 registration; missing names produce `JSON-003` diagnostics at the `eventName` reference.
 Documents cannot implicitly declare events by referring to them.
 
-State-machine event/internal transitions accept either a CLR alias or a structural name
-in each trigger reference, never both:
+State-machine event/internal transitions accept exactly one CLR alias, or one or more
+structural event names. CLR and structural references cannot be mixed:
 
 ```json
 {
   "kind": "event",
   "triggers": [
     { "eventName": "orderSubmitted" },
-    { "clrType": "events.cancelOrder" }
+    { "eventName": "orderCancelled" }
   ],
   "target": "processed",
   "guard": { "clrType": "handlers.orderGuard" },
@@ -170,22 +170,16 @@ in each trigger reference, never both:
 }
 ```
 
-Existing `clrType` formats are unchanged. A mixed list retains every declared trigger:
-the CLR subset keeps its multi-trigger edge and each structural name receives a separate
-name-routed edge with the same target, guards, effects, metadata and else/local settings.
-Structural events with other names do not match these named edges. Duplicate named
-triggers, mixing Completion with named triggers, or combining a CLR `StructuralEvent` /
-`StructuralRequest` wildcard with named triggers are rejected.
-An `else` transition containing a structural reference must declare exactly one trigger:
-the core allows only one else edge per vertex. Mixed/multiple named else triggers fail
-binding rather than silently dropping triggers.
+Every declaration constructs one transition, including a collection of structural names.
+Other structural names do not match it. Multiple CLR references, mixed CLR/structural
+references, and duplicate structural names are rejected. An else transition may contain
+multiple structural names while remaining one fallback edge.
 
 Guards/effects for named triggers implement `ITransitionGuard<StructuralEvent>` /
-`ITransitionEffect<StructuralEvent>`. In a mixed list the handler must also satisfy the
-existing CLR trigger contracts; the loader checks the full list before constructing any
-edges. Transition definitions must expose one contract covering the complete trigger set,
-as before, and are applied to each expanded edge. Named transition visitors receive the
-registered `EventDefinition`, not a CLR wildcard. This named JSON syntax applies to
+`ITransitionEffect<StructuralEvent>`. Transition definitions must expose one contract
+covering the complete trigger set. Visitors receive the declared CLR type and all effective
+event names; structural schema details can be resolved through the event registry.
+This named JSON syntax applies to
 transitions only: initializer and deferral trigger declarations still use `clrType`.
 
 Activity accept-event nodes use exactly one of `eventType` (the existing CLR alias) or
@@ -378,7 +372,7 @@ and `history`.
   There is no separate initial pseudostate. A root needs an initial state, supplied by JSON or a definition.
 - A composite accepts a single `region`; an orthogonal state accepts ordered `regions`.
   Regions contain `vertices`, optional `initial`, and optional `history`.
-- A region's `history` selects a directly contained history vertex; omission preserves first-declared selection.
+- Every history vertex in a region restores that region's remembered configuration.
   Multiple history vertices and final states are supported.
 - Regions do not own handlers or hosted behaviors.
 - Regional states additionally accept `onInitialize` and `onFinalize`.
@@ -397,8 +391,7 @@ Completion-triggered internal transitions require a guard.
 {
   "kind": "event",
   "triggers": [
-    { "clrType": "events.paymentReceived" },
-    { "clrType": "events.paymentConfirmed" }
+    { "clrType": "events.paymentUnion" }
   ],
   "target": "paid",
   "guard": {
@@ -418,8 +411,9 @@ Completion-triggered internal transitions require a guard.
 ```
 
 A trigger list defines one logical transition, not multiple independently ordered transitions.
-The host's type mappers are honored, including OneOf when `AddOneOf()` is registered before loading.
-Duplicate or overlapping mapped types inside one trigger list are rejected.
+A CLR trigger list contains exactly one alias. Its CLR type can be a OneOf or C# union
+mapped to several event names by the host; register the corresponding extension before loading.
+All other CLR types produce one event name. JSON does not describe heterogeneous CLR unions itself.
 CLR handlers must support every mapped trigger, either through compatible event interfaces or a
 declared union interface. A transition definition needs one definition contract covering the whole set.
 Language-specific union syntax is not part of the JSON format.
@@ -429,7 +423,8 @@ Otherwise declaration order determines evaluation order. `all` / `any` are order
 short-circuiting guard groups.
 
 Deferrals are ordered declarations containing `triggers` and an optional `guard`.
-Multiple triggers share one guard expression; omitting it means unconditional deferral.
+One declared CLR type (possibly a mapped union) owns one guard expression shared by its
+effective event names; omitting it means unconditional deferral.
 Forbidden deferred event types and conflicts with outgoing transitions use existing graph validation.
 
 ## Behavior-class handlers and hosted behaviors

@@ -10,9 +10,13 @@ namespace Stateflows.StateMachines
         public static async Task<bool> IterateOverAsync(this Logic<StateMachinePredicateAsync> action, RootContext context)
         {
             var hit = true;
-            foreach (var handler in action.Actions)
+            for (var index = 0; index < action.Actions.Count; index++)
             {
-                if (!await handler(context))
+                var handler = action.Actions[index];
+                var result = action.Registrations.TryGetValue(index, out var registration)
+                    ? await registration.ObserveAsync(context, () => handler(context))
+                    : await handler(context);
+                if (!result)
                 {
                     hit = false;
                     break;

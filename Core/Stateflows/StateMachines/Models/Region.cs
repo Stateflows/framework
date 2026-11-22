@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Stateflows.StateMachines.Models
 {
@@ -8,37 +9,24 @@ namespace Stateflows.StateMachines.Models
 
         public Graph Graph { get; set; }
         public Vertex ParentVertex { get; set; }
+        public string Identifier => $"region:{ParentVertex.Identifier.Length}:{ParentVertex.Identifier}:{ParentVertex.Regions.IndexOf(this)}";
         public string OriginStateMachineName { get; set; } = null;
         public string InitialVertexName { get; set; }
         public Vertex InitialVertex { get; set; }
-        public Vertex History { get; set; }
         public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();
 
-        private bool? isHistoryEnabled = null;
         public bool IsHistoryEnabled
         {
             get
             {
-                if (isHistoryEnabled == null)
+                for (var region = this; region != null; region = region.ParentVertex?.ParentRegion)
                 {
-                    var currentVertex = this;
-                    while (currentVertex != null)
-                    {
-                        if (currentVertex.History != null)
-                        {
-                            isHistoryEnabled = true;
-                        }
-
-                        currentVertex = currentVertex?.ParentVertex?.ParentRegion;
-                    }
-
-                    isHistoryEnabled = false;
+                    if (region.HasHistory) return true;
                 }
-
-                return isHistoryEnabled.Value;
+                return false;
             }
         }
         
-        public bool HasHistory => History != null;
+        public bool HasHistory => Vertices.Values.Any(vertex => vertex.Type == VertexType.History);
     }
 }

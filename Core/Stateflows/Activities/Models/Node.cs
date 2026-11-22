@@ -15,6 +15,9 @@ namespace Stateflows.Activities.Models
     internal class Node : Element
     {
         public override string Identifier { get; set; }
+        internal string DefinitionIdentifier => this is Graph ? Identifier : $"node/{EncodeDefinitionComponent(Identifier)}";
+        internal static string EncodeDefinitionComponent(string value)
+            => string.Concat(value.Select(character => ((int)character).ToString("X4")));
         public int Level { get; set; }
         public Graph Graph { get; set; }
         public Node Parent { get; set; }
@@ -41,6 +44,7 @@ namespace Stateflows.Activities.Models
 
         public Type EventType { get; set; }
         public string StructuralEventName { get; set; }
+        internal string[] EffectiveEventNames { get; set; } = [];
 
         public IEnumerable<Type> ActualEventTypes { get; set; }
 
@@ -49,7 +53,10 @@ namespace Stateflows.Activities.Models
         internal int MaxConcurrency { get; set; } = -1;
         public bool Anchored { get; set; } = true;
 
-        internal Func<IActivityVisitor, Task>? VisitingTask { get; set; } = null;
+        internal Type ImplementationType { get; set; }
+        internal Type ImplementationEventType { get; set; }
+        internal Dictionary<(ActivityOperationKind Kind, int Order), Type> OperationTypes { get; } = [];
+        internal HashSet<int> ObservedActionBodies { get; } = [];
         
         public System.Action<object>? ConfigurationAction { get; set; } = null;
 
@@ -81,6 +88,8 @@ namespace Stateflows.Activities.Models
         public void ScanForDeclaredTypes(Type nodeType)
         {
             DeclaredTypesSet = true;
+            ImplementationType = nodeType;
+            OperationTypes[(ActivityOperationKind.Execute, Action.Actions.Count)] = nodeType;
 
             var constructors = nodeType.GetConstructors();
 

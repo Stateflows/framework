@@ -21,10 +21,12 @@ public class StructuralOverrides : StateflowsTestClass
     {
         public readonly List<string> Events = [];
 
-        public override Task TransitionAddedAsync(EventDefinition definition, string stateMachineName,
-            int stateMachineVersion, string sourceVertexName, string? targetVertexName = null, bool isElse = false)
+        public override Task TransitionAddedAsync<TEvent>(string id, string stateMachineName,
+            int stateMachineVersion, string sourceVertexName, string? targetVertexName, bool isElse, bool isLocal,
+            bool polymorphic, IReadOnlyList<string> triggerNames)
         {
-            Events.Add(definition.Name);
+            Assert.AreEqual(typeof(StructuralEvent), typeof(TEvent));
+            Events.AddRange(triggerNames);
             return Task.CompletedTask;
         }
     }

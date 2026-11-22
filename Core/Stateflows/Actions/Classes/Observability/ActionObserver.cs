@@ -8,10 +8,10 @@ namespace Stateflows.Actions;
 public abstract class ActionObserver : IActionObserver
 {
     /// <inheritdoc/>
-    public virtual Task OnActionInitializeAsync(IActionDelegateContext context, Func<Task> next)
+    public virtual Task OnActionInitializeAsync(IActionDelegateContext actionContext, Func<Task> next)
         => next();
 
     /// <inheritdoc/>
-    public virtual Task OnActionFinalizeAsync(IActionDelegateContext context, Func<Task> next)
+    public virtual Task OnActionFinalizeAsync(IActionDelegateContext actionContext, Func<Task> next)
         => next();
 }

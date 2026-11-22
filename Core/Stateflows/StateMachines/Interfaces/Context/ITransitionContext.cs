@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Stateflows.StateMachines
 {
@@ -6,6 +7,13 @@ namespace Stateflows.StateMachines
     /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition">transition semantics</see>.</remarks>
     public interface ITransitionContext
     {
+        /// <summary>The stable identity of the registered transition segment being observed.</summary>
+        string Identifier { get; }
+        /// <summary>Registered transition identities in the selected route, in execution order.</summary>
+        IReadOnlyList<string> RouteTransitionIds { get; }
+        /// <summary>The zero-based position of this segment in the route.</summary>
+        int RouteIndex { get; }
+
         /// <summary>The state from which the transition originates.</summary>
         IStateContext Source { get; }
 

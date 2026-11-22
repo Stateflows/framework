@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using Stateflows.Activities.Models;
 using System.Threading.Tasks;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
@@ -28,9 +29,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.2.-Flows" />
         IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation(async c =>
+            => RegistrationMetadata.Transformation(() => AddTransformation(async c =>
                 await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TTransformation, TToken>(c)).TransformAsync(c.Token)
-            );
+            ), typeof(TTransformation));
     }
 
     /// <summary>Configures a weighted typed object flow and its guard or transformation.</summary>
@@ -55,9 +56,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.2.-Flows" />
         IObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation(async c
+            => RegistrationMetadata.Transformation(() => AddTransformation(async c
                 => await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TTransformation, TToken>(c)).TransformAsync(c.Token)
-            );
+            ), typeof(TTransformation));
     }
 
     /// <summary>Configures a weighted fallback object flow, including optional transformation.</summary>
@@ -81,9 +82,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.2.-Flows" />
         IElseObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation(async c
+            => RegistrationMetadata.Transformation(() => AddTransformation(async c
                 => await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TTransformation, TToken>(c)).TransformAsync(c.Token)
-            );
+            ), typeof(TTransformation));
     }
 
     /// <summary>Configures a fallback object flow, including its weight and optional transformation.</summary>
@@ -108,9 +109,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.2.-Flows" />
         IElseObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation(async c
+            => RegistrationMetadata.Transformation(() => AddTransformation(async c
                 => await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TTransformation, TToken>(c)).TransformAsync(c.Token)
-            );
+            ), typeof(TTransformation));
     }
 
     /// <summary>Configures guards for a typed object flow.</summary>
@@ -135,9 +136,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.2.-Flows" />
         TReturn AddGuard<TGuard>()
             where TGuard : class, IFlowGuard<TToken>
-            => AddGuard(async c
+            => RegistrationMetadata.Guard(() => AddGuard(async c
                 => await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TGuard, TToken>(c)).GuardAsync(c.Token)
-            );
+            ), ActivityGuardKind.Leaf, typeof(TGuard));
 
         /// <summary>Adds two guard types combined with logical AND.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IFlowGuard&lt;TToken&gt;" />; return true to
@@ -161,14 +162,14 @@ namespace Stateflows.Activities.Registration.Interfaces
         TReturn AddAndGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IFlowGuard<TToken>
             where TGuard2 : class, IFlowGuard<TToken>
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
                 var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
 
-                return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token);
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync(c.Token));
+            }), ActivityGuardKind.And, typeof(TGuard1), typeof(TGuard2));
 
         /// <summary>Adds three guard types combined with logical AND.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IFlowGuard&lt;TToken&gt;" />; return true to
@@ -198,15 +199,15 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard1 : class, IFlowGuard<TToken>
             where TGuard2 : class, IFlowGuard<TToken>
             where TGuard3 : class, IFlowGuard<TToken>
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
                 var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
                 var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
 
-                return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token) && await guard3.GuardAsync(c.Token);
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync(c.Token));
+            }), ActivityGuardKind.And, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3));
 
         /// <summary>Adds four guard types combined with logical AND.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IFlowGuard&lt;TToken&gt;" />; return true to
@@ -242,7 +243,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard2 : class, IFlowGuard<TToken>
             where TGuard3 : class, IFlowGuard<TToken>
             where TGuard4 : class, IFlowGuard<TToken>
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
@@ -250,8 +251,8 @@ namespace Stateflows.Activities.Registration.Interfaces
                 var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
                 var guard4 = await executor.NodeScope.GetObjectFlowAsync<TGuard4, TToken>(c);
 
-                return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token) && await guard3.GuardAsync(c.Token) && await guard4.GuardAsync(c.Token);
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 3, () => guard4.GuardAsync(c.Token));
+            }), ActivityGuardKind.And, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3), typeof(TGuard4));
 
         /// <summary>Adds five guard types combined with logical AND.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IFlowGuard&lt;TToken&gt;" />; return true to
@@ -293,7 +294,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard3 : class, IFlowGuard<TToken>
             where TGuard4 : class, IFlowGuard<TToken>
             where TGuard5 : class, IFlowGuard<TToken>
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
@@ -302,8 +303,8 @@ namespace Stateflows.Activities.Registration.Interfaces
                 var guard4 = await executor.NodeScope.GetObjectFlowAsync<TGuard4, TToken>(c);
                 var guard5 = await executor.NodeScope.GetObjectFlowAsync<TGuard5, TToken>(c);
 
-                return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token) && await guard3.GuardAsync(c.Token) && await guard4.GuardAsync(c.Token) && await guard5.GuardAsync(c.Token);
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 3, () => guard4.GuardAsync(c.Token)) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 4, () => guard5.GuardAsync(c.Token));
+            }), ActivityGuardKind.And, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3), typeof(TGuard4), typeof(TGuard5));
 
         /// <summary>Adds two guard types combined with logical OR.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IFlowGuard&lt;TToken&gt;" />; return true to
@@ -315,14 +316,14 @@ namespace Stateflows.Activities.Registration.Interfaces
         TReturn AddOrGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IFlowGuard<TToken>
             where TGuard2 : class, IFlowGuard<TToken>
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
                 var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
 
-                return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token);
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync(c.Token));
+            }), ActivityGuardKind.Or, typeof(TGuard1), typeof(TGuard2));
 
         /// <summary>Adds three guard types combined with logical OR.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IFlowGuard&lt;TToken&gt;" />; return true to
@@ -337,15 +338,15 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard1 : class, IFlowGuard<TToken>
             where TGuard2 : class, IFlowGuard<TToken>
             where TGuard3 : class, IFlowGuard<TToken>
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
                 var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
                 var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
 
-                return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token) || await guard3.GuardAsync(c.Token);
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync(c.Token));
+            }), ActivityGuardKind.Or, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3));
 
         /// <summary>Adds four guard types combined with logical OR.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IFlowGuard&lt;TToken&gt;" />; return true to
@@ -363,7 +364,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard2 : class, IFlowGuard<TToken>
             where TGuard3 : class, IFlowGuard<TToken>
             where TGuard4 : class, IFlowGuard<TToken>
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
@@ -371,8 +372,8 @@ namespace Stateflows.Activities.Registration.Interfaces
                 var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
                 var guard4 = await executor.NodeScope.GetObjectFlowAsync<TGuard4, TToken>(c);
 
-                return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token) || await guard3.GuardAsync(c.Token) || await guard4.GuardAsync(c.Token);
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 3, () => guard4.GuardAsync(c.Token));
+            }), ActivityGuardKind.Or, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3), typeof(TGuard4));
 
         /// <summary>Adds five guard types combined with logical OR.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IFlowGuard&lt;TToken&gt;" />; return true to
@@ -393,7 +394,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard3 : class, IFlowGuard<TToken>
             where TGuard4 : class, IFlowGuard<TToken>
             where TGuard5 : class, IFlowGuard<TToken>
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
@@ -402,8 +403,8 @@ namespace Stateflows.Activities.Registration.Interfaces
                 var guard4 = await executor.NodeScope.GetObjectFlowAsync<TGuard4, TToken>(c);
                 var guard5 = await executor.NodeScope.GetObjectFlowAsync<TGuard5, TToken>(c);
 
-                return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token) || await guard3.GuardAsync(c.Token) || await guard4.GuardAsync(c.Token) || await guard5.GuardAsync(c.Token);
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 3, () => guard4.GuardAsync(c.Token)) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 4, () => guard5.GuardAsync(c.Token));
+            }), ActivityGuardKind.Or, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3), typeof(TGuard4), typeof(TGuard5));
     }
 
     /// <summary>Configures guard predicates on a control flow.</summary>
@@ -426,7 +427,7 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.2.-Flows" />
         TReturn AddGuard<TGuard>()
             where TGuard : class, IControlFlowGuard
-            => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.NodeScope.GetControlFlowAsync<TGuard>(c)).GuardAsync());
+            => RegistrationMetadata.Guard(() => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.NodeScope.GetControlFlowAsync<TGuard>(c)).GuardAsync()), ActivityGuardKind.Leaf, typeof(TGuard));
 
         /// <summary>Adds two guard types combined with logical AND.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IControlFlowGuard" />; return true to permit
@@ -450,14 +451,14 @@ namespace Stateflows.Activities.Registration.Interfaces
         TReturn AddAndGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IControlFlowGuard
             where TGuard2 : class, IControlFlowGuard
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
                 var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
 
-                return await guard1.GuardAsync() && await guard2.GuardAsync();
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync());
+            }), ActivityGuardKind.And, typeof(TGuard1), typeof(TGuard2));
 
         /// <summary>Adds three guard types combined with logical AND.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IControlFlowGuard" />; return true to permit
@@ -487,15 +488,15 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard1 : class, IControlFlowGuard
             where TGuard2 : class, IControlFlowGuard
             where TGuard3 : class, IControlFlowGuard
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
                 var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
                 var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
 
-                return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync();
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync());
+            }), ActivityGuardKind.And, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3));
 
         /// <summary>Adds four guard types combined with logical AND.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IControlFlowGuard" />; return true to permit
@@ -531,7 +532,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard2 : class, IControlFlowGuard
             where TGuard3 : class, IControlFlowGuard
             where TGuard4 : class, IControlFlowGuard
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
@@ -539,8 +540,8 @@ namespace Stateflows.Activities.Registration.Interfaces
                 var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
                 var guard4 = await executor.NodeScope.GetControlFlowAsync<TGuard4>(c);
 
-                return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync() && await guard4.GuardAsync();
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 3, () => guard4.GuardAsync());
+            }), ActivityGuardKind.And, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3), typeof(TGuard4));
 
         /// <summary>Adds five guard types combined with logical AND.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IControlFlowGuard" />; return true to permit
@@ -582,7 +583,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard3 : class, IControlFlowGuard
             where TGuard4 : class, IControlFlowGuard
             where TGuard5 : class, IControlFlowGuard
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
@@ -591,8 +592,8 @@ namespace Stateflows.Activities.Registration.Interfaces
                 var guard4 = await executor.NodeScope.GetControlFlowAsync<TGuard4>(c);
                 var guard5 = await executor.NodeScope.GetControlFlowAsync<TGuard5>(c);
 
-                return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync() && await guard4.GuardAsync() && await guard5.GuardAsync();
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 3, () => guard4.GuardAsync()) && await RegistrationMetadata.ObserveGuardLeafAsync(c, 4, () => guard5.GuardAsync());
+            }), ActivityGuardKind.And, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3), typeof(TGuard4), typeof(TGuard5));
 
         /// <summary>Adds two guard types combined with logical OR.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IControlFlowGuard" />; return true to permit
@@ -604,14 +605,14 @@ namespace Stateflows.Activities.Registration.Interfaces
         TReturn AddOrGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IControlFlowGuard
             where TGuard2 : class, IControlFlowGuard
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
                 var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
 
-                return await guard1.GuardAsync() || await guard2.GuardAsync();
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync());
+            }), ActivityGuardKind.Or, typeof(TGuard1), typeof(TGuard2));
 
         /// <summary>Adds three guard types combined with logical OR.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IControlFlowGuard" />; return true to permit
@@ -626,15 +627,15 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard1 : class, IControlFlowGuard
             where TGuard2 : class, IControlFlowGuard
             where TGuard3 : class, IControlFlowGuard
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
                 var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
                 var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
 
-                return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync();
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync());
+            }), ActivityGuardKind.Or, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3));
 
         /// <summary>Adds four guard types combined with logical OR.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IControlFlowGuard" />; return true to permit
@@ -652,7 +653,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard2 : class, IControlFlowGuard
             where TGuard3 : class, IControlFlowGuard
             where TGuard4 : class, IControlFlowGuard
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
@@ -660,8 +661,8 @@ namespace Stateflows.Activities.Registration.Interfaces
                 var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
                 var guard4 = await executor.NodeScope.GetControlFlowAsync<TGuard4>(c);
 
-                return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync() || await guard4.GuardAsync();
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 3, () => guard4.GuardAsync());
+            }), ActivityGuardKind.Or, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3), typeof(TGuard4));
 
         /// <summary>Adds five guard types combined with logical OR.</summary>
         /// <typeparam name="TGuard1">Typed flow guard implementing <see cref="IControlFlowGuard" />; return true to permit
@@ -682,7 +683,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard3 : class, IControlFlowGuard
             where TGuard4 : class, IControlFlowGuard
             where TGuard5 : class, IControlFlowGuard
-            => AddGuard(async c =>
+            => RegistrationMetadata.Guard(() => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
@@ -691,8 +692,8 @@ namespace Stateflows.Activities.Registration.Interfaces
                 var guard4 = await executor.NodeScope.GetControlFlowAsync<TGuard4>(c);
                 var guard5 = await executor.NodeScope.GetControlFlowAsync<TGuard5>(c);
 
-                return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync() || await guard4.GuardAsync() || await guard5.GuardAsync();
-            });
+                return await RegistrationMetadata.ObserveGuardLeafAsync(c, 0, () => guard1.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 1, () => guard2.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 2, () => guard3.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 3, () => guard4.GuardAsync()) || await RegistrationMetadata.ObserveGuardLeafAsync(c, 4, () => guard5.GuardAsync());
+            }), ActivityGuardKind.Or, typeof(TGuard1), typeof(TGuard2), typeof(TGuard3), typeof(TGuard4), typeof(TGuard5));
     }
 
     /// <summary>Configures a control flow's guards and weight.</summary>

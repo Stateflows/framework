@@ -41,27 +41,10 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         {
             var builder = (TransitionBuilder<TEvent>)this;
             builder.Edge.TriggerType = typeof(TTrigger);
-            builder.Edge.StructuralEventName = null;
+            builder.Edge.StructuralEventNames = null;
             builder.Edge.Trigger = typeof(TTrigger).GetEventName();
 
             var result = new TransitionBuilder<TTrigger>(builder.Edge);
-            
-            if (builder.Edge.VisitingTask is not null)
-            {
-                var graph = builder.Edge.Graph;
-                var index = graph.VisitingTasks.IndexOf(builder.Edge.VisitingTask);
-                
-                builder.Edge.VisitingTask = visitor => visitor.TransitionAddedAsync<TTrigger>(
-                    graph.Name,
-                    graph.Version,
-                    builder.Edge.SourceName,
-                    builder.Edge.TargetName == Constants.DefaultTransitionTarget
-                        ? builder.Edge.TargetName
-                        : null
-                );
-                
-                graph.VisitingTasks[index] = builder.Edge.VisitingTask;
-            }
 
             return result;
         }
@@ -81,18 +64,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces
                 throw new System.InvalidOperationException("A CLR-typed transition cannot be changed to an incompatible structural trigger.");
             var builder = (TransitionBuilder<TEvent>)this;
             var edge = builder.Edge;
-            edge.StructuralEventName = eventName;
+            edge.StructuralEventNames = [eventName];
             edge.TriggerType = typeof(StructuralEvent);
             edge.Trigger = eventName;
-            edge.DeclaredTriggerTypes = null;
-            if (edge.VisitingTask != null)
-            {
-                var index = edge.Graph.VisitingTasks.IndexOf(edge.VisitingTask);
-                edge.VisitingTask = visitor => visitor.TransitionAddedAsync(
-                    edge.Graph.StateflowsBuilder.Events.GetEvent(eventName),
-                    edge.Graph.Name, edge.Graph.Version, edge.SourceName, edge.TargetName, edge.IsElse);
-                edge.Graph.VisitingTasks[index] = edge.VisitingTask;
-            }
             return new TransitionBuilder<StructuralEvent>(edge);
         }
     }

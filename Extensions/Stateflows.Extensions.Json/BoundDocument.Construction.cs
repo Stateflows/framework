@@ -71,11 +71,11 @@ internal sealed partial class BoundDocument
         }
         foreach (var (node, path) in Items(document, "", "initializers"))
             foreach (var (_, handlerPath) in Items(node, path, "handlers"))
-                foreach (var trigger in triggers[path].SelectMany(Mapped).Distinct())
-                {
-                    var binding = bindings[handlerPath];
-                    Invoke("AddInitializer", [binding.Type, eventBindings[handlerPath][trigger], trigger], binding, builder);
-                }
+            {
+                var binding = bindings[handlerPath];
+                var dispatch = EventDispatch<Func<Context.Classes.RootContext, Task<bool>>>(handlerPath, "InitializerHandler");
+                Invoke("AddInitializerBinding", [triggers[path].Single()], binding, builder, dispatch);
+            }
         foreach (var (_, path) in Items(document, "", "finalizers"))
         {
             var binding = bindings[path];
@@ -134,7 +134,6 @@ internal sealed partial class BoundDocument
             if (vertex.Type == VertexType.History)
             {
                 vertex.HistoricalRegion = region!;
-                if (region != null) region.History ??= vertex;
             }
             foreach (var (_, bindingPath) in Items(node, vertexPath, "definitions"))
             {
@@ -164,8 +163,6 @@ internal sealed partial class BoundDocument
                     var behavior = behaviors[vertexPath + "/do"];
                     vertex.BehaviorType = behavior.Type;
                     vertex.BehaviorName = behavior.Name;
-                    graph.VisitingTasks.Add(visitor => visitor.DoBehaviorAddedAsync(Name, Version,
-                        vertex.Name, behavior.Name, behavior.Type, vertex.BehaviorEventTypes));
                 }
             }
             if (node["region"] is { } child)
@@ -176,8 +173,6 @@ internal sealed partial class BoundDocument
                 vertex.Regions.Add(created);
                 ConstructContainer(childRegion, regionPath, graph, created);
             }
-            graph.VisitingTasks.Add(visitor => visitor.VertexAddedAsync(Name, Version, vertex.Name, vertex.Type,
-                vertex.ParentRegion?.ParentVertex.Name));
         }
         if (region != null) region.SourcePath ??= path;
         if (container["initial"] != null)
@@ -200,12 +195,6 @@ internal sealed partial class BoundDocument
             }
             else Error(path + "/initial", $"Initial vertex '{initial}' is not directly contained.", region == null ? "SM-009" : "SM-012");
         }
-        if (region != null && container["history"] != null)
-        {
-            var history = names[path + "/history"];
-            if (members.TryGetValue(history, out var selected)) region.History = selected;
-            else Error(path + "/history", $"History vertex '{history}' is not directly contained.", "SM-029");
-        }
     }
 
     private void ApplyMetadata(JToken node, string path, Dictionary<string, object> target)
@@ -222,34 +211,30 @@ internal sealed partial class BoundDocument
         var declared = triggers[path];
         if (structuralTriggers.TryGetValue(path, out var structural) && structural.Length != 0)
         {
-            var clr = declared.Where(type => type != typeof(StructuralEvent)).ToArray();
-            if (clr.Length != 0) ConstructTransition(node, path, vertex, clr, null);
-            foreach (var name in structural)
-                ConstructTransition(node, path, vertex, [typeof(StructuralEvent)], name);
+            ConstructTransition(node, path, vertex, declared.Single(), structural);
         }
-        else ConstructTransition(node, path, vertex, declared, null);
+        else ConstructTransition(node, path, vertex, declared.Single(), null);
     }
 
-    private void ConstructTransition(JToken node, string path, Vertex vertex, Type[] declared, string? structuralName)
+    private void ConstructTransition(JToken node, string path, Vertex vertex, Type triggerType, string[]? structuralNames)
     {
-        var actual = declared.SelectMany(Mapped).Distinct().ToArray();
+        var actual = Mapped(triggerType);
         var completion = actual.Length == 1 && actual[0] == typeof(Completion);
         if (completion && node.Value<string>("kind") == "event")
             Error(path + "/kind", "Completion-triggered targeted transitions must use kind 'default'.", "SM-019");
-        var triggerType = completion ? typeof(Completion) : declared.Length == 1 ? declared[0] : typeof(object);
-        var trigger = structuralName ?? (declared.Length == 1 ? Event.GetName(triggerType)
-            : System.Text.Json.JsonSerializer.Serialize(actual.Select(Event.GetName).Order(StringComparer.Ordinal)));
+        var trigger = structuralNames == null ? Event.GetName(triggerType)
+            : structuralNames.Length == 1 ? structuralNames[0] : System.Text.Json.JsonSerializer.Serialize(structuralNames.Order(StringComparer.Ordinal));
         var target = node.Value<string>("kind") == "internal" ? "" : names[path + "/target"];
         var otherwise = node.Value<bool?>("else") == true;
         Edge edge;
-        if (structuralName != null)
+        if (structuralNames != null)
         {
             Edge? namedEdge = null;
             new StateBuilder(vertex).AddTransitionInternal<StructuralEvent>(target, otherwise,
-                builder => namedEdge = ((TransitionBuilder<StructuralEvent>)builder).Edge, structuralName);
+                builder => namedEdge = ((TransitionBuilder<StructuralEvent>)builder).Edge, trigger);
             edge = namedEdge!;
             edge.SourcePath = path;
-            edge.DeclaredTriggerTypes = declared;
+            edge.StructuralEventNames = structuralNames;
             edge.IsLocal = node.Value<bool?>("local") ?? true;
         }
         else
@@ -257,12 +242,12 @@ internal sealed partial class BoundDocument
             edge = new Edge
             {
                 Graph = vertex.Graph, Source = vertex, SourceName = vertex.Name, SourcePath = path,
-                TriggerType = triggerType, DeclaredTriggerTypes = declared, Trigger = trigger,
+                TriggerType = triggerType, Trigger = trigger,
                 TargetName = target, IsElse = otherwise, IsLocal = node.Value<bool?>("local") ?? true,
                 Type = completion ? EdgeType.DefaultTransition : target == "" ? EdgeType.InternalTransition : EdgeType.Transition,
                 Name = $"{vertex.Name}-{trigger}{(otherwise ? "|else" : "")}->{target}"
             };
-            if (declared.All(t => typeof(Exception).IsAssignableFrom(t))) edge.PolymorphicTriggers = true;
+            if (actual.All(t => typeof(Exception).IsAssignableFrom(t))) edge.PolymorphicTriggers = true;
             if (!vertex.Edges.TryAdd(edge.Name, edge))
             {
                 Error(path, "Duplicate transition declaration.", "SM-020");
@@ -278,16 +263,22 @@ internal sealed partial class BoundDocument
         }
         if (node.Value<bool?>("local") is { } local && local != edge.IsLocal)
             Error(path + "/local", "A transition definition changed the explicitly declared local/external setting.", "JSON-005");
-        if (edge.TriggerType != triggerType || edge.Trigger != trigger || edge.DeclaredTriggerTypes != declared ||
-            edge.StructuralEventName != structuralName)
+        if (edge.TriggerType != triggerType || edge.Trigger != trigger ||
+            !(edge.StructuralEventNames ?? []).SequenceEqual(structuralNames ?? []))
             Error(path + "/triggers", "A transition definition changed the explicitly declared trigger set.", "JSON-005");
         var transitionBuilder = new TransitionBuilder<object>(edge);
         if (node["guard"] is { } guard)
         {
-            var evaluate = CompileGuard(guard, path + "/guard", vertex, edge);
+            var registration = GuardRegistration(guard, path + "/guard");
+            var evaluate = CompileGuard(guard, path + "/guard", vertex, edge, registration, false);
+            edge.Guards.Registrations[edge.Guards.Actions.Count] = registration;
             transitionBuilder.AddGuards(c => evaluate(((Context.Classes.BaseContext)c).Context));
         }
         foreach (var (_, effectPath) in Items(node, path, "effects"))
+        {
+            edge.Effects.Registrations[edge.Effects.Actions.Count] = behaviors.TryGetValue(effectPath, out var calledBehavior)
+                ? new OperationRegistration { Behavior = calledBehavior }
+                : OperationRegistration.Leaf(bindings[effectPath].Type);
             if (behaviors.TryGetValue(effectPath, out var behavior))
                 transitionBuilder.AddEffect(c => JsonExecution.RunEffect(c, behavior));
             else
@@ -299,16 +290,8 @@ internal sealed partial class BoundDocument
                     return Choose(dispatch, context)(context, edge);
                 });
             }
-        ApplyMetadata(node, path, edge.Metadata);
-        if (structuralName == null)
-        {
-            var visits = declared.Select(type => (Func<IStateMachineVisitor, Task>)Invoke("TransitionVisit", [type], edge)!).ToArray();
-            edge.VisitingTask = async visitor =>
-            {
-                foreach (var visit in visits) await visit(visitor);
-            };
-            vertex.Graph.VisitingTasks.Add(edge.VisitingTask);
         }
+        ApplyMetadata(node, path, edge.Metadata);
     }
 
     private Dictionary<Type, T> EventDispatch<T>(string path, string method) where T : Delegate
@@ -324,12 +307,20 @@ internal sealed partial class BoundDocument
         throw new InvalidOperationException($"No bound handler contract for event '{type}'.");
     }
 
-    private Func<Context.Classes.RootContext, Task<bool>> CompileGuard(JToken node, string path, Vertex vertex, Edge? edge)
+    private Func<Context.Classes.RootContext, Task<bool>> CompileGuard(JToken node, string path, Vertex vertex, Edge? edge,
+        OperationRegistration registration, bool observe = true)
+    {
+        var evaluate = CompileGuardCore(node, path, vertex, edge, registration);
+        return observe ? context => registration.ObserveAsync(context, () => evaluate(context)) : evaluate;
+    }
+
+    private Func<Context.Classes.RootContext, Task<bool>> CompileGuardCore(JToken node, string path, Vertex vertex, Edge? edge,
+        OperationRegistration registration)
     {
         foreach (var group in new[] { "all", "any" })
             if (node[group] is JArray array)
             {
-                var children = array.Select((child, i) => CompileGuard(child, $"{path}/{group}/{i}", vertex, edge)).ToArray();
+                var children = array.Select((child, i) => CompileGuard(child, $"{path}/{group}/{i}", vertex, edge, registration.Children[i])).ToArray();
                 return async context =>
                 {
                     foreach (var child in children)
@@ -365,12 +356,28 @@ internal sealed partial class BoundDocument
         }
     }
 
+    private OperationRegistration GuardRegistration(JToken node, string path)
+    {
+        foreach (var group in new[] { "all", "any" })
+            if (node[group] is JArray children)
+            {
+                var registration = new OperationRegistration { Kind = group == "all" ? GuardKind.And : GuardKind.Or };
+                registration.Children.AddRange(children.Select((child, index) => GuardRegistration(child, $"{path}/{group}/{index}")));
+                return registration;
+            }
+        return behaviors.TryGetValue(path, out var behavior)
+            ? new OperationRegistration { Behavior = behavior }
+            : OperationRegistration.Leaf(bindings[path].Type);
+    }
+
     private void ConstructDeferral(JToken node, string path, Vertex vertex)
     {
         var logic = new Logic<Interfaces.StateMachinePredicateAsync>(Constants.Deferral);
         if (node["guard"] is { } guard)
         {
-            var evaluate = CompileGuard(guard, path + "/guard", vertex, null);
+            var registration = GuardRegistration(guard, path + "/guard");
+            var evaluate = CompileGuard(guard, path + "/guard", vertex, null, registration, false);
+            logic.Registrations[0] = registration;
             logic.Actions.Add(c => evaluate(c));
         }
         foreach (var type in triggers[path].SelectMany(Mapped).Distinct())
@@ -380,7 +387,7 @@ internal sealed partial class BoundDocument
                 Error(path, $"Event '{name}' is already deferred.", "SM-035");
             else
             {
-                vertex.DeferralTypes.Add(name, type);
+                vertex.DeferralTypes.Add(name, triggers[path].Single());
                 vertex.DeferralPaths.Add(name, path);
             }
         }

@@ -527,37 +527,37 @@ public class JsonDefinitions
         public int DefaultInitializers { get; private set; }
         public int Finalizers { get; private set; }
 
-        public override Task NodeAddedAsync(string activityName, int activityVersion, string nodeName, NodeType nodeType, string? parentNodeName = null)
+        public override Task NodeAddedAsync(string id, string activityName, int activityVersion, string nodeName, NodeType nodeType, string? parentNodeId)
         {
             Nodes.Add(nodeType);
             return Task.CompletedTask;
         }
 
-        public override Task NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
+        public override Task NodeTypeAddedAsync<TNode>(string id, string activityName, int activityVersion)
         {
             NodeTypes.Add(typeof(TNode));
             return Task.CompletedTask;
         }
 
-        public override Task AcceptEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName, string? parentNodeName = null)
+        public override Task AcceptEventNodeAddedAsync<TEvent>(string id, string activityName, int activityVersion, IReadOnlyList<string> eventNames)
         {
             EventTypes.Add(typeof(TEvent));
             return Task.CompletedTask;
         }
 
-        public override Task ControlFlowAddedAsync(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false)
+        public override Task ControlFlowAddedAsync(string id, string activityName, int activityVersion, string sourceNodeId, string targetNodeId, bool isElse)
         {
             ControlFlows++;
             return Task.CompletedTask;
         }
 
-        public override Task DefaultInitializerAddedAsync(string activityName, int activityVersion)
+        public override Task DefaultInitializerAddedAsync(string id, string activityName, int activityVersion, int order)
         {
             DefaultInitializers++;
             return Task.CompletedTask;
         }
 
-        public override Task FinalizerAddedAsync(string activityName, int activityVersion)
+        public override Task FinalizerAddedAsync(string id, string activityName, int activityVersion, int order)
         {
             Finalizers++;
             return Task.CompletedTask;

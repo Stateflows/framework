@@ -7,50 +7,24 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Builders;
 
-/// <summary>Collects event definitions and mapped CLR event types exposed by an embedded do action.</summary>
-/// <param name="typeMapper">Resolves mapped event types accepted by the action.</param>
+/// <summary>Collects effective event names and mapped CLR payload types exposed by an embedded action.</summary>
 public class DoActionVisitor(ITypeMapper typeMapper) : ActionVisitor
 {
-    /// <summary>The distinct event definitions collected by registered event name.</summary>
-    public List<EventDefinition> EventDefinitions { get; } = [];
-    /// <inheritdoc/>
-    public override Task CustomEventAddedAsync(EventDefinition definition, string actionName, int actionVersion,
-        BehaviorStatus[] supportedStatuses)
-    {
-        if (!EventDefinitions.Exists(e => e.Name == definition.Name)) EventDefinitions.Add(definition);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc/>
-    public override Task CustomEventAddedAsync<TEvent>(string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
-    {
-        var eventTypes = typeMapper.GetMappedTypes(typeof(TEvent));
-        foreach (var eventType in eventTypes)
-        {
-            if (!EventTypes.Contains(eventType))
-            {
-                EventTypes.Add(eventType);
-            }
-        }
-
-        return Task.CompletedTask;
-    }
-
-    // public override Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
-    //     string targetVertexName = null, bool isElse = false)
-    // {
-    //     var eventTypes = typeMapper.GetMappedTypes(typeof(TEvent));
-    //     foreach (var eventType in eventTypes)
-    //     {
-    //         if (!EventTypes.Contains(eventType))
-    //         {
-    //             EventTypes.Add(eventType);
-    //         }
-    //     }
-    //
-    //     return Task.CompletedTask;
-    // }
-
-    /// <summary>The distinct mapped CLR payload types collected from the action's custom events.</summary>
     public List<Type> EventTypes { get; } = [];
+    public List<string> EventNames { get; } = [];
+    public Dictionary<Type, HashSet<string>> EventBindings { get; } = [];
+
+    public override Task CustomEventAddedAsync<TEvent>(string bindingId, string actionName, int actionVersion, IReadOnlyList<string> eventNames, BehaviorStatus[] supportedStatuses)
+    {
+        if (!EventBindings.TryGetValue(typeof(TEvent), out var bindings))
+            EventBindings[typeof(TEvent)] = bindings = [];
+        foreach (var name in eventNames)
+        {
+            bindings.Add(name);
+            if (!EventNames.Contains(name)) EventNames.Add(name);
+        }
+        foreach (var type in typeMapper.GetMappedTypes(typeof(TEvent)))
+            if (!EventTypes.Contains(type)) EventTypes.Add(type);
+        return Task.CompletedTask;
+    }
 }

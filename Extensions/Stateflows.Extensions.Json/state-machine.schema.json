@@ -61,22 +61,24 @@
     "triggers": {
       "type": "array",
       "minItems": 1,
+      "maxItems": 1,
       "items": { "$ref": "#/$defs/typeReference" }
     },
     "eventTriggers": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "oneOf": [
-          { "$ref": "#/$defs/typeReference" },
-          {
+      "oneOf": [
+        { "$ref": "#/$defs/triggers" },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
             "type": "object",
             "required": ["eventName"],
             "properties": { "eventName": { "type": "string", "minLength": 1 } },
             "additionalProperties": false
           }
-        ]
-      }
+        }
+      ]
     },
     "behaviorClass": {
       "type": "object",
@@ -192,7 +194,6 @@
       "type": "object",
       "properties": {
         "initial": { "$ref": "#/$defs/name" },
-        "history": { "$ref": "#/$defs/name" },
         "vertices": { "$ref": "#/$defs/vertices" }
       },
       "additionalProperties": false

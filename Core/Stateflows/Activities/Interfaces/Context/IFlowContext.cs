@@ -6,6 +6,9 @@ namespace Stateflows.Activities
     /// <summary>Describes an activity flow and its endpoints and token types.</summary>
     public interface IFlowContext
     {
+        /// <summary>The definition flow identity, when supplied by the execution provider.</summary>
+        string? Identifier => null;
+
         /// <summary>The node from which tokens are transferred.</summary>
         ISourceNodeContext SourceNode { get; }
 

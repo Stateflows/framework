@@ -43,6 +43,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync)
         {
             Graph.DefaultInitializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
+            Graph.DefaultInitializerImplementation = null;
 
             Graph.DefaultInitializer.Actions.Add(c =>
             {
@@ -54,7 +55,6 @@ namespace Stateflows.Activities.Registration.Builders
                 return actionAsync(context);
             });
             
-            Graph.VisitingTasks.Add(v => v.DefaultInitializerAddedAsync(Graph.Name, Graph.Version));
 
             return this;
         }
@@ -98,7 +98,6 @@ namespace Stateflows.Activities.Registration.Builders
                 return result;
             });
             
-            Graph.VisitingTasks.Add(v => v.InitializerAddedAsync<TInitializationEvent>(Graph.Name, Graph.Version));
 
             return this;
         }
@@ -125,7 +124,6 @@ namespace Stateflows.Activities.Registration.Builders
         {
             var result = AddOnFinalize(actionAsync) as ActivityBuilder;
             
-            Graph.VisitingTasks.Add(v => v.FinalizerAddedAsync(Graph.Name, Graph.Version));
 
             return result;
         }

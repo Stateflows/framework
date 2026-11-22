@@ -6,6 +6,8 @@ namespace Stateflows.StateMachines
     /// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/5.1.-Behavior-Values">behavior and state values</see>.</remarks>
     public interface IStateContext
     {
+        /// <summary>The stable model-element identifier.</summary>
+        string Identifier { get; }
         /// <summary>The registered state name, rather than its display label or CLR type name.</summary>
         string Name { get; }
 

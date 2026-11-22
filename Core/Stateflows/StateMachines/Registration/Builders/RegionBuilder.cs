@@ -67,8 +67,6 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateDefinitionException(vertex.Name, $"State '{vertex.Name}' is already registered", Region.Graph.Class);
             Region.Vertices.Add(vertex.Name, vertex);
             Region.Graph.AllVertices.Add(vertex.Identifier, vertex);
-            
-            Region.Graph.VisitingTasks.Add(visitor => visitor.VertexAddedAsync(Region.Graph.Name, Region.Graph.Version, vertex.Name, vertex.Type));
 
             return this;
         }
@@ -435,7 +433,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             AddVertex(historyEntrypointName, VertexType.History);
             var historyVertex = Region.Vertices[historyEntrypointName];
             historyVertex.HistoricalRegion = Region;
-            Region.History ??= historyVertex;
             
             buildAction?.Invoke(new StateBuilder(historyVertex));
 

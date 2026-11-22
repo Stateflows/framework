@@ -64,6 +64,7 @@ namespace Stateflows
                     .AddSingleton<INotificationsHub, NotificationsHub>()
                     .AddSingleton<ITenantAccessor, TenantAccessor>()
                     .AddScoped<CommonInterceptor>()
+                    .AddSingleton<IBehaviorDispatchObserver, BehaviorObservation>()
                     .AddScoped<IStateflowsInterceptor, CommonInterceptor>()
                     .AddScoped<IStateflowsTenantExecutor, TenantExecutor>()
                     .AddTransient(provider =>

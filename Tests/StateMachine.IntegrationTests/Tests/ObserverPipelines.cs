@@ -25,8 +25,16 @@ public class ObserverPipelines : StateflowsTestClass
     private bool initializationAccepted = true;
     private bool guardAccepted = true;
     private int operations;
+    private string? pauseHook;
+    private readonly TaskCompletionSource pauseReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource pauseRelease = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly ConcurrentQueue<(string Operation, string? RuntimeId, string[] RegistrationIds)> transitionIdentities = new();
 
     public record Advance;
+    public sealed class EmptyAction : IAction
+    {
+        public Task ExecuteAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
 
     [TestInitialize]
     public override void Initialize() => base.Initialize();
@@ -68,6 +76,19 @@ public class ObserverPipelines : StateflowsTestClass
                     .AddInitialState("source");
                 foreach (var observer in locals)
                     machine.AddObserver((_, _) => observer);
+            });
+            machines.AddStateMachine("junction-identities", machine => machine
+                .AddInitialState("source", state => state.AddTransition<Advance>("junction"))
+                .AddJunction("junction", junction => junction.AddTransition("target"))
+                .AddState("target"));
+            machines.AddStateMachine("deferred-do", machine =>
+            {
+                machine.AddInitialState("source", state => state
+                    .AddDoAction<EmptyAction>()
+                    .AddDeferredEvent<Advance>(guards => guards.AddGuard(_ => guardAccepted))
+                    .AddTransition<Advance>("target"))
+                    .AddState("target");
+                foreach (var observer in locals) machine.AddObserver((_, _) => observer);
             });
             foreach (var observer in globals)
                 machines.AddObserver((_, _) => observer);
@@ -124,6 +145,52 @@ public class ObserverPipelines : StateflowsTestClass
         var expected = scopes.Select(scope => $"{hook}:{scope}:before")
             .Concat(scopes.Reverse().Select(scope => $"{hook}:{scope}:after")).ToArray();
         CollectionAssert.AreEqual(expected, trace.Where(entry => entry.StartsWith(hook + ":")).ToArray());
+    }
+
+    [TestMethod]
+    public async Task JunctionOperationsExposeBothRegisteredSegmentsInRouteOrder()
+    {
+        await ExecuteAsync(BehaviorType.StateMachine, new Initialize(), "junction-identities");
+        var (status, exceptions) = await ExecuteAsync(BehaviorType.StateMachine, new Advance(), "junction-identities");
+        Assert.AreEqual(EventStatus.Consumed, status);
+        Assert.AreEqual(0, exceptions.Count);
+        var observations = transitionIdentities.Where(item => item.RegistrationIds.Length == 2).ToArray();
+        Assert.AreEqual(8, observations.Length);
+        var segments = observations.Select(item => item.RuntimeId).Distinct().ToArray();
+        Assert.AreEqual(2, segments.Length);
+        foreach (var observation in observations)
+        {
+            Assert.AreEqual(2, observation.RegistrationIds.Length);
+            CollectionAssert.AreEqual(segments, observation.RegistrationIds);
+            Assert.IsTrue(observation.RegistrationIds.Contains(observation.RuntimeId!));
+        }
+        CollectionAssert.AreEqual(new[] { "guard", "effect" }, observations.Select(item => item.Operation).Distinct().ToArray());
+    }
+
+    [TestMethod]
+    [DataRow("StateDo:source")]
+    [DataRow("StateDeferral:source")]
+    public async Task DoAndDeferralObserversAwaitContinuationAndPreserveExecution(string hook)
+    {
+        if (hook.StartsWith("StateDeferral"))
+            await ExecuteAsync(BehaviorType.StateMachine, new Initialize(), "deferred-do");
+        pauseHook = hook;
+        var execution = hook.StartsWith("StateDo")
+            ? ExecuteAsync(BehaviorType.StateMachine, new Initialize(), "deferred-do")
+            : ExecuteAsync(BehaviorType.StateMachine, new Advance(), "deferred-do");
+        try
+        {
+            await pauseReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.IsFalse(execution.IsCompleted);
+            Assert.IsFalse(trace.Any(item => item == $"{hook}:g1:after"));
+        }
+        finally { pauseRelease.TrySetResult(); }
+        var (status, exceptions) = await execution;
+        Assert.AreEqual(0, exceptions.Count);
+        Assert.AreEqual(hook.StartsWith("StateDo") ? EventStatus.Initialized : EventStatus.Deferred, status);
+        AssertOrder(hook);
+        if (hook.StartsWith("StateDeferral"))
+            Assert.AreEqual(4, results.Count(item => item.Hook == hook && Equals(item.Result, true)));
     }
 
     [TestMethod]
@@ -306,9 +373,17 @@ public class ObserverPipelines : StateflowsTestClass
     private sealed class Recorder(ObserverPipelines owner, string scope)
         : StateMachineObserver, IActionObserver, IActivityObserver
     {
+        Task IActivityObserver.OnActionAsync(IActivityActionObservationContext context, Func<Task> next) => next();
+        Task IActivityObserver.OnPredicateAsync(IActivityPredicateObservationContext predicateContext, Func<Task<bool>> next) => next();
+
         private async Task ObserveAsync(string hook, Func<Task> next)
         {
             owner.trace.Enqueue($"{hook}:{scope}:before");
+            if (scope == "g1" && owner.pauseHook == hook)
+            {
+                owner.pauseReached.TrySetResult();
+                await owner.pauseRelease.Task;
+            }
             await Task.Yield();
             try
             {
@@ -349,14 +424,26 @@ public class ObserverPipelines : StateflowsTestClass
         }
         public override Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next)
             => ObserveAsync("StateMachineFinalize", next);
+        public override Task OnHostedBehaviorInitializeAsync(IHostedBehaviorObservationContext context, Func<Task> next)
+            => ObserveAsync($"StateDo:{context.State.Name}", next);
+        public override Task OnDeferralGuardAsync(IDeferralObservationContext context, Func<Task<bool>> next)
+            => ObserveResultAsync($"StateDeferral:{context.State.Name}", next);
         public override Task OnStateEntryAsync(IStateActionContext context, Func<Task> next)
             => ObserveAsync("StateEntry:" + context.State.Name, next);
         public override Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
             => ObserveAsync("StateExit", next);
         public override Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task<bool>> next)
-            => ObserveResultAsync("TransitionGuard", next);
+        {
+            Assert.AreEqual(context.Identifier, context.RouteTransitionIds[context.RouteIndex]);
+            owner.transitionIdentities.Enqueue(("guard", context.Identifier, context.RouteTransitionIds.ToArray()));
+            return ObserveResultAsync("TransitionGuard", next);
+        }
         public override Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
-            => ObserveAsync("TransitionEffect", next);
+        {
+            Assert.AreEqual(context.Identifier, context.RouteTransitionIds[context.RouteIndex]);
+            owner.transitionIdentities.Enqueue(("effect", context.Identifier, context.RouteTransitionIds.ToArray()));
+            return ObserveAsync("TransitionEffect", next);
+        }
         public Task OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
             owner.implicitInitializations.Enqueue(implicitInitialization);

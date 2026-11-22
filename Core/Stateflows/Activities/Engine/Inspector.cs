@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -105,6 +105,12 @@ namespace Stateflows.Activities.Engine
 
         public Task<bool> OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
             => ObserveAsync(next, (observer, inner) => observer.OnActivityInitializeAsync(context, implicitInitialization, inner));
+
+        public Task OnActionAsync(ActionObservationContext context, Func<Task> next)
+            => ObserveAsync(next, (observer, inner) => observer.OnActionAsync(context, inner));
+
+        public Task<bool> OnPredicateAsync(PredicateObservationContext predicateContext, Func<Task<bool>> next)
+            => ObserveAsync(next, (observer, inner) => observer.OnPredicateAsync(predicateContext, inner));
 
         public Task OnActivityFinalizeAsync(ActivityActionContext context, Func<Task> next)
             => ObserveAsync(next, (observer, inner) => observer.OnActivityFinalizeAsync(context, inner));

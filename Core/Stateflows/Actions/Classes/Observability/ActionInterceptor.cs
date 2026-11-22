@@ -10,6 +10,6 @@ namespace Stateflows.Actions;
 public abstract class ActionInterceptor : IActionInterceptor
 {
     /// <inheritdoc/>
-    public virtual Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+    public virtual Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> eventContext, Func<Task<EventStatus>> next)
         => next();
 }

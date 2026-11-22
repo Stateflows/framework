@@ -3,55 +3,27 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Activities;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common;
 
 namespace Stateflows.StateMachines.Registration.Builders;
 
-/// <summary>Collects the event definitions and mapped payload types accepted by an embedded do activity.</summary>
-/// <param name="typeMapper">Resolves mapped event types accepted by activity nodes.</param>
+/// <summary>Collects effective event names and mapped CLR payload types accepted by an embedded activity.</summary>
 public class DoActivityVisitor(ITypeMapper typeMapper) : ActivityVisitor
 {
-    /// <summary>The distinct accepted event definitions collected by event name.</summary>
-    public List<EventDefinition> EventDefinitions { get; } = [];
-    /// <inheritdoc/>
-    public override Task AcceptEventNodeAddedAsync(EventDefinition definition, string activityName, int activityVersion,
-        string nodeName, string parentNodeName = null)
-    {
-        if (!EventDefinitions.Exists(e => e.Name == definition.Name)) EventDefinitions.Add(definition);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc/>
-    public override Task AcceptEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
-        string parentNodeName = null)
-    {
-        var eventTypes = typeMapper.GetMappedTypes(typeof(TEvent));
-        foreach (var eventType in eventTypes)
-        {
-            if (!EventTypes.Contains(eventType))
-            {
-                EventTypes.Add(eventType);
-            }
-        }
-
-        return Task.CompletedTask;
-    }
-
-    // public override Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
-    //     string targetVertexName = null, bool isElse = false)
-    // {
-    //     var eventTypes = typeMapper.GetMappedTypes(typeof(TEvent));
-    //     foreach (var eventType in eventTypes)
-    //     {
-    //         if (!EventTypes.Contains(eventType))
-    //         {
-    //             EventTypes.Add(eventType);
-    //         }
-    //     }
-    //
-    //     return Task.CompletedTask;
-    // }
-
-    /// <summary>The distinct mapped CLR payload types accepted by visited event-accepting nodes.</summary>
     public List<Type> EventTypes { get; } = [];
+    public List<string> EventNames { get; } = [];
+    public Dictionary<Type, HashSet<string>> EventBindings { get; } = [];
+
+    public override Task AcceptEventNodeAddedAsync<TEvent>(string nodeId, string activityName, int activityVersion, IReadOnlyList<string> eventNames)
+    {
+        if (!EventBindings.TryGetValue(typeof(TEvent), out var bindings))
+            EventBindings[typeof(TEvent)] = bindings = [];
+        foreach (var name in eventNames)
+        {
+            bindings.Add(name);
+            if (!EventNames.Contains(name)) EventNames.Add(name);
+        }
+        foreach (var type in typeMapper.GetMappedTypes(typeof(TEvent)))
+            if (!EventTypes.Contains(type)) EventTypes.Add(type);
+        return Task.CompletedTask;
+    }
 }

@@ -19,6 +19,7 @@ internal class EventDeferralBuilder<TEvent> :
     public Type EventType => typeof(TEvent);
     public Vertex Vertex { get; }
     public Logic<StateMachinePredicateAsync> Guards => Logic;
+    public string RegistrationAddress => Guards.Actions.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     public Graph Graph => Vertex.Graph;
         
@@ -29,6 +30,8 @@ internal class EventDeferralBuilder<TEvent> :
     }
 
     public readonly Logic<StateMachinePredicateAsync> Logic;
+
+    public void RecordGuard(OperationRegistration registration) => Guards.Registrations[Guards.Actions.Count] = registration;
     
     public IEventDeferralBuilder<TEvent> AddGuards(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
     {

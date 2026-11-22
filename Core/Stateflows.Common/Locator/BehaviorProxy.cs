@@ -3,6 +3,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
@@ -14,6 +15,7 @@ namespace Stateflows.Common.Locator
         private IBehavior Behavior { get; }
 
         private ClientInterceptor Interceptor { get; }
+        private readonly IBehaviorDispatchObserver dispatchObserver;
 
         public IServiceProvider ServiceProvider { get; private set; }
 
@@ -24,48 +26,65 @@ namespace Stateflows.Common.Locator
             Behavior = behavior;
             Interceptor = interceptor;
             ServiceProvider = serviceProvider;
+            dispatchObserver = serviceProvider.GetService<IBehaviorDispatchObserver>();
         }
 
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
         {
-            SendResult result = null;
             var eventHolder = @event.ToTypedEventHolder(headers);
+            return dispatchObserver == null
+                ? await DispatchAsync()
+                : await dispatchObserver.SendAsync(Id, eventHolder, DispatchAsync);
 
-            if (Interceptor.BeforeDispatchEvent(eventHolder))
+            async Task<SendResult> DispatchAsync()
             {
-                result = await Behavior.SendAsync(eventHolder, eventHolder.Headers);
+                SendResult result = null;
+                if (Interceptor.BeforeDispatchEvent(eventHolder))
+                {
+                    Task<SendResult> dispatch;
+                    using (BehaviorDispatchAmbient.Suppress())
+                        dispatch = Behavior.SendAsync(eventHolder, eventHolder.Headers);
+                    result = await dispatch;
 
-                Interceptor.AfterDispatchEvent(eventHolder);
+                    Interceptor.AfterDispatchEvent(eventHolder);
+                }
+                else
+                {
+                    Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Event dispatch.");
+                }
+
+                return result ?? new SendResult(EventStatus.Undelivered, new EventValidation(true));
             }
-            else
-            {
-                Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Event dispatch.");
-            }
-
-            result ??= new SendResult(EventStatus.Undelivered, new EventValidation(true));
-
-            return result;
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader> headers = null)
         {
-            RequestResult<TResponse> result = null;
             var eventHolder = request.ToTypedEventHolder(headers);
+            return dispatchObserver == null
+                ? await DispatchAsync()
+                : await dispatchObserver.RequestAsync(Id, eventHolder, DispatchAsync);
 
-            if (Interceptor.BeforeDispatchEvent(eventHolder))
+            async Task<RequestResult<TResponse>> DispatchAsync()
             {
-                result = await Behavior.RequestAsync(eventHolder.BoxedPayload as IRequest<TResponse>, eventHolder.Headers);
+                RequestResult<TResponse> result = null;
+                if (Interceptor.BeforeDispatchEvent(eventHolder))
+                {
+                    Task<RequestResult<TResponse>> dispatch;
+                    using (BehaviorDispatchAmbient.Suppress())
+                        dispatch = Behavior is IEnvelopeRequestBehavior envelopeBehavior
+                            ? envelopeBehavior.RequestEnvelopeAsync<TResponse>(eventHolder)
+                            : Behavior.RequestAsync(eventHolder.BoxedPayload as IRequest<TResponse>, eventHolder.Headers);
+                    result = await dispatch;
 
-                Interceptor.AfterDispatchEvent(eventHolder);
+                    Interceptor.AfterDispatchEvent(eventHolder);
+                }
+                else
+                {
+                    Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Request dispatch.");
+                }
+
+                return result ?? new RequestResult<TResponse>(eventHolder, EventStatus.Undelivered);
             }
-            else
-            {
-                Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Request dispatch.");
-            }
-
-            result ??= new RequestResult<TResponse>(eventHolder, EventStatus.Undelivered);
-
-            return result;
         }
 
         [Obsolete("Use WatchStatusAsync instead.")]

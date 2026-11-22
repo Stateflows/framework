@@ -29,13 +29,13 @@ namespace Stateflows.StateMachines.Context.Classes
         public bool ShouldSerializeTimeEventIds()
             => TimeEventIds.Any();
 
-        /// <summary>The remembered active-state configuration used by history restoration.</summary>
-        public TreeNode<string> HistoryTree { get; set; }
+        /// <summary>Remembered active-state configurations, indexed by region within this state.</summary>
+        public Dictionary<int, TreeNode<string>> RegionHistory { get; set; } = new();
 
-        /// <summary>Determines whether a remembered configuration should be persisted.</summary>
-        /// <returns>Whether the history tree is assigned.</returns>
-        public bool ShouldSerializeHistoryTree()
-            => HistoryTree != null;
+        /// <summary>Determines whether remembered configurations should be persisted.</summary>
+        /// <returns>Whether any region has a remembered configuration.</returns>
+        public bool ShouldSerializeRegionHistory()
+            => RegionHistory.Count != 0;
         
         /// <summary>Identifiers of scheduled time events keyed by their registration names.</summary>
         public Dictionary<string, Guid> TimeEventIds { get; set; } = new Dictionary<string, Guid>();

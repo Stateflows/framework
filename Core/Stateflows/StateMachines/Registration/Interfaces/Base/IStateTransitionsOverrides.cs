@@ -17,7 +17,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
             var vertex = ((IVertexBuilder)this).Vertex;
-            var edge = vertex.Edges.Values.FirstOrDefault(edge => edge.StructuralEventName == eventName &&
+            var edge = vertex.Edges.Values.FirstOrDefault(edge => edge.StructuralEventNames?.Contains(eventName) == true &&
                 edge.Type == (internalTransition ? EdgeType.InternalTransition : EdgeType.Transition) &&
                 edge.IsElse == isElse && (internalTransition || edge.TargetName == targetStateName));
             if (edge?.OriginStateMachineName == null)

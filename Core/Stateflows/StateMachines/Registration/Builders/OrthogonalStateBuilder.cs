@@ -197,7 +197,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
                 Vertex.Initialize.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
-                        var context = new StateActionContext(c, Vertex, Constants.Entry);
+                        var context = new StateActionContext(c, Vertex, Constants.Initialize);
                         await actionAsync(context);
                     })
                 );
@@ -215,7 +215,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
                 Vertex.Finalize.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
-                        var context = new StateActionContext(c, Vertex, Constants.Entry);
+                        var context = new StateActionContext(c, Vertex, Constants.Finalize);
                         await actionAsync(context);
                     })
                 );
@@ -265,23 +265,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IOrthogonalStateBuilder AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
         {
-            if (typeof(TEvent) == typeof(Completion))
-                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
-
-            if (typeof(TEvent) == typeof(Finalize))
-                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Exit event cannot be deferred.", Vertex.Graph.Class);
-
-            if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
-                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
-
-            var builder = new EventDeferralBuilder<TEvent>(Vertex);
-            buildAction?.Invoke(builder);
-
-            var eventName = typeof(TEvent).GetEventName();
-            if (!Vertex.Deferrals.TryAdd(eventName, builder.Logic))
-                throw new DeferralDefinitionException(eventName, $"Event '{eventName}' is already deferred by '{Vertex.Name}'.", Vertex.Graph.Class);
-            Vertex.DeferralTypes.Add(eventName, typeof(TEvent));
-
+            new StateBuilder(Vertex).AddDeferredEvent(buildAction);
             return this;
         }
         #endregion
@@ -574,8 +558,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
 
             if (
-                !Vertex.Deferrals.TryGetValue(typeof(TEvent).GetEventName(), out var deferralLogic) ||
-                deferralLogic?.OriginStateMachineName == null
+                !Vertex.TryGetInheritedDeferral(typeof(TEvent), out var deferralLogic)
             )
             {
                 throw new StateMachineOverrideException($"Deferral of event '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);

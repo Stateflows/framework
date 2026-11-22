@@ -10,9 +10,12 @@ namespace Stateflows.StateMachines
     {
         public static async Task IterateOverAsync(this Logic<StateMachineActionAsync> action, RootContext context)
         {
-            foreach (var task in action.Actions.Select(a => a(context)))
+            for (var index = 0; index < action.Actions.Count; index++)
             {
-                await task;
+                var handler = action.Actions[index];
+                if (action.Registrations.TryGetValue(index, out var registration))
+                    await context.Executor.Inspector.OnActionAsync(new ActionObservationContext(context, registration), () => handler(context));
+                else await handler(context);
             }
         }
     }

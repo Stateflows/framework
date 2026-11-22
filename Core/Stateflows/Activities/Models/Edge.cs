@@ -5,6 +5,7 @@ namespace Stateflows.Activities.Models
     internal class Edge : Element
     {
         public override string Identifier { get; set; }
+        internal string DefinitionIdentifier { get; set; }
 
         public Graph Graph { get; set; }
         public Type TokenType { get; set; }
@@ -20,5 +21,7 @@ namespace Stateflows.Activities.Models
         public bool IsElse { get; set; }
         public bool IsCrossScope { get; set; }
         public Node Owner { get; set; }
+        internal Type ImplementationType { get; set; }
+        internal System.Collections.Generic.List<FlowOperationRegistration> Operations { get; } = [];
     }
 }

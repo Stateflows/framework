@@ -107,6 +107,15 @@ namespace Stateflows.Entities.Engine
                 (interceptor, inner) => interceptor.ProcessEventAsync(context, inner));
         }
 
+        /// <summary>Runs a direct field write through registered observers.</summary>
+        public Task FieldSetAsync<TTemplate, TField>(TTemplate entity, string fieldName, TField value, Func<Task> next)
+        {
+            var context = new FieldSetObservationContext<TTemplate, TField>(actionContext, entity, fieldName, value);
+            return Observe(
+                async () => { await next(); return true; },
+                (observer, inner) => observer.OnFieldSetAsync(context, () => inner()));
+        }
+
         /// <summary>Runs a mutation through registered observers (exactly-once continuation enforced).</summary>
         public Task MutationAsync<TTemplate, TMutationEvent>(TTemplate entity, TMutationEvent mutation, Func<Task> next)
         {

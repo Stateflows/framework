@@ -43,7 +43,6 @@ internal sealed class DefinitionModel
     {
         var history = Add(name, VertexType.History, region);
         history.HistoricalRegion = region;
-        region.History ??= history;
         return history;
     }
 

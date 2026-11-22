@@ -1,5 +1,6 @@
 ﻿using System;
 using Stateflows.StateMachines.Registration.Builders;
+using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
@@ -18,9 +19,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.-Transitions#logic" />
         TReturn AddGuardExpression(Func<IGuardBuilder<TEvent>, IGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(((IVertexBuilder)this).Vertex);
+            var edge = ((IEdgeBuilder)this).Edge;
+            var builder = new GuardBuilder<TEvent>(edge);
             guardExpression.Invoke(builder);
 
+            var index = edge.Guards.Actions.Count;
+            edge.Guards.Registrations[index] = builder.Expression(GuardKind.And);
             return AddGuard(builder.GetAndGuard());
         }
 

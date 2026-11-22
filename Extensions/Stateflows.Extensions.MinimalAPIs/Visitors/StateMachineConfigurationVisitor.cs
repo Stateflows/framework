@@ -1,5 +1,6 @@
 ﻿using Stateflows.Common.Extensions;
 using Stateflows.StateMachines;
+using Stateflows.Common;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -8,7 +9,7 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
     // private BehaviorClass? OwnerClass = null;
     private bool HasDefaultInstance = false;
     
-    public override Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
+    public override Task StateMachineTypeAddedAsync<TStateMachine>(string id, string stateMachineName, int stateMachineVersion)
     {
         // if (OwnerClass != null)
         // {
@@ -26,7 +27,8 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false)
+    public override Task StateMachineAddingAsync(string id, string stateMachineName, int stateMachineVersion,
+        BehaviorClass? owner, BehaviorClass? parent, bool hasDefaultInstance)
     {
         // OwnerClass = ownerClass;
         HasDefaultInstance = hasDefaultInstance;

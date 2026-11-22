@@ -14,7 +14,8 @@ namespace Stateflows.Extensions.MinimalAPIs;
 internal class ActivityVisitor(
     IEndpointRouteBuilder routeBuilder,
     Interceptor interceptor,
-    ITypeMapper typeMapper
+    ITypeMapper typeMapper,
+    IEventsRegister eventsRegister
 ) : BehaviorVisitor(routeBuilder, typeMapper), IActivityVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
@@ -27,9 +28,9 @@ internal class ActivityVisitor(
     private readonly Dictionary<(string Name, int Version), Dictionary<(bool Input, Type Type), System.Action>> pinEndpoints = new();
     private readonly Dictionary<string, int> latestPinVersions = new();
 
-    public Task InputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+    public Task InputPinAddedAsync<TToken>(string pinId, string activityName, int activityVersion, string? parentNodeId)
     {
-        if (OwnerClass == null && parentNodeName == null && ActivityPinEndpoints.IsMappable<TToken>())
+        if (OwnerClass == null && parentNodeId == null && ActivityPinEndpoints.IsMappable<TToken>())
         {
             var hasDefaultInstance = HasDefaultInstance;
             pinEndpoints[(activityName, activityVersion)][(true, typeof(TToken))] = () =>
@@ -38,9 +39,9 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public Task OutputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+    public Task OutputPinAddedAsync<TToken>(string pinId, string activityName, int activityVersion, string? parentNodeId)
     {
-        if (OwnerClass == null && parentNodeName == null && ActivityPinEndpoints.IsMappable<TToken>())
+        if (OwnerClass == null && parentNodeId == null && ActivityPinEndpoints.IsMappable<TToken>())
         {
             var hasDefaultInstance = HasDefaultInstance;
             pinEndpoints[(activityName, activityVersion)][(false, typeof(TToken))] = () =>
@@ -67,12 +68,12 @@ internal class ActivityVisitor(
 
     Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> IBehaviorClassVisitor.HateoasLinks => HateoasLinks;
 
-    Task IActivityVisitor.ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
+    Task IActivityVisitor.ActivityTypeAddedAsync<TActivity>(string activityId, string activityName, int activityVersion)
     {
-        return ActivityTypeAddedAsync<TActivity>(activityName, activityVersion);
+        return ActivityTypeAddedAsync<TActivity>(activityId, activityName, activityVersion);
     }
 
-    public Task InitializerAddedAsync<TInitializationEvent>(string activityName, int activityVersion)
+    public Task InitializerAddedAsync<TInitializationEvent>(string initializerId, string activityName, int activityVersion, IReadOnlyList<string> eventNames, int order)
     {
         if (OwnerClass != null)
         {
@@ -81,6 +82,14 @@ internal class ActivityVisitor(
 
         Initializers[activityName] = true;
 
+        if (typeof(TInitializationEvent) == typeof(StructuralEvent))
+        {
+            foreach (var eventName in eventNames)
+                if (StructuralTriggers.Add((activityName, eventName)))
+                    RouteBuilder.RegisterStructuralEventEndpoint(Interceptor, BehaviorType.Activity, activityName, eventsRegister.GetEvent(eventName), HateoasLinks, HasDefaultInstance);
+            return Task.CompletedTask;
+        }
+
         CurrentActivityName = activityName;
         typeMapper.VisitMappedTypes<TInitializationEvent>(this);
         CurrentActivityName = string.Empty;
@@ -88,18 +97,17 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    Task IActivityVisitor.DefaultInitializerAddedAsync(string activityName, int activityVersion)
-        => Task.CompletedTask;
 
-    Task IActivityVisitor.FinalizerAddedAsync(string activityName, int activityVersion)
-        => Task.CompletedTask;
 
-    Task IActivityVisitor.NodeAddedAsync(string activityName, int activityVersion, string nodeName, NodeType nodeType,
-        string parentNodeName)
+    Task IActivityVisitor.NodeAddedAsync(string nodeId, string activityName, int activityVersion, string nodeName, NodeType nodeType,
+        string? parentNodeId)
     {
+        nodeNames[(activityName, activityVersion, nodeId)] = nodeName;
         NodeTypes[(activityName, nodeName)] = nodeType;
         return Task.CompletedTask;
     }
+
+    private readonly Dictionary<(string Name, int Version, string Id), string> nodeNames = new();
 
     // Node types are taken from the model, so endpoint contexts don't need to hydrate behavior state.
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string ActivityName, string NodeName), NodeType> NodeTypes = new();
@@ -107,16 +115,23 @@ internal class ActivityVisitor(
     internal static NodeType GetNodeType(string activityName, string nodeName)
         => NodeTypes.TryGetValue((activityName, nodeName), out var nodeType) ? nodeType : default;
 
-    Task IActivityVisitor.NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
+    Task IActivityVisitor.NodeTypeAddedAsync<TNode>(string nodeId, string activityName, int activityVersion)
     {
-        return NodeTypeAddedAsync<TNode>(activityName, activityVersion, nodeName);
+        return RegisterNodeEndpoints<TNode>(activityName, activityVersion, nodeNames[(activityName, activityVersion, nodeId)]);
     }
 
-    public Task AcceptEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
-        string? parentNodeName = null)
+    public Task AcceptEventNodeAddedAsync<TEvent>(string nodeId, string activityName, int activityVersion, IReadOnlyList<string> eventNames)
     {
         if (OwnerClass != null)
         {
+            return Task.CompletedTask;
+        }
+
+        if (typeof(TEvent) == typeof(StructuralEvent))
+        {
+            foreach (var eventName in eventNames)
+                if (StructuralTriggers.Add((activityName, eventName)))
+                    RouteBuilder.RegisterStructuralEventEndpoint(Interceptor, BehaviorType.Activity, activityName, eventsRegister.GetEvent(eventName), HateoasLinks, HasDefaultInstance);
             return Task.CompletedTask;
         }
 
@@ -127,64 +142,7 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public Task AcceptEventNodeAddedAsync(EventDefinition definition, string activityName, int activityVersion, string nodeName,
-        string? parentNodeName = null)
-    {
-        if (OwnerClass != null || !StructuralTriggers.Add((activityName, definition.Name)))
-        {
-            return Task.CompletedTask;
-        }
-
-        RouteBuilder.RegisterStructuralEventEndpoint(Interceptor, BehaviorType.Activity, activityName, definition,
-            HateoasLinks, HasDefaultInstance);
-
-        return Task.CompletedTask;
-    }
-
-    Task IActivityVisitor.AcceptEventNodeTypeAddedAsync<TEvent, TAcceptEventAction>(string activityName, int activityVersion,
-        string nodeName)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.SendEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
-        string parentNodeName)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.SendEventNodeTypeAddedAsync<TEvent, TSendEventAction>(string activityName, int activityVersion, string nodeName)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.PublishEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
-        string parentNodeName)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.PublishEventNodeTypeAddedAsync<TEvent, TPublishEventAction>(string activityName, int activityVersion,
-        string nodeName)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.ControlFlowAddedAsync(string activityName, int activityVersion, string sourceNodeName, string targetNodeName,
-        bool isElse)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.ControlFlowTypeAddedAsync<TControlFlow>(string activityName, int activityVersion, string sourceNodeName,
-        string targetNodeName, bool isElse)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.FlowAddedAsync<TToken>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName,
-        bool isElse)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.FlowTypeAddedAsync<TToken, TFlow>(string activityName, int activityVersion, string sourceNodeName,
-        string targetNodeName, bool isElse)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.TransformationFlowAddedAsync<TToken, TTransformedToken>(string activityName, int activityVersion,
-        string sourceNodeName, string targetNodeName, bool isElse)
-        => Task.CompletedTask;
-
-    Task IActivityVisitor.TransformationFlowTypeAddedAsync<TToken, TTransformedToken, TFlowTransformation>(string activityName,
-        int activityVersion, string sourceNodeName, string targetNodeName, bool isElse)
-        => Task.CompletedTask;
-
-    public Task ActivityAddingAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    public Task ActivityAddingAsync(string activityId, string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
         HasDefaultInstance = hasDefaultInstance;
         OwnerClass = ownerClass;
@@ -197,7 +155,7 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public Task ActivityAddedAsync(string activityName, int activityVersion)
+    public Task ActivityAddedAsync(string activityId, string activityName, int activityVersion)
     {
         if (OwnerClass != null)
         {
@@ -215,7 +173,7 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
+    public Task ActivityTypeAddedAsync<TActivity>(string activityId, string activityName, int activityVersion)
         where TActivity : class, IActivity
     {
         if (OwnerClass != null)
@@ -655,7 +613,7 @@ internal class ActivityVisitor(
         }
     }
 
-    public Task NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
+    private Task RegisterNodeEndpoints<TNode>(string activityName, int activityVersion, string nodeName)
         where TNode : class, IActivityNode
     {
         if (OwnerClass != null)
@@ -683,17 +641,5 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public Task CustomEventAddedAsync<TEvent>(string activityName, int activityVersion, BehaviorStatus[] supportedStatuses)
-    {
-        if (OwnerClass != null)
-        {
-            return Task.CompletedTask;
-        }
 
-        CurrentActivityName = activityName;
-        typeMapper.VisitMappedTypes<TEvent>(this);
-        CurrentActivityName = string.Empty;
-
-        return Task.CompletedTask;
-    }
 }

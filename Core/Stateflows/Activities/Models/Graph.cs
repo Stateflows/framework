@@ -16,8 +16,6 @@ namespace Stateflows.Activities.Models
     {
         internal string? ResourceName { get; set; }= null;
         
-        internal readonly List<Func<IActivityVisitor, Task>> VisitingTasks = new List<Func<IActivityVisitor, Task>>();
-        
         internal readonly StateflowsBuilder StateflowsBuilder = null;
 
         public Graph(string name, int version, StateflowsBuilder stateflowsBuilder, BehaviorClass? ownerClass, BehaviorClass? parentClass)
@@ -52,6 +50,9 @@ namespace Stateflows.Activities.Models
         public readonly Dictionary<string, Logic<ActivityPredicateAsync>> Initializers = [];
         public readonly List<Type> InitializerTypes = [];
         public Logic<ActivityPredicateAsync> DefaultInitializer;
+        internal Dictionary<(string Binding, int Order), Type> InitializerImplementations { get; } = [];
+        internal Type DefaultInitializerImplementation { get; set; }
+        internal Dictionary<Type, string[]> InitializerEventNames { get; } = [];
 
         public readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = [];
         public readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = [];
@@ -84,13 +85,23 @@ namespace Stateflows.Activities.Models
             }
 
             AllEdges.Clear();
+            foreach (var type in InitializerTypes)
+                InitializerEventNames[type] = StateflowsBuilder.TypeMapper.GetMappedTypes(type)
+                    .Select(mapped => mapped.GetEventName()).Distinct().ToArray();
             foreach (var node in AllNodes.Values.Where(node => node != null))
             {
                 node.IncomingEdges?.Clear();
                 if (node.StructuralEventName != null)
+                {
                     StateflowsBuilder.Events.GetEvent(node.StructuralEventName);
+                    node.EffectiveEventNames = [node.StructuralEventName];
+                }
                 else if (node.EventType != null && node.Type is NodeType.AcceptEventAction or NodeType.TimeEventAction or NodeType.SendEventAction or NodeType.PublishEventAction)
+                {
                     StateflowsBuilder.Events.RegisterClr(node.EventType);
+                    node.EffectiveEventNames = StateflowsBuilder.TypeMapper.GetMappedTypes(node.EventType)
+                        .Select(mapped => mapped.GetEventName()).Distinct().ToArray();
+                }
             }
             foreach (var edge in AllEdgesList.Where(edge => edge != null))
             {
@@ -277,6 +288,7 @@ namespace Stateflows.Activities.Models
             ThrowValidationErrors();
 
             StateflowsBuilder.ResourcesByBehaviorClass[Class] = resourceName;
+            FinalizeOperationRegistrations();
             Built = true;
         }
 

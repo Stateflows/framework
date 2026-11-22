@@ -9,6 +9,7 @@ using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Extensions.MinimalAPIs.Attributes;
 using Stateflows.StateMachines;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -23,6 +24,7 @@ internal class StateMachineVisitor(
     private readonly Dictionary<string, bool> Initializers = new();
     private readonly Dictionary<string, List<Type>> Triggers = new();
     private readonly HashSet<(string BehaviorName, string EventName)> StructuralTriggers = new();
+    private readonly Dictionary<string, string> VertexNames = new();
     private static readonly MethodInfo RegisterRequestMethod = typeof(StateMachineVisitor).GetMethod(
         nameof(RegisterRequestEndpoint),
         BindingFlags.Instance | BindingFlags.NonPublic
@@ -43,56 +45,57 @@ internal class StateMachineVisitor(
 
     Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> IBehaviorClassVisitor.HateoasLinks => HateoasLinks;
 
-    public override Task InitializerAddedAsync<TInitializationEvent>(string stateMachineName, int stateMachineVersion)
+    public override Task InitializerAddedAsync<TInitializationEvent>(string id, string stateMachineName, int stateMachineVersion, IReadOnlyList<string> eventNames)
     {
         Initializers[stateMachineName] = true;
 
         CurrentStateMachineName = stateMachineName;
         SupportedStatuses = [BehaviorStatus.NotInitialized];
-        typeMapper.VisitMappedTypes<TInitializationEvent>(this);
+        RegisterEvents<TInitializationEvent>(stateMachineName, eventNames);
         CurrentStateMachineName = string.Empty;
         SupportedStatuses = [];
 
         return Task.CompletedTask;
     }
 
-    public override Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
-        string targetVertexName = null, bool isElse = false)
+    public override Task TransitionAddedAsync<TEvent>(string id, string stateMachineName, int stateMachineVersion, string sourceVertexName,
+        string? targetVertexName, bool isElse, bool isLocal, bool polymorphic, IReadOnlyList<string> eventNames)
     {
         CurrentStateMachineName = stateMachineName;
         SupportedStatuses = [BehaviorStatus.Initialized];
-        typeMapper.VisitMappedTypes<TEvent>(this);
+        RegisterEvents<TEvent>(stateMachineName, eventNames);
         CurrentStateMachineName = string.Empty;
         SupportedStatuses = [];
 
         return Task.CompletedTask;
     }
 
-    public override Task TransitionAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
-        string sourceVertexName, string targetVertexName = null, bool isElse = false)
+    private void RegisterEvents<TEvent>(string stateMachineName, IReadOnlyList<string> eventNames)
     {
-        if (!StructuralTriggers.Add((stateMachineName, definition.Name)))
+        if (typeof(TEvent) != typeof(StructuralEvent))
         {
-            return Task.CompletedTask;
+            typeMapper.VisitMappedTypes<TEvent>(this);
+            return;
         }
-
-        routeBuilder.RegisterStructuralEventEndpoint(interceptor, BehaviorType.StateMachine, stateMachineName, definition,
-            HateoasLinks, HasDefaultInstance, [BehaviorStatus.Initialized]);
-
-        return Task.CompletedTask;
+        var events = routeBuilder.ServiceProvider.GetRequiredService<IEventsRegister>();
+        foreach (var name in eventNames)
+            if (StructuralTriggers.Add((stateMachineName, name)))
+                routeBuilder.RegisterStructuralEventEndpoint(interceptor, BehaviorType.StateMachine, stateMachineName,
+                    events.GetEvent(name), HateoasLinks, HasDefaultInstance, SupportedStatuses);
     }
 
-    public override Task DoBehaviorAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
-        string stateName, string behaviorName, string behaviorType)
-        => TransitionAddedAsync(definition, stateMachineName, stateMachineVersion, stateName);
-    public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false)
+    public override Task HostedBehaviorEventAddedAsync<TEvent>(string id, string stateMachineName, int stateMachineVersion,
+        string hostedBehaviorId, IReadOnlyList<string> eventNames)
+        => TransitionAddedAsync<TEvent>(id, stateMachineName, stateMachineVersion, hostedBehaviorId, null, false, false, false, eventNames);
+    public override Task StateMachineAddingAsync(string id, string stateMachineName, int stateMachineVersion,
+        BehaviorClass? owner, BehaviorClass? parent, bool hasDefaultInstance)
     {
         HasDefaultInstance = hasDefaultInstance;
 
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion)
+    public override Task StateMachineAddedAsync(string id, string stateMachineName, int stateMachineVersion)
     {
         RegisterStandardEndpoints(stateMachineName);
         RegisterRemainingEndpoints(stateMachineName);
@@ -530,7 +533,7 @@ internal class StateMachineVisitor(
             );
         }
     }
-    public override Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
+    public override Task StateMachineTypeAddedAsync<TStateMachine>(string id, string stateMachineName, int stateMachineVersion)
     {
         var stateMachineType = typeof(TStateMachine);
         if (typeof(IStateMachineEndpoints).IsAssignableFrom(stateMachineType))
@@ -543,8 +546,16 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task VertexTypeAddedAsync<TVertex>(string stateMachineName, int stateMachineVersion, string vertexName)
+    public override Task VertexAddedAsync(string id, string stateMachineName, int stateMachineVersion, string vertexName,
+        VertexType vertexType, string? parentVertexId, string? regionId, int? regionIndex)
     {
+        VertexNames[id] = vertexName;
+        return Task.CompletedTask;
+    }
+
+    public override Task VertexTypeAddedAsync<TVertex>(string id, string stateMachineName, int stateMachineVersion)
+    {
+        var vertexName = VertexNames[id];
         var vertexType = typeof(TVertex);
         if (typeof(IStateEndpoints).IsAssignableFrom(vertexType))
         {
@@ -561,29 +572,4 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses)
-    {
-        CurrentStateMachineName = stateMachineName;
-        SupportedStatuses = supportedStatuses;
-        typeMapper.VisitMappedTypes<TEvent>(this);
-        CurrentStateMachineName = string.Empty;
-        SupportedStatuses = [];
-
-        return Task.CompletedTask;
-    }
-
-    public override Task DoBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName,
-        string behaviorType, IEnumerable<Type> eventTypes)
-    {
-        CurrentStateMachineName = stateMachineName;
-        SupportedStatuses = [ BehaviorStatus.Initialized ];
-        foreach (var eventType in eventTypes)
-        {
-            typeMapper.VisitMappedTypes(eventType, this);
-        }
-        CurrentStateMachineName = string.Empty;
-        SupportedStatuses = [];
-
-        return Task.CompletedTask;
-    }
 }

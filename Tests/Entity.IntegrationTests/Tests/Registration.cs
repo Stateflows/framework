@@ -170,25 +170,25 @@ namespace Entity.IntegrationTests.Tests
         public Dictionary<string, (FieldAccess Access, bool Computed, object? DefaultValue)> AddedFields { get; } = [];
         public List<string> AddedInitializers { get; } = [];
 
-        public override Task FieldAddedAsync<TTemplate, TField>(string entityName, int entityVersion, string fieldName, TField defaultValue, bool computed, FieldAccess access)
+        public override Task FieldAddedAsync<TTemplate, TField>(string id, string entityName, int entityVersion, string fieldName, bool hasDefaultValue, TField defaultValue, bool computed, FieldAccess access)
         {
             AddedFields[$"{entityName}.{fieldName}"] = (access, computed, defaultValue);
             return Task.CompletedTask;
         }
 
-        public override Task InitializerAddedAsync<TTemplate, TInitializationEvent>(string entityName, int entityVersion)
+        public override Task InitializerAddedAsync<TTemplate, TInitializationEvent>(string id, string entityName, int entityVersion, IReadOnlyList<string> eventNames)
         {
             AddedInitializers.Add($"{entityName}:{typeof(TInitializationEvent).Name}");
             return Task.CompletedTask;
         }
 
-        public override Task EntityAddedAsync<TTemplate>(string entityName, int entityVersion)
+        public override Task EntityAddedAsync<TTemplate>(string id, string entityName, int entityVersion)
         {
             AddedEntities.Add($"{entityName}.{entityVersion}");
             return Task.CompletedTask;
         }
 
-        public override Task EntityTypeAddedAsync<TTemplate, TEntity>(string entityName, int entityVersion)
+        public override Task EntityTypeAddedAsync<TTemplate, TEntity>(string id, string entityName, int entityVersion)
         {
             AddedTypes.Add(typeof(TEntity));
             return Task.CompletedTask;
@@ -608,4 +608,3 @@ namespace Entity.IntegrationTests.Tests
         }
     }
 }
-

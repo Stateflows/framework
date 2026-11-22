@@ -17,6 +17,9 @@ namespace Stateflows.Extensions.OpenTelemetry
     /// <param name="logger">The logger used to report activity processing outcomes.</param>
     public class ActivityTracer(ILogger<ActivityTracer> logger) : IActivityObserver, IActivityInterceptor, IActivityExceptionHandler
     {
+        public Task OnActionAsync(IActivityActionObservationContext context, Func<Task> next) => next();
+        public Task OnPredicateAsync(IActivityPredicateObservationContext predicateContext, Func<Task<bool>> next) => next();
+
         private bool Skip = false;
 
         private TracingActivity? EventProcessingActivity;

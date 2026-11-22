@@ -10,35 +10,52 @@ namespace Stateflows.StateMachines
     public abstract class StateMachineObserver : IStateMachineObserver
     {
         /// <inheritdoc/>
-        public virtual Task OnStateMachineInitializeAsync(IStateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
+        public virtual Task OnActionAsync(IStateMachineActionObservationContext actionContext, Func<Task> next) => next();
+        /// <inheritdoc/>
+        public virtual Task OnPredicateAsync(IStateMachinePredicateObservationContext predicateContext, Func<Task<bool>> next) => next();
+        /// <inheritdoc/>
+        public virtual Task OnHostedBehaviorInitializeAsync(IHostedBehaviorObservationContext hostedBehaviorContext, Func<Task> next) => next();
+        /// <inheritdoc/>
+        public virtual Task OnHostedBehaviorFinalizeAsync(IHostedBehaviorObservationContext hostedBehaviorContext, Func<Task> next) => next();
+        /// <inheritdoc/>
+        public virtual Task OnHostedBehaviorEventForwardAsync(IHostedBehaviorObservationContext hostedBehaviorContext, Func<Task> next) => next();
+
+        /// <inheritdoc/>
+        public virtual Task OnDeferralGuardAsync(IDeferralObservationContext deferralContext, Func<Task<bool>> next) => next();
+
+        /// <inheritdoc/>
+        public virtual Task OnEventDeferredAsync(IDeferralObservationContext deferralContext, Func<Task> next) => next();
+
+        /// <inheritdoc/>
+        public virtual Task OnStateMachineInitializeAsync(IStateMachineInitializationContext initializationContext, bool implicitInitialization, Func<Task<bool>> next)
             => next();
 
         /// <inheritdoc/>
-        public virtual Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next)
+        public virtual Task OnStateMachineFinalizeAsync(IStateMachineActionContext finalizationContext, Func<Task> next)
             => next();
 
         /// <inheritdoc/>
-        public virtual Task OnStateInitializeAsync(IStateActionContext context, Func<Task> next)
+        public virtual Task OnStateInitializeAsync(IStateActionContext stateContext, Func<Task> next)
             => next();
 
         /// <inheritdoc/>
-        public virtual Task OnStateFinalizeAsync(IStateActionContext context, Func<Task> next)
+        public virtual Task OnStateFinalizeAsync(IStateActionContext stateContext, Func<Task> next)
             => next();
 
         /// <inheritdoc/>
-        public virtual Task OnStateEntryAsync(IStateActionContext context, Func<Task> next)
+        public virtual Task OnStateEntryAsync(IStateActionContext stateContext, Func<Task> next)
             => next();
 
         /// <inheritdoc/>
-        public virtual Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
+        public virtual Task OnStateExitAsync(IStateActionContext stateContext, Func<Task> next)
             => next();
 
         /// <inheritdoc/>
-        public virtual Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task<bool>> next)
+        public virtual Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> transitionContext, Func<Task<bool>> next)
             => next();
 
         /// <inheritdoc/>
-        public virtual Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
+        public virtual Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> transitionContext, Func<Task> next)
             => next();
     }
 }

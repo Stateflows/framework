@@ -1,94 +1,31 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.StateMachines;
+
+/// <summary>No-op base for finalized-definition visitors; type callbacks do not forward to general callbacks.</summary>
+public abstract class StateMachineVisitor : IStateMachineVisitor
 {
-    /// <summary>Base definition visitor with no-op implementations, allowing individual metadata callbacks to be overridden.</summary>
-    /// <remarks>This visits registrations, not runtime executions.
-    /// See <see href="https://github.com/Stateflows/framework/wiki/4.5.-Observability">observability</see>.</remarks>
-    public abstract class StateMachineVisitor : IStateMachineVisitor
-    {
-        /// <inheritdoc/>
-        public virtual Task TransitionAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
-            string sourceVertexName, string targetVertexName = null, bool isElse = false)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task DoBehaviorAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
-            string stateName, string behaviorName, string behaviorType) => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
-            where TStateMachine : class, IStateMachine
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task InitializerAddedAsync<TInitializationEvent>(string stateMachineName, int stateMachineVersion)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task DefaultInitializerAddedAsync(string stateMachineName, int stateMachineVersion)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task FinalizerAddedAsync(string stateMachineName, int stateMachineVersion)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task VertexAddedAsync(string stateMachineName, int stateMachineVersion, string vertexName, VertexType vertexType, string parentVertexName = null)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task VertexTypeAddedAsync<TVertex>(string stateMachineName, int stateMachineVersion, string vertexName)
-            where TVertex : class, IVertex
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string targetVertexName = null, bool isElse = false)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task TransitionTypeAddedAsync<TEvent, TTransition>(string stateMachineName, int stateMachineVersion,
-            string sourceVertexName, string targetVertexName = null, bool isElse = false) where TTransition : class, ITransition<TEvent>
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task DoBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName,
-            string behaviorType, IEnumerable<Type> eventTypes)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task OnEntryBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName,
-            string behaviorType)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task OnExitBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName,
-            string behaviorType)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task GuardBehaviorAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
-            string? targetVertexName, bool isElse, string behaviorName, string behaviorType)
-            => Task.CompletedTask;
-
-        /// <inheritdoc/>
-        public virtual Task EffectBehaviorAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
-            string? targetVertexName, bool isElse, string behaviorName, string behaviorType)
-            => Task.CompletedTask;
-    }
+    public virtual Task StateMachineAddingAsync(string stateMachineId, string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass, BehaviorClass? parentClass, bool hasDefaultInstance) => Task.CompletedTask;
+    public virtual Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineId, string stateMachineName, int stateMachineVersion) where TStateMachine : class, IStateMachine => Task.CompletedTask;
+    public virtual Task StateMachineAddedAsync(string stateMachineId, string stateMachineName, int stateMachineVersion) => Task.CompletedTask;
+    public virtual Task VertexAddedAsync(string vertexId, string stateMachineName, int stateMachineVersion, string vertexName, VertexType vertexType, string? parentVertexId, string? regionId, int? regionIndex) => Task.CompletedTask;
+    public virtual Task VertexTypeAddedAsync<TVertex>(string vertexId, string stateMachineName, int stateMachineVersion) where TVertex : class, IVertex => Task.CompletedTask;
+    public virtual Task RegionAddedAsync(string regionId, string stateMachineName, int stateMachineVersion, string parentVertexId, int regionIndex) => Task.CompletedTask;
+    public virtual Task TransitionAddedAsync<TEvent>(string transitionId, string stateMachineName, int stateMachineVersion, string sourceVertexId, string? targetVertexId, bool isElse, bool isLocal, bool polymorphicTriggers, IReadOnlyList<string> triggerNames) => Task.CompletedTask;
+    public virtual Task TransitionTypeAddedAsync<TEvent, TTransition>(string transitionId, string stateMachineName, int stateMachineVersion) where TTransition : class, ITransition<TEvent> => Task.CompletedTask;
+    public virtual Task InitializerAddedAsync<TEvent>(string initializerId, string stateMachineName, int stateMachineVersion, IReadOnlyList<string> eventNames) => Task.CompletedTask;
+    public virtual Task DefaultInitializerAddedAsync(string initializerId, string stateMachineName, int stateMachineVersion) => Task.CompletedTask;
+    public virtual Task FinalizerAddedAsync(string finalizerId, string stateMachineName, int stateMachineVersion) => Task.CompletedTask;
+    public virtual Task ActionAddedAsync(string actionId, string stateMachineName, int stateMachineVersion, string ownerElementId, StateMachineOperation operationKind, int actionIndex) => Task.CompletedTask;
+    public virtual Task ActionTypeAddedAsync<TImplementation>(string actionId, string stateMachineName, int stateMachineVersion) where TImplementation : class => Task.CompletedTask;
+    public virtual Task ActionBehaviorAddedAsync(string actionId, string stateMachineName, int stateMachineVersion, BehaviorClass actionBehaviorClass) => Task.CompletedTask;
+    public virtual Task GuardAddedAsync(string guardId, string stateMachineName, int stateMachineVersion, string ownerElementId, string? parentGuardId, int guardIndex, GuardKind guardKind) => Task.CompletedTask;
+    public virtual Task GuardTypeAddedAsync<TImplementation>(string guardId, string stateMachineName, int stateMachineVersion) where TImplementation : class => Task.CompletedTask;
+    public virtual Task GuardBehaviorAddedAsync(string guardId, string stateMachineName, int stateMachineVersion, BehaviorClass guardBehaviorClass) => Task.CompletedTask;
+    public virtual Task DeferralAddedAsync<TEvent>(string deferralId, string stateMachineName, int stateMachineVersion, string vertexId, IReadOnlyList<string> eventNames) => Task.CompletedTask;
+    public virtual Task HostedBehaviorAddedAsync(string hostedBehaviorId, string stateMachineName, int stateMachineVersion, string vertexId, BehaviorClass hostedBehaviorClass) => Task.CompletedTask;
+    public virtual Task HostedBehaviorTypeAddedAsync<TImplementation>(string hostedBehaviorId, string stateMachineName, int stateMachineVersion) where TImplementation : class => Task.CompletedTask;
+    public virtual Task HostedBehaviorEventAddedAsync<TEvent>(string hostedBehaviorEventId, string stateMachineName, int stateMachineVersion, string hostedBehaviorId, IReadOnlyList<string> eventNames) => Task.CompletedTask;
 }

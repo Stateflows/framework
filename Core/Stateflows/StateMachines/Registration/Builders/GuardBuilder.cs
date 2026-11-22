@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -11,15 +12,34 @@ namespace Stateflows.StateMachines.Registration.Builders
     internal class GuardBuilder<TEvent> :
         IGuardBuilder<TEvent>,
         IDefaultGuardBuilder,
+        IEdgeBuilder,
         IVertexBuilder
     {
         private readonly List<Func<ITransitionContext<TEvent>, Task<bool>>> Guards = [];
+        private readonly Dictionary<int, OperationRegistration> registrations = [];
 
-        public Vertex Vertex { get; private set; }
-        
-        public GuardBuilder(Vertex vertex)
+        internal void RecordType(Type? type, bool negated = false)
+            => registrations[Guards.Count] = OperationRegistration.Leaf(type, negated);
+        internal void RecordBehavior(Type? type, BehaviorClass behavior)
+            => registrations[Guards.Count] = new OperationRegistration { ImplementationType = type, Behavior = behavior };
+        internal string RegistrationAddress => $"{path}.{Guards.Count}";
+
+        internal OperationRegistration Expression(GuardKind kind)
         {
-            Vertex = vertex;
+            var expression = new OperationRegistration { Kind = kind };
+            for (var index = 0; index < Guards.Count; index++)
+                expression.Children.Add(registrations.TryGetValue(index, out var registration) ? registration : OperationRegistration.Leaf());
+            return expression;
+        }
+
+        public Vertex Vertex => Edge.Source;
+        public Edge Edge { get; }
+        private readonly string path;
+        
+        public GuardBuilder(Edge edge, string? path = null)
+        {
+            Edge = edge;
+            this.path = path ?? edge.Guards.Actions.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
         
         public Func<ITransitionContext<TEvent>, Task<bool>> GetAndGuard()
@@ -54,27 +74,34 @@ namespace Stateflows.StateMachines.Registration.Builders
         
         public IGuardBuilder<TEvent> AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
         {
-            Guards.AddRange(guardsAsync);
+            foreach (var guard in guardsAsync)
+            {
+                if (!registrations.TryGetValue(Guards.Count, out var registration))
+                    registrations[Guards.Count] = registration = OperationRegistration.Leaf();
+                Guards.Add(context => registration.ObserveAsync(((Context.Classes.BaseContext)context).Context, () => guard(context)));
+            }
 
             return this;
         }
 
         public IGuardBuilder<TEvent> AddAndExpression(Action<IGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(Vertex);
+            var builder = new GuardBuilder<TEvent>(Edge, RegistrationAddress);
             guardExpression.Invoke(builder);
             
-            Guards.Add(builder.GetAndGuard());
+            registrations[Guards.Count] = builder.Expression(GuardKind.And);
+            AddGuards(builder.GetAndGuard());
 
             return this;
         }
 
         public IGuardBuilder<TEvent> AddOrExpression(Action<IGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(Vertex);
+            var builder = new GuardBuilder<TEvent>(Edge, RegistrationAddress);
             guardExpression.Invoke(builder);
             
-            Guards.Add(builder.GetOrGuard());
+            registrations[Guards.Count] = builder.Expression(GuardKind.Or);
+            AddGuards(builder.GetOrGuard());
 
             return this;
         }

@@ -12,7 +12,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public string Name => Vertex.Name;
 
-        public string Identifier => Vertex.Identifier;
+        public string Identifier => Vertex.DefinitionIdentifier;
 
         private RootContext Context { get; }
 
@@ -36,7 +36,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public bool TryGetParent(out IStateContext parentStateContext)
         {
-            var parent = Context.Executor.Graph.AllVertices[Identifier].ParentRegion?.ParentVertex;
+            var parent = Vertex.ParentRegion?.ParentVertex;
 
             parentStateContext = parent != null
                 ? new StateContext(parent, Context)

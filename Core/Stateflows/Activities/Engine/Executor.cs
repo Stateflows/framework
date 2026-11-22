@@ -2092,11 +2092,15 @@ namespace Stateflows.Activities.Engine
                 foreach (var token in originalTokens)
                 {
                     var processedToken = token;
-                    foreach (var logic in edge.TokenPipeline.Actions)
+                    for (var operationIndex = 0; operationIndex < edge.TokenPipeline.Actions.Count; operationIndex++)
                     {
+                        var logic = edge.TokenPipeline.Actions[operationIndex];
                         foreach (var action in logic.Actions)
                         {
-                            var pipelineContext = new TokenPipelineContext(context, edge, processedToken);
+                            var pipelineContext = new TokenPipelineContext(context, edge, processedToken)
+                            {
+                                Operation = edge.Operations[operationIndex]
+                            };
                             processedToken = await action.Invoke(pipelineContext, Inspector);
                             if (processedToken != null)
                             {

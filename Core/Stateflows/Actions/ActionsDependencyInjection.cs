@@ -72,7 +72,8 @@ namespace Stateflows.Actions
                 {
                     register = new ActionsRegister()
                     {
-                        EventsRegister = (stateflowsBuilder as StateflowsBuilder)?.Events
+                        EventsRegister = (stateflowsBuilder as StateflowsBuilder)?.Events,
+                        TypeMapper = (stateflowsBuilder as StateflowsBuilder)?.TypeMapper
                     };
                     Registers.Add(stateflowsBuilder, register);
 

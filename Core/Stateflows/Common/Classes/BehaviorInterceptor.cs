@@ -10,14 +10,14 @@ namespace Stateflows.Common.Classes;
 public abstract class BehaviorInterceptor : IBehaviorInterceptor
 {
     /// <inheritdoc />
-    public virtual Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+    public virtual Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> eventContext, Func<Task<EventStatus>> next)
         => next();
 
     /// <inheritdoc />
-    public virtual Task NotificationPublishedAsync<TNotification>(IBehaviorActionContext context, TNotification notification, IDictionary<string, EventHeader> headers)
+    public virtual Task NotificationPublishedAsync<TNotification>(IBehaviorActionContext actionContext, TNotification notification, IDictionary<string, EventHeader> headers)
         => Task.CompletedTask;
 
     /// <inheritdoc />
-    public virtual Task RequestRespondedAsync<TRequest, TResponse>(IBehaviorActionContext context, TRequest request, TResponse response) where TRequest : IRequest<TResponse>
+    public virtual Task RequestRespondedAsync<TRequest, TResponse>(IBehaviorActionContext actionContext, TRequest request, TResponse response) where TRequest : IRequest<TResponse>
         => Task.CompletedTask;
 }

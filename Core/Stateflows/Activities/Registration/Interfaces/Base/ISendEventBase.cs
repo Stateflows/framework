@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Activities.Context.Classes;
@@ -74,7 +74,9 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             );
 
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.SendEventNodeTypeAddedAsync<TEvent, TSendEventAction>(graph.Name, graph.Version, actionNodeName));
+            graph.AllNamedNodes[actionNodeName].ImplementationType = typeof(TSendEventAction);
+        graph.AllNamedNodes[actionNodeName].OperationTypes[(ActivityOperationKind.Execute, graph.AllNamedNodes[actionNodeName].Action.Actions.Count - 1)] = typeof(TSendEventAction);
+            graph.AllNamedNodes[actionNodeName].ImplementationEventType = typeof(TEvent);
 
             return result;
         }

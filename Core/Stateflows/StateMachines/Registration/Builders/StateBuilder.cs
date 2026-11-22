@@ -71,7 +71,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
                 Vertex.Initialize.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
-                        var context = new StateActionContext(c, Vertex, Constants.Entry);
+                        var context = new StateActionContext(c, Vertex, Constants.Initialize);
                         await actionAsync(context);
                     })
                 );
@@ -89,7 +89,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
                 Vertex.Finalize.Actions.Add(c => c.Executor.RunInScopeAsync(async () =>
                     {
-                        var context = new StateActionContext(c, Vertex, Constants.Entry);
+                        var context = new StateActionContext(c, Vertex, Constants.Finalize);
                         await actionAsync(context);
                     })
                 );
@@ -152,10 +152,15 @@ namespace Stateflows.StateMachines.Registration.Builders
             
             buildAction?.Invoke(builder);
 
-            var eventName = typeof(TEvent).GetEventName();
-            if (!Vertex.Deferrals.TryAdd(eventName, builder.Logic))
-                throw new DeferralDefinitionException(eventName, $"Event '{eventName}' is already deferred by '{Vertex.Name}'.", Vertex.Graph.Class);
-            Vertex.DeferralTypes.Add(eventName, typeof(TEvent));
+            if (!Vertex.DeferralDeclarations.TryAdd(typeof(TEvent), builder.Logic))
+                throw new DeferralDefinitionException(Event<TEvent>.Name, $"Event '{Event<TEvent>.Name}' is already deferred by '{Vertex.Name}'.", Vertex.Graph.Class);
+            foreach (var type in Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(typeof(TEvent)))
+            {
+                var eventName = Event.GetName(type);
+                if (!Vertex.Deferrals.TryAdd(eventName, builder.Logic))
+                    throw new DeferralDefinitionException(eventName, $"Event '{eventName}' is already deferred by '{Vertex.Name}'.", Vertex.Graph.Class);
+                Vertex.DeferralTypes.Add(eventName, typeof(TEvent));
+            }
 
             return this;
         }
@@ -182,7 +187,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 Trigger = trigger,
                 TriggerType = typeof(TEvent),
-                StructuralEventName = structuralEventName,
+                StructuralEventNames = structuralEventName == null ? null : [structuralEventName],
                 IsElse = isElse,
                 Graph = Vertex.Graph,
                 SourceName = Vertex.Name,
@@ -211,20 +216,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex.Graph.AllEdges.Add(edge);
 
             transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
-
-            edge.VisitingTask = structuralEventName != null
-                ? visitor => visitor.TransitionAddedAsync(Graph.StateflowsBuilder.Events.GetEvent(structuralEventName),
-                    Graph.Name, Graph.Version, edge.SourceName, targetStateName, isElse)
-                : visitor => visitor.TransitionAddedAsync<TEvent>(
-                Vertex.Graph.Name,
-                Vertex.Graph.Version,
-                edge.SourceName,
-                targetStateName == Constants.DefaultTransitionTarget
-                    ? edge.TargetName
-                    : null
-            );
-            
-            Vertex.Graph.VisitingTasks.Add(edge.VisitingTask);
 
             return this;
         }
@@ -393,14 +384,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         #region Submachine
-        private void AddStructuralHostedEventsVisitor()
-            => Graph.VisitingTasks.Add(async visitor =>
-            {
-                foreach (var name in Vertex.BehaviorStructuralEvents)
-                    await visitor.DoBehaviorAddedAsync(Graph.StateflowsBuilder.Events.GetEvent(name),
-                        Graph.Name, Graph.Version, Vertex.Name, Vertex.BehaviorName, Vertex.BehaviorType);
-            });
-
         [DebuggerHidden]
         private StateBuilder AddSubmachine<TStateMachine>(StateMachineUtilsBuildAction buildAction = null)
             where TStateMachine : class, IStateMachine
@@ -411,7 +394,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
-            AddStructuralHostedEventsVisitor();
+            Vertex.HostedImplementationType = typeof(TStateMachine);
             // Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
@@ -426,7 +409,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
-            AddStructuralHostedEventsVisitor();
             // Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
@@ -447,7 +429,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
-            AddStructuralHostedEventsVisitor();
+            Graph.RecordStateActionType(Vertex, Constants.Do, 0, typeof(TActivity));
             // Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
@@ -462,7 +444,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
-            AddStructuralHostedEventsVisitor();
             // Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
@@ -492,10 +473,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 Vertex.BehaviorType = action.BehaviorClassType;
                 Vertex.BehaviorName = doActionName;
-                AddStructuralHostedEventsVisitor();
-            }
-            
-            Graph.VisitingTasks.Add(visitor => visitor.DoBehaviorAddedAsync(Graph.Name, Graph.Version, Vertex.Name, doActionName, action.BehaviorClassType, action.ConsumedEventTypes));
+                Graph.RecordStateActionType(Vertex, Constants.Do, 0, typeof(TAction));
+                }
             
             return this;
         }
@@ -518,8 +497,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 Vertex.BehaviorType = action.BehaviorClassType;
                 Vertex.BehaviorName = doActionName;
-                AddStructuralHostedEventsVisitor();
-            }
+                }
             
             return this;
         }
@@ -1015,8 +993,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
 
             if (
-                !Vertex.Deferrals.TryGetValue(typeof(TEvent).GetEventName(), out var deferralLogic) ||
-                deferralLogic?.OriginStateMachineName == null
+                !Vertex.TryGetInheritedDeferral(typeof(TEvent), out var deferralLogic)
             )
             {
                 throw new StateMachineOverrideException($"Deferral of event '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);

@@ -31,6 +31,9 @@ namespace Stateflows.StateMachines.Engine
         public override Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
             => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
 
+        public override Task<bool> OnDeferralGuardExceptionAsync(IDeferralObservationContext context, Exception exception)
+            => Task.FromResult(HandleException(context.Behavior.Id, exception, context.EventHeaders));
+
         public override Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
             => Task.FromResult(HandleException(context.Behavior.Id, exception, context.Headers));
 

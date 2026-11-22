@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Models;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
@@ -34,7 +35,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         public TReturn AddExceptionHandler<TException, TExceptionHandler>()
             where TException : Exception
             where TExceptionHandler : class, IExceptionHandlerNode<TException>
-            => AddExceptionHandler<TException>(async c =>
+            => RegistrationMetadata.ExceptionHandler(() => AddExceptionHandler<TException>(async c =>
             {
                 var handler = await ((BaseContext)c).NodeScope.GetExceptionHandlerAsync<TException, TExceptionHandler>(c);
 
@@ -46,6 +47,6 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                     OutputTokens.TokensHolder.Value = null;
                     ActivityNodeContextAccessor.Context.Value = null;
                 }
-            });
+            }), typeof(TException), typeof(TExceptionHandler));
     }
 }

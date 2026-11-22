@@ -14,7 +14,8 @@ namespace Stateflows.Extensions.MinimalAPIs;
 internal class ActionVisitor(
     IEndpointRouteBuilder routeBuilder,
     Interceptor interceptor,
-    ITypeMapper typeMapper
+    ITypeMapper typeMapper,
+    IEventsRegister eventsRegister
 )
     : BehaviorVisitor(routeBuilder, typeMapper), IActionVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
@@ -25,7 +26,7 @@ internal class ActionVisitor(
     private string CurrentActionName = string.Empty;
     public string BehaviorClassType { get; private set; }
     
-    public Task ActionAddingAsync(string actionName, int actionVersion, string? behaviorClassType = null,
+    public Task ActionAddingAsync(string actionId, string actionName, int actionVersion, string? behaviorClassType = null,
         BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
         OwnerClass = ownerClass;
@@ -34,7 +35,7 @@ internal class ActionVisitor(
         return Task.CompletedTask;
     }
 
-    public Task ActionAddedAsync(string actionName, int actionVersion)
+    public Task ActionAddedAsync(string actionId, string actionName, int actionVersion)
     {
         if (OwnerClass != null)
         {
@@ -50,9 +51,9 @@ internal class ActionVisitor(
         return Task.CompletedTask;
     }
 
-    Task IActionVisitor.ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
+    Task IActionVisitor.ActionTypeAddedAsync<TAction>(string actionId, string actionName, int actionVersion)
     {
-        return ActionTypeAddedAsync<TAction>(actionName, actionVersion);
+        return ActionTypeAddedAsync<TAction>(actionId, actionName, actionVersion);
     }
 
     private static string GetEventName<TEvent>()
@@ -474,7 +475,7 @@ internal class ActionVisitor(
         }
     }
 
-    public Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
+    public Task ActionTypeAddedAsync<TAction>(string actionId, string actionName, int actionVersion)
     {
         if (OwnerClass != null)
         {
@@ -492,10 +493,18 @@ internal class ActionVisitor(
         return Task.CompletedTask;
     }
 
-    public Task CustomEventAddedAsync<TEvent>(string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
+    public Task CustomEventAddedAsync<TEvent>(string bindingId, string actionName, int actionVersion, IReadOnlyList<string> eventNames, BehaviorStatus[] supportedStatuses)
     {
         if (OwnerClass != null)
         {
+            return Task.CompletedTask;
+        }
+
+        if (typeof(TEvent) == typeof(StructuralEvent))
+        {
+            foreach (var eventName in eventNames)
+                if (StructuralTriggers.Add((actionName, eventName)))
+                    routeBuilder.RegisterStructuralEventEndpoint(interceptor, BehaviorType.Action, actionName, eventsRegister.GetEvent(eventName), HateoasLinks, HasDefaultInstance, supportedStatuses);
             return Task.CompletedTask;
         }
 
@@ -506,18 +515,6 @@ internal class ActionVisitor(
         return Task.CompletedTask;
     }
 
-    public Task CustomEventAddedAsync(EventDefinition definition, string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
-    {
-        if (OwnerClass != null || !StructuralTriggers.Add((actionName, definition.Name)))
-        {
-            return Task.CompletedTask;
-        }
-
-        routeBuilder.RegisterStructuralEventEndpoint(interceptor, BehaviorType.Action, actionName, definition,
-            HateoasLinks, HasDefaultInstance, supportedStatuses);
-
-        return Task.CompletedTask;
-    }
     public void Visit<T>()
     {
         RegisterEventEndpoint<T>(CurrentActionName);

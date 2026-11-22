@@ -292,7 +292,7 @@ public sealed class Pins : StateflowsTestClass
             .AddStructuredActivity("scope", scope => scope
                 .AddInputPin<int>(pin => pin.AddFlow("scope-result")).AddOutputPin<int>("scope-result")));
         var visitor = new PinVisitor();
-        foreach (var visit in graph.VisitingTasks) await visit(visitor);
+        await graph.VisitAsync(visitor);
         CollectionAssert.AreEquivalent(new[]
         {
             "input:Int32:root:definition-pins.Stateflows.Activities.InputPin<System.Int32>",
@@ -350,13 +350,23 @@ public sealed class Pins : StateflowsTestClass
     private sealed class PinVisitor : ActivityVisitor
     {
         public List<string> Pins { get; } = [];
-        public override Task InputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+        private readonly Dictionary<string, string> names = [];
+        public override Task NodeAddedAsync(string id, string activityName, int activityVersion, string nodeName, NodeType nodeType, string? parentNodeId)
         {
+            names[id] = nodeName;
+            return Task.CompletedTask;
+        }
+        public override Task InputPinAddedAsync<TToken>(string pinId, string activityName, int activityVersion, string? parentNodeId)
+        {
+            var nodeName = names[pinId];
+            var parentNodeName = parentNodeId == null ? null : names[parentNodeId];
             Pins.Add($"input:{typeof(TToken).Name}:{parentNodeName ?? "root"}:{nodeName}");
             return Task.CompletedTask;
         }
-        public override Task OutputPinAddedAsync<TToken>(string activityName, int activityVersion, string nodeName, string parentNodeName = null)
+        public override Task OutputPinAddedAsync<TToken>(string pinId, string activityName, int activityVersion, string? parentNodeId)
         {
+            var nodeName = names[pinId];
+            var parentNodeName = parentNodeId == null ? null : names[parentNodeId];
             Pins.Add($"output:{typeof(TToken).Name}:{parentNodeName ?? "root"}:{nodeName}");
             return Task.CompletedTask;
         }

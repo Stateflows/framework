@@ -1,5 +1,6 @@
 ﻿using System;
 using Stateflows.StateMachines.Registration.Builders;
+using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
@@ -22,6 +23,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             
             guardExpression.Invoke(builder);
 
+            deferral.RecordGuard(builder.Expression(GuardKind.And));
             return AddGuard(builder.GetAndGuard());
         }
 

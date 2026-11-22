@@ -4,6 +4,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Context.Classes;
@@ -22,9 +23,8 @@ namespace Stateflows.Activities
                 throw new StateMachineRuntimeException($"On{stateActionName}Action '{actionName}' not found", context.Behavior.Id.BehaviorClass);
             }
 
-            _ = a.SendAsync(
-                new TokensInput(),
-                new Dictionary<string, EventHeader>
+            var delivery = new TokensInput().ToEventHolder();
+            delivery.Headers = new Dictionary<string, EventHeader>
                 {
                     {
                         nameof(BehaviorEmbedding),
@@ -36,8 +36,8 @@ namespace Stateflows.Activities
                             ParentId = context.Behavior.Id
                         }
                     }
-                }
-            );
+                };
+            BehaviorObservation.Dispatch(a.Id, delivery, () => _ = delivery.SendAsync(a, delivery.Headers));
 
             return Task.CompletedTask;
         }
@@ -83,7 +83,9 @@ namespace Stateflows.Activities
                 EventName = Event<TEvent>.Name
             };
 
-            _ = a.SendAsync(context.Event, headers);
+            var delivery = context.Event.ToTypedEventHolder();
+            delivery.Headers = headers;
+            BehaviorObservation.Dispatch(a.Id, delivery, () => _ = delivery.SendAsync(a, headers));
             
             return Task.FromResult(false);
         }
@@ -132,7 +134,9 @@ namespace Stateflows.Activities
             
             var ev = StateflowsJsonConverter.Clone(context.Event);
 
-            _ = a.SendAsync(ev, headers);
+            var delivery = ev.ToTypedEventHolder();
+            delivery.Headers = headers;
+            BehaviorObservation.Dispatch(a.Id, delivery, () => _ = delivery.SendAsync(a, headers));
             
             return Task.FromResult(false);
         }
@@ -147,9 +151,8 @@ namespace Stateflows.Activities
 
             var ev = StateflowsJsonConverter.Clone(context.Event);
 
-            _ = a.SendAsync(
-                new TokensInput().Add(ev),
-                new Dictionary<string, EventHeader>
+            var delivery = new TokensInput().Add(ev).ToEventHolder();
+            delivery.Headers = new Dictionary<string, EventHeader>
                 {
                     {
                         nameof(BehaviorEmbedding),
@@ -161,8 +164,8 @@ namespace Stateflows.Activities
                             ParentId = context.Behavior.Id
                         }
                     }
-                }
-            );
+                };
+            BehaviorObservation.Dispatch(a.Id, delivery, () => _ = delivery.SendAsync(a, delivery.Headers));
 
             return Task.CompletedTask;
         }

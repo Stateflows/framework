@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +20,8 @@ namespace Stateflows.Activities.Registration.Builders
         IElseObjectFlowBuilderWithWeight<TToken>,
         IControlFlowBuilder,
         IControlFlowBuilderWithWeight,
-        IElseControlFlowBuilder
+        IElseControlFlowBuilder,
+        IFlowMetadataBuilder
     {
         public Edge Edge { get; set; }
 
@@ -47,7 +48,9 @@ namespace Stateflows.Activities.Registration.Builders
                     
                     try
                     {
-                        var passed = await inspector.OnFlowGuardAsync(flowContext, () => guardAsync(flowContext));
+                        var passed = await inspector.OnFlowGuardAsync(flowContext, () =>
+                            inspector.OnPredicateAsync(new PredicateObservationContext(flowContext, context.Operation.Registration),
+                                () => guardAsync(flowContext)));
                         var result = passed ? tokenHolder : default;
                         
                         return result;
@@ -71,6 +74,7 @@ namespace Stateflows.Activities.Registration.Builders
                 });
 
                 Edge.TokenPipeline.Actions.Add(logic);
+                Edge.Operations.Add(new FlowOperationRegistration { InputType = typeof(TToken), OutputType = typeof(TToken) });
             }
 
             return this;
@@ -115,6 +119,7 @@ namespace Stateflows.Activities.Registration.Builders
             });
 
             Edge.TokenPipeline.Actions.Add(logic);
+            Edge.Operations.Add(new FlowOperationRegistration { IsTransformation = true, InputType = typeof(TToken), OutputType = typeof(TTransformedToken) });
             Edge.TargetTokenType = typeof(TTransformedToken);
 
             return new FlowBuilder<TTransformedToken>(Edge);

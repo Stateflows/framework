@@ -1,46 +1,111 @@
-﻿using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Common;
 
 namespace Stateflows.Actions
 {
-    /// <summary>Receives notifications about registered action definitions and custom events.</summary>
-    /// <remarks>Visitors are used for metadata integration and inspection; callbacks run as registrations are visited.</remarks>
+    /// <summary>
+    /// Receives an ordered description of a finalized action definition during an
+    /// action-registration visit. Each callback is awaited before the next callback
+    /// is invoked; a callback failure stops the visit and is propagated to its caller.
+    /// The action identifier is provided before the action name and version, followed
+    /// by callback-specific metadata.
+    /// </summary>
     public interface IActionVisitor
     {
-        /// <summary>Signals that an action definition is about to be visited.</summary>
-        /// <param name="actionName">The action name.</param>
-        /// <param name="actionVersion">The action version.</param>
-        /// <param name="behaviorClassType">Optional custom behavior class type.</param>
-        /// <param name="ownerClass">Optional owning behavior class.</param>
-        /// <param name="parentClass">Optional parent behavior class.</param>
-        /// <param name="hasDefaultInstance">Whether a default instance is registered.</param>
-        Task ActionAddingAsync(string actionName, int actionVersion, string? behaviorClassType = null, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false);
+        /// <summary>
+        /// Runs first for an action definition, before implementation type, binding,
+        /// configuration, and completion notifications.
+        /// </summary>
+        /// <param name="actionId">The engine identifier for the action definition; it identifies the action kind and is not necessarily unique among action names.</param>
+        /// <param name="actionName">The registered action name associated with this definition.</param>
+        /// <param name="actionVersion">The registered version of the action definition.</param>
+        /// <param name="behaviorClassType">The behavior-class kind under which the action is registered, when supplied.</param>
+        /// <param name="ownerClass">The owning behavior class, when the action is owned by another behavior.</param>
+        /// <param name="parentClass">The parent behavior class, when the action is nested under another behavior.</param>
+        /// <param name="hasDefaultInstance">Whether a default instance initialization is registered for this action's behavior class.</param>
+        /// <returns>A task completed when this visitor has finished handling the notification.</returns>
+        Task ActionAddingAsync(string actionId, string actionName, int actionVersion, string? behaviorClassType = null, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false) => Task.CompletedTask;
 
-        /// <summary>Signals that an action definition has been visited.</summary>
-        /// <param name="actionName">The action name.</param>
-        /// <param name="actionVersion">The action version.</param>
-        Task ActionAddedAsync(string actionName, int actionVersion);
-        
-        /// <summary>Signals that a typed action implementation has been registered.</summary>
-        /// <typeparam name="TAction">The action implementation type.</typeparam>
-        /// <param name="actionName">The action name.</param>
-        /// <param name="actionVersion">The action version.</param>
-        Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
-            where TAction : class, IAction;
-        
-        /// <summary>Signals that a typed custom event has been declared by an action.</summary>
-        /// <typeparam name="TEvent">The custom event type.</typeparam>
-        /// <param name="actionName">The action name.</param>
-        /// <param name="actionVersion">The action version.</param>
-        /// <param name="supportedStatuses">The behavior statuses supported by the event.</param>
-        Task CustomEventAddedAsync<TEvent>(string actionName, int actionVersion, BehaviorStatus[] supportedStatuses);
+        /// <summary>
+        /// Runs after all action type, binding, and configuration notifications; this
+        /// is the final callback for the visited action definition.
+        /// </summary>
+        /// <param name="actionId">The engine identifier for the action definition.</param>
+        /// <param name="actionName">The registered action name associated with this definition.</param>
+        /// <param name="actionVersion">The registered version of the action definition.</param>
+        /// <returns>A task completed when this visitor has finished handling the notification.</returns>
+        Task ActionAddedAsync(string actionId, string actionName, int actionVersion) => Task.CompletedTask;
 
-        /// <summary>Signals that a custom event definition has been declared by an action.</summary>
-        /// <param name="definition">The event definition.</param>
-        /// <param name="actionName">The action name.</param>
-        /// <param name="actionVersion">The action version.</param>
-        /// <param name="supportedStatuses">The behavior statuses supported by the event.</param>
-        Task CustomEventAddedAsync(EventDefinition definition, string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
-            => Task.CompletedTask;
+        /// <summary>
+        /// Reports the CLR implementation type registered for the action, when one
+        /// exists; it follows the initial action notification.
+        /// </summary>
+        /// <typeparam name="TAction">The concrete action implementation type.</typeparam>
+        /// <param name="actionId">The engine identifier for the action definition.</param>
+        /// <param name="actionName">The registered action name associated with this definition.</param>
+        /// <param name="actionVersion">The registered version of the action definition.</param>
+        /// <returns>A task completed when this visitor has finished handling the notification.</returns>
+        Task ActionTypeAddedAsync<TAction>(string actionId, string actionName, int actionVersion) where TAction : class, IAction => Task.CompletedTask;
+
+        /// <summary>
+        /// Reports one consumed event binding, after the action type notification and
+        /// before configuration, produced-event, and token-binding notifications.
+        /// Event names are the finalized mapped names accepted by this binding.
+        /// </summary>
+        /// <typeparam name="TEvent">The CLR event type represented by this binding.</typeparam>
+        /// <param name="bindingId">The engine identity of this consumed-event binding.</param>
+        /// <param name="actionName">The registered action name associated with this binding.</param>
+        /// <param name="actionVersion">The registered version of the action definition.</param>
+        /// <param name="eventNames">The ordered event names accepted by the binding after type mapping.</param>
+        /// <param name="supportedStatuses">The behavior statuses in which this binding is supported.</param>
+        /// <returns>A task completed when this visitor has finished handling the notification.</returns>
+        Task CustomEventAddedAsync<TEvent>(string bindingId, string actionName, int actionVersion, IReadOnlyList<string> eventNames, BehaviorStatus[] supportedStatuses) => Task.CompletedTask;
+
+        /// <summary>
+        /// Reports one produced-event binding, after the action configuration
+        /// notification. Names are the finalized mapped event names this binding can
+        /// produce.
+        /// </summary>
+        /// <typeparam name="TEvent">The CLR event type represented by this produced binding.</typeparam>
+        /// <param name="bindingId">The engine identity of this produced-event binding.</param>
+        /// <param name="actionName">The registered action name associated with this binding.</param>
+        /// <param name="actionVersion">The registered version of the action definition.</param>
+        /// <param name="eventNames">The ordered event names produced by the binding after type mapping.</param>
+        /// <returns>A task completed when this visitor has finished handling the notification.</returns>
+        Task ProducedEventAddedAsync<TEvent>(string bindingId, string actionName, int actionVersion, IReadOnlyList<string> eventNames) => Task.CompletedTask;
+
+        /// <summary>
+        /// Reports one input-token binding, in the order the action definition
+        /// registered its distinct consumed token types.
+        /// </summary>
+        /// <typeparam name="TToken">The CLR token type accepted by this input binding.</typeparam>
+        /// <param name="pinId">The engine identity of this input-token binding.</param>
+        /// <param name="actionName">The registered action name associated with this binding.</param>
+        /// <param name="actionVersion">The registered version of the action definition.</param>
+        /// <returns>A task completed when this visitor has finished handling the notification.</returns>
+        Task InputTokenAddedAsync<TToken>(string pinId, string actionName, int actionVersion) => Task.CompletedTask;
+
+        /// <summary>
+        /// Reports one output-token binding, in the order the action definition
+        /// registered its distinct produced token types.
+        /// </summary>
+        /// <typeparam name="TToken">The CLR token type produced by this output binding.</typeparam>
+        /// <param name="pinId">The engine identity of this output-token binding.</param>
+        /// <param name="actionName">The registered action name associated with this binding.</param>
+        /// <param name="actionVersion">The registered version of the action definition.</param>
+        /// <returns>A task completed when this visitor has finished handling the notification.</returns>
+        Task OutputTokenAddedAsync<TToken>(string pinId, string actionName, int actionVersion) => Task.CompletedTask;
+
+        /// <summary>
+        /// Reports the action's finalized configuration after its consumed-event
+        /// bindings and before produced-event and token bindings.
+        /// </summary>
+        /// <param name="actionId">The engine identifier for the action definition.</param>
+        /// <param name="actionName">The registered action name associated with this definition.</param>
+        /// <param name="actionVersion">The registered version of the action definition.</param>
+        /// <param name="isStateless">Whether the action is configured as stateless.</param>
+        /// <returns>A task completed when this visitor has finished handling the notification.</returns>
+        Task ActionConfigurationAddedAsync(string actionId, string actionName, int actionVersion, bool isStateless) => Task.CompletedTask;
     }
 }

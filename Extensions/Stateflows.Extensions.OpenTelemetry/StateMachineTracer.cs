@@ -21,6 +21,27 @@ namespace Stateflows.Extensions.OpenTelemetry
 
         internal static readonly ActivitySource Source = new(nameof(Stateflows));
 
+        /// <inheritdoc/>
+        public Task OnActionAsync(IStateMachineActionObservationContext context, Func<Task> next) => next();
+
+        /// <inheritdoc/>
+        public Task OnPredicateAsync(IStateMachinePredicateObservationContext predicateContext, Func<Task<bool>> next) => next();
+
+        /// <inheritdoc/>
+        public Task OnHostedBehaviorInitializeAsync(IHostedBehaviorObservationContext context, Func<Task> next) => next();
+
+        /// <inheritdoc/>
+        public Task OnHostedBehaviorFinalizeAsync(IHostedBehaviorObservationContext context, Func<Task> next) => next();
+
+        /// <inheritdoc/>
+        public Task OnHostedBehaviorEventForwardAsync(IHostedBehaviorObservationContext context, Func<Task> next) => next();
+
+        /// <inheritdoc/>
+        public Task OnDeferralGuardAsync(IDeferralObservationContext context, Func<Task<bool>> next) => next();
+
+        /// <inheritdoc/>
+        public Task OnEventDeferredAsync(IDeferralObservationContext context, Func<Task> next) => next();
+
         private Activity? EventProcessingActivity;
         /// <inheritdoc/>
         public async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
@@ -534,6 +555,44 @@ namespace Stateflows.Extensions.OpenTelemetry
             catch (Exception e)
             {
                 logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnStateMachineFinalizationExceptionAsync), e);
+            }
+
+            return Task.FromResult(false);
+        }
+
+        /// <inheritdoc/>
+        public Task<bool> OnDeferralGuardExceptionAsync(IDeferralObservationContext context, Exception exception)
+        {
+            try
+            {
+                if (Skip && !ImplicitInitialization) return Task.FromResult(false);
+
+                EventProcessingActivity?.SetTag("DeferralRule", context.Identifier);
+                EventProcessingActivity?.SetTag("DeferralState", context.State.Name);
+                EventProcessingActivity?.SetTag("DeferralCandidateEvent", context.EventName);
+                EventProcessingActivity?.SetTag("DeferralCandidateEventId", context.EventId);
+                EventProcessingActivity?.SetTag("DeferralIsReevaluation", context.IsReevaluation);
+
+                logger.LogError(
+                    message: "State Machine '{StateMachineId}' failed evaluating deferral guard '{DeferralRule}' in state '{State}' for candidate event '{CandidateEvent}' (reevaluation: {IsReevaluation})",
+                    exception: exception,
+                    args:
+                    [
+                        $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
+                        context.Identifier,
+                        context.State.Name,
+                        context.EventName,
+                        context.IsReevaluation
+                    ]
+                );
+
+                StopProcessingActivity(context, EventStatus.Failed, exception);
+                EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
+                EventProcessingActivity?.AddException(exception);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateMachineTracer).FullName, nameof(OnDeferralGuardExceptionAsync), e);
             }
 
             return Task.FromResult(false);

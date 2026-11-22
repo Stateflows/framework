@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Utilities;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
 using Stateflows.Entities;
 
@@ -95,128 +97,54 @@ namespace Stateflows.StateMachines.Context.Classes
         void IPublishes<IOwnerBehaviorContext>.PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader> headers)
             => PublishRange(Context.Context.ContextOwnerId!.Value, notifications, headers);
 
-        private async Task<bool> TrySetFieldAsync<T>(BehaviorId behaviorId, string entityName, string fieldName, T fieldValue, IDictionary<string, EventHeader>? headers)
-        {
-            var entityId = new EntityId($"{behaviorId.Name}.entity.{entityName}", behaviorId.Instance);
-            
-            headers ??= new Dictionary<string, EventHeader>();
-            headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
-            {
-                OwnerId = behaviorId,
-                ParentId = behaviorId
-            };
-
-            if (TryLocateBehavior(entityId, out var entity))
-            {
-                return (await entity.SendAsync(new FieldState<T> { Name = fieldName, Value = fieldValue}, headers)).Status == EventStatus.Consumed;
-            }
-            
-            return false;
-        }
+        private Task<bool> TrySetFieldAsync<T>(BehaviorId? behaviorId, string entityName, string fieldName, T fieldValue, IDictionary<string, EventHeader>? headers)
+            => EntityOperations.SetFieldAsync(this, behaviorId, entityName, fieldName, fieldValue, headers);
         
         Task<bool> IEntityOperations<IBehaviorContext>.TrySetFieldAsync<T>(string entityName, string fieldName, T fieldValue, IDictionary<string, EventHeader>? headers)
             => TrySetFieldAsync(Id, entityName, fieldName, fieldValue, headers);
 
-        async Task<bool> IEntityOperations<IParentBehaviorContext>.TrySetFieldAsync<T>(string entityName, string fieldName, T fieldValue, IDictionary<string, EventHeader>? headers)
-            => Context.Context.ContextParentId.HasValue && await TrySetFieldAsync(Context.Context.ContextParentId!.Value, entityName, fieldName, fieldValue, headers);
+        Task<bool> IEntityOperations<IParentBehaviorContext>.TrySetFieldAsync<T>(string entityName, string fieldName, T fieldValue, IDictionary<string, EventHeader>? headers)
+            => TrySetFieldAsync(Context.Context.ContextParentId, entityName, fieldName, fieldValue, headers);
 
-        async Task<bool> IEntityOperations<IOwnerBehaviorContext>.TrySetFieldAsync<T>(string entityName, string fieldName, T fieldValue, IDictionary<string, EventHeader>? headers)
-            => Context.Context.ContextOwnerId.HasValue && await TrySetFieldAsync(Context.Context.ContextOwnerId!.Value, entityName, fieldName, fieldValue, headers);
+        Task<bool> IEntityOperations<IOwnerBehaviorContext>.TrySetFieldAsync<T>(string entityName, string fieldName, T fieldValue, IDictionary<string, EventHeader>? headers)
+            => TrySetFieldAsync(Context.Context.ContextOwnerId, entityName, fieldName, fieldValue, headers);
 
-        private async Task<bool> TryMutateAsync<TMutationEvent>(BehaviorId behaviorId, string entityName, TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers)
-        {
-            var entityId = new EntityId($"{behaviorId.Name}.entity.{entityName}", behaviorId.Instance);
-            
-            headers ??= new Dictionary<string, EventHeader>();
-            headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
-            {
-                OwnerId = behaviorId,
-                ParentId = behaviorId
-            };
-
-            if (TryLocateBehavior(entityId, out var entity))
-            {
-                return (await entity.SendAsync(mutationEvent, headers)).Status == EventStatus.Consumed;
-            }
-            
-            return false;
-        }
+        private Task<bool> TryMutateAsync<TMutationEvent>(BehaviorId? behaviorId, string entityName, TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers)
+            => EntityOperations.MutateAsync(this, behaviorId, entityName, mutationEvent, headers);
         
         Task<bool> IEntityOperations<IBehaviorContext>.TryMutateAsync<TMutationEvent>(string entityName, TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers)
             => TryMutateAsync(Id, entityName, mutationEvent, headers);
 
-        async Task<bool> IEntityOperations<IParentBehaviorContext>.TryMutateAsync<TMutationEvent>(string entityName, TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers)
-            => Context.Context.ContextParentId.HasValue && await TryMutateAsync(Context.Context.ContextParentId!.Value, entityName, mutationEvent, headers);
+        Task<bool> IEntityOperations<IParentBehaviorContext>.TryMutateAsync<TMutationEvent>(string entityName, TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers)
+            => TryMutateAsync(Context.Context.ContextParentId, entityName, mutationEvent, headers);
 
-        async Task<bool> IEntityOperations<IOwnerBehaviorContext>.TryMutateAsync<TMutationEvent>(string entityName, TMutationEvent mutationEvent,
+        Task<bool> IEntityOperations<IOwnerBehaviorContext>.TryMutateAsync<TMutationEvent>(string entityName, TMutationEvent mutationEvent,
             IDictionary<string, EventHeader> headers)
-            => Context.Context.ContextOwnerId.HasValue && await TryMutateAsync(Context.Context.ContextOwnerId!.Value, entityName, mutationEvent, headers);
+            => TryMutateAsync(Context.Context.ContextOwnerId, entityName, mutationEvent, headers);
 
-        private async Task<(bool Success, T Field)> TryGetFieldAsync<T>(string entityName, string fieldName, BehaviorId behaviorId, IDictionary<string, EventHeader>? headers)
-        {
-            var entityId = new EntityId($"{behaviorId.Name}.entity.{entityName}", behaviorId.Instance);
-            
-            headers ??= new Dictionary<string, EventHeader>();
-            headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
-            {
-                OwnerId = behaviorId,
-                ParentId = behaviorId
-            };
-
-            if (TryLocateBehavior(entityId, out var entity))
-            {
-                var result = await entity.RequestAsync(new FieldStateRequest<T> { Name = fieldName }, headers);
-                return (result.Status == EventStatus.Consumed, result.Response != null ? result.Response.Value : default);
-            }
-            
-            return (false, default);
-        }
+        private Task<(bool Success, T Field)> TryGetFieldAsync<T>(string entityName, string fieldName, BehaviorId? behaviorId, IDictionary<string, EventHeader>? headers)
+            => EntityOperations.GetFieldAsync<T>(this, behaviorId, entityName, fieldName, headers);
 
         Task<(bool Success, T Field)> IEntityOperations<IBehaviorContext>.TryGetFieldAsync<T>(string entityName, string fieldName, IDictionary<string, EventHeader>? headers)
             => TryGetFieldAsync<T>(entityName, fieldName, Id, headers);
 
-        async Task<(bool Success, T Field)> IEntityOperations<IParentBehaviorContext>.TryGetFieldAsync<T>(string entityName, string fieldName, IDictionary<string, EventHeader>? headers)
-            => Context.Context.ContextParentId.HasValue
-                ? await TryGetFieldAsync<T>(entityName, fieldName, Context.Context.ContextParentId!.Value, headers)
-                : (false, default);
+        Task<(bool Success, T Field)> IEntityOperations<IParentBehaviorContext>.TryGetFieldAsync<T>(string entityName, string fieldName, IDictionary<string, EventHeader>? headers)
+            => TryGetFieldAsync<T>(entityName, fieldName, Context.Context.ContextParentId, headers);
         
-        async Task<(bool Success, T Field)> IEntityOperations<IOwnerBehaviorContext>.TryGetFieldAsync<T>(string entityName, string fieldName, IDictionary<string, EventHeader>? headers)
-            => Context.Context.ContextOwnerId.HasValue
-                ? await TryGetFieldAsync<T>(entityName, fieldName, Context.Context.ContextOwnerId!.Value, headers)
-                : (false, default);
+        Task<(bool Success, T Field)> IEntityOperations<IOwnerBehaviorContext>.TryGetFieldAsync<T>(string entityName, string fieldName, IDictionary<string, EventHeader>? headers)
+            => TryGetFieldAsync<T>(entityName, fieldName, Context.Context.ContextOwnerId, headers);
 
-        private async Task<(bool Success, TProjection Projection)> TryGetProjectionAsync<TProjection>(BehaviorId behaviorId, string entityName, IDictionary<string, EventHeader>? headers)
-        {
-            var entityId = new EntityId($"{behaviorId.Name}.entity.{entityName}", behaviorId.Instance);
-            
-            headers ??= new Dictionary<string, EventHeader>();
-            headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
-            {
-                OwnerId = behaviorId,
-                ParentId = behaviorId
-            };
-
-            if (TryLocateBehavior(entityId, out var entity))
-            {
-                var result = await entity.RequestAsync(new ProjectionRequest<TProjection>(), headers);
-                return (result.Status == EventStatus.Consumed, result.Response);
-            }
-            
-            return (false, default);
-        }
+        private Task<(bool Success, TProjection Projection)> TryGetProjectionAsync<TProjection>(BehaviorId? behaviorId, string entityName, IDictionary<string, EventHeader>? headers)
+            => EntityOperations.GetProjectionAsync<TProjection>(this, behaviorId, entityName, headers);
 
         Task<(bool Success, TProjection Projection)> IEntityOperations<IBehaviorContext>.TryGetProjectionAsync<TProjection>(string entityName, IDictionary<string, EventHeader>? headers)
             => TryGetProjectionAsync<TProjection>(Id, entityName, headers);
 
-        async Task<(bool Success, TProjection Projection)> IEntityOperations<IParentBehaviorContext>.TryGetProjectionAsync<TProjection>(string entityName, IDictionary<string, EventHeader>? headers)
-            => Context.Context.ContextParentId.HasValue
-                ? await TryGetProjectionAsync<TProjection>(Context.Context.ContextParentId!.Value, entityName, headers)
-                : (false, default);
+        Task<(bool Success, TProjection Projection)> IEntityOperations<IParentBehaviorContext>.TryGetProjectionAsync<TProjection>(string entityName, IDictionary<string, EventHeader>? headers)
+            => TryGetProjectionAsync<TProjection>(Context.Context.ContextParentId, entityName, headers);
         
-        async Task<(bool Success, TProjection Projection)> IEntityOperations<IOwnerBehaviorContext>.TryGetProjectionAsync<TProjection>(string entityName, IDictionary<string, EventHeader>? headers)
-            => Context.Context.ContextOwnerId.HasValue
-                ? await TryGetProjectionAsync<TProjection>(Context.Context.ContextOwnerId!.Value, entityName, headers)
-                : (false, default);
+        Task<(bool Success, TProjection Projection)> IEntityOperations<IOwnerBehaviorContext>.TryGetProjectionAsync<TProjection>(string entityName, IDictionary<string, EventHeader>? headers)
+            => TryGetProjectionAsync<TProjection>(Context.Context.ContextOwnerId, entityName, headers);
 
         private Task SubscribeAsync<TNotification>(BehaviorId subscribeeBehaviorId, BehaviorId behaviorId)
             => Subscriber.SubscribeAsync<TNotification>(subscribeeBehaviorId, behaviorId);
@@ -244,10 +172,13 @@ namespace Stateflows.StateMachines.Context.Classes
 
         private void Send<TEvent>(BehaviorId behaviorId, TEvent @event, IDictionary<string, EventHeader>? headers = null)
         {
-            if (TryLocateBehavior(behaviorId, out var behavior))
+            var envelope = @event.ToTypedEventHolder(headers);
+            BehaviorObservation.Dispatch(behaviorId, envelope, observation =>
             {
-                _ = SendOperations.SendAsync(behavior, @event, headers);
-            }
+                observation.Dispatched = TryLocateBehavior(behaviorId, out var behavior);
+                if (observation.Dispatched == true)
+                    _ = SendOperations.SendAsync(behavior, envelope);
+            });
         }
 
         void ISends<IBehaviorContext>.Send<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers)

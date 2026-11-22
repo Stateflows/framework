@@ -149,11 +149,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 }
             );
 
-            var sourceName = ((IStateBuilderInfo)this).Name;
-            var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor =>
-                visitor.TransitionTypeAddedAsync<TEvent, TTransition>(graph.Name, graph.Version, sourceName, targetStateName, false));
-
             return result;
         }
 
@@ -220,11 +215,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 }
             );
 
-            var sourceName = ((IStateBuilderInfo)this).Name;
-            var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor =>
-                visitor.TransitionTypeAddedAsync<Completion, TTransition>(graph.Name, graph.Version, sourceName, targetStateName, false));
-
             return result;
         }
 
@@ -268,10 +258,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 ((ITransitionBuilder<TEvent>)b).AddTransitionEvents<TTransition, TEvent>();
                 transitionBuildAction?.Invoke(b);
             });
-            var sourceName = ((IStateBuilderInfo)this).Name;
-            var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.TransitionTypeAddedAsync<TEvent, TTransition>(
-                graph.Name, graph.Version, sourceName, Constants.DefaultTransitionTarget, false));
             return result;
         }
         #endregion
@@ -337,11 +323,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                     transitionBuildAction?.Invoke(b);
                 }
             );
-
-            var sourceName = ((IStateBuilderInfo)this).Name;
-            var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor =>
-                visitor.TransitionTypeAddedAsync<TEvent, TElseTransition>(graph.Name, graph.Version, sourceName, targetStateName, true));
 
             return result;
         }
@@ -420,11 +401,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 }
             );
 
-            var sourceName = ((IStateBuilderInfo)this).Name;
-            var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor =>
-                visitor.TransitionTypeAddedAsync<Completion, TElseTransition>(graph.Name, graph.Version, sourceName, targetStateName, true));
-
             return result;
         }
 
@@ -477,10 +453,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 ((IElseTransitionBuilder<TEvent>)b).AddElseTransitionEvents<TElseTransition, TEvent>();
                 transitionBuildAction?.Invoke(b);
             });
-            var sourceName = ((IStateBuilderInfo)this).Name;
-            var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.TransitionTypeAddedAsync<TEvent, TElseTransition>(
-                graph.Name, graph.Version, sourceName, Constants.DefaultTransitionTarget, true));
             return result;
         }
         #endregion

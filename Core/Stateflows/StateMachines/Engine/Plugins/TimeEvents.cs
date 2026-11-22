@@ -189,7 +189,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 var timeEventIds = Context.GetStateValues(currentVertex.Name).StartupEventIds;
 
-                var edges = currentVertex.Edges.Values.SelectMany(edge => edge.GetActualEdges())
+                var edges = currentVertex.Edges.Values
                     .Where(edge =>
                         !edge.IsElse &&
                         edge.ActualTriggerTypes.Contains(typeof(Startup)) &&
@@ -246,7 +246,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 var timeEventIds = Context.GetStateValues(currentVertex.Name).TimeEventIds;
 
-                var edges = currentVertex.Edges.Values.SelectMany(edge => edge.GetActualEdges())
+                var edges = currentVertex.Edges.Values
                     .Where(edge =>
                         !edge.IsElse &&
                         edge.TimeTriggerTypes.Any() &&
@@ -265,7 +265,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 var timeEventIds = Context.GetStateValues(currentVertex.Name).TimeEventIds;
 
-                var edges = currentVertex.Edges.Values.SelectMany(edge => edge.GetActualEdges())
+                var edges = currentVertex.Edges.Values
                     .Where(edge =>
                         !edge.IsElse &&
                         edge.RecurringTypes.Any() &&

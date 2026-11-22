@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -124,6 +124,8 @@ namespace Stateflows.Activities.Registration
 
             buildAction?.Invoke(new NodeBuilder(node, this));
             
+            var actionOrder = node.Action.Actions.Count;
+            node.ObservedActionBodies.Add(actionOrder);
             node.Action.Actions.Add(async c =>
             {
                 var context = (ActionContext)c;
@@ -131,7 +133,9 @@ namespace Stateflows.Activities.Registration
                 try
                 {
                     var inspector = c.Behavior.GetExecutor().Inspector;
-                    await inspector.OnNodeExecuteAsync(context, () => actionAsync(c));
+                    await inspector.OnNodeExecuteAsync(context, () => inspector.OnActionAsync(
+                        new ActionObservationContext(context, context.Context.Executor.Graph.OperationRegistrations[node.Action][actionOrder]),
+                        () => actionAsync(c)));
                 }
                 catch (Stateflows.Activities.Streams.ActivityCheckpointPauseException)
                 {
@@ -179,7 +183,6 @@ namespace Stateflows.Activities.Registration
                 Graph.AllNamedNodes.Add(node.Name, node);
             }
             
-            Graph.VisitingTasks.Add(visitor => visitor.NodeAddedAsync(Graph.Name, Graph.Version, node.Name, node.Type));
 
             return this;
         }
@@ -211,7 +214,6 @@ namespace Stateflows.Activities.Registration
             );
 
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.SendEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName));
 
             return result;
         }
@@ -260,7 +262,6 @@ namespace Stateflows.Activities.Registration
             );
 
             var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.PublishEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName));
 
             return result;
         }
@@ -284,16 +285,6 @@ namespace Stateflows.Activities.Registration
                 typeof(TEvent)
             );
 
-            var node = result.Node.Nodes.Values.FirstOrDefault(n => n.OwnName == actionNodeName);
-            if (node is not null)
-            {
-                var graph = ((IGraphBuilder)this).Graph;
-                node.VisitingTask = structuralEventName != null
-                    ? visitor => visitor.AcceptEventNodeAddedAsync(graph.StateflowsBuilder.Events.GetEvent(structuralEventName),
-                        graph.Name, graph.Version, actionNodeName)
-                    : visitor => visitor.AcceptEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName);
-                graph.VisitingTasks.Add(node.VisitingTask);
-            }
 
             return result;
         }
@@ -345,8 +336,6 @@ namespace Stateflows.Activities.Registration
                 buildAction(new InputPinBuilder<TToken>(builder.Node, this));
             });
             var pin = Node.Nodes.Values.Single(n => n.Type == NodeType.InputPin && n.PinTokenType == typeof(TToken));
-            Graph.VisitingTasks.Add(visitor => visitor.InputPinAddedAsync<TToken>(
-                Graph.Name, Graph.Version, pin.Name, Node is Graph ? null : Node.Name));
             return this;
         }
 
@@ -362,8 +351,6 @@ namespace Stateflows.Activities.Registration
                 builder.SetOptions(NodeOptions.None);
             });
             var pin = Node.Nodes.Values.Single(n => n.Type == NodeType.OutputPin && n.PinTokenType == typeof(TToken));
-            Graph.VisitingTasks.Add(visitor => visitor.OutputPinAddedAsync<TToken>(
-                Graph.Name, Graph.Version, pin.Name, Node is Graph ? null : Node.Name));
             return this;
         }
 
@@ -378,6 +365,9 @@ namespace Stateflows.Activities.Registration
                     buildAction?.Invoke(builder);
                 });
             var pin = Node.OutputPins.Single(n => n.PinTokenType == typeof(TToken));
+            pin.ImplementationType = null;
+            pin.ImplementationEventType = null;
+            pin.OperationTypes.Remove((ActivityOperationKind.Execute, pin.Action.Actions.Count - 1));
             if (typeof(TToken) == typeof(bool))
                 pin.Action.Actions.Add(c =>
                 {
@@ -391,8 +381,6 @@ namespace Stateflows.Activities.Registration
                     }
                     return Task.CompletedTask;
                 });
-            Graph.VisitingTasks.Add(visitor => visitor.OutputPinAddedAsync<TToken>(
-                Graph.Name, Graph.Version, pin.Name, null));
             return this;
         }
 

@@ -293,6 +293,7 @@ namespace Stateflows.Activities.Engine
             return host(async () =>
             {
                 using var inspection = session.Executor.BindInspection();
+                using var observation = BehaviorObservation.Enter(id, session.ServiceScope.ServiceProvider);
                 using var pendingTasks = new PendingTasksScope();
                 using var invocationProvenance = session.Context.BeginInvocationProvenance(streamed: true, callRoot: true);
                 session.Context.IsStreamingExecution = true;

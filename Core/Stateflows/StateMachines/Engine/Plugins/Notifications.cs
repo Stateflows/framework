@@ -194,6 +194,14 @@ namespace Stateflows.StateMachines.Engine
             return Task.FromResult(false);
         }
 
+        public override Task<bool> OnDeferralGuardExceptionAsync(IDeferralObservationContext context, Exception exception)
+        {
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on deferral guard '{context.Identifier}' in state '{context.State.Name}' for candidate event '{context.EventName}' (reevaluation: {context.IsReevaluation})");
+
+            return Task.FromResult(false);
+        }
+
         public override Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
             var stateflowsContext = ((BaseContext)context).Context.Context;

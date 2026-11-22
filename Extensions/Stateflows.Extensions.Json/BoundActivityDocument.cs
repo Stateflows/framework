@@ -6,6 +6,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Activities.Models;
+using Stateflows.Activities.Registration;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
@@ -397,6 +399,7 @@ internal sealed partial class BoundActivityDocument(
             var callback = (Func<IActivityInitializationContext, Task<bool>>)(context =>
                 InvokeDefaultInitializer(binding, context));
             builder.AddDefaultInitializer(callback);
+            ((IGraphBuilder)builder).Graph.DefaultInitializerImplementation = binding.Type;
         }
         foreach (var (node, path) in Items(document, "", "initializers"))
             ConstructInitializer(builder, node, path);
@@ -611,6 +614,13 @@ internal sealed partial class BoundActivityDocument(
 
     private void ConfigureNode(object nodeBuilder, JToken node, string path, string kind, bool reactive)
     {
+        if (bindings.TryGetValue(path + "/implementation", out var implementation))
+        {
+            var model = ((NodeBuilder)nodeBuilder).Node;
+            model.ImplementationType = implementation.Type;
+            model.ImplementationEventType = model.EventType;
+            model.OperationTypes[(ActivityOperationKind.Execute, model.Action.Actions.Count)] = implementation.Type;
+        }
         if (kind is "structured" or "parallel" or "iterative")
             foreach (var (definition, definitionPath) in Items(node, path, "definitions"))
                 InvokeDefinition(bindings[definitionPath], nodeBuilder);
@@ -660,6 +670,10 @@ internal sealed partial class BoundActivityDocument(
         var callback = CreateExceptionHandlerDelegate(exceptionType, binding);
         CallGenericInterface(builder, typeof(IExceptionHandlerBase<>), "AddExceptionHandler", [exceptionType],
             [callback], methodParameterCount: 1);
+        var nodeBuilder = builder is StructuredActivityBuilder structured ? structured.NodeBuilder : (NodeBuilder)builder;
+        var model = nodeBuilder.Graph.AllNamedNodes[$"{nodeBuilder.Node.Name}.{exceptionType.FullName}.ExceptionHandler"];
+        model.ImplementationType = binding.Type;
+        model.OperationTypes[(ActivityOperationKind.Execute, model.Action.Actions.Count - 1)] = binding.Type;
     }
 
     private Delegate CreateExceptionHandlerDelegate(Type exceptionType, ClrBinding binding)
@@ -764,12 +778,14 @@ internal sealed partial class BoundActivityDocument(
             {
                 var callback = CreateObjectGuard(currentToken, binding);
                 CallObjectGuard(flowBuilder, currentToken, callback);
+                ((IFlowMetadataBuilder)flowBuilder).Edge.Operations[^1].ImplementationTypes = [binding.Type];
             }
             else
             {
                 var output = resolvedTypes[stagePath + "/outputTokenType"];
                 var callback = CreateObjectTransformation(currentToken, output, binding);
                 flowBuilder = CallTransformation(flowBuilder, currentToken, output, callback, isElse);
+                ((IFlowMetadataBuilder)flowBuilder).Edge.Operations[^1].ImplementationTypes = [binding.Type];
                 currentToken = output;
             }
         }
@@ -783,6 +799,7 @@ internal sealed partial class BoundActivityDocument(
             var binding = bindings[stagePath + "/handler"];
             var callback = CreateControlGuard(binding);
             CallControlGuard(flowBuilder, callback);
+            ((IFlowMetadataBuilder)flowBuilder).Edge.Operations[^1].ImplementationTypes = [binding.Type];
         }
         SetWeight(flowBuilder, weight);
     }
@@ -1023,6 +1040,9 @@ internal sealed partial class BoundActivityDocument(
         var call = Expression.Call(helper, Expression.Constant(binding), Expression.Constant(property), parameter);
         var callback = Expression.Lambda(delegateType, call, parameter).Compile();
         CallGenericInterface(builder, typeof(IStructuredActivityEvents<>), methodName, [], [callback], methodParameterCount: 1);
+        var model = ((StructuredActivityBuilder)builder).Node;
+        var kind = property == "onInitialize" ? ActivityOperationKind.Initialize : ActivityOperationKind.Finalize;
+        model.OperationTypes[(kind, (kind == ActivityOperationKind.Initialize ? model.Initialize.Actions.Count : model.Finalize.Actions.Count) - 1)] = binding.Type;
     }
 
     private static async Task InvokeStructuredLifecycle<TStructured>(ClrBinding binding, string property,
@@ -1068,6 +1088,9 @@ internal sealed partial class BoundActivityDocument(
             .MakeGenericMethod(eventType, binding.Type);
         var callback = Delegate.CreateDelegate(delegateType, binding, method);
         CallGenericInterface(builder, typeof(IActivityEvents<>), "AddInitializer", [eventType], [callback], methodParameterCount: 1);
+        var graph = ((IGraphBuilder)builder).Graph;
+        var eventName = eventType.GetEventName();
+        graph.InitializerImplementations[(eventName, graph.Initializers[eventName].Actions.Count - 1)] = binding.Type;
     }
 
     private static async Task<bool> Initializer<TEvent, TInitializer>(ClrBinding binding,
@@ -1083,6 +1106,8 @@ internal sealed partial class BoundActivityDocument(
     {
         var callback = (Func<IActivityActionContext, Task>)(context => InvokeFinalizer(binding, context));
         builder.AddFinalizer(callback);
+        var graph = ((IGraphBuilder)builder).Graph;
+        graph.OperationTypes[(ActivityOperationKind.Finalize, graph.Finalize.Actions.Count - 1)] = binding.Type;
     }
 
     private static async Task InvokeFinalizer(ClrBinding binding, IActivityActionContext context)

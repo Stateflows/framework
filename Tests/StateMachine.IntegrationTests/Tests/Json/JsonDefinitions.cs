@@ -264,14 +264,15 @@ public class JsonDefinitions
     [TestMethod]
     public void MultipleTriggersRemainOneTransitionAndOneDeferralLogic()
     {
-        var (_, register, builder) = Host();
+        var (services, register, builder) = Host();
+        services.AddOneOf();
         var model = Model();
         State(model)["transitions"] = JArray.Parse("""
-            [{"kind":"event","triggers":[{"clrType":"ping"},{"clrType":"pong"}],"target":"done",
+            [{"kind":"event","triggers":[{"clrType":"union"}],"target":"done",
               "guard":{"clrType":"guard"},"metadata":{"x":{"$type":"int","$value":3}}}]
             """);
         State(model)["deferrals"] = JArray.Parse("""
-            [{"triggers":[{"clrType":"ping"},{"clrType":"pong"}],"guard":{"clrType":"guard"}}]
+            [{"triggers":[{"clrType":"union"}],"guard":{"clrType":"guard"}}]
             """);
         builder.AddStateMachineJson(model.ToString(), Options());
         var graph = register.StateMachines["json-machine.1"];
@@ -319,10 +320,11 @@ public class JsonDefinitions
     [TestMethod]
     public void InstanceTransitionDefinitionExecutesOnlyRequestedDefinitionWithConfiguration()
     {
-        var (_, register, builder) = Host();
+        var (services, register, builder) = Host();
+        services.AddOneOf();
         var model = Model();
         State(model)["transitions"] = JArray.Parse("""
-            [{"kind":"event","triggers":[{"clrType":"ping"},{"clrType":"pong"}],"target":"done",
+            [{"kind":"event","triggers":[{"clrType":"union"}],"target":"done",
               "definitions":[{"clrType":"transition","configuration":"marker"}]}]
             """);
         builder.AddStateMachineJson(model.ToString(), Options());
@@ -409,7 +411,7 @@ public class JsonDefinitions
     }
 
     [TestMethod]
-    public void RegionalModelsSelectHistoriesAndAllowMetadataOnEveryPseudostate()
+    public void RegionalModelsAllowMultipleHistoriesAndMetadataOnEveryPseudostate()
     {
         var (_, register, builder) = Host();
         var model = JObject.Parse("""
@@ -417,7 +419,7 @@ public class JsonDefinitions
               "formatVersion":"1.0","name":"json-machine","initial":"outer",
               "vertices":[
                 {"kind":"composite","name":"outer","region":{
-                  "initial":"child","history":"history-two",
+                  "initial":"child",
                   "vertices":[
                     {"kind":"state","name":"child","transitions":[{"kind":"event","triggers":[{"clrType":"ping"}],"target":"choice"}]},
                     {"kind":"choice","name":"choice","metadata":{"tag":"choice"},"transitions":[
@@ -436,7 +438,7 @@ public class JsonDefinitions
         builder.AddStateMachineJson(model.ToString(), Options());
         var graph = register.StateMachines["json-machine.1"];
         var region = graph.InitialVertex.Regions.Single();
-        Assert.AreEqual("history-two", region.History.Name);
+        Assert.IsTrue(region.HasHistory);
         Assert.AreEqual("child", region.InitialVertex.Name);
         foreach (var name in new[] { "choice", "junction", "history-one", "history-two", "child-final" })
             Assert.IsTrue(graph.AllVertices[name].Metadata.ContainsKey("tag"));
@@ -517,10 +519,11 @@ public class JsonDefinitions
     [TestMethod]
     public void SubmachineVisitorsRetainJsonTriggerTypes()
     {
-        var (_, register, builder) = Host();
+        var (services, register, builder) = Host();
+        services.AddOneOf();
         var model = Model();
         State(model)["transitions"] = JArray.Parse("""
-            [{"kind":"event","triggers":[{"clrType":"ping"},{"clrType":"pong"}],"target":"done"}]
+            [{"kind":"event","triggers":[{"clrType":"union"}],"target":"done"}]
             """);
         builder.AddStateMachineJson(model.ToString(), Options());
         model["name"] = "host";
@@ -589,14 +592,15 @@ public class JsonDefinitions
     }
 
     [TestMethod]
-    public void MixedTriggerSetsPreserveExceptionPolymorphismWithoutWideningOtherTriggers()
+    public void UnionTriggersPreserveExceptionPolymorphismWithoutWideningOtherTriggers()
     {
-        var (_, register, builder) = Host();
+        var (services, register, builder) = Host();
+        services.AddOneOf();
         var model = Model();
         State(model)["transitions"] = JArray.Parse("""
-            [{"kind":"event","triggers":[{"clrType":"exception"},{"clrType":"baseEvent"}],"target":"done"}]
+            [{"kind":"event","triggers":[{"clrType":"exceptionUnion"}],"target":"done"}]
             """);
-        builder.AddStateMachineJson(model.ToString(), Options().AddType<Exception>("exception").AddType<BaseEvent>("baseEvent"));
+        builder.AddStateMachineJson(model.ToString(), Options().AddType<OneOf<Exception, BaseEvent>>("exceptionUnion"));
         var edge = register.StateMachines["json-machine.1"].AllEdges.Single();
         Assert.IsTrue(new EventHolder<InvalidOperationException> { Payload = new() }.Triggers(edge));
         Assert.IsTrue(new EventHolder<BaseEvent> { Payload = new() }.Triggers(edge));
