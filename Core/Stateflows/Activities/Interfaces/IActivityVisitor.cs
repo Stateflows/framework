@@ -139,9 +139,8 @@ namespace Stateflows.Activities
         /// <param name="publishScope">The configured publication scope.</param>
         /// <param name="timeToLive">For a publication node, the configured time to live in seconds; zero disables publication history and retries unless the published event is retained.</param>
         /// <param name="retain">Whether node data is configured to be retained.</param>
-        /// <param name="immediatePublish">Whether publication is configured to occur immediately.</param>
         /// <returns>A task completed when this visitor has finished handling the notification.</returns>
-        Task NodeConfigurationAddedAsync(string nodeId, string activityName, int activityVersion, NodeOptions options, int chunkSize, int maxConcurrency, bool anchored, PublishScope publishScope, int timeToLive, bool retain, bool immediatePublish) => Task.CompletedTask;
+        Task NodeConfigurationAddedAsync(string nodeId, string activityName, int activityVersion, NodeOptions options, int chunkSize, int maxConcurrency, bool anchored, PublishScope publishScope, int timeToLive, bool retain) => Task.CompletedTask;
 
         /// <summary>Reports a token input pin owned by a node or by the activity root.</summary>
         /// <typeparam name="TToken">The CLR token type accepted by this input pin.</typeparam>

@@ -20,7 +20,7 @@ namespace Stateflows.Activities
         public virtual Task FinalizerTypeAddedAsync<TFinalizer>(string finalizerId, string activityName, int activityVersion) where TFinalizer : class, IFinalizer => Task.CompletedTask;
         public virtual Task NodeAddedAsync(string nodeId, string activityName, int activityVersion, string nodeName, NodeType nodeType, string? parentNodeId) => Task.CompletedTask;
         public virtual Task NodeTypeAddedAsync<TNode>(string nodeId, string activityName, int activityVersion) where TNode : class, IActivityNode => Task.CompletedTask;
-        public virtual Task NodeConfigurationAddedAsync(string nodeId, string activityName, int activityVersion, NodeOptions options, int chunkSize, int maxConcurrency, bool anchored, PublishScope publishScope, int timeToLive, bool retain, bool immediatePublish) => Task.CompletedTask;
+        public virtual Task NodeConfigurationAddedAsync(string nodeId, string activityName, int activityVersion, NodeOptions options, int chunkSize, int maxConcurrency, bool anchored, PublishScope publishScope, int timeToLive, bool retain) => Task.CompletedTask;
         public virtual Task InputPinAddedAsync<TToken>(string pinId, string activityName, int activityVersion, string? parentNodeId) => Task.CompletedTask;
         public virtual Task OutputPinAddedAsync<TToken>(string pinId, string activityName, int activityVersion, string? parentNodeId) => Task.CompletedTask;
         public virtual Task AcceptEventNodeAddedAsync<TEvent>(string nodeId, string activityName, int activityVersion, IReadOnlyList<string> eventNames) => Task.CompletedTask;

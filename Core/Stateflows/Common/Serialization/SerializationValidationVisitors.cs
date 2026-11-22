@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
@@ -27,66 +28,89 @@ internal static class SerializationValidationVisitors
 
     private static Task Add<T>(StartupSerializationValidation types, string name, int version, string usage)
     {
-        types.Add(typeof(T), $"{name} v{version}: {usage}");
-        return Task.CompletedTask;
-    }
-
-    private static Task Structural(StartupSerializationValidation types, EventDefinition definition, string name, int version)
-    {
-        if (definition.ResponseType != null)
-            types.Add(definition.ResponseType, $"{name} v{version}: {definition.Name} response");
+        var type = typeof(T);
+        var description = $"{name} v{version}: {usage}";
+        types.Add(type, description);
+        var request = type.GetInterfaces().Append(type)
+            .FirstOrDefault(contract => contract.IsGenericType &&
+                contract.GetGenericTypeDefinition() == typeof(IRequest<>));
+        if (request != null)
+            types.Add(request.GetGenericArguments()[0], $"{description} response");
         return Task.CompletedTask;
     }
 
     private sealed class Machines(StartupSerializationValidation types) : StateMachineVisitor
     {
-        public override Task InitializerAddedAsync<T>(string name, int version) => Add<T>(types, name, version, "initializer");
-        public override Task TransitionAddedAsync<T>(string name, int version, string source, string target = null, bool isElse = false)
-            => Add<T>(types, name, version, $"transition {source} -> {target}");
-        public override Task CustomEventAddedAsync<T>(string name, int version, BehaviorStatus[] statuses)
-            => Add<T>(types, name, version, "custom event");
-        public override Task DoBehaviorAddedAsync(string name, int version, string state, string behavior, string kind, IEnumerable<Type> events)
-        {
-            foreach (var type in events) types.Add(type, $"{name} v{version}: {state} do {behavior}");
-            return Task.CompletedTask;
-        }
-        public override Task TransitionAddedAsync(EventDefinition definition, string name, int version, string source, string target = null, bool isElse = false)
-            => Structural(types, definition, name, version);
-        public override Task DoBehaviorAddedAsync(EventDefinition definition, string name, int version, string state, string behavior, string kind)
-            => Structural(types, definition, name, version);
+        public override Task InitializerAddedAsync<TEvent>(string initializerId, string name, int version, IReadOnlyList<string> eventNames)
+            => Add<TEvent>(types, name, version, "initializer");
+        public override Task TransitionAddedAsync<TEvent>(string transitionId, string name, int version,
+            string sourceVertexId, string? targetVertexId, bool isElse, bool isLocal, bool polymorphicTriggers,
+            IReadOnlyList<string> triggerNames)
+            => Add<TEvent>(types, name, version, "transition");
+        public override Task DeferralAddedAsync<TEvent>(string deferralId, string name, int version,
+            string vertexId, IReadOnlyList<string> eventNames)
+            => Add<TEvent>(types, name, version, "deferred event");
+        public override Task HostedBehaviorEventAddedAsync<TEvent>(string hostedBehaviorEventId, string name, int version,
+            string hostedBehaviorId, IReadOnlyList<string> eventNames)
+            => Add<TEvent>(types, name, version, "hosted behavior event");
     }
 
     private sealed class Actions(StartupSerializationValidation types) : ActionVisitor
     {
-        public override Task CustomEventAddedAsync<T>(string name, int version, BehaviorStatus[] statuses)
-            => Add<T>(types, name, version, "action consumed event/token");
-        public override Task CustomEventAddedAsync(EventDefinition definition, string name, int version, BehaviorStatus[] statuses)
-            => Structural(types, definition, name, version);
+        public override Task CustomEventAddedAsync<TEvent>(string bindingId, string name, int version,
+            IReadOnlyList<string> eventNames, BehaviorStatus[] supportedStatuses)
+            => Add<TEvent>(types, name, version, "action consumed event/token");
+        public override Task ProducedEventAddedAsync<TEvent>(string bindingId, string name, int version,
+            IReadOnlyList<string> eventNames)
+            => Add<TEvent>(types, name, version, "action produced event");
+        public override Task InputTokenAddedAsync<TToken>(string pinId, string name, int version)
+            => Add<TToken>(types, name, version, "action input token");
+        public override Task OutputTokenAddedAsync<TToken>(string pinId, string name, int version)
+            => Add<TToken>(types, name, version, "action output token");
     }
 
     private sealed class Activities(StartupSerializationValidation types) : ActivityVisitor
     {
-        public override Task InitializerAddedAsync<T>(string name, int version) => Add<T>(types, name, version, "initializer");
-        public override Task CustomEventAddedAsync<T>(string name, int version, BehaviorStatus[] statuses) => Add<T>(types, name, version, "custom event");
-        public override Task InputPinAddedAsync<T>(string name, int version, string node, string parent = null) => Add<T>(types, name, version, $"{node} input token");
-        public override Task OutputPinAddedAsync<T>(string name, int version, string node, string parent = null) => Add<T>(types, name, version, $"{node} output token");
-        public override Task AcceptEventNodeAddedAsync<T>(string name, int version, string node, string parent = null) => Add<T>(types, name, version, $"{node} accepted event");
-        public override Task SendEventNodeAddedAsync<T>(string name, int version, string node, string parent = null) => Add<T>(types, name, version, $"{node} sent event");
-        public override Task PublishEventNodeAddedAsync<T>(string name, int version, string node, string parent = null) => Add<T>(types, name, version, $"{node} published event");
-        public override Task AcceptEventNodeAddedAsync(EventDefinition definition, string name, int version, string node, string parent = null) => Structural(types, definition, name, version);
-        public override Task FlowAddedAsync<T>(string name, int version, string source, string target, bool isElse = false) => Add<T>(types, name, version, $"{source} -> {target} token");
-        public override Task TransformationFlowAddedAsync<T, TOut>(string name, int version, string source, string target, bool isElse = false)
+        public override Task InitializerAddedAsync<TEvent>(string initializerId, string name, int version,
+            IReadOnlyList<string> eventNames, int order)
+            => Add<TEvent>(types, name, version, "initializer");
+        public override Task InputPinAddedAsync<TToken>(string pinId, string name, int version, string? parentNodeId)
+            => Add<TToken>(types, name, version, "input token");
+        public override Task OutputPinAddedAsync<TToken>(string pinId, string name, int version, string? parentNodeId)
+            => Add<TToken>(types, name, version, "output token");
+        public override Task AcceptEventNodeAddedAsync<TEvent>(string nodeId, string name, int version,
+            IReadOnlyList<string> eventNames)
+            => Add<TEvent>(types, name, version, "accepted event");
+        public override Task SendEventNodeAddedAsync<TEvent>(string nodeId, string name, int version,
+            IReadOnlyList<string> eventNames)
+            => Add<TEvent>(types, name, version, "sent event");
+        public override Task PublishEventNodeAddedAsync<TEvent>(string nodeId, string name, int version,
+            IReadOnlyList<string> eventNames)
+            => Add<TEvent>(types, name, version, "published event");
+        public override Task FlowAddedAsync<TToken>(string flowId, string name, int version,
+            string sourceNodeId, string targetNodeId, bool isElse)
+            => Add<TToken>(types, name, version, "flow token");
+        public override Task TransformationFlowAddedAsync<TToken, TOut>(string transformationId, string name,
+            int version, string flowId, int order)
         {
-            Add<T>(types, name, version, $"{source} -> {target} input token");
-            return Add<TOut>(types, name, version, $"{source} -> {target} transformed token");
+            Add<TToken>(types, name, version, "transformation input token");
+            return Add<TOut>(types, name, version, "transformation output token");
         }
     }
 
     private sealed class Entities(StartupSerializationValidation types) : EntityVisitor
     {
-        public override Task InitializerAddedAsync<TTemplate, T>(string name, int version) => Add<T>(types, name, version, "initializer");
-        public override Task MutationAddedAsync<TTemplate, T>(string name, int version) => Add<T>(types, name, version, "mutation");
-        public override Task FieldAddedAsync<TTemplate, T>(string name, int version, string field, T value, bool computed, FieldAccess access) => Add<T>(types, name, version, $"field {field}");
-        public override Task ProjectionAddedAsync<TTemplate, T>(string name, int version, PublishScope scope) => Add<T>(types, name, version, "projection");
+        public override Task InitializerAddedAsync<TTemplate, TEvent>(string initializerId, string name, int version,
+            IReadOnlyList<string> eventNames)
+            => Add<TEvent>(types, name, version, "entity initializer");
+        public override Task MutationAddedAsync<TTemplate, TEvent>(string mutationId, string name, int version,
+            IReadOnlyList<string> eventNames)
+            => Add<TEvent>(types, name, version, "entity mutation");
+        public override Task FieldAddedAsync<TTemplate, TField>(string fieldId, string name, int version,
+            string fieldName, bool hasDefaultValue, TField defaultValue, bool isComputed, FieldAccess fieldAccess)
+            => Add<TField>(types, name, version, $"field {fieldName}");
+        public override Task ProjectionAddedAsync<TTemplate, TProjection>(string projectionId, string name,
+            int version, PublishScope publishScope)
+            => Add<TProjection>(types, name, version, "entity projection");
     }
 }

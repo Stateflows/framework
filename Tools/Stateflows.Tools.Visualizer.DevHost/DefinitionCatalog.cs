@@ -241,7 +241,7 @@ public sealed class DefinitionCatalog
 
         public override Task NodeConfigurationAddedAsync(string id, string name, int version, NodeOptions options,
             int chunkSize, int maxConcurrency, bool anchored, Stateflows.Entities.Enums.PublishScope publishScope,
-            int timeToLive, bool retain, bool immediatePublish)
+            int timeToLive, bool retain)
         {
             UpdateNode(id, name, version, node => node with { Options = options });
             return Task.CompletedTask;

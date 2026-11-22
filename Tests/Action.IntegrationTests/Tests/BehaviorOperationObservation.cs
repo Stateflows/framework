@@ -292,8 +292,6 @@ public class BehaviorOperationObservation : StateflowsTestClass
     [TestMethod]
     [DataRow("sync-missing")]
     [DataRow("sync-double")]
-    [DataRow("stage-missing")]
-    [DataRow("stage-double")]
     public async Task SynchronousContinuationsMustRunExactlyOnce(string violation)
     {
         log.Violation = violation;

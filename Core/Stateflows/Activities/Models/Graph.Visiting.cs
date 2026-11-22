@@ -51,7 +51,7 @@ internal partial class Graph
         foreach (var node in nodes)
         {
             await visitor.NodeConfigurationAddedAsync(node.DefinitionIdentifier, Name, Version, node.Options, node.ChunkSize,
-                node.MaxConcurrency, node.Anchored, node.PublishScope, node.TimeToLive, node.Retain, node.ImmediatePublish);
+                node.MaxConcurrency, node.Anchored, node.PublishScope, node.TimeToLive, node.Retain);
             if (node.PinTokenType != null)
                 await DispatchAsync(visitor, node.Type == NodeType.InputPin ? nameof(IActivityVisitor.InputPinAddedAsync) : nameof(IActivityVisitor.OutputPinAddedAsync),
                     [node.PinTokenType], node.DefinitionIdentifier, Name, Version, node.Parent is Graph ? null : node.Parent?.DefinitionIdentifier);
