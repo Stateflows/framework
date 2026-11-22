@@ -8,4 +8,6 @@ internal sealed class PinContext(Node node, RootContext context, NodeScope scope
     : NodeContext(node, null, context, scope), IPinContext
 {
     public Type TokenType => Node.PinTokenType!;
+
+    public System.Collections.Generic.IReadOnlyList<string> TokenNames => Node.PinTokenNames ?? [];
 }

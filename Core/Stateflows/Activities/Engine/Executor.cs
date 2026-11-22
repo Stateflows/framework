@@ -270,7 +270,7 @@ namespace Stateflows.Activities.Engine
             NodeType.DataStore
         ];
 
-        public readonly NodeType[] StructuralTypes =
+        public readonly NodeType[] PayloadTypes =
         [
             NodeType.StructuredActivity,
             NodeType.ParallelActivity,
@@ -383,8 +383,8 @@ namespace Stateflows.Activities.Engine
                         .Distinct()
                         .ToArray(),
                     
-                    BehaviorStatus.NotInitialized => Graph.InitializerTypes.Any()
-                        ? Graph.InitializerTypes.ToArray()
+                    BehaviorStatus.NotInitialized => Graph.Initializers.Any()
+                        ? Graph.InitializerTypes.SelectMany(Graph.StateflowsBuilder.TypeMapper.GetMappedTypes).Distinct().ToArray()
                         : [ typeof(Initialize) ],
                     
                     _ => []
@@ -394,10 +394,13 @@ namespace Stateflows.Activities.Engine
             => GetExpectedEvents()
                 .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
                 .Where(type => !typeof(Exception).IsAssignableFrom(type))
-                .Where(type => !typeof(StructuralEvent).IsAssignableFrom(type))
+                .Where(type => !typeof(Payload).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
-                    ? GetActiveNodes().Where(node => node.StructuralEventName != null).Select(node => node.StructuralEventName)
+                    ? GetActiveNodes().Where(node => node.PayloadNames != null).SelectMany(node => node.PayloadNames)
+                    : [])
+                .Concat(BehaviorStatus == BehaviorStatus.NotInitialized
+                    ? Graph.PayloadInitializerNames.Values.SelectMany(names => names)
                     : [])
                 .Distinct()
                 .ToArray();
@@ -874,7 +877,8 @@ namespace Stateflows.Activities.Engine
         private ActivityContinuationFrame CreatePartitionedFrame<TToken>(ActionContext context, ActivityContinuationKind kind, bool sharedThread)
         {
             var frame = CreateFrame(context, kind);
-            var typedInput = context.InputTokens.OfTokenType<TToken>().ToArray();
+            var selectionKey = context.Node.SelectionKey ?? TokenKey.Of(typeof(TToken));
+            var typedInput = context.InputTokens.Where(selectionKey.Matches).ToArray();
             frame.RestOfInput = context.InputTokens.Except(typedInput).ToList();
             var threadId = Guid.NewGuid();
             frame.Partitions = typedInput.Partition(context.Node.ChunkSize)
@@ -1174,10 +1178,10 @@ namespace Stateflows.Activities.Engine
 
             var localWork = Task.WhenAll(
                 nodes.Where(n => n.Type != NodeType.InputPin ||
-                    input?.Any(token => n.PinTokenType.IsAssignableFrom(token.ActualPayloadType)) == true)
+                    input?.Any(token => n.PinKey!.Matches(token)) == true)
                 .Select(n => DoHandleNodeAsync(n, nodeScope.Edge, nodeScope,
                     n.Type == NodeType.InputPin
-                        ? input?.Where(token => n.PinTokenType.IsAssignableFrom(token.ActualPayloadType)).ToArray()
+                        ? input?.Where(token => n.PinKey!.Matches(token)).ToArray()
                         : null, selectionTokens)).ToArray()
             );
             var result = await CompleteStructureWorkAsync(nodeScope, Task.WhenAll(pendingCrossings.Append(localWork)));
@@ -1308,9 +1312,10 @@ namespace Stateflows.Activities.Engine
         {
             InitializationStatus result = InitializationStatus.NotInitialized;
 
-            var initializer = Graph.Initializers.ContainsKey(context.InitializationEvent.GetType().GetEventName())
-                ? Graph.Initializers[context.InitializationEvent.GetType().GetEventName()]
-                : Graph.DefaultInitializer;
+            var initializers = Graph.InitializerBindings.TryGetValue(context.InitializationEventHolder.Name, out var bound)
+                ? bound
+                : null;
+            var initializer = initializers?[0] ?? Graph.DefaultInitializer;
 
             var implicitInitialization = (initializer == null || initializer == Graph.DefaultInitializer) && !(context.InitializationEvent is Initialize);
 
@@ -1320,7 +1325,14 @@ namespace Stateflows.Activities.Engine
                 {
                     try
                     {
-                        result = await initializer.IterateOverAsync(context)
+                        var accepted = true;
+                        foreach (var logic in initializers ?? [initializer])
+                            if (!await logic.IterateOverAsync(context))
+                            {
+                                accepted = false;
+                                break;
+                            }
+                        result = accepted
                             ? initializer == Graph.DefaultInitializer
                                 ? InitializationStatus.InitializedImplicitly
                                 : InitializationStatus.InitializedExplicitly
@@ -1559,7 +1571,7 @@ namespace Stateflows.Activities.Engine
             }
             else
                 nodeScope = activeScope ?? nodeScope.CreateChildScope(node, upstreamEdge,
-                    StructuralTypes.Contains(node.Type) && node.Options.HasFlag(NodeOptions.Reentrant) ? Guid.NewGuid() : null);
+                    PayloadTypes.Contains(node.Type) && node.Options.HasFlag(NodeOptions.Reentrant) ? Guid.NewGuid() : null);
             invocationScope.Value = nodeScope;
 
             var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens)
@@ -1680,7 +1692,7 @@ namespace Stateflows.Activities.Engine
                     }
 
                     if (nodeScope.CancellationToken.IsCancellationRequested && CancellableTypes.Contains(node.Type) &&
-                        !StructuralTypes.Contains(node.Type))
+                        !PayloadTypes.Contains(node.Type))
                         return;
 
                     if (node.Type is NodeType.OutputPin or NodeType.ExceptionHandler)
@@ -1690,7 +1702,7 @@ namespace Stateflows.Activities.Engine
                     else
                     {
                         if (
-                            StructuralTypes.Contains(node.Type) &&
+                            PayloadTypes.Contains(node.Type) &&
                             (interleaving?.Finalized ?? Context.IsNodeCompleted(node, nodeScope)) &&
                             !actionContext.OutputTokens.Any()
                         )
@@ -1712,7 +1724,7 @@ namespace Stateflows.Activities.Engine
                             await Task.WhenAll(
                                 node.Edges
                                     .Where(edge => edge.Target.Type == NodeType.OutputPin || outputTokens.Any(t => t is TokenHolder<ControlToken>))
-                                    .Where(edge => outputTokens.Any(t => edge.TokenType.IsAssignableFrom(t.ActualPayloadType)) || edge.Weight == 0)
+                                    .Where(edge => outputTokens.Any(edge.SourceKey.Matches) || edge.Weight == 0)
                                     .OrderBy(edge => edge.IsElse)
                                     .Select(async edge =>
                                         (
@@ -1887,7 +1899,7 @@ namespace Stateflows.Activities.Engine
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': executing '{node.Name}'{(!inputTokens.Any() ? ", no input" : "")}");
                     if (upstreamEdge != null)
                     {
-                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.TokenType.GetTokenName() + "'")} flow from '{upstreamEdge.Source.Name}'");
+                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.SourceKey.Identifier + "'")} flow from '{upstreamEdge.Source.Name}'");
                     }
                     ReportTokens(inputTokens);  
                 }
@@ -1927,7 +1939,7 @@ namespace Stateflows.Activities.Engine
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': omitting '{node.Name}'");
                     if (upstreamEdge != null)
                     {
-                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.TokenType.GetTokenName() + "'")} flow from '{upstreamEdge.Source.Name}'");
+                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.SourceKey.Identifier + "'")} flow from '{upstreamEdge.Source.Name}'");
                     }
                     ReportTokens(streams.SelectMany(stream => stream.Tokens).Distinct().ToArray());
                     var activatedFlows = streams.Select(s => s.EdgeIdentifier).ToArray();
@@ -1935,15 +1947,14 @@ namespace Stateflows.Activities.Engine
                     ReportMissingFlows(missingFlows);
 
                     var inputTokens = streams.SelectMany(stream => stream.Tokens).ToArray();
-                    var missingRequiredTypes = node.InputTokenTypes
-                        .Where(requiredType => !inputTokens.Any(token =>
-                            requiredType.IsAssignableFrom(token.GetEffectivePayloadType())))
+                    var missingRequiredKeys = node.InputTokenKeys
+                        .Where(requiredKey => !inputTokens.Any(requiredKey.Matches))
                         .Distinct()
                         .ToArray();
-                    if (missingRequiredTypes.Length > 0)
+                    if (missingRequiredKeys.Length > 0)
                     {
-                        var missingTypeNames = missingRequiredTypes
-                            .Select(type => type.FullName ?? type.Name)
+                        var missingTypeNames = missingRequiredKeys
+                            .Select(key => key.IsPayload ? key.ToString() : key.Type.FullName ?? key.Type.Name)
                             .ToArray();
                         logger.LogWarning(
                             "Activity {ActivityName}:{ActivityInstance} skipped node {NodeName}; required input token types were not delivered: {MissingTokenTypes}.",
@@ -1987,7 +1998,7 @@ namespace Stateflows.Activities.Engine
                 Trace.WriteLine($"    Not activated incoming flows:");
                 foreach (var flow in flows)
                 {
-                    var tokenName = flow.TargetTokenType.GetTokenName();
+                    var tokenName = flow.TargetKey.Identifier;
                     if (tokenName == typeof(ControlToken).GetTokenName())
                     {
                         Trace.WriteLine($"    - control flow from '{flow.SourceName}'  ");
@@ -2074,10 +2085,13 @@ namespace Stateflows.Activities.Engine
             var edgeTokenName = edge.TokenType.GetTokenName();
 
             IEnumerable<TokenHolder> originalTokens = context.OutputTokens
-            .Where(t => edge.TokenType.IsAssignableFrom(t.ActualPayloadType))
+            .Where(edge.SourceKey.Matches)
             .Select(token => token.CopyForExecution(context.IsStreamed || token.IsStreamed))
             .ToArray();
 
+            flowContext.Tokens = originalTokens
+                .Select(token => token.BoxedPayload)
+                .ToArray();
             flowContext.TokenCount = stream.Tokens.Count;
             flowContext.SourceTokenCount = originalTokens.Count();
 

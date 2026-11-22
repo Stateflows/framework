@@ -139,6 +139,9 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateBuilder AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
         {
+            if (Stateflows.Payloads.PayloadNameSet.IsPayloadType(typeof(TEvent)))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Payload events can be deferred only by name; use AddDeferredEvent(eventNames, ...).", Vertex.Graph.Class);
+
             if (typeof(TEvent) == typeof(Completion))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
 
@@ -168,7 +171,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Transitions
         [DebuggerHidden]
-        internal IStateBuilder AddTransitionInternal<TEvent>(string targetStateName, bool isElse, TransitionBuildAction<TEvent> transitionBuildAction = null, string structuralEventName = null)
+        internal IStateBuilder AddTransitionInternal<TEvent>(string targetStateName, bool isElse, TransitionBuildAction<TEvent> transitionBuildAction = null, IReadOnlyList<string> payloadNames = null)
         {
             var targetEdgeType = targetStateName == Constants.DefaultTransitionTarget
                 ? EdgeType.InternalTransition
@@ -176,8 +179,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             var triggerType = typeof(TEvent);
 
-            var trigger = structuralEventName ?? Event.GetName(triggerType);
-            if (structuralEventName == null) Graph.StateflowsBuilder.Events.RegisterClr(triggerType);
+            if (payloadNames != null)
+                payloadNames = Stateflows.Payloads.PayloadNameSet.Validate(payloadNames, nameof(payloadNames));
+            var trigger = payloadNames != null ? Stateflows.Payloads.PayloadNameSet.Key(payloadNames) : Event.GetName(triggerType);
+            if (payloadNames == null) Graph.StateflowsBuilder.Payloads.RegisterClr(triggerType);
 
             var triggerDescriptor = isElse
                 ? $"{trigger}|else"
@@ -187,7 +192,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 Trigger = trigger,
                 TriggerType = typeof(TEvent),
-                StructuralEventNames = structuralEventName == null ? null : [structuralEventName],
+                PayloadNames = payloadNames,
                 IsElse = isElse,
                 Graph = Vertex.Graph,
                 SourceName = Vertex.Name,

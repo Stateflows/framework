@@ -17,6 +17,8 @@ public interface IActivityOperationObservationContext : IActivityActionContext
     object? Event { get; }
     /// <summary>Gets the current event name, or null when no delivery is active.</summary>
     string? EventName { get; }
+    /// <summary>Gets the current payload token name, or the CLR token name for a typed token.</summary>
+    string? TokenName { get; }
     /// <summary>Gets the current delivery identifier, or null when no delivery is active.</summary>
     Guid? EventId { get; }
     /// <summary>Gets the current delivery headers, or null when no delivery is active.</summary>

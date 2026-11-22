@@ -32,7 +32,7 @@ namespace Stateflows.StateMachines.Models
         public Graph Graph { get; set; }
 
         public Type TriggerType { get; set; }
-        public IReadOnlyList<string>? StructuralEventNames { get; set; }
+        public IReadOnlyList<string>? PayloadNames { get; set; }
 
         private bool polymorphicTriggers = false;
         private bool polymorphicTriggersSet = false;

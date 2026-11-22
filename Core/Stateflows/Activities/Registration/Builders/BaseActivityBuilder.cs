@@ -167,7 +167,7 @@ namespace Stateflows.Activities.Registration
                 }
                 finally
                 {
-                    if (!faulty && !context.Context.Executor.StructuralTypes.Contains(node.Type))
+                    if (!faulty && !context.Context.Executor.PayloadTypes.Contains(node.Type))
                     {
                         c.Output(new ControlToken());
                     }
@@ -270,7 +270,7 @@ namespace Stateflows.Activities.Registration
             string actionNodeName,
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
             AcceptEventActionBuildAction<TEvent> buildAction = null,
-            string structuralEventName = null
+            IReadOnlyList<string> payloadNames = null
         )
         {
             var result = AddNode(
@@ -279,7 +279,7 @@ namespace Stateflows.Activities.Registration
                 c => actionAsync(new AcceptEventActionContext<TEvent>(c as ActionContext)),
                 b =>
                 {
-                    b.Node.StructuralEventName = structuralEventName;
+                    b.Node.PayloadNames = payloadNames;
                     buildAction?.Invoke(new AcceptEventNodeBuilder<TEvent>(b.Node, b.ActivityBuilder));
                 },
                 typeof(TEvent)
@@ -323,48 +323,88 @@ namespace Stateflows.Activities.Registration
                 b => b.SetOptions(NodeOptions.ControlNodeDefault)
             );
 
+        /// <summary>
+        /// Takes the payload token names supplied by a name-first overload (see <see cref="PayloadFlowScope"/>). Must be
+        /// called before any nested build action runs. A payload type without names is rejected (V4).
+        /// </summary>
+        internal IReadOnlyList<string> TakeTokenNames<TToken>(string declaration)
+        {
+            var names = PayloadFlowScope.Take();
+            if (names == null && Stateflows.Payloads.PayloadNameSet.IsPayloadType(typeof(TToken)))
+            {
+                throw new ActivityDefinitionException(
+                    $"{declaration} of '{typeof(TToken).Name}' requires payload token names; use the overload that takes token names.",
+                    Graph.Class);
+            }
+            if (names != null && !Stateflows.Payloads.PayloadNameSet.IsPayloadType(typeof(TToken)))
+            {
+                throw new ActivityDefinitionException(
+                    $"{declaration} of '{typeof(TToken).Name}' cannot declare payload token names; use a payload token declaration.",
+                    Graph.Class);
+            }
+
+            return names;
+        }
+
+        private static Func<IActionContext, Task> PassTokens<TToken>(IReadOnlyList<string> names)
+        {
+            if (names == null)
+            {
+                return c =>
+                {
+                    c.PassTokensOfTypeOn<TToken>();
+                    return Task.CompletedTask;
+                };
+            }
+
+            var key = TokenKey.OfNames(names);
+            return c =>
+            {
+                ((ActionContext)c).PassTokensOn(key);
+                return Task.CompletedTask;
+            };
+        }
+
         internal BaseActivityBuilder AddInputPin<TToken>(System.Action<IInputPinBuilder<TToken>> buildAction)
         {
+            var names = TakeTokenNames<TToken>("Input pin");
             ArgumentNullException.ThrowIfNull(buildAction);
-            AddNode(NodeType.InputPin, $"{Node.Name}.{InputPin<TToken>.Name}", c =>
-            {
-                c.PassTokensOfTypeOn<TToken>();
-                return Task.CompletedTask;
-            }, builder =>
+            var pinName = names == null ? InputPin<TToken>.Name : InputPin.GetName(names);
+            AddNode(NodeType.InputPin, $"{Node.Name}.{pinName}", PassTokens<TToken>(names), builder =>
             {
                 builder.Node.PinTokenType = typeof(TToken);
+                builder.Node.PinTokenNames = names;
                 buildAction(new InputPinBuilder<TToken>(builder.Node, this));
             });
-            var pin = Node.Nodes.Values.Single(n => n.Type == NodeType.InputPin && n.PinTokenType == typeof(TToken));
             return this;
         }
 
         internal BaseActivityBuilder AddOutputPin<TToken>(string name = null)
         {
-            AddNode(NodeType.OutputPin, name ?? OutputPin<TToken>.Name, c =>
-            {
-                c.PassTokensOfTypeOn<TToken>();
-                return Task.CompletedTask;
-            }, builder =>
+            var names = TakeTokenNames<TToken>("Output pin");
+            AddNode(NodeType.OutputPin, name ?? (names == null ? OutputPin<TToken>.Name : OutputPin.GetName(names)), PassTokens<TToken>(names), builder =>
             {
                 builder.Node.PinTokenType = typeof(TToken);
+                builder.Node.PinTokenNames = names;
                 builder.SetOptions(NodeOptions.None);
             });
-            var pin = Node.Nodes.Values.Single(n => n.Type == NodeType.OutputPin && n.PinTokenType == typeof(TToken));
             return this;
         }
 
         internal BaseActivityBuilder AddRootOutputPin<TToken>(string name, PublishEventActionBuildAction buildAction)
         {
+            var names = TakeTokenNames<TToken>("Output pin");
+            var pinName = name ?? (names == null ? OutputPin<TToken>.Name : OutputPin.GetName(names));
             ((IPublishEventBase<IActivityBuilder>)this)
-                .AddPublishEventAction<TToken, OutputPinNode<TToken>>(name ?? OutputPin<TToken>.Name, builder =>
+                .AddPublishEventAction<TToken, OutputPinNode<TToken>>(pinName, builder =>
                 {
                     var node = ((NodeBuilder)builder).Node;
                     node.PinTokenType = typeof(TToken);
+                    node.PinTokenNames = names;
                     node.Options = NodeOptions.None;
                     buildAction?.Invoke(builder);
                 });
-            var pin = Node.OutputPins.Single(n => n.PinTokenType == typeof(TToken));
+            var pin = Node.OutputPins.Single(n => n.Name == pinName);
             pin.ImplementationType = null;
             pin.ImplementationEventType = null;
             pin.OperationTypes.Remove((ActivityOperationKind.Execute, pin.Action.Actions.Count - 1));
@@ -393,28 +433,59 @@ namespace Stateflows.Activities.Registration
             );
 
         internal BaseActivityBuilder AddParallelActivity<TToken>(string parallelActivityNodeName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1, int maxConcurrency = -1)
-            => AddNode(
+        {
+            var names = TakeTokenNames<TToken>("Parallel activity");
+            return AddNode(
                 NodeType.ParallelActivity,
                 parallelActivityNodeName,
                 c => c.Behavior.GetContext().Executor.ExecuteParallelActivityAsync<TToken>((ActionContext)c),
                 b =>
                 {
+                    b.Node.TokenNames = names;
                     b.Node.MaxConcurrency = maxConcurrency;
                     buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this));
                 },
                 typeof(TToken),
                 chunkSize
             );
+        }
 
         internal BaseActivityBuilder AddIterativeActivity<TToken>(string parallelActivityNodeName, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
-            => AddNode(
+        {
+            var names = TakeTokenNames<TToken>("Iterative activity");
+            return AddNode(
                 NodeType.IterativeActivity,
                 parallelActivityNodeName,
                 c => c.Behavior.GetContext().Executor.ExecuteIterativeActivityAsync<TToken>((ActionContext)c),
-                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this)),
+                b =>
+                {
+                    b.Node.TokenNames = names;
+                    buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this));
+                },
                 typeof(TToken),
                 chunkSize
             );
+        }
+
+        internal BaseActivityBuilder AddDecision<TToken>(string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
+        {
+            var names = TakeTokenNames<TToken>("Decision");
+            return AddNode(
+                NodeType.Decision,
+                decisionNodeName,
+                c =>
+                {
+                    c.PassAllTokensOn();
+                    return Task.CompletedTask;
+                },
+                b =>
+                {
+                    b.Node.TokenNames = names;
+                    decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder));
+                },
+                typeof(TToken)
+            );
+        }
 
         internal BaseActivityBuilder AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)
         {
@@ -512,10 +583,11 @@ namespace Stateflows.Activities.Registration
         internal BaseActivityBuilder UseParallelActivity<TParallelizationToken>(string parallelActivityNodeName,
             OverridenParallelActivityBuildAction buildAction)
         {
+            var names = TakeTokenNames<TParallelizationToken>("Parallel activity");
             if (
                 !Node.Nodes.TryGetValue($"{NodeType.ParallelActivity}:{Node.Name}:{parallelActivityNodeName}", out var node) ||
                 node.Type != NodeType.ParallelActivity ||
-                node.EventType != typeof(TParallelizationToken) ||
+                !Equals(node.SelectionKey, TokenKey.Of(typeof(TParallelizationToken), names)) ||
                 node.OriginActivityName == null
             )
             {
@@ -529,10 +601,11 @@ namespace Stateflows.Activities.Registration
 
         internal BaseActivityBuilder UseIterativeActivity<TIterationToken>(string iterativeActivityNodeName, OverridenIterativeActivityBuildAction buildAction)
         {
+            var names = TakeTokenNames<TIterationToken>("Iterative activity");
             if (
                 !Node.Nodes.TryGetValue($"{NodeType.IterativeActivity}:{Node.Name}:{iterativeActivityNodeName}", out var node) ||
                 node.Type != NodeType.IterativeActivity ||
-                node.EventType != typeof(TIterationToken) ||
+                !Equals(node.SelectionKey, TokenKey.Of(typeof(TIterationToken), names)) ||
                 node.OriginActivityName == null
             )
             {
@@ -559,10 +632,12 @@ namespace Stateflows.Activities.Registration
 
         internal BaseActivityBuilder UseInputPin<TToken>(System.Action<IOverridenInputPinBuilder<TToken>> buildAction)
         {
-            var node = Node.InputPins.FirstOrDefault(pin => pin.PinTokenType == typeof(TToken));
+            var names = TakeTokenNames<TToken>("Input pin");
+            var key = TokenKey.Of(typeof(TToken), names);
+            var node = Node.InputPins.FirstOrDefault(pin => key.Equals(pin.PinKey));
             if (node?.OriginActivityName == null)
             {
-                throw new ActivityOverrideException($"Input pin '{InputPin<TToken>.Name}' not found in overriden activity", Graph.Class);
+                throw new ActivityOverrideException($"Input pin '{(names == null ? InputPin<TToken>.Name : InputPin.GetName(names))}' not found in overriden activity", Graph.Class);
             }
             
             buildAction?.Invoke(new InputPinBuilder<TToken>(node, this));
@@ -673,10 +748,11 @@ namespace Stateflows.Activities.Registration
 
         internal BaseActivityBuilder UseDecision<TToken>(string decisionNodeName, OverridenDecisionBuildAction<TToken> decisionBuildAction)
         {
+            var names = TakeTokenNames<TToken>("Decision");
             if (
                 !Node.Nodes.TryGetValue($"{NodeType.Decision}:{Node.Name}:{decisionNodeName}", out var node) ||
                 node.Type != NodeType.Decision ||
-                node.EventType != typeof(TToken) ||
+                !Equals(node.SelectionKey, TokenKey.Of(typeof(TToken), names)) ||
                 node.OriginActivityName == null
             )
             {

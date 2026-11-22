@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using Stateflows.Common;
 using System.Threading.Tasks;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Extensions;
@@ -148,18 +150,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.-Nodes" />
         [DebuggerHidden]
         public TReturn AddDecision<TToken>(string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
-            => ((BaseActivityBuilder)this)
-                .AddNode(
-                    NodeType.Decision,
-                    decisionNodeName,
-                    c =>
-                    {
-                        c.PassAllTokensOn();
-                        return Task.CompletedTask;
-                    },
-                    b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder)),
-                    typeof(TToken)
-                ) as TReturn;
+            => ((BaseActivityBuilder)this).AddDecision(decisionNodeName, decisionBuildAction) as TReturn;
 
         /// <summary>Adds a decision node that selects an eligible outgoing object flow for the specified token type.
         /// </summary>
@@ -171,6 +162,50 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddDecision<TToken>(DecisionBuildAction<TToken> buildAction)
             => AddDecision(DecisionNode<TToken>.Name, buildAction);
+
+        /// <summary>Adds a decision node that selects an eligible outgoing object flow for payload tokens with the
+        /// specified names.</summary>
+        /// <param name="tokenNames">Payload token names accepted by the decision; flows leaving it carry this name set.
+        /// </param>
+        /// <param name="decisionNodeName">Registered name of this node in its containing Activity scope.</param>
+        /// <param name="decisionBuildAction">Callback configuring the decision's outgoing guarded and fallback flows. Its
+        /// builder is scoped to the node or flow, not the enclosing Activity.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddDecision(IReadOnlyList<string> tokenNames, string decisionNodeName, DecisionBuildAction<Payload> decisionBuildAction)
+            => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => AddDecision<Payload>(decisionNodeName, decisionBuildAction));
+
+        /// <summary>Adds a decision node that selects an eligible outgoing object flow for payload tokens with the
+        /// specified name.</summary>
+        /// <param name="tokenName">Payload token name accepted by the decision.</param>
+        /// <param name="decisionNodeName">Registered name of this node in its containing Activity scope.</param>
+        /// <param name="decisionBuildAction">Callback configuring the decision's outgoing guarded and fallback flows.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddDecision(string tokenName, string decisionNodeName, DecisionBuildAction<Payload> decisionBuildAction)
+            => AddDecision(new[] { tokenName }, decisionNodeName, decisionBuildAction);
+
+        /// <summary>Adds a decision node with the default name <see cref="DecisionNode.GetName"/> that selects an
+        /// eligible outgoing object flow for payload tokens with the specified names.</summary>
+        /// <param name="tokenNames">Payload token names accepted by the decision.</param>
+        /// <param name="buildAction">Callback configuring the decision's outgoing guarded and fallback flows.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddDecision(IReadOnlyList<string> tokenNames, DecisionBuildAction<Payload> buildAction)
+            => AddDecision(tokenNames, DecisionNode.GetName(tokenNames), buildAction);
+
+        /// <summary>Adds a decision node with the default name <see cref="DecisionNode.GetName"/> that selects an
+        /// eligible outgoing object flow for payload tokens with the specified name.</summary>
+        /// <param name="tokenName">Payload token name accepted by the decision.</param>
+        /// <param name="buildAction">Callback configuring the decision's outgoing guarded and fallback flows.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddDecision(string tokenName, DecisionBuildAction<Payload> buildAction)
+            => AddDecision(new[] { tokenName }, buildAction);
         #endregion
         
         #region AddDataStore

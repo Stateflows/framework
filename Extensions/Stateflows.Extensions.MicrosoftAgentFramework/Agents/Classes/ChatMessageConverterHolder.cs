@@ -20,12 +20,12 @@ internal sealed class ChatMessageConverterHolder<TSource>(IChatMessageConverter<
         );
 }
 
-internal sealed class StructuralChatMessageConverterHolder(string eventName, IChatMessageConverter<StructuralEvent> converter) : ChatMessageConverterHolder
+internal sealed class PayloadChatMessageConverterHolder(string eventName, IChatMessageConverter<Payload> converter) : ChatMessageConverterHolder
 {
     public override Task<ChatMessage[]> ConvertAsync(IAIAgentContext context, CancellationToken cancellationToken = default)
         => Task.WhenAll(
             context
-                .GetTokensOfType<StructuralEvent>()
+                .GetTokensOfType<Payload>()
                 .Where(@event => @event.Name == eventName)
                 .Select(@event => converter.ConvertAsync(@event, context, cancellationToken))
                 .ToArray()

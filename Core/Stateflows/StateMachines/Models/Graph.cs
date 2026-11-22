@@ -75,6 +75,7 @@ namespace Stateflows.StateMachines.Models
         public readonly Dictionary<string, Logic<StateMachinePredicateAsync>> Initializers = new Dictionary<string, Logic<StateMachinePredicateAsync>>();
         public readonly List<Type> InitializerTypes = new List<Type>();
         internal Dictionary<Type, Logic<StateMachinePredicateAsync>> InitializerDeclarations { get; } = [];
+        internal Dictionary<string, PayloadInitializerDeclaration> PayloadInitializerDeclarations { get; } = new(StringComparer.Ordinal);
         public Logic<StateMachinePredicateAsync> DefaultInitializer;
 
         public Logic<StateMachineActionAsync> Finalize { get; } =
@@ -129,7 +130,7 @@ namespace Stateflows.StateMachines.Models
                     region.InitialVertex = string.IsNullOrEmpty(region.InitialVertexName) ? null : region.Vertices[region.InitialVertexName];
 
                 vertex.BehaviorEventTypes.Clear();
-                vertex.BehaviorStructuralEvents.Clear();
+                vertex.BehaviorPayloads.Clear();
                 vertex.BehaviorEventBindings.Clear();
                 if (string.IsNullOrEmpty(vertex.BehaviorName)) continue;
                 switch (vertex.BehaviorType)
@@ -139,7 +140,7 @@ namespace Stateflows.StateMachines.Models
                         StateflowsBuilder.EnsureActivitiesServices().VisitActivityAsync(vertex.BehaviorName, 1, activityVisitor).GetAwaiter().GetResult();
                         vertex.BehaviorEventTypes.AddRange(activityVisitor.EventTypes);
                         foreach (var binding in activityVisitor.EventBindings) vertex.BehaviorEventBindings.Add(binding.Key, binding.Value);
-                        vertex.BehaviorStructuralEvents.UnionWith(activityVisitor.EventNames.Where(name => !activityVisitor.EventTypes.Any(type => Event.GetName(type) == name)));
+                        vertex.BehaviorPayloads.UnionWith(activityVisitor.EventNames.Where(name => !activityVisitor.EventTypes.Any(type => Event.GetName(type) == name)));
                         break;
 
                     case BehaviorType.StateMachine:
@@ -147,7 +148,7 @@ namespace Stateflows.StateMachines.Models
                         StateflowsBuilder.EnsureStateMachinesServices().VisitStateMachineAsync(vertex.BehaviorName, 1, machineVisitor).GetAwaiter().GetResult();
                         vertex.BehaviorEventTypes.AddRange(machineVisitor.EventTypes);
                         foreach (var binding in machineVisitor.EventBindings) vertex.BehaviorEventBindings.Add(binding.Key, binding.Value);
-                        vertex.BehaviorStructuralEvents.UnionWith(machineVisitor.EventNames.Where(name => !machineVisitor.EventTypes.Any(type => Event.GetName(type) == name)));
+                        vertex.BehaviorPayloads.UnionWith(machineVisitor.EventNames.Where(name => !machineVisitor.EventTypes.Any(type => Event.GetName(type) == name)));
                         break;
 
                     default:
@@ -155,7 +156,7 @@ namespace Stateflows.StateMachines.Models
                         StateflowsBuilder.EnsureActionsServices().VisitActionAsync(vertex.BehaviorName, 1, actionVisitor).GetAwaiter().GetResult();
                         vertex.BehaviorEventTypes.AddRange(actionVisitor.EventTypes);
                         foreach (var binding in actionVisitor.EventBindings) vertex.BehaviorEventBindings.Add(binding.Key, binding.Value);
-                        vertex.BehaviorStructuralEvents.UnionWith(actionVisitor.EventNames.Where(name => !actionVisitor.EventTypes.Any(type => Event.GetName(type) == name)));
+                        vertex.BehaviorPayloads.UnionWith(actionVisitor.EventNames.Where(name => !actionVisitor.EventTypes.Any(type => Event.GetName(type) == name)));
                         break;
                 }
             }

@@ -89,7 +89,9 @@ execution; SSE supplies real operations to the diagram and capture list. Click a
 observation to inspect its execution frame. State-machine current states come from
 a status query after each demo command. Activity badges are observed activation
 and execution results, not an authoritative current token marking. Captures are
-bounded and do not constitute transaction commit receipts.
+bounded and do not constitute transaction commit receipts. Flow activation,
+guard and transformation observations include payload token names and field values
+when available; treat the capture API and stream as sensitive development data.
 
 For frontend hot reload, run the .NET host separately using its `Visualizer` launch
 profile and `npm run dev` here; Vite proxies `/api` to port 5167.

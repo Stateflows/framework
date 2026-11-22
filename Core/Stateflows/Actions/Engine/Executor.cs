@@ -89,13 +89,14 @@ namespace Stateflows.Actions.Engine
             if (eventHolder.Payload is TokensInputEvent tokensInput)
             {
                 using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, tokensInput.Tokens);
+                var previousInputTokens = InputTokens.TokensHolder.Value;
+                var previousOutputTokens = OutputTokens.TokensHolder.Value;
                 try
                 {
                     InputTokens.TokensHolder.Value = context.InputTokens.ToList();
+                    OutputTokens.TokensHolder.Value = context.OutputTokens;
 
                     await InvokeActionAsync(context);
-
-                    InputTokens.TokensHolder.Value = null;
 
                     Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
 
@@ -111,6 +112,8 @@ namespace Stateflows.Actions.Engine
                 }
                 finally
                 {
+                    InputTokens.TokensHolder.Value = previousInputTokens;
+                    OutputTokens.TokensHolder.Value = previousOutputTokens;
                     result = EventStatus.Consumed;
                 }
             }
@@ -155,19 +158,22 @@ namespace Stateflows.Actions.Engine
                     ServiceProvider,
                     [eventHolder.Payload.ToTokenHolder()]
                 );
+                var previousInputTokens = InputTokens.TokensHolder.Value;
+                var previousOutputTokens = OutputTokens.TokensHolder.Value;
 
                 try
                 {
                     InputTokens.TokensHolder.Value = context.InputTokens.ToList();
+                    OutputTokens.TokensHolder.Value = context.OutputTokens;
 
                     await InvokeActionAsync(context);
-
-                    InputTokens.TokensHolder.Value = null;
 
                     Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
                 }
                 finally
                 {
+                    InputTokens.TokensHolder.Value = previousInputTokens;
+                    OutputTokens.TokensHolder.Value = previousOutputTokens;
                     result = EventStatus.Consumed;
                 }
             }
@@ -190,13 +196,14 @@ namespace Stateflows.Actions.Engine
             else
             {
                 using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, [eventHolder.Payload.ToTokenHolder()]);
+                var previousInputTokens = InputTokens.TokensHolder.Value;
+                var previousOutputTokens = OutputTokens.TokensHolder.Value;
                 try
                 {
                     InputTokens.TokensHolder.Value = context.InputTokens.ToList();
+                    OutputTokens.TokensHolder.Value = context.OutputTokens;
 
                     await InvokeActionAsync(context);
-
-                    InputTokens.TokensHolder.Value = null;
 
                     Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
 
@@ -204,6 +211,8 @@ namespace Stateflows.Actions.Engine
                 }
                 finally
                 {
+                    InputTokens.TokensHolder.Value = previousInputTokens;
+                    OutputTokens.TokensHolder.Value = previousOutputTokens;
                     result = EventStatus.Consumed;
                 }
             }

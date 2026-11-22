@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Stateflows;
 using Stateflows.Activities;
 using Stateflows.Common;
+using Stateflows.Payloads;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests;
@@ -16,6 +17,9 @@ public sealed class PlantUmlPins : StateflowsTestClass
     public override void Cleanup() => base.Cleanup();
 
     protected override void InitializeStateflows(IStateflowsBuilder builder) => builder
+        .AddPayloads(events => events
+            .AddPayload("first", _ => { })
+            .AddPayload("second", _ => { }))
         .AddPlantUml()
         .AddActivities(activities => activities
             .AddActivity("diagram-pins", activity => activity
@@ -40,6 +44,9 @@ public sealed class PlantUmlPins : StateflowsTestClass
             .AddActivity("diagram-typed-boundary", activity => activity
                 .AddInputPin<int>(input => input.AddFlow<OutputPin<int>>())
                 .AddOutputPin<int>())
+            .AddActivity("diagram-payload-pins", activity => activity
+                .AddInputPin(new[] { "first", "second" }, pin => pin.AddFlow("payload-output"))
+                .AddOutputPin(new[] { "first", "second" }, "payload-output", _ => { }))
             .AddActivity("diagram-pin-alias", activity => activity
                 .AddInputPin<int>(pin => pin.AddFlow("pin0"))
                 .AddAction("pin0", context =>
@@ -143,6 +150,15 @@ public sealed class PlantUmlPins : StateflowsTestClass
         StringAssert.Contains(diagram, "\"Input pin\\nInt32\" as pin0");
         StringAssert.Contains(diagram, "\"Output pin\\nInt32\" as pin1");
         StringAssert.Contains(diagram, "pin0 -->[Int32] pin1");
+    }
+
+    [TestMethod]
+    public async Task PayloadPinAndFlowNamesAreRendered()
+    {
+        var diagram = await DiagramAsync("diagram-payload-pins");
+        StringAssert.Contains(diagram, "\"Input pin\\nfirst, second\"");
+        StringAssert.Contains(diagram, "\"Output pin\\nfirst, second\"");
+        StringAssert.Contains(diagram, "[first, second -> first, second]");
     }
 
     [TestMethod]

@@ -9,6 +9,7 @@ using Stateflows;
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
+using Stateflows.Payloads;
 
 namespace Orleans.IntegrationTests;
 
@@ -299,6 +300,106 @@ public sealed class ActivityStreamingRecoveryTests
             Assert.AreEqual(1, probe.Get("recovery-iterative-recovered", "finalize"));
             Assert.AreEqual(1, probe.Get("recovery-fork-recovered", "b"));
             Assert.AreEqual(1, probe.Get("recovery-fork-recovered", "c"));
+        }
+        finally
+        {
+            probe.ReleaseAll();
+            await host.StopAsync();
+        }
+    }
+
+    [TestMethod]
+    [Timeout(120_000)]
+    public async Task CheckpointedPayloadTokensRecoverAfterOrleansReactivation()
+    {
+        var probe = new RecoveryProbe();
+        var ports = GetPorts();
+        var cluster = Guid.NewGuid().ToString("N");
+        using var host = Host.CreateDefaultBuilder()
+            .ConfigureServices((_, services) =>
+            {
+                services.AddSingleton(probe);
+                services.AddStateflows(sf => sf
+                    .AddPayloads(payloads => payloads.AddPayload("recovery-payload", payload =>
+                        payload.AddField("value", Stateflows.Common.FieldType.Int32)))
+                    .AddActivities(activities => activities.AddActivity("recovery-payload", activity => activity
+                        .AddInputPin(["recovery-payload"], pin => pin.AddFlow("work"))
+                        .AddAction("work", async context =>
+                        {
+                            var payloads = context.GetTokensOfType<Payload>().ToArray();
+                            foreach (var payload in payloads)
+                                probe.Count(context.Behavior.Id.Instance, $"work:{payload.Get<int>("value")}");
+                            if (payloads.Any(payload => payload.Get<int>("value") == 1))
+                                await probe.GatedAsync(context.Behavior.Id.Instance, "payload");
+                            context.PassAllTokensOn();
+                        }, node => node.AddFlow(["recovery-payload"], "after"))
+                        .AddAction("after", context =>
+                        {
+                            foreach (var payload in context.GetTokensOfType<Payload>())
+                            {
+                                var value = payload.Get<int>("value");
+                                probe.Count(context.Behavior.Id.Instance, $"after:{payload.Name}:{value}");
+                            }
+                            if (probe.Get(context.Behavior.Id.Instance, "after:recovery-payload:1") > 0 &&
+                                probe.Get(context.Behavior.Id.Instance, "after:recovery-payload:2") > 0)
+                                probe.Done(context.Behavior.Id.Instance);
+                            return Task.CompletedTask;
+                        }))));
+                services.Configure<StateflowsRuntimeOptions>(options =>
+                {
+                    options.SuspendActivityCheckpointResumeForTesting = true;
+                    options.ActivityCheckpointPauseRequestedForTesting = id => probe.PauseRequested(id.Instance).TrySetResult();
+                });
+            })
+            .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Error))
+            .UseOrleans(silo => silo
+                .UseLocalhostClustering(ports[0], ports[1], null, cluster, cluster)
+                .UseInMemoryReminderService()
+                .AddMemoryGrainStorageAsDefault()
+                .AddStateflowsRuntime())
+            .Build();
+
+        await host.StartAsync();
+        try
+        {
+            var factory = host.Services.GetRequiredService<IBehaviorFactory>();
+            var payloadFactory = host.Services.GetRequiredService<IPayloadFactory>();
+            var management = host.Services.GetRequiredService<IGrainFactory>().GetGrain<IManagementGrain>(0);
+            using var behavior = factory.CreateBehavior(new ActivityId("recovery-payload", "payload-recovered"));
+            Assert.AreEqual(EventStatus.Accepted, (await behavior.SendAsync(new TokensInput().Add(
+                payloadFactory.Create("recovery-payload", payload => payload.Set("value", 1))), StreamHeader)
+                .WaitAsync(TimeSpan.FromSeconds(10))).Status);
+            await probe.Started("payload-recovered").Task.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.AreEqual(EventStatus.Accepted, (await behavior.SendAsync(new TokensInput().Add(
+                payloadFactory.Create("recovery-payload", payload => payload.Set("value", 2))), StreamHeader)
+                .WaitAsync(TimeSpan.FromSeconds(10))).Status);
+
+            var checkpoint = behavior.GetStatusAsync(new Dictionary<string, EventHeader>
+            {
+                [nameof(Checkpoint)] = new Checkpoint()
+            });
+            await probe.PauseRequested("payload-recovered").Task.WaitAsync(TimeSpan.FromSeconds(10));
+            probe.Gate("payload-recovered").TrySetResult();
+            Assert.AreEqual(EventStatus.Consumed, (await checkpoint.WaitAsync(TimeSpan.FromSeconds(10))).Status);
+
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+            int remaining;
+            do
+            {
+                await management.ForceActivationCollection(TimeSpan.Zero);
+                remaining = (await management.GetSimpleGrainStatistics())
+                    .Where(statistic => statistic.GrainType.Contains(nameof(StateflowsBehavior)))
+                    .Sum(statistic => statistic.ActivationCount);
+                if (remaining > 0) await Task.Delay(50);
+            } while (remaining > 0 && DateTime.UtcNow < deadline);
+            Assert.AreEqual(0, remaining, "The checkpointed payload context must be deactivated before recovery.");
+
+            await behavior.GetStatusAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            await probe.Completion("payload-recovered").Task.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.AreEqual(1, probe.Get("payload-recovered", "work:1"));
+            Assert.AreEqual(1, probe.Get("payload-recovered", "work:2"));
+            Assert.AreEqual(1, probe.Get("payload-recovered", "after:recovery-payload:1"));
+            Assert.AreEqual(1, probe.Get("payload-recovered", "after:recovery-payload:2"));
         }
         finally
         {

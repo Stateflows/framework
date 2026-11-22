@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common;
+using Stateflows.Payloads;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -37,23 +39,27 @@ namespace Stateflows.Activities.Registration.Builders
         IOverridenAcceptEventActionBuilder<TEvent> IOverridenControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent>>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => UseControlFlow(targetNodeName, buildAction) as IOverridenAcceptEventActionBuilder<TEvent>;
 
-        public IOverridenAcceptEventActionBuilder<StructuralEvent> ChangeAcceptedEvent(string eventName)
+        public IOverridenAcceptEventActionBuilder<Payload> ChangeAcceptedEvent(string eventName)
+            => ChangeAcceptedEvent(new[] { eventName });
+
+        public IOverridenAcceptEventActionBuilder<Payload> ChangeAcceptedEvent(IReadOnlyList<string> eventNames)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            if (!typeof(TEvent).IsAssignableFrom(typeof(StructuralEvent)))
-                throw new InvalidOperationException("A CLR-typed accept-event node cannot be changed to an incompatible structural event.");
-            var definition = Graph.StateflowsBuilder.Events.GetEvent(eventName);
-            Node.EventType = typeof(StructuralEvent);
-            Node.StructuralEventName = eventName;
-            Node.ActualEventTypes = [typeof(StructuralEvent)];
-            return new AcceptEventNodeBuilder<StructuralEvent>(Node, activityBuilder);
+            PayloadNameSet.Validate(eventNames, nameof(eventNames));
+            if (!typeof(TEvent).IsAssignableFrom(typeof(Payload)))
+                throw new InvalidOperationException("A CLR-typed accept-event node cannot be changed to an incompatible payload.");
+            foreach (var eventName in eventNames)
+                Graph.StateflowsBuilder.Payloads.GetPayload(eventName);
+            Node.EventType = typeof(Payload);
+            Node.PayloadNames = eventNames.ToArray();
+            Node.ActualEventTypes = [typeof(Payload)];
+            return new AcceptEventNodeBuilder<Payload>(Node, activityBuilder);
         }
 
         public IOverridenAcceptEventActionBuilder<TAcceptedEvent> ChangeAcceptedEvent<TAcceptedEvent>()
             where TAcceptedEvent : TEvent
         {
             Node.EventType = typeof(TAcceptedEvent);
-            Node.StructuralEventName = null;
+            Node.PayloadNames = null;
             Node.ActualEventTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(Node.EventType).ToHashSet();
 
             var result = new AcceptEventNodeBuilder<TAcceptedEvent>(Node, activityBuilder);
@@ -113,7 +119,7 @@ namespace Stateflows.Activities.Registration.Builders
             where TAcceptedEvent : TEvent
         {
             Node.EventType = typeof(TAcceptedEvent);
-            Node.StructuralEventName = null;
+            Node.PayloadNames = null;
             Node.ActualEventTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(Node.EventType).ToHashSet();
 
             var result = new AcceptEventNodeBuilder<TAcceptedEvent>(Node, activityBuilder);

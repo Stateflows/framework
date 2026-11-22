@@ -7,6 +7,7 @@ using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Json;
 using Stateflows.Common.Registration.Builders;
+using Stateflows.Payloads;
 
 namespace Activity.IntegrationTests.Tests.Json;
 
@@ -35,11 +36,23 @@ public class JsonDefinitions
         .AddType<AbstractAction>("abstract")
         .AddType<NoPublicConstructor>("private")
         .AddType<int>("int")
-        .AddType<string>("string");
+        .AddType<string>("string")
+        .AddType<PayloadIdentity>("payloadIdentity");
 
     internal static (ActivitiesRegister Register, ActivitiesBuilder Builder) Host()
     {
         var services = new StateflowsBuilder(new ServiceCollection());
+        var register = (ActivitiesRegister)services.EnsureActivitiesServices();
+        return (register, new ActivitiesBuilder(register));
+    }
+
+    internal static (ActivitiesRegister Register, ActivitiesBuilder Builder) PayloadHost(params string[] names)
+    {
+        var services = new StateflowsBuilder(new ServiceCollection());
+        services.AddPayloads(events =>
+        {
+            foreach (var name in names) events.AddPayload(name, _ => { });
+        });
         var register = (ActivitiesRegister)services.EnsureActivitiesServices();
         return (register, new ActivitiesBuilder(register));
     }
@@ -52,7 +65,7 @@ public class JsonDefinitions
     [DataRow("parallel", -1)]
     [DataRow("parallel", 2)]
     [DataRow("iterative", -1)]
-    public void StructuralOptionsAndParallelConcurrencyRegisterFromJson(string kind, int limit)
+    public void PayloadOptionsAndParallelConcurrencyRegisterFromJson(string kind, int limit)
     {
         var node = new JObject
         {
@@ -175,6 +188,105 @@ public class JsonDefinitions
         Assert.IsTrue(graph.AllNamedNodes.ContainsKey("nested-result"));
         Assert.IsTrue(graph.AllEdgesList.Any(edge => edge.TargetName == "root-result" && edge.Target?.Parent == graph));
         Assert.IsTrue(graph.AllEdgesList.Any(edge => edge.TargetName == "nested-result" && edge.Target?.Parent?.Name == "scope"));
+    }
+
+    [TestMethod]
+    public void NamedPayloadSelectorsBindOnPinsFlowsDecisionsAndScopes()
+    {
+        const string json = """
+            {
+              "formatVersion": "1.0",
+              "name": "json-payload-selectors",
+              "nodes": [
+                { "kind": "initial", "flows": [
+                  { "kind": "control", "target": "work" },
+                  { "kind": "control", "target": "iterate" },
+                  { "kind": "control", "target": "parallelize" }
+                ] },
+                { "kind": "action", "name": "work", "implementation": { "clrType": "action" },
+                  "flows": [{ "kind": "control", "target": "done" }] },
+                { "kind": "final", "name": "done" },
+                { "kind": "inputPin", "tokenNames": ["first", "second"],
+                  "flows": [{ "kind": "object", "target": "choose", "tokenNames": ["first", "second"] }] },
+                { "kind": "decision", "mode": "object", "name": "choose", "tokenNames": ["first", "second"],
+                  "flows": [
+                    { "kind": "object", "target": "result", "tokenNames": ["first", "second"],
+                      "pipeline": [{ "kind": "transform", "outputTokenNames": ["result", "other"],
+                        "handler": { "clrType": "payloadIdentity" } }] },
+                    { "kind": "elseObject", "target": "fallback", "tokenNames": ["first", "second"] }
+                  ] },
+                { "kind": "outputPin", "name": "result", "tokenNames": ["result", "other"] },
+                { "kind": "outputPin", "name": "fallback", "tokenNames": ["first", "second"] },
+                { "kind": "iterative", "name": "iterate", "iterationTokenNames": ["first"],
+                  "flows": [{ "kind": "control", "target": "done" }], "nodes": [] },
+                { "kind": "parallel", "name": "parallelize", "parallelizationTokenNames": ["second"],
+                  "flows": [{ "kind": "control", "target": "done" }], "nodes": [] }
+              ]
+            }
+            """;
+        var (register, builder) = PayloadHost("first", "second", "result", "other");
+
+        Assert.IsFalse(JsonActivityDefinition.Parse(json, Options()).Register(builder).HasErrors);
+
+        var graph = register.Activities["json-payload-selectors.current"];
+        var input = graph.AllNodes.Values.Single(node => node.Type == NodeType.InputPin);
+        CollectionAssert.AreEquivalent(new[] { "first", "second" }, input.PinTokenNames!.ToArray());
+        var decision = graph.AllNodes.Values.Single(node => node.Type == NodeType.Decision);
+        CollectionAssert.AreEquivalent(new[] { "first", "second" }, decision.TokenNames!.ToArray());
+        var iterative = graph.AllNodes.Values.Single(node => node.Type == NodeType.IterativeActivity);
+        CollectionAssert.AreEqual(new[] { "first" }, iterative.TokenNames!.ToArray());
+        var parallel = graph.AllNodes.Values.Single(node => node.Type == NodeType.ParallelActivity);
+        CollectionAssert.AreEqual(new[] { "second" }, parallel.TokenNames!.ToArray());
+        var transformed = graph.AllEdgesList.Single(edge => edge.TargetName == "result");
+        CollectionAssert.AreEquivalent(new[] { "first", "second" }, transformed.TokenNames!.ToArray());
+        CollectionAssert.AreEquivalent(new[] { "result", "other" }, transformed.TargetTokenNames!.ToArray());
+    }
+
+    [TestMethod]
+    [DataRow("""{"kind":"inputPin","tokenType":"int","tokenNames":["first"]}""")]
+    [DataRow("""{"kind":"inputPin","tokenNames":[]}""")]
+    [DataRow("""{"kind":"transform","handler":{"clrType":"payloadIdentity"},"outputTokenName":"first","outputTokenNames":["second"]}""")]
+    [DataRow("""{"kind":"parallel","name":"parallel","nodes":[],"iterationTokenNames":["first"],"parallelizationTokenNames":["second"]}""")]
+    public void TokenNameSelectorsRejectInvalidSchemaShapes(string fragment)
+    {
+        var model = JObject.Parse("""
+            {"formatVersion":"1.0","name":"invalid-token-selectors","nodes":[
+              {"kind":"action","name":"action","implementation":{"clrType":"action"},
+               "flows":[{"kind":"control","target":"done"}]},
+              {"kind":"final","name":"done"}]}
+            """);
+        var node = (JObject)model["nodes"]![0]!;
+        var value = JObject.Parse(fragment);
+        switch (value.Value<string>("kind"))
+        {
+            case "inputPin":
+                model["nodes"] = new JArray(value, model["nodes"]![1]!.DeepClone());
+                break;
+            case "transform":
+                ((JObject)node["flows"]![0]!)["kind"] = "object";
+                ((JObject)node["flows"]![0]!)["tokenType"] = "int";
+                ((JObject)node["flows"]![0]!)["pipeline"] = new JArray(value);
+                break;
+            case "parallel":
+                model["nodes"] = new JArray(value);
+                break;
+        }
+        Assert.Throws<JsonActivityException>(() => JsonActivityDefinition.Parse(model.ToString(), Options()));
+    }
+
+    [TestMethod]
+    public void UnknownPayloadNamesReportTheirJsonPath()
+    {
+        const string json = """
+            {"formatVersion":"1.0","name":"unknown-payload-name",
+             "nodes":[{"kind":"inputPin","tokenNames":["missing"]}]}
+            """;
+        var (_, builder) = PayloadHost("first");
+
+        var exception = Assert.Throws<JsonActivityException>(() => JsonActivityDefinition.Parse(json, Options()).Register(builder));
+
+        Assert.IsTrue(exception.ValidationReport.Diagnostics.Any(diagnostic =>
+            diagnostic.RuleId == "JSON-003" && diagnostic.ElementPath == "/nodes/0/tokenNames/0"));
     }
 
     [TestMethod]
@@ -562,6 +674,12 @@ public class JsonDefinitions
             Finalizers++;
             return Task.CompletedTask;
         }
+
+    }
+
+    public sealed class PayloadIdentity : IFlowTransformation<Payload, Payload>
+    {
+        public Task<Payload> TransformAsync(Payload token) => Task.FromResult(token);
     }
 
     public sealed class DefaultInitializer : IDefaultInitializer

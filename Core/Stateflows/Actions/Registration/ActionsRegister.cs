@@ -27,7 +27,7 @@ namespace Stateflows.Actions.Registration
 
 
 
-        internal Stateflows.Events.EventsRegister EventsRegister { get; set; }
+        internal Stateflows.Payloads.PayloadsRegister PayloadsRegister { get; set; }
         internal ITypeMapper TypeMapper { get; set; }
 
         public readonly Dictionary<string, ActionModel> Actions = new();

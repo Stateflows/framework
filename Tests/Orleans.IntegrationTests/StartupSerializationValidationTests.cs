@@ -30,7 +30,7 @@ public sealed class StartupSerializationValidationTests
             () => provider.GetRequiredService<StartupSerializationValidator>().ValidateAsync());
         StringAssert.Contains(failure.Message, "manual event");
         StringAssert.Contains(failure.Message, "manual token");
-        Assert.AreEqual(0, provider.GetRequiredService<IEventsRegister>().Events.Count);
+        Assert.AreEqual(0, provider.GetRequiredService<IPayloadsRegister>().Payloads.Count);
     }
 
     [TestMethod]

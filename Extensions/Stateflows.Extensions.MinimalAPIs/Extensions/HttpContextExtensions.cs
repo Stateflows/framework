@@ -19,7 +19,7 @@ public static class HttpContextExtensions
         var behaviorId = eventHolder.SenderId;
         try
         {
-            var jsonString = StructuralJson.SerializeObject(eventHolder);
+            var jsonString = PayloadJson.SerializeObject(eventHolder);
         
             var frame = Encoding.UTF8.GetBytes($"event: {eventHolder.Name}\ndata: {jsonString}\n\n");
             await httpContext.Response.Body.WriteAsync(frame, httpContext.RequestAborted);

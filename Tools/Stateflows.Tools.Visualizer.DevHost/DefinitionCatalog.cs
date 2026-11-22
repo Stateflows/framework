@@ -235,7 +235,7 @@ public sealed class DefinitionCatalog
             string? parentNodeId)
         {
             pending[(name, version)].Nodes.Add(new ActivityNodeDefinition(nodeId, nodeName, nodeType,
-                parentNodeId, null, null, NodeOptions.None));
+                parentNodeId, null, [], null, NodeOptions.None));
             return Task.CompletedTask;
         }
 
@@ -263,6 +263,25 @@ public sealed class DefinitionCatalog
         public override Task OutputPinAddedAsync<TToken>(string id, string name, int version, string? parentNodeId)
             => InputPinAddedAsync<TToken>(id, name, version, parentNodeId);
 
+        public override Task TokenNamesDeclaredAsync(string id, string name, int version,
+            TokenNamesDeclarationKind kind, IReadOnlyList<string> tokenNames)
+        {
+            if (kind is TokenNamesDeclarationKind.InputPin or TokenNamesDeclarationKind.OutputPin)
+                UpdateNode(id, name, version, node => node with { PinTokenNames = tokenNames.ToArray() });
+            else if (kind == TokenNamesDeclarationKind.FlowSource)
+                UpdateFlow(id, name, version, flow => flow with { TokenNames = tokenNames.ToArray() });
+            else if (kind == TokenNamesDeclarationKind.FlowTarget)
+                UpdateFlow(id, name, version, flow => flow with { TargetTokenNames = tokenNames.ToArray() });
+            return Task.CompletedTask;
+        }
+
+        private void UpdateFlow(string id, string name, int version, Func<ActivityFlowDefinition, ActivityFlowDefinition> update)
+        {
+            var flows = pending[(name, version)].Flows;
+            var index = flows.FindIndex(flow => flow.Id == id);
+            flows[index] = update(flows[index]);
+        }
+
         public override Task AcceptEventNodeAddedAsync<TEvent>(string id, string name, int version, IReadOnlyList<string> eventNames)
         {
             UpdateNode(id, name, version, node => node with { EventName = string.Join(", ", eventNames) });
@@ -279,7 +298,7 @@ public sealed class DefinitionCatalog
             bool isElse)
         {
             pending[(name, version)].Flows.Add(new ActivityFlowDefinition(flowId, sourceNodeId, targetNodeId,
-                typeof(ControlToken).GetTokenName(), typeof(ControlToken).GetTokenName(), 1, isElse, false));
+                typeof(ControlToken).GetTokenName(), typeof(ControlToken).GetTokenName(), 1, isElse, false, [], []));
             return Task.CompletedTask;
         }
 
@@ -287,7 +306,7 @@ public sealed class DefinitionCatalog
             bool isElse)
         {
             pending[(name, version)].Flows.Add(new ActivityFlowDefinition(flowId, sourceNodeId, targetNodeId,
-                typeof(TToken).GetTokenName(), typeof(TToken).GetTokenName(), 1, isElse, false));
+                typeof(TToken).GetTokenName(), typeof(TToken).GetTokenName(), 1, isElse, false, [], []));
             return Task.CompletedTask;
         }
 

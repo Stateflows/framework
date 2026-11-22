@@ -5,7 +5,7 @@ using Stateflows.Common;
 namespace Stateflows.StateMachines.Context.Interfaces
 {
     /// <summary>Provides the event being processed together with its envelope metadata and machine execution context.</summary>
-    /// <typeparam name="TEvent">The payload type; named structural transitions use <c>StructuralEvent</c>.</typeparam>
+    /// <typeparam name="TEvent">The payload type; named payload transitions use <c>Payload</c>.</typeparam>
     public interface IEventContext<out TEvent> : IStateMachineActionContext
     {
         /// <summary>The event payload supplied to the current operation.</summary>

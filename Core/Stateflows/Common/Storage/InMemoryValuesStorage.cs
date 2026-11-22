@@ -117,7 +117,7 @@ namespace Stateflows.Common.Storage
             return Task.FromResult(result);
         }
 
-        public Task<T> GetOrDefaultAsync<T>(BehaviorId behaviorId, string key, T defaultValue = default)
+        public Task<T> GetOrDefaultAsync<T>(BehaviorId behaviorId, string key, T defaultValue)
         {
             lock (Values)
             {

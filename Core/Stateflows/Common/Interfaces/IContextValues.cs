@@ -32,9 +32,16 @@ namespace Stateflows.Common.Interfaces
         /// <summary>Gets a stored value or returns the supplied default.</summary>
         /// <typeparam name="T">The expected value type.</typeparam>
         /// <param name="key">The storage key.</param>
+        /// <returns>The stored value or default(T).</returns>
+        Task<T?> GetOrDefaultAsync<T>(string key)
+            => GetOrDefaultAsync<T>(key, default!)!;
+
+        /// <summary>Gets a stored value or returns the supplied default.</summary>
+        /// <typeparam name="T">The expected value type.</typeparam>
+        /// <param name="key">The storage key.</param>
         /// <param name="defaultValue">The value returned when no stored value is available.</param>
         /// <returns>The stored value or <paramref name="defaultValue"/>.</returns>
-        Task<T?> GetOrDefaultAsync<T>(string key, T? defaultValue = default);
+        Task<T> GetOrDefaultAsync<T>(string key, T defaultValue);
 
         /// <summary>Atomically updates a value using a callback.</summary>
         /// <typeparam name="T">The value type.</typeparam>

@@ -84,7 +84,7 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
         => (rule.Event == null || rule.Event == eventType) &&
            (rule.EventName == null || rule.EventName == eventName);
 
-    private IEnumerable<EndpointConfigurationRule> GetStructuralEventRules(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance)
+    private IEnumerable<EndpointConfigurationRule> GetPayloadRules(BehaviorClass behaviorClass, PayloadDefinition eventDefinition, bool isDefaultInstance)
         => Rules.Where(rule =>
             rule.Kind is EndpointKind.Event or EndpointKind.All &&
             (rule.BehaviorType == null || rule.BehaviorType == behaviorClass.Type) &&
@@ -94,9 +94,9 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
             MatchesEvent(rule, null, eventDefinition.Name)
         );
 
-    public override bool BeforeStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
+    public override bool BeforePayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
     {
-        foreach (var rule in GetStructuralEventRules(behaviorClass, eventDefinition, isDefaultInstance))
+        foreach (var rule in GetPayloadRules(behaviorClass, eventDefinition, isDefaultInstance))
         {
             if (rule.Disable)
             {
@@ -109,10 +109,10 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
         return true;
     }
 
-    public override void AfterStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, string method, string route,
+    public override void AfterPayloadEndpointDefinition(BehaviorClass behaviorClass, PayloadDefinition eventDefinition, bool isDefaultInstance, string method, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
-        foreach (var rule in GetStructuralEventRules(behaviorClass, eventDefinition, isDefaultInstance))
+        foreach (var rule in GetPayloadRules(behaviorClass, eventDefinition, isDefaultInstance))
         {
             rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
         }

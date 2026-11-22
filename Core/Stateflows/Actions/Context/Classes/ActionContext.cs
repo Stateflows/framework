@@ -13,6 +13,8 @@ using Stateflows.Common.Context.Classes;
 using Stateflows.Common.Utilities;
 using Stateflows.Entities;
 using Stateflows.Utils;
+using Stateflows.Payloads;
+using Stateflows.Activities.Models;
 
 namespace Stateflows.Actions.Context.Classes
 {
@@ -65,14 +67,32 @@ namespace Stateflows.Actions.Context.Classes
             => BehaviorLocator.TryLocateBehavior(id, out behavior);
 
         public IEnumerable<TToken> GetTokensOfType<TToken>()
-            => typeof(StructuralEvent).IsAssignableFrom(typeof(TToken))
+            => typeof(Payload).IsAssignableFrom(typeof(TToken))
                 ? InputTokens.Select(tokenHolder => tokenHolder.BoxedPayload).OfType<TToken>()
                 : InputTokens.OfType<TokenHolder<TToken>>().Select(tokenHolder => tokenHolder.Payload);
         
         public bool HasTokensOfType<TToken>()
-            => typeof(StructuralEvent).IsAssignableFrom(typeof(TToken))
+            => typeof(Payload).IsAssignableFrom(typeof(TToken))
                 ? InputTokens.Any(tokenHolder => tokenHolder.BoxedPayload is TToken)
                 : InputTokens.OfType<TokenHolder<TToken>>().Any();
+
+        public IEnumerable<Payload> GetPayloadTokens(string tokenName)
+            => GetPayloadTokens([tokenName]);
+
+        public IEnumerable<Payload> GetPayloadTokens(IReadOnlyList<string> tokenNames)
+        {
+            var names = PayloadNameSet.Validate(tokenNames, nameof(tokenNames));
+            return InputTokens
+                .Where(token => token.BoxedPayload is Payload payload && names.Contains(payload.Name, StringComparer.Ordinal))
+                .Select(token => (Payload)token.BoxedPayload)
+                .ToArray();
+        }
+
+        public bool HasPayloadTokens(string tokenName)
+            => HasPayloadTokens([tokenName]);
+
+        public bool HasPayloadTokens(IReadOnlyList<string> tokenNames)
+            => GetPayloadTokens(tokenNames).Any();
 
         public void Output<TToken>(TToken token)
             => OutputTokens.Add(token.ToTokenHolder());
@@ -200,6 +220,12 @@ namespace Stateflows.Actions.Context.Classes
 
         public void PassAllTokensOn()
             => OutputTokens.AddRange(InputTokens);
+
+        public void PassPayloadTokensOn(IReadOnlyList<string> tokenNames)
+        {
+            var key = TokenKey.OfNames(PayloadNameSet.Validate(tokenNames, nameof(tokenNames)));
+            OutputTokens.AddRange(InputTokens.Where(key.Matches));
+        }
 
     }
 }

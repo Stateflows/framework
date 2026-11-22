@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions.Models;
 using Stateflows.Actions.Registration.Interfaces;
@@ -112,8 +114,8 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
         if (!Model.ConsumedEventNames.Contains(eventName))
         {
             Model.ConsumedEventNames.Add(eventName);
-            if (!Model.ConsumedBindingOrder.Contains(typeof(Stateflows.Common.StructuralEvent)))
-                Model.ConsumedBindingOrder.Add(typeof(Stateflows.Common.StructuralEvent));
+            if (!Model.ConsumedBindingOrder.Contains(typeof(Stateflows.Common.Payload)))
+                Model.ConsumedBindingOrder.Add(typeof(Stateflows.Common.Payload));
         }
 
         return this;
@@ -138,6 +140,28 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
     public IActionBuilder AddProducedToken<TToken>()
     {
         Model.ProducedTokenTypes.Add(typeof(TToken));
+
+        return this;
+    }
+
+    public IActionBuilder AddConsumedPayloadToken(string tokenName)
+    {
+        var name = Stateflows.Payloads.PayloadNameSet.Validate([tokenName], nameof(tokenName))[0];
+        if (!Model.ConsumedPayloadTokenNames.Contains(name, StringComparer.Ordinal))
+            Model.ConsumedPayloadTokenNames.Add(name);
+        if (!Model.ConsumedTokenTypes.Contains(typeof(Stateflows.Common.Payload)))
+            Model.ConsumedTokenTypes.Add(typeof(Stateflows.Common.Payload));
+
+        return this;
+    }
+
+    public IActionBuilder AddProducedPayloadToken(string tokenName)
+    {
+        var name = Stateflows.Payloads.PayloadNameSet.Validate([tokenName], nameof(tokenName))[0];
+        if (!Model.ProducedPayloadTokenNames.Contains(name, StringComparer.Ordinal))
+            Model.ProducedPayloadTokenNames.Add(name);
+        if (!Model.ProducedTokenTypes.Contains(typeof(Stateflows.Common.Payload)))
+            Model.ProducedTokenTypes.Add(typeof(Stateflows.Common.Payload));
 
         return this;
     }
@@ -190,6 +214,12 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
 
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddProducedToken<TToken>()
         => AddProducedToken<TToken>() as IActionBuilder<TAction>;
+
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedPayloadToken(string tokenName)
+        => AddConsumedPayloadToken(tokenName) as IActionBuilder<TAction>;
+
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddProducedPayloadToken(string tokenName)
+        => AddProducedPayloadToken(tokenName) as IActionBuilder<TAction>;
 
     IActionBuilder<TAction> IActionObservability<IActionBuilder<TAction>>.AddInterceptor(ActionInterceptorFactoryAsync interceptorFactory)
         => AddInterceptor(interceptorFactory) as IActionBuilder<TAction>;

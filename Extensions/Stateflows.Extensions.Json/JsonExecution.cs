@@ -1,6 +1,7 @@
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Payloads;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -162,6 +163,18 @@ internal static class JsonExecution
             return dispatch[root.EventHolder.PayloadType](root);
         });
         var logic = builder.Graph.InitializerDeclarations[typeof(TTrigger)];
+        logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(binding.Type);
+    }
+
+    internal static void AddPayloadInitializerBinding(ClrBinding binding, StateMachineBuilder builder,
+        IReadOnlyList<string> eventNames, Dictionary<Type, Func<RootContext, Task<bool>>> dispatch)
+    {
+        StateMachineBuilder.AddPayloadInitializer(builder.Graph, eventNames, context =>
+        {
+            var root = ((BaseContext)context).Context;
+            return dispatch[root.EventHolder.PayloadType](root);
+        });
+        var logic = builder.Graph.PayloadInitializerDeclarations[PayloadNameSet.Key(eventNames)].Logic;
         logic.Registrations[logic.Actions.Count - 1] = OperationRegistration.Leaf(binding.Type);
     }
 

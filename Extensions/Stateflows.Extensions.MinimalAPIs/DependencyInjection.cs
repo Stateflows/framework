@@ -275,7 +275,7 @@ public static class DependencyInjection
                 root,
                 interceptor,
                 builder.ServiceProvider.GetRequiredService<ITypeMapper>(),
-                builder.ServiceProvider.GetRequiredService<IEventsRegister>()
+                builder.ServiceProvider.GetRequiredService<IPayloadsRegister>()
             );
 
             activitiesRegister.VisitActivitiesAsync(visitor).GetAwaiter().GetResult();
@@ -337,7 +337,7 @@ public static class DependencyInjection
             }
 
             var visitor = new ActionVisitor(root, interceptor, builder.ServiceProvider.GetRequiredService<ITypeMapper>(),
-                builder.ServiceProvider.GetRequiredService<IEventsRegister>());
+                builder.ServiceProvider.GetRequiredService<IPayloadsRegister>());
 
             actionsRegister.VisitActionsAsync(visitor).GetAwaiter().GetResult();
         }
@@ -458,7 +458,9 @@ public static class DependencyInjection
             interceptor.AfterGetInstancesEndpointDefinition(EntityClass.Type, instancesMethod, instancesRoute, endpointRouteBuilder);
         }
 
-        var visitor = new EntityVisitor(root, interceptor);
+        var visitor = new EntityVisitor(root, interceptor,
+                builder.ServiceProvider.GetRequiredService<ITypeMapper>(),
+                builder.ServiceProvider.GetRequiredService<IPayloadsRegister>());
         entitiesRegister.VisitEntitiesAsync(visitor).GetAwaiter().GetResult();
         visitor.RegisterEndpoints();
     }

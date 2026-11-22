@@ -18,6 +18,7 @@ export interface Observation {
   tokenCount: number | null;
   requiredTokens: number | null;
   exceptionType: string | null;
+  payloadTokens: { name: string; fields: Readonly<Record<string, unknown>> }[] | null;
 }
 
 export function matches(record: Observation, document: DiagramDocument, instance: string): boolean {

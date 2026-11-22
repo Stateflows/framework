@@ -1,4 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using Stateflows.Activities.Registration.Builders;
+using Stateflows.Common;
+using Stateflows.Payloads;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
@@ -76,6 +80,41 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         public TReturn UseParallelActivity<TParallelizationToken, TParallelActivity>(OverridenParallelActivityBuildAction buildAction)
             where TParallelActivity : class, IStructuredActivityNode
             => UseParallelActivity<TParallelizationToken>(ActivityNode<TParallelActivity>.Name, buildAction);
+
+        /// <summary>Overrides a parallel activity for payload tokens with the specified names.</summary>
+        public TReturn UseParallelActivity(IReadOnlyList<string> parallelizationTokenNames, string actionNodeName,
+            OverridenParallelActivityBuildAction buildAction)
+            => PayloadFlowScope.With(parallelizationTokenNames, nameof(parallelizationTokenNames),
+                () => UseParallelActivity<Payload>(actionNodeName, buildAction));
+
+        /// <summary>Overrides the default-named parallel activity for payload tokens with the specified names.</summary>
+        public TReturn UseParallelActivity(IReadOnlyList<string> parallelizationTokenNames,
+            OverridenParallelActivityBuildAction buildAction)
+            => UseParallelActivity(parallelizationTokenNames, ParallelActivityNode.GetName(parallelizationTokenNames), buildAction);
+
+        /// <summary>Overrides a parallel activity for payload tokens with the specified name.</summary>
+        public TReturn UseParallelActivity(string parallelizationTokenName, string actionNodeName,
+            OverridenParallelActivityBuildAction buildAction)
+            => UseParallelActivity(new[] { parallelizationTokenName }, actionNodeName, buildAction);
+
+        /// <summary>Overrides a typed parallel activity implementation for the specified payload token names.</summary>
+        public TReturn UseParallelActivity<TParallelActivity>(IReadOnlyList<string> parallelizationTokenNames,
+            OverridenParallelActivityBuildAction buildAction)
+            where TParallelActivity : class, IStructuredActivityNode
+            => PayloadFlowScope.With(parallelizationTokenNames, nameof(parallelizationTokenNames),
+                () => UseParallelActivity<Payload, TParallelActivity>(buildAction));
+
+        /// <summary>Overrides a typed parallel activity implementation for the specified payload token names.</summary>
+        public TReturn UseParallelActivity<TParallelActivity>(IReadOnlyList<string> parallelizationTokenNames,
+            string actionNodeName, OverridenParallelActivityBuildAction buildAction)
+            where TParallelActivity : class, IStructuredActivityNode
+            => UseParallelActivity(parallelizationTokenNames, actionNodeName, buildAction);
+
+        /// <summary>Overrides a typed parallel activity implementation for the specified payload token name.</summary>
+        public TReturn UseParallelActivity<TParallelActivity>(string parallelizationTokenName, string actionNodeName,
+            OverridenParallelActivityBuildAction buildAction)
+            where TParallelActivity : class, IStructuredActivityNode
+            => UseParallelActivity<TParallelActivity>(new[] { parallelizationTokenName }, actionNodeName, buildAction);
         #endregion
         
         #region UseIterativeActivity
@@ -113,6 +152,41 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         public TReturn UseIterativeActivity<TIterationToken, TIterativeActivity>(OverridenIterativeActivityBuildAction buildAction)
             where TIterativeActivity : class, IStructuredActivityNode
             => UseIterativeActivity<TIterationToken>(ActivityNode<TIterativeActivity>.Name, buildAction);
+
+        /// <summary>Overrides an iterative activity for payload tokens with the specified names.</summary>
+        public TReturn UseIterativeActivity(IReadOnlyList<string> iterationTokenNames, string actionNodeName,
+            OverridenIterativeActivityBuildAction buildAction)
+            => PayloadFlowScope.With(iterationTokenNames, nameof(iterationTokenNames),
+                () => UseIterativeActivity<Payload>(actionNodeName, buildAction));
+
+        /// <summary>Overrides the default-named iterative activity for payload tokens with the specified names.</summary>
+        public TReturn UseIterativeActivity(IReadOnlyList<string> iterationTokenNames,
+            OverridenIterativeActivityBuildAction buildAction)
+            => UseIterativeActivity(iterationTokenNames, IterativeActivityNode.GetName(iterationTokenNames), buildAction);
+
+        /// <summary>Overrides an iterative activity for payload tokens with the specified name.</summary>
+        public TReturn UseIterativeActivity(string iterationTokenName, string actionNodeName,
+            OverridenIterativeActivityBuildAction buildAction)
+            => UseIterativeActivity(new[] { iterationTokenName }, actionNodeName, buildAction);
+
+        /// <summary>Overrides a typed iterative activity implementation for the specified payload token names.</summary>
+        public TReturn UseIterativeActivity<TIterativeActivity>(IReadOnlyList<string> iterationTokenNames,
+            OverridenIterativeActivityBuildAction buildAction)
+            where TIterativeActivity : class, IStructuredActivityNode
+            => PayloadFlowScope.With(iterationTokenNames, nameof(iterationTokenNames),
+                () => UseIterativeActivity<Payload, TIterativeActivity>(buildAction));
+
+        /// <summary>Overrides a typed iterative activity implementation for the specified payload token names.</summary>
+        public TReturn UseIterativeActivity<TIterativeActivity>(IReadOnlyList<string> iterationTokenNames,
+            string actionNodeName, OverridenIterativeActivityBuildAction buildAction)
+            where TIterativeActivity : class, IStructuredActivityNode
+            => UseIterativeActivity(iterationTokenNames, actionNodeName, buildAction);
+
+        /// <summary>Overrides a typed iterative activity implementation for the specified payload token name.</summary>
+        public TReturn UseIterativeActivity<TIterativeActivity>(string iterationTokenName, string actionNodeName,
+            OverridenIterativeActivityBuildAction buildAction)
+            where TIterativeActivity : class, IStructuredActivityNode
+            => UseIterativeActivity<TIterativeActivity>(new[] { iterationTokenName }, actionNodeName, buildAction);
         #endregion
     }
 }

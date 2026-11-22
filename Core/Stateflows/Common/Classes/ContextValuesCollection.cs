@@ -92,7 +92,7 @@ namespace Stateflows.Common.Classes
             return Task.FromResult(result);
         }
 
-        private T? InternalGetOrDefault<T>(string key, T? defaultValue)
+        private T InternalGetOrDefault<T>(string key, T defaultValue)
         {
             if (!Values.TryGetValue(key, out var data))
             {
@@ -110,7 +110,7 @@ namespace Stateflows.Common.Classes
 
             if (type.IsNullable() && deserializedData is null)
             {
-                return default;
+                return default!;
             }
 
             if (deserializedData is T t)
@@ -121,9 +121,9 @@ namespace Stateflows.Common.Classes
             return defaultValue;
         }
 
-        public Task<T?> GetOrDefaultAsync<T>(string key, T? defaultValue = default)
+        public Task<T> GetOrDefaultAsync<T>(string key, T defaultValue)
         {
-            T? result;
+            T result;
             lock (Values)
             {
                 result = InternalGetOrDefault(key, defaultValue);

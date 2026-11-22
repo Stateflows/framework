@@ -85,9 +85,9 @@ public sealed class InvocationIsolation
                     ready.SetResult();
                 await release.Task.WaitAsync(Deadline);
                 Assert.AreSame(holder, root.EventHolder);
-                Assert.AreSame(holder, root.ExecutionTriggerHolder);
+                Assert.AreSame(holder, root.ExecutionEventHolder);
                 Assert.AreEqual(((Trigger)holder.BoxedPayload).Value,
-                    ((Origin)root.ExecutionTriggerHolder.Headers["origin"]).Value);
+                    ((Origin)root.ExecutionEventHolder.Headers["origin"]).Value);
             }
             finally
             {
@@ -113,7 +113,7 @@ public sealed class InvocationIsolation
         root.SetEvent(outer);
         root.SetEvent(inner);
         Assert.AreSame(inner, root.EventHolder);
-        Assert.AreSame(outer, root.ExecutionTriggerHolder);
+        Assert.AreSame(outer, root.ExecutionEventHolder);
         root.ClearEvent();
         Assert.AreSame(outer, root.EventHolder);
         root.ClearEvent();

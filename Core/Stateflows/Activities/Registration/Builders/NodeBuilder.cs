@@ -94,12 +94,27 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
+        private System.Collections.Generic.IReadOnlyList<string> ResolveFlowTokenNames<TToken>()
+        {
+            var names = PayloadFlowScope.Take();
+            if (names == null && typeof(TToken) == typeof(Payload))
+                names = Node.BoundTokenNames;
+            if (names == null && Stateflows.Payloads.PayloadNameSet.IsPayloadType(typeof(TToken)))
+                throw new ActivityDefinitionException(
+                    $"Flow of {typeof(TToken).Name} tokens from node '{Node.Name}' must declare the payload token names it carries; use an AddFlow overload accepting token names.",
+                    Node.Graph.Class);
+            return names;
+        }
+
         private Edge AddFlowInternal<TToken>(string targetNodeName, bool isElse, ObjectFlowBuildAction<TToken> buildAction = null)
         {
+            var names = ResolveFlowTokenNames<TToken>();
             var edge = new Edge()
             {
                 TokenType = typeof(TToken),
                 TargetTokenType = typeof(TToken),
+                TokenNames = names,
+                TargetTokenNames = names,
                 Graph = Node.Graph,
                 SourceName = Node.Name,
                 Source = Node,
@@ -211,11 +226,18 @@ namespace Stateflows.Activities.Registration
         IOverridenForkBuilder IControlFlowBase<IOverridenForkBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IOverridenForkBuilder;
 
+        private bool MatchesTokenNames(Edge edge, System.Collections.Generic.IReadOnlyList<string> names)
+            => names == null
+                ? edge.TokenNames == null
+                : Stateflows.Payloads.PayloadNameSet.SetEquals(edge.TokenNames, names);
+
         protected NodeBuilder UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
         {
+            var names = ResolveFlowTokenNames<TToken>();
             var edge = Node.Edges.FirstOrDefault(edge =>
                 edge.TargetName == targetNodeName &&
                 edge.TokenType == typeof(TToken) &&
+                MatchesTokenNames(edge, names) &&
                 !edge.IsElse
             );
             
@@ -224,16 +246,18 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityOverrideException($"Flow targeting '{targetNodeName}' not found in overriden node '{Node.Name}'", Node.Graph.Class);
             }
             
-            buildAction(new FlowBuilder<TToken>(edge));
+            buildAction?.Invoke(new FlowBuilder<TToken>(edge));
 
             return this;
         }
 
         protected NodeBuilder UseElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction)
         {
+            var names = ResolveFlowTokenNames<TToken>();
             var edge = Node.Edges.FirstOrDefault(edge =>
                 edge.TargetName == targetNodeName &&
                 edge.TokenType == typeof(TToken) &&
+                MatchesTokenNames(edge, names) &&
                 edge.IsElse
             );
             
@@ -242,7 +266,7 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityOverrideException($"Else flow targeting '{targetNodeName}' not found in overriden node '{Node.Name}'", Node.Graph.Class);
             }
             
-            buildAction(new FlowBuilder<TToken>(edge));
+            buildAction?.Invoke(new FlowBuilder<TToken>(edge));
 
             return this;
         }

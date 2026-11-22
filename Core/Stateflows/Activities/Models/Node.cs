@@ -2,13 +2,16 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Reflection;
 using Stateflows.Common;
+using Stateflows.Common.Attributes;
 using Stateflows.Common.Models;
 using Stateflows.Common.Utilities;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Entities.Enums;
+using Stateflows.Payloads;
 
 namespace Stateflows.Activities.Models
 {
@@ -25,6 +28,9 @@ namespace Stateflows.Activities.Models
         public string Name { get; set; }
         public NodeType Type { get; set; }
         public Type? PinTokenType { get; set; }
+        /// <summary>Payload names of a payload pin, or <c>null</c> for a typed pin.</summary>
+        public IReadOnlyList<string>? PinTokenNames { get; set; }
+        public TokenKey? PinKey => PinTokenType == null ? null : TokenKey.Of(PinTokenType, PinTokenNames);
         public bool IsOutputPin => PinTokenType != null &&
             (Type == NodeType.OutputPin || Type == NodeType.PublishEventAction && Parent is Graph);
         public PublishScope PublishScope { get; set; } = PublishScope.Self;
@@ -35,15 +41,23 @@ namespace Stateflows.Activities.Models
 
         public bool AcceptsInput(IEnumerable<TokenHolder> tokens)
         {
-            var types = InputPins.Select(pin => pin.PinTokenType!).ToArray();
-            return tokens.All(token => types.Any(type => type.IsAssignableFrom(token.ActualPayloadType)));
+            var keys = InputPins.Select(pin => pin.PinKey!).ToArray();
+            return tokens.All(token => keys.Any(key => key.Matches(token)));
         }
         public NodeOptions Options { get; set; } = NodeOptions.ActionDefault;
 
         public Type ExceptionType { get; set; }
 
         public Type EventType { get; set; }
-        public string StructuralEventName { get; set; }
+        /// <summary>Payload names selected by a decision or by an iterative/parallel scope, or <c>null</c> when typed.</summary>
+        public IReadOnlyList<string>? TokenNames { get; set; }
+        /// <summary>Token key of a decision (its <see cref="EventType"/> or <see cref="TokenNames"/>).</summary>
+        public TokenKey? SelectionKey => EventType == null ? null : TokenKey.Of(EventType, TokenNames);
+        /// <summary>Payload names that outgoing flows of a payload pin or payload decision inherit (section 4.4.2).</summary>
+        public IReadOnlyList<string>? BoundTokenNames => PinTokenType != null
+            ? PinTokenNames
+            : Type == NodeType.Decision ? TokenNames : null;
+        public IReadOnlyList<string> PayloadNames { get; set; }
         internal string[] EffectiveEventNames { get; set; } = [];
 
         public IEnumerable<Type> ActualEventTypes { get; set; }
@@ -69,20 +83,23 @@ namespace Stateflows.Activities.Models
 
         public bool DeclaredTypesSet { get; set; } = false;
 
-        public List<Type> InputTokenTypes { get; set; } = new List<Type>();
-        public List<Type> OptionalInputTokenTypes { get; set; } = new List<Type>();
-        public List<Type> OutputTokenTypes { get; set; } = new List<Type>();
+        public List<TokenKey> InputTokenKeys { get; set; } = new List<TokenKey>();
+        public List<TokenKey> OptionalInputTokenKeys { get; set; } = new List<TokenKey>();
+        public List<TokenKey> OutputTokenKeys { get; set; } = new List<TokenKey>();
 
-        public IEnumerable<Type> GetIncomingTokenTypes()
+        private static bool IsDataKey(TokenKey key)
+            => key.Type != typeof(ControlToken) && key.Type != typeof(NodeReferenceToken) && !typeof(Exception).IsAssignableFrom(key.Type);
+
+        public IEnumerable<TokenKey> GetIncomingTokenKeys()
             => IncomingEdges
-                .Select(e => e.TargetTokenType)
-                .Where(t => t != typeof(ControlToken) && t != typeof(NodeReferenceToken) && !typeof(Exception).IsAssignableFrom(t))
+                .Select(e => e.TargetKey)
+                .Where(IsDataKey)
                 .Distinct();
 
-        public IEnumerable<Type> GetOutgoingTokenTypes()
+        public IEnumerable<TokenKey> GetOutgoingTokenKeys()
             => Edges
-                .Select(e => e.TokenType)
-                .Where(t => t != typeof(ControlToken) && t != typeof(NodeReferenceToken) && !typeof(Exception).IsAssignableFrom(t))
+                .Select(e => e.SourceKey)
+                .Where(IsDataKey)
                 .Distinct();
 
         public void ScanForDeclaredTypes(Type nodeType)
@@ -104,8 +121,80 @@ namespace Stateflows.Activities.Models
             }
 
             var parameters = constructors.First().GetParameters().ToArray();
+            var payloadCollectionTypes = new[]
+            {
+                typeof(IInputTokens), typeof(IInputToken), typeof(IOptionalInputTokens), typeof(IOptionalInputToken),
+                typeof(IOutputTokens), typeof(IInputOutputTokens), typeof(IInputOutputToken),
+                typeof(IOptionalInputOutputTokens), typeof(IOptionalInputOutputToken)
+            };
+            var payloadInputKeys = new List<TokenKey>();
+            var payloadOptionalInputKeys = new List<TokenKey>();
+            var payloadOutputKeys = new List<TokenKey>();
+            foreach (var parameter in parameters)
+            {
+                var attribute = parameter.GetCustomAttribute<TokenNameAttribute>();
+                var isPayloadCollection = payloadCollectionTypes.Contains(parameter.ParameterType);
+                var isFrameworkPayloadOutput = nodeType.IsGenericType &&
+                    (nodeType.GetGenericTypeDefinition() == typeof(OutputPinNode<>) ||
+                     nodeType.GetGenericTypeDefinition() == typeof(AcceptAndOutputEventActionNode<>)) &&
+                    PayloadNameSet.IsPayloadType(nodeType.GenericTypeArguments[0]);
+                var isPayloadGenericCollection = parameter.ParameterType.IsGenericType &&
+                    new[]
+                    {
+                        typeof(IInputTokens<>), typeof(IInputToken<>), typeof(IOptionalInputTokens<>),
+                        typeof(IOptionalInputToken<>), typeof(IOutputTokens<>), typeof(IInputOutputTokens<>),
+                        typeof(IInputOutputToken<>), typeof(IOptionalInputOutputTokens<>),
+                        typeof(IOptionalInputOutputToken<>)
+                    }.Contains(parameter.ParameterType.GetGenericTypeDefinition()) &&
+                    PayloadNameSet.IsPayloadType(parameter.ParameterType.GenericTypeArguments[0]);
 
-            InputTokenTypes = parameters
+                if (attribute != null && (!isPayloadCollection || isPayloadGenericCollection))
+                {
+                    throw new NodeDefinitionException(ActivityNode.GetName(nodeType),
+                        $"TokenName can only be applied to non-generic payload token collection parameters; '{parameter.ParameterType}' is not supported.",
+                        Graph.Class);
+                }
+                if (isPayloadCollection && attribute == null)
+                {
+                    throw new NodeDefinitionException(ActivityNode.GetName(nodeType),
+                        $"Payload token collection parameter '{parameter.Name}' requires a TokenName attribute.",
+                        Graph.Class);
+                }
+                if (isPayloadGenericCollection && attribute == null && !isFrameworkPayloadOutput)
+                {
+                    throw new NodeDefinitionException(ActivityNode.GetName(nodeType),
+                        $"Payload token collection parameter '{parameter.Name}' requires a TokenName attribute.",
+                        Graph.Class);
+                }
+                if (attribute == null)
+                {
+                    continue;
+                }
+
+                var key = TokenKey.OfNames(PayloadNameSet.Validate(attribute.Names, nameof(attribute.Names)));
+                if (parameter.ParameterType == typeof(IInputTokens) || parameter.ParameterType == typeof(IInputToken) ||
+                    parameter.ParameterType == typeof(IInputOutputTokens) || parameter.ParameterType == typeof(IInputOutputToken))
+                {
+                    payloadInputKeys.Add(key);
+                }
+                else if (parameter.ParameterType == typeof(IOptionalInputTokens) ||
+                    parameter.ParameterType == typeof(IOptionalInputToken) ||
+                    parameter.ParameterType == typeof(IOptionalInputOutputTokens) ||
+                    parameter.ParameterType == typeof(IOptionalInputOutputToken))
+                {
+                    payloadOptionalInputKeys.Add(key);
+                }
+                if (parameter.ParameterType == typeof(IOutputTokens) ||
+                    parameter.ParameterType == typeof(IInputOutputTokens) ||
+                    parameter.ParameterType == typeof(IInputOutputToken) ||
+                    parameter.ParameterType == typeof(IOptionalInputOutputTokens) ||
+                    parameter.ParameterType == typeof(IOptionalInputOutputToken))
+                {
+                    payloadOutputKeys.Add(key);
+                }
+            }
+
+            InputTokenKeys = parameters
                 .Where(p => 
                     p.ParameterType.IsGenericType &&
                     (
@@ -113,10 +202,11 @@ namespace Stateflows.Activities.Models
                         p.ParameterType.GetGenericTypeDefinition() == typeof(IInputOutputTokens<>)
                     )
                 )
-                .Select(p => p.ParameterType.GenericTypeArguments[0])
+                .Where(p => !PayloadNameSet.IsPayloadType(p.ParameterType.GenericTypeArguments[0]))
+                .Select(p => TokenKey.Of(p.ParameterType.GenericTypeArguments[0]))
                 .ToList();
 
-            InputTokenTypes.AddRange(
+            InputTokenKeys.AddRange(
                 parameters
                     .Where(p => 
                         p.ParameterType.IsGenericType &&
@@ -125,11 +215,12 @@ namespace Stateflows.Activities.Models
                             p.ParameterType.GetGenericTypeDefinition() == typeof(IInputOutputToken<>)
                         )
                     )
-                    .Select(p => p.ParameterType.GenericTypeArguments[0])
+                    .Where(p => !PayloadNameSet.IsPayloadType(p.ParameterType.GenericTypeArguments[0]))
+                    .Select(p => TokenKey.Of(p.ParameterType.GenericTypeArguments[0]))
                     .ToList()
             );
 
-            OptionalInputTokenTypes = parameters
+            OptionalInputTokenKeys = parameters
                 .Where(p => 
                     p.ParameterType.IsGenericType &&
                     (
@@ -137,10 +228,11 @@ namespace Stateflows.Activities.Models
                         p.ParameterType.GetGenericTypeDefinition() == typeof(IOptionalInputOutputTokens<>)
                     )
                 )
-                .Select(p => p.ParameterType.GenericTypeArguments[0])
+                .Where(p => !PayloadNameSet.IsPayloadType(p.ParameterType.GenericTypeArguments[0]))
+                .Select(p => TokenKey.Of(p.ParameterType.GenericTypeArguments[0]))
                 .ToList();
 
-            OptionalInputTokenTypes.AddRange(
+            OptionalInputTokenKeys.AddRange(
                 parameters
                     .Where(p => 
                         p.ParameterType.IsGenericType &&
@@ -149,11 +241,12 @@ namespace Stateflows.Activities.Models
                             p.ParameterType.GetGenericTypeDefinition() == typeof(IOptionalInputOutputToken<>)
                         )
                     )
-                    .Select(p => p.ParameterType.GenericTypeArguments[0])
+                    .Where(p => !PayloadNameSet.IsPayloadType(p.ParameterType.GenericTypeArguments[0]))
+                    .Select(p => TokenKey.Of(p.ParameterType.GenericTypeArguments[0]))
                     .ToList()
             );
 
-            OutputTokenTypes = parameters
+            OutputTokenKeys = parameters
                 .Where(p => 
                     p.ParameterType.IsGenericType &&
                     (
@@ -164,8 +257,13 @@ namespace Stateflows.Activities.Models
                         p.ParameterType.GetGenericTypeDefinition() == typeof(IOptionalInputOutputToken<>)
                     )
                 )
-                .Select(p => p.ParameterType.GenericTypeArguments[0])
+                .Where(p => !PayloadNameSet.IsPayloadType(p.ParameterType.GenericTypeArguments[0]))
+                .Select(p => TokenKey.Of(p.ParameterType.GenericTypeArguments[0]))
                 .ToList();
+
+            InputTokenKeys.AddRange(payloadInputKeys);
+            OptionalInputTokenKeys.AddRange(payloadOptionalInputKeys);
+            OutputTokenKeys.AddRange(payloadOutputKeys);
         }
 
         public Logic<ActivityEventActionAsync> Initialize { get; } =

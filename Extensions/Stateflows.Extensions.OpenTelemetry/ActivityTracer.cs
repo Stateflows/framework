@@ -328,7 +328,8 @@ namespace Stateflows.Extensions.OpenTelemetry
                     TracingActivity? parentActivity = null;
                     if (context.Node.TryGetCurrentFlow(out var flow))
                     {
-                        var flowIdentifier = $"{flow.SourceNode.Name}-{flow.TokenType.GetTokenName()}->{flow.TargetNode.Name}";
+                        var tokenName = flow.TokenNames.Count == 0 ? flow.TokenType.GetTokenName() : string.Join("|", flow.TokenNames);
+                        var flowIdentifier = $"{flow.SourceNode.Name}-{tokenName}->{flow.TargetNode.Name}";
                         lock (FlowActivationActivities)
                         {
                             FlowActivationActivities.TryGetValue(flowIdentifier, out parentActivity);
@@ -369,7 +370,8 @@ namespace Stateflows.Extensions.OpenTelemetry
                         flow.TargetNode.Name == context.Node.Name
                     )
                     {
-                        var flowIdentifier = $"{flow.SourceNode.Name}-{flow.TokenType.GetTokenName()}->{flow.TargetNode.Name}";
+                        var tokenName = flow.TokenNames.Count == 0 ? flow.TokenType.GetTokenName() : string.Join("|", flow.TokenNames);
+                        var flowIdentifier = $"{flow.SourceNode.Name}-{tokenName}->{flow.TargetNode.Name}";
                         lock (FlowActivationActivities)
                         {
                             FlowActivationActivities.TryGetValue(flowIdentifier, out parentActivity);
@@ -501,7 +503,8 @@ namespace Stateflows.Extensions.OpenTelemetry
                 TracingActivity? parentActivity = null;
                 if (context.Node.TryGetCurrentFlow(out var flow))
                 {
-                    var flowIdentifier = $"{flow.SourceNode.Name}-{flow.TokenType.GetTokenName()}->{flow.TargetNode.Name}";
+                    var tokenName = flow.TokenNames.Count == 0 ? flow.TokenType.GetTokenName() : string.Join("|", flow.TokenNames);
+                    var flowIdentifier = $"{flow.SourceNode.Name}-{tokenName}->{flow.TargetNode.Name}";
                     lock (FlowActivationActivities)
                     {
                         FlowActivationActivities.TryGetValue(flowIdentifier, out parentActivity);
@@ -547,6 +550,12 @@ namespace Stateflows.Extensions.OpenTelemetry
                     : StateMachineTracer.Source.StartActivity(traceName);
 
                 if (activity == null) return;
+                var tokenNames = context.Node.InputPins.Concat(context.Node.OutputPins)
+                    .SelectMany(pin => pin.TokenNames)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+                if (tokenNames.Length != 0)
+                    activity.SetTag("stateflows.token.names", string.Join(",", tokenNames));
                 lock (ExecutionActivities)
                 {
                     ExecutionActivities.TryAdd(context.Node.Name, activity);
@@ -596,22 +605,32 @@ namespace Stateflows.Extensions.OpenTelemetry
 
                 if (parentActivity != null)
                 {
-                    var tokenName = context.TokenType.GetTokenName();
+                    var tokenName = context.TokenNames.Count == 0
+                        ? context.TokenType.GetTokenName()
+                        : string.Join("|", context.TokenNames);
                     var flowIdentifier = $"{context.SourceNode.Name}-{tokenName}->{context.TargetNode.Name}";
-                    tokenName = tokenName.ToShortName();
-                    var targetTokenName = context.TargetTokenType.GetTokenName().ToShortName();
+                    var tokenLabel = context.TokenNames.Count == 0
+                        ? tokenName.ToShortName()
+                        : string.Join(", ", context.TokenNames);
+                    var targetTokenName = context.TargetTokenNames.Count == 0
+                        ? context.TargetTokenType.GetTokenName().ToShortName()
+                        : string.Join(", ", context.TargetTokenNames);
 
                     var activity = StateMachineTracer.Source.StartActivity(
                         context.TokenType == typeof(ControlToken)
                             ? $"Control flow ({context.SourceNode.Name.ToShortName()}) 🡢 ({context.TargetNode.Name.ToShortName()})"
-                            : tokenName == targetTokenName
-                                ? $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})"
-                                : $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName}/{targetTokenName} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})",
+                            : tokenLabel == targetTokenName
+                                ? $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenLabel} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})"
+                                : $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenLabel}/{targetTokenName} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})",
                         ActivityKind.Internal,
                         parentActivity!.Context
                     );
 
                     if (activity == null) return;
+                    if (context.TokenNames.Count != 0)
+                        activity.SetTag("stateflows.token.names", context.TokenNames);
+                    if (context.TargetTokenNames.Count != 0)
+                        activity.SetTag("stateflows.target_token.names", context.TargetTokenNames);
 
                     lock (FlowActivationActivities)
                     {
@@ -622,7 +641,9 @@ namespace Stateflows.Extensions.OpenTelemetry
 
             void After(IActivityAfterFlowContext context, bool activated)
             {
-                var tokenName = context.TokenType.GetTokenName();
+                var tokenName = context.TokenNames.Count == 0
+                    ? context.TokenType.GetTokenName()
+                    : string.Join("|", context.TokenNames);
                 var flowIdentifier = $"{context.SourceNode.Name}-{tokenName}->{context.TargetNode.Name}";
                 lock (FlowActivationActivities)
                     if (FlowActivationActivities.TryGetValue(flowIdentifier, out var activity))
@@ -668,7 +689,13 @@ namespace Stateflows.Extensions.OpenTelemetry
 
         /// <inheritdoc/>
         public Task OnFlowTransformAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Func<Task<TTransformedToken>> next)
-            => next();
+        {
+            if (context.InputTokenNames.Count != 0)
+                TracingActivity.Current?.SetTag("stateflows.input_token.names", context.InputTokenNames);
+            if (context.OutputTokenNames.Count != 0)
+                TracingActivity.Current?.SetTag("stateflows.output_token.names", context.OutputTokenNames);
+            return next();
+        }
 
         // public void AfterHydrate(IActivityActionContext context)
         // { }

@@ -20,10 +20,10 @@ public interface IEventsConfiguration<out TReturn>
     TReturn ConfigureEventEndpoint<TEvent>(Action<IEndpointConfiguration> configureEndpointAction);
 
     /// <summary>
-    /// Configures an endpoint that sends a structural (runtime-defined) Event to Behavior.
+    /// Configures an endpoint that sends a payload (runtime-defined) Event to Behavior.
     /// Rules registered with this method also apply to CLR events with matching event name.
     /// </summary>
-    /// <param name="eventName">Name of the event (as registered in <see cref="Stateflows.Common.IEventsRegister"/>)</param>
+    /// <param name="eventName">Name of the event (as registered in <see cref="Stateflows.Common.IPayloadsRegister"/>)</param>
     /// <param name="configureEndpointAction">Configuration action</param>
     /// <returns>The enclosing configuration.</returns>
     TReturn ConfigureEventEndpoint(string eventName, Action<IEndpointConfiguration> configureEndpointAction);

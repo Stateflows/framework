@@ -5,13 +5,13 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 /// <summary>
 /// Detects event endpoints whose shortened route segments collide although their full event names differ.
-/// Collisions involving a structural event or typed Activity pin fail fast; CLR-only collisions keep their previous behavior.
+/// Collisions involving a payload or typed Activity pin fail fast; CLR-only collisions keep their previous behavior.
 /// </summary>
 internal static class EndpointRouteRegistry
 {
-    private static readonly ConditionalWeakTable<IEndpointRouteBuilder, Dictionary<string, (string EventName, bool IsStructural)>> MappedRoutes = new();
+    private static readonly ConditionalWeakTable<IEndpointRouteBuilder, Dictionary<string, (string EventName, bool IsPayload)>> MappedRoutes = new();
 
-    public static void EnsureUnique(IEndpointRouteBuilder routeBuilder, string method, string route, string eventName, bool isStructural)
+    public static void EnsureUnique(IEndpointRouteBuilder routeBuilder, string method, string route, string eventName, bool isPayload)
     {
         var routes = MappedRoutes.GetOrCreateValue(routeBuilder);
         var key = $"{method.ToUpperInvariant()} {route.ToLowerInvariant()}";
@@ -19,7 +19,7 @@ internal static class EndpointRouteRegistry
         {
             if (routes.TryGetValue(key, out var existing) && existing.EventName != eventName)
             {
-                if (existing.IsStructural || isStructural)
+                if (existing.IsPayload || isPayload)
                 {
                     throw new InvalidOperationException(
                         $"Events '{existing.EventName}' and '{eventName}' map to the same endpoint '{key}'. " +
@@ -29,7 +29,7 @@ internal static class EndpointRouteRegistry
                 return;
             }
 
-            routes.TryAdd(key, (eventName, isStructural));
+            routes.TryAdd(key, (eventName, isPayload));
         }
     }
 }

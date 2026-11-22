@@ -9,6 +9,6 @@
     }
 
     /// <summary>Context supplied during activity initialization, including output-token operations.</summary>
-    public interface IActivityInitializationContext : IActivityActionContext, IOutput
+    public interface IActivityInitializationContext : IActivityActionContext, IInput, IOutput
     { }
 }

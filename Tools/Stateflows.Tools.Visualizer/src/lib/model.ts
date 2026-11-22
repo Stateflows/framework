@@ -12,6 +12,7 @@ export interface DiagramNode {
   parentId?: string;
   initial?: boolean;
   details?: readonly string[];
+  pinTokenNames?: readonly string[];
   operations?: readonly DiagramOperation[];
   notation?: 'stateMachine';
   selectable?: boolean;
@@ -56,6 +57,8 @@ export interface DiagramEdge {
   isElse?: boolean;
   isLocal?: boolean;
   weight?: number;
+  tokenNames?: readonly string[];
+  targetTokenNames?: readonly string[];
   parts?: LabelParts;
 }
 

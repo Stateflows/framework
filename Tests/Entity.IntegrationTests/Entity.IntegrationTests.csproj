@@ -28,5 +28,9 @@
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.OneOf\Stateflows.Extensions.OneOf.csproj" />
+  </ItemGroup>
+
 </Project>
 

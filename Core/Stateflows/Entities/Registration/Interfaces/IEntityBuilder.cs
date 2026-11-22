@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Enums;
 using Stateflows.Entities.Registration.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Entities
 {
@@ -23,7 +25,23 @@ namespace Stateflows.Entities
         /// <typeparam name="TInitializationEvent">The event that triggers this initializer.</typeparam>
         /// <param name="action">Callback that initializes the entity using the event payload.</param>
         /// <returns>This builder for fluent configuration.</returns>
+        /// <remarks><typeparamref name="TInitializationEvent"/> may be an <c>ITypeMapper</c> type (OneOf, UnionTypes); the initializer then runs for every mapped type.
+        /// <see cref="Payload"/> is rejected; use <see cref="AddInitializer(IReadOnlyList{string}, InitializerAction{TTemplate, Payload})"/>.</remarks>
         IEntityBuilder<TTemplate> AddInitializer<TInitializationEvent>(InitializerAction<TTemplate, TInitializationEvent> action);
+
+        /// <summary>Registers initialization to run when an entity is initialized by a payload event with one of the given names.</summary>
+        /// <param name="eventNames">Payload event names that trigger this initializer.</param>
+        /// <param name="action">Callback that initializes the entity using the received <see cref="Payload"/>.</param>
+        /// <returns>This builder for fluent configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        IEntityBuilder<TTemplate> AddInitializer(IReadOnlyList<string> eventNames, InitializerAction<TTemplate, Payload> action);
+
+        /// <summary>Registers initialization to run when an entity is initialized by a payload event with the given name.</summary>
+        /// <param name="eventName">Payload event name that triggers this initializer.</param>
+        /// <param name="action">Callback that initializes the entity using the received <see cref="Payload"/>.</param>
+        /// <returns>This builder for fluent configuration.</returns>
+        IEntityBuilder<TTemplate> AddInitializer(string eventName, InitializerAction<TTemplate, Payload> action)
+            => AddInitializer([eventName], action);
 
         /// <summary>Registers an entity field and optionally configures its access, default, or computation.</summary>
         /// <typeparam name="TField">The field's value type.</typeparam>
@@ -36,7 +54,39 @@ namespace Stateflows.Entities
         /// <typeparam name="TMutationEvent">The event handled by the mutation.</typeparam>
         /// <param name="mutationAction">The mutation operation.</param>
         /// <returns>This builder for fluent configuration.</returns>
+        /// <remarks><typeparamref name="TMutationEvent"/> may be an <c>ITypeMapper</c> type (OneOf, UnionTypes); the mutation then handles every mapped type.
+        /// <see cref="Payload"/> is rejected; use <see cref="AddMutation(IReadOnlyList{string}, MutationAction{TTemplate, Payload})"/>.</remarks>
         IEntityBuilder<TTemplate> AddMutation<TMutationEvent>(MutationAction<TTemplate, TMutationEvent> mutationAction);
+
+        /// <summary>Registers a mutation handling payload events with the given names.</summary>
+        /// <param name="eventNames">Payload event names handled by the mutation.</param>
+        /// <param name="mutationAction">The mutation operation receiving the <see cref="Payload"/>.</param>
+        /// <returns>This builder for fluent configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        IEntityBuilder<TTemplate> AddMutation(IReadOnlyList<string> eventNames, MutationAction<TTemplate, Payload> mutationAction);
+
+        /// <summary>Registers a mutation handling payload events with the given name.</summary>
+        /// <param name="eventName">Payload event name handled by the mutation.</param>
+        /// <param name="mutationAction">The mutation operation receiving the <see cref="Payload"/>.</param>
+        /// <returns>This builder for fluent configuration.</returns>
+        IEntityBuilder<TTemplate> AddMutation(string eventName, MutationAction<TTemplate, Payload> mutationAction)
+            => AddMutation([eventName], mutationAction);
+
+        /// <summary>Registers a payload mutation implemented by a static-operation type.</summary>
+        /// <typeparam name="TMutation">The implementation providing the mutation operation.</typeparam>
+        /// <param name="eventNames">Payload event names handled by the mutation.</param>
+        /// <returns>This builder for fluent configuration.</returns>
+        IEntityBuilder<TTemplate> AddMutation<TMutation>(IReadOnlyList<string> eventNames)
+            where TMutation : class, IMutation<TTemplate, Payload>
+            => AddMutation(eventNames, c => TMutation.Mutate(c.Entity, c.MutationEvent));
+
+        /// <summary>Registers a payload mutation implemented by a static-operation type.</summary>
+        /// <typeparam name="TMutation">The implementation providing the mutation operation.</typeparam>
+        /// <param name="eventName">Payload event name handled by the mutation.</param>
+        /// <returns>This builder for fluent configuration.</returns>
+        IEntityBuilder<TTemplate> AddMutation<TMutation>(string eventName)
+            where TMutation : class, IMutation<TTemplate, Payload>
+            => AddMutation<TMutation>([eventName]);
         
         /// <summary>Registers a mutation implemented by a static-operation type.</summary>
         /// <typeparam name="TMutationEvent">The event handled by the mutation.</typeparam>

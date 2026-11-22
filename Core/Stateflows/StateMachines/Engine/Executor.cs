@@ -302,14 +302,17 @@ namespace Stateflows.StateMachines.Engine
             => GetExpectedEvents()
                 .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
                 .Where(type => !typeof(Exception).IsAssignableFrom(type))
-                .Where(type => !typeof(StructuralEvent).IsAssignableFrom(type))
+                .Where(type => !typeof(Payload).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
                     ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.Edges.Values)
-                        .Where(edge => edge.StructuralEventNames != null).SelectMany(edge => edge.StructuralEventNames!)
+                        .Where(edge => edge.PayloadNames != null).SelectMany(edge => edge.PayloadNames!)
                     : [])
                 .Concat(BehaviorStatus == BehaviorStatus.Initialized
-                    ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.BehaviorStructuralEvents)
+                    ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.BehaviorPayloads)
+                    : [])
+                .Concat(BehaviorStatus == BehaviorStatus.NotInitialized
+                    ? Graph.PayloadInitializerDeclarations.Values.SelectMany(declaration => declaration.Names)
                     : [])
                 .Distinct()
                 .ToArray();
@@ -326,7 +329,7 @@ namespace Stateflows.StateMachines.Engine
                         .Distinct()
                         .ToArray(),
                     
-                    BehaviorStatus.NotInitialized => Graph.InitializerTypes.Any()
+                    BehaviorStatus.NotInitialized => Graph.Initializers.Any()
                         ? Graph.InitializerTypes.SelectMany(Graph.StateflowsBuilder.TypeMapper.GetMappedTypes).Distinct().ToArray()
                         : [ typeof(Initialize) ],
                     
@@ -463,7 +466,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     if (
                         (vertex.BehaviorEventTypes.Contains(eventHolder.PayloadType) ||
-                         vertex.BehaviorStructuralEvents.Contains(eventHolder.Name)) &&
+                         vertex.BehaviorPayloads.Contains(eventHolder.Name)) &&
                         !eventHolder.Headers.Values.Any(h => h is NoForwarding) &&
                         !eventHolder.PayloadType.GetCustomAttributes<NoForwardingAttribute>().Any()
                     )

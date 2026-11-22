@@ -39,6 +39,8 @@ namespace Stateflows.Actions.Models
         public List<Type> ProducedEventTypes { get; } = [];
         public List<Type> ConsumedTokenTypes { get; } = [];
         public List<Type> ProducedTokenTypes { get; } = [];
+        public List<string> ConsumedPayloadTokenNames { get; } = [];
+        public List<string> ProducedPayloadTokenNames { get; } = [];
         internal List<Type> ConsumedBindingOrder { get; } = [];
         private Dictionary<Type, string[]> BindingNames { get; } = [];
         private Dictionary<Type, string[]> ProducedBindingNames { get; } = [];
@@ -46,7 +48,7 @@ namespace Stateflows.Actions.Models
         internal void FinalizeBindings()
         {
             foreach (var type in ConsumedBindingOrder)
-                BindingNames[type] = type == typeof(StructuralEvent) && ConsumedEventNames.Count != 0
+                BindingNames[type] = type == typeof(Payload) && ConsumedEventNames.Count != 0
                     ? ConsumedEventNames.ToArray()
                     : TypeMapper.GetMappedTypes(type).Select(mapped => mapped.GetEventName()).Distinct().ToArray();
             foreach (var type in ProducedEventTypes.Distinct())
@@ -69,18 +71,38 @@ namespace Stateflows.Actions.Models
 
             foreach (var eventType in ConsumedEventTypes.Concat(ProducedEventTypes))
             {
-                stateflowsBuilder.Events.RegisterClr(eventType);
+                stateflowsBuilder.Payloads.RegisterClr(eventType);
             }
 
             foreach (var eventName in ConsumedEventNames)
             {
                 try
                 {
-                    stateflowsBuilder.Events.GetEvent(eventName);
+                    stateflowsBuilder.Payloads.GetPayload(eventName);
                 }
                 catch (ArgumentException e)
                 {
                     throw new ActionDefinitionException($"Action '{Name}' consumes event '{eventName}' which is not registered.", new ActionClass(Name), e);
+                }
+            }
+
+            ValidatePayloadTokenNames(stateflowsBuilder, ConsumedPayloadTokenNames, "consumes");
+            ValidatePayloadTokenNames(stateflowsBuilder, ProducedPayloadTokenNames, "produces");
+        }
+
+        private void ValidatePayloadTokenNames(StateflowsBuilder stateflowsBuilder, IEnumerable<string> names, string operation)
+        {
+            foreach (var tokenName in names)
+            {
+                try
+                {
+                    stateflowsBuilder.Payloads.GetPayload(tokenName);
+                }
+                catch (ArgumentException e)
+                {
+                    throw new ActionDefinitionException(
+                        $"Action '{Name}' {operation} payload token '{tokenName}' which is not registered.",
+                        new ActionClass(Name), e);
                 }
             }
         }
@@ -109,12 +131,22 @@ namespace Stateflows.Actions.Models
                         ProducedBindingNames[type]], null);
             order = 0;
             foreach (var type in ConsumedTokenTypes.Distinct())
+            {
+                var pinId = $"{Identifier}/input/{order++}";
                 await (Task)typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.InputTokenAddedAsync))
-                    .MakeGenericMethod(type).Invoke(visitor, BindingFlags.DoNotWrapExceptions, null, [$"{Identifier}/input/{order++}", Name, Version], null);
+                    .MakeGenericMethod(type).Invoke(visitor, BindingFlags.DoNotWrapExceptions, null, [pinId, Name, Version], null);
+                if (type == typeof(Payload) && ConsumedPayloadTokenNames.Count != 0)
+                    await visitor.InputTokenNamesAddedAsync(pinId, Name, Version, ConsumedPayloadTokenNames);
+            }
             order = 0;
             foreach (var type in ProducedTokenTypes.Distinct())
+            {
+                var pinId = $"{Identifier}/output/{order++}";
                 await (Task)typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.OutputTokenAddedAsync))
-                    .MakeGenericMethod(type).Invoke(visitor, BindingFlags.DoNotWrapExceptions, null, [$"{Identifier}/output/{order++}", Name, Version], null);
+                    .MakeGenericMethod(type).Invoke(visitor, BindingFlags.DoNotWrapExceptions, null, [pinId, Name, Version], null);
+                if (type == typeof(Payload) && ProducedPayloadTokenNames.Count != 0)
+                    await visitor.OutputTokenNamesAddedAsync(pinId, Name, Version, ProducedPayloadTokenNames);
+            }
             await visitor.ActionAddedAsync(Identifier, Name, Version);
         }
     }

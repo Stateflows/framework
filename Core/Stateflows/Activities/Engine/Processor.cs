@@ -39,7 +39,7 @@ namespace Stateflows.Activities.Engine
 
             var key = context.Version != 0 ? $"{id.Name}.{context.Version}" : $"{id.Name}.current";
             return register.Activities.TryGetValue(key, out var graph) &&
-                (context.Status == BehaviorStatus.Initialized || !graph.InitializerTypes.Any());
+                (context.Status == BehaviorStatus.Initialized || !graph.Initializers.Any());
         }
 
         public bool AcceptsInput(BehaviorId id, StateflowsContext context, TokensInputEvent input)

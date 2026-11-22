@@ -19,9 +19,9 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["triggers", "handlers"],
+        "required": ["events", "handlers"],
         "properties": {
-          "triggers": { "$ref": "#/$defs/triggers" },
+          "events": { "$ref": "#/$defs/eventTriggers" },
           "handlers": { "$ref": "#/$defs/bindings" }
         },
         "additionalProperties": false
@@ -182,9 +182,9 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["triggers"],
+        "required": ["events"],
         "properties": {
-          "triggers": { "$ref": "#/$defs/triggers" },
+          "events": { "$ref": "#/$defs/eventTriggers" },
           "guard": { "$ref": "#/$defs/guard" }
         },
         "additionalProperties": false

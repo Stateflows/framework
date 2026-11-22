@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Payloads;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces.Internal;
@@ -13,7 +15,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
     public interface IAcceptEventBase<out TReturn>
     {
         /// <summary>Adds an action node that activates for the specified event while the node is active.</summary>
-        /// <param name="eventName">Registered structural-event name accepted or published by this node.</param>
+        /// <param name="eventName">Registered payload name accepted or published by this node.</param>
         /// <param name="actionNodeName">Registered name of this node in its containing Activity scope.</param>
         /// <param name="eventActionAsync">Asynchronous callback invoked with the accepted event and node context.</param>
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
@@ -21,24 +23,50 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         TReturn AddAcceptEventAction(string eventName, string actionNodeName,
-            AcceptEventActionDelegateAsync<StructuralEvent> eventActionAsync,
-            AcceptEventActionBuildAction<StructuralEvent> buildAction = null)
+            AcceptEventActionDelegateAsync<Payload> eventActionAsync,
+            AcceptEventActionBuildAction<Payload> buildAction = null)
+            => AddAcceptEventAction(new[] { eventName }, actionNodeName, eventActionAsync, buildAction);
+
+        /// <summary>Adds an action node that activates for any of the specified payload events while the node is active.</summary>
+        /// <param name="eventNames">Registered payload names accepted by this node.</param>
+        /// <param name="actionNodeName">Registered name of this node in its containing Activity scope.</param>
+        /// <param name="eventActionAsync">Asynchronous callback invoked with the accepted event and node context.</param>
+        /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
+        /// </param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        TReturn AddAcceptEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
+            AcceptEventActionDelegateAsync<Payload> eventActionAsync,
+            AcceptEventActionBuildAction<Payload> buildAction = null)
         {
-            System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+            var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));
             System.ArgumentNullException.ThrowIfNull(eventActionAsync);
-            ((BaseActivityBuilder)this).AddAcceptEventAction(actionNodeName, eventActionAsync, buildAction, eventName);
+            ((BaseActivityBuilder)this).AddAcceptEventAction(actionNodeName, eventActionAsync, buildAction, names);
             return (TReturn)this;
         }
 
+        /// <summary>Adds an action node that activates for any of the specified payload events while the node is active.</summary>
+        /// <param name="eventNames">Registered payload names accepted by this node.</param>
+        /// <param name="actionNodeName">Registered name of this node in its containing Activity scope.</param>
+        /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
+        /// </param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        TReturn AddAcceptEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
+            AcceptEventActionBuildAction<Payload> buildAction = null)
+            => AddAcceptEventAction(eventNames, actionNodeName, _ => Task.CompletedTask, buildAction);
+
         /// <summary>Adds an action node that activates for the specified event while the node is active.</summary>
-        /// <param name="eventName">Registered structural-event name accepted or published by this node.</param>
+        /// <param name="eventName">Registered payload name accepted or published by this node.</param>
         /// <param name="actionNodeName">Registered name of this node in its containing Activity scope.</param>
         /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
         /// </param>
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         TReturn AddAcceptEventAction(string eventName, string actionNodeName,
-            AcceptEventActionBuildAction<StructuralEvent> buildAction = null)
+            AcceptEventActionBuildAction<Payload> buildAction = null)
             => AddAcceptEventAction(eventName, actionNodeName, _ => Task.CompletedTask, buildAction);
 
         #region AddAcceptEventAction

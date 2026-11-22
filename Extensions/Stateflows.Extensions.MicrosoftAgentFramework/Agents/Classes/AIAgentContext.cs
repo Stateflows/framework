@@ -42,6 +42,18 @@ internal class AIAgentContext(IBehaviorContext functionContext, IInput input, IO
     public bool HasTokensOfType<TToken>()
         => input.HasTokensOfType<TToken>();
 
+    public IEnumerable<Payload> GetPayloadTokens(string tokenName)
+        => input.GetPayloadTokens(tokenName);
+
+    public IEnumerable<Payload> GetPayloadTokens(IReadOnlyList<string> tokenNames)
+        => input.GetPayloadTokens(tokenNames);
+
+    public bool HasPayloadTokens(string tokenName)
+        => input.HasPayloadTokens(tokenName);
+
+    public bool HasPayloadTokens(IReadOnlyList<string> tokenNames)
+        => input.HasPayloadTokens(tokenNames);
+
     public void Output<TToken>(TToken token)
     {
         output.Output(token);
@@ -61,6 +73,9 @@ internal class AIAgentContext(IBehaviorContext functionContext, IInput input, IO
     {
         output.PassAllTokensOn();
     }
+
+    public void PassPayloadTokensOn(IReadOnlyList<string> tokenNames)
+        => output.PassPayloadTokensOn(tokenNames);
 
     public Task<bool> TryMutateAsync<TMutationEvent>(string entityName, TMutationEvent mutationEvent, IDictionary<string, EventHeader>? headers = null)
     {

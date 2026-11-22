@@ -45,7 +45,7 @@
   data-kind={data.model.kind}
   data-status={status}
   data-element-id={data.model.id}
-  title={`${data.model.label}\n${data.model.kind}${badge ? `\n${badge}` : ''}`}
+  title={`${data.model.label}\n${data.model.kind}${data.model.pinTokenNames?.length ? `\n${data.model.pinTokenNames.join(', ')}` : ''}${badge ? `\n${badge}` : ''}`}
 >
   {#each [Position.Left, Position.Right, Position.Top, Position.Bottom] as position}
     <Handle type="source" {position} id={`source-${position}`} isConnectable={false} />

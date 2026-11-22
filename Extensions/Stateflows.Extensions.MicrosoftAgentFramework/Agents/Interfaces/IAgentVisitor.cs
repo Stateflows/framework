@@ -33,7 +33,7 @@ namespace Stateflows.MAF.AIAgents
         /// <param name="actionVersion">The agent action version.</param>
         /// <param name="supportedStatuses">The behavior statuses for which the event is available.</param>
         /// <returns>A task that completes after the notification is handled.</returns>
-        Task CustomEventAddedAsync(EventDefinition definition, string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
+        Task CustomEventAddedAsync(PayloadDefinition definition, string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
             => Task.CompletedTask;
     }
 }

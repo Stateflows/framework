@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
 using Stateflows.Common;
-using Stateflows.Events;
+using Stateflows.Payloads;
 
 namespace Action.IntegrationTests.Tests;
 
@@ -120,7 +120,7 @@ public sealed class CanonicalVisitors
     {
         var services = new ServiceCollection();
         services.AddStateflows(builder => builder
-            .AddEvents(events => events.AddEvent("first", _ => { }).AddEvent("second", _ => { }))
+            .AddPayloads(events => events.AddPayload("first", _ => { }).AddPayload("second", _ => { }))
             .AddActions(actions => actions
                 .AddAction<Implementation>("canonical-action", 1, action => action
                     .AddConsumedEvent("first").AddConsumedEvent<Ping>().AddConsumedEvent("second").AddConsumedEvent("first"))
@@ -136,7 +136,7 @@ public sealed class CanonicalVisitors
         CollectionAssert.AreEqual(new[] { "begin", "type", "event", "event", "end", "begin", "end" }, first.Trace);
         CollectionAssert.AreEqual(first.Trace, second.Trace);
         CollectionAssert.AreEqual(first.Bindings.Select(binding => binding.Id).ToArray(), second.Bindings.Select(binding => binding.Id).ToArray());
-        Assert.AreEqual(typeof(StructuralEvent), first.Bindings[0].Type);
+        Assert.AreEqual(typeof(Payload), first.Bindings[0].Type);
         CollectionAssert.AreEqual(new[] { "first", "second" }, first.Bindings[0].Names);
         Assert.AreEqual(typeof(Ping), first.Bindings[1].Type);
         CollectionAssert.AreEqual(new[] { typeof(Ping).GetEventName() }, first.Bindings[1].Names);

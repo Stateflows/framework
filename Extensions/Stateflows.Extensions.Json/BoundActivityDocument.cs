@@ -17,6 +17,7 @@ using Stateflows.Common.Exceptions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Validation;
+using Stateflows.Payloads;
 using Stateflows.StateMachines.Json;
 
 namespace Stateflows.Activities.Json;
@@ -30,6 +31,8 @@ internal sealed partial class BoundActivityDocument(
     private readonly TypedJson serializer = new(types);
     private readonly Dictionary<string, ClrBinding> bindings = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Type> resolvedTypes = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string[]> eventNames = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string[]> tokenNames = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Dictionary<string, string>> targetAliases = new(StringComparer.Ordinal);
     private readonly HashSet<string> nodeNames = new(StringComparer.Ordinal);
 
@@ -119,15 +122,68 @@ internal sealed partial class BoundActivityDocument(
         return (string)pinType.GetProperty("Name")!.GetValue(null)!;
     }
 
+    private bool BindEventNames(JToken node, string path)
+    {
+        string[] names;
+        if (node["eventNames"] is JArray list)
+        {
+            names = list.Values<string>().ToArray()!;
+            for (var i = 0; i < names.Length; i++)
+            {
+                try { services.Payloads.GetPayload(names[i]); }
+                catch (ArgumentException exception) { Error($"{path}/eventNames/{i}", exception.Message); }
+            }
+        }
+        else if (node.Value<string>("eventName") is { } name)
+        {
+            names = [name];
+            try { services.Payloads.GetPayload(name); }
+            catch (ArgumentException exception) { Error(path + "/eventName", exception.Message); }
+        }
+        else return false;
+        eventNames[path] = names;
+        resolvedTypes[path + "/eventType"] = typeof(Payload);
+        return true;
+    }
+
+    private Type? BindTokenSet(JToken node, string path, string typeProperty, string namesProperty,
+        string? singleNameProperty = null)
+    {
+        var namesPath = path + "/" + namesProperty;
+        if (node[namesProperty] is JArray list)
+        {
+            var names = list.Values<string>().ToArray()!;
+            BindPayloadNames(names, namesPath);
+            tokenNames[namesPath] = names;
+            resolvedTypes[path + "/" + typeProperty] = typeof(Payload);
+            return typeof(Payload);
+        }
+        if (singleNameProperty != null && node.Value<string>(singleNameProperty) is { } singleName)
+        {
+            var singlePath = path + "/" + singleNameProperty;
+            BindPayloadNames([singleName], singlePath);
+            tokenNames[singlePath] = [singleName];
+            resolvedTypes[path + "/" + typeProperty] = typeof(Payload);
+            return typeof(Payload);
+        }
+        return BindType(node.Value<string>(typeProperty)!, path + "/" + typeProperty);
+    }
+
+    private void BindPayloadNames(IEnumerable<string> names, string path)
+    {
+        var index = 0;
+        foreach (var name in names)
+        {
+            try { services.Payloads.GetPayload(name); }
+            catch (ArgumentException exception) { Error($"{path}/{index}", exception.Message); }
+            index++;
+        }
+    }
+
     private Type? BindEventNode(JToken node, string path, string kind)
     {
         Type? eventType;
-        if (kind == "acceptEvent" && node.Value<string>("eventName") is { } eventName)
-        {
-            try { services.Events.GetEvent(eventName); }
-            catch (ArgumentException exception) { Error(path + "/eventName", exception.Message); }
-            resolvedTypes[path + "/eventType"] = eventType = typeof(StructuralEvent);
-        }
+        if (kind == "acceptEvent" && BindEventNames(node, path)) eventType = typeof(Payload);
         else eventType = BindType(node.Value<string>("eventType")!, path + "/eventType");
         if (eventType == null) return null;
         if (services.TypeMapper.GetMappedTypes(eventType).Any() != true)
@@ -169,7 +225,7 @@ internal sealed partial class BoundActivityDocument(
         }
         else
         {
-            var flowToken = BindType(flow.Value<string>("tokenType")!, path + "/tokenType");
+            var flowToken = BindTokenSet(flow, path, "tokenType", "tokenNames");
             if (flowToken == null) return;
             var current = flowToken;
             var isElse = kind == "elseObject";
@@ -186,7 +242,7 @@ internal sealed partial class BoundActivityDocument(
                 }
                 else if (stage.Value<string>("kind") == "transform")
                 {
-                    var output = BindType(stage.Value<string>("outputTokenType")!, stagePath + "/outputTokenType");
+                    var output = BindTokenSet(stage, stagePath, "outputTokenType", "outputTokenNames", "outputTokenName");
                     if (output == null) continue;
                     BindClr(stage["handler"]!, stagePath + "/handler",
                         typeof(IFlowTransformation<,>).MakeGenericType(current, output));
@@ -213,14 +269,15 @@ internal sealed partial class BoundActivityDocument(
             var kind = node.Value<string>("kind")!;
             var name = node.Value<string>("name");
             var pinToken = kind is "inputPin" or "outputPin"
-                ? BindType(node.Value<string>("tokenType")!, nodePath + "/tokenType")
+                ? BindTokenSet(node, nodePath, "tokenType", "tokenNames")
                 : null;
+            var pinNames = tokenNames.GetValueOrDefault(nodePath + "/tokenNames");
             var registeredName = kind switch
             {
                 "initial" => $"{parentName}.initial",
                 "final" => name ?? FinalNode.Name,
-                "inputPin" when pinToken != null => $"{parentName}.{TypedPinName(kind, pinToken)}",
-                "outputPin" when pinToken != null => name ?? TypedPinName(kind, pinToken),
+                "inputPin" when pinToken != null => $"{parentName}.{(pinNames == null ? TypedPinName(kind, pinToken) : InputPin.GetName(pinNames))}",
+                "outputPin" when pinToken != null => name ?? (pinNames == null ? TypedPinName(kind, pinToken) : OutputPin.GetName(pinNames)),
                 _ => name
             };
             if (registeredName is { Length: > 0 } && !nodeNames.Add(registeredName))
@@ -281,11 +338,11 @@ internal sealed partial class BoundActivityDocument(
                 case "decision":
                     if (node.Value<string>("mode") == "object")
                     {
-                        var token = BindType(node.Value<string>("tokenType")!, nodePath + "/tokenType");
+                        var token = BindTokenSet(node, nodePath, "tokenType", "tokenNames");
                         if (token != null)
                             foreach (var (flow, flowPath) in Items(node, nodePath, "flows"))
                                 if (flow.Value<string>("kind") is "object" or "elseObject" &&
-                                    BindType(flow.Value<string>("tokenType")!, flowPath + "/tokenType") is { } flowToken &&
+                                    BindTokenSet(flow, flowPath, "tokenType", "tokenNames") is { } flowToken &&
                                     flowToken != token)
                                     Error(flowPath + "/tokenType", "Decision object flows must use the declared decision token type.");
                     }
@@ -299,7 +356,8 @@ internal sealed partial class BoundActivityDocument(
                     break;
                 case "parallel":
                 case "iterative":
-                    BindType(node.Value<string>("iterationTokenType")!, nodePath + "/iterationTokenType");
+                    BindTokenSet(node, nodePath, "iterationTokenType",
+                        kind == "parallel" ? "parallelizationTokenNames" : "iterationTokenNames");
                     BindStructuredCapabilities(node, nodePath);
                     BindDefinitions(node, nodePath, typeof(IStructuredActivityNodeDefinition), typeof(IStructuredActivityBuilder));
                     BindNodes(node, nodePath, false, name!);
@@ -350,7 +408,9 @@ internal sealed partial class BoundActivityDocument(
 
         foreach (var (initializer, path) in Items(document, "", "initializers"))
         {
-            var eventType = BindType(initializer.Value<string>("eventType")!, path + "/eventType");
+            var eventType = BindEventNames(initializer, path)
+                ? typeof(Payload)
+                : BindType(initializer.Value<string>("eventType")!, path + "/eventType");
             if (eventType != null) BindClr(initializer["handler"]!, path + "/handler",
                 typeof(IInitializer<>).MakeGenericType(eventType));
         }
@@ -453,18 +513,33 @@ internal sealed partial class BoundActivityDocument(
             {
                 var token = resolvedTypes[path + "/tokenType"];
                 var builderType = typeof(IInputPinBuilder<>).MakeGenericType(token);
-                CallGenericInterface(parent, typeof(IInputBase<>), "AddInputPin", [token],
-                    [CreateCallback(typeof(Action<>).MakeGenericType(builderType), callback)], methodParameterCount: 1);
+                var buildAction = CreateCallback(typeof(Action<>).MakeGenericType(builderType), callback);
+                if (tokenNames.TryGetValue(path + "/tokenNames", out var names))
+                    CallGenericInterface(parent, typeof(IInputBase<>), "AddInputPin", [], [names, buildAction], methodParameterCount: 2);
+                else
+                    CallGenericInterface(parent, typeof(IInputBase<>), "AddInputPin", [token], [buildAction], methodParameterCount: 1);
                 break;
             }
             case "outputPin":
             {
-                var outputInterface = parent is IActivityBuilder ? typeof(IActivityOutputBase<>) : typeof(IOutputBase<>);
                 var outputToken = resolvedTypes[path + "/tokenType"];
-                if (parent is IActivityBuilder)
-                    CallGenericInterface(parent, outputInterface, "AddOutputPin", [outputToken], [name, null], methodParameterCount: 2);
+                if (tokenNames.TryGetValue(path + "/tokenNames", out var names))
+                    PayloadFlowScope.With(names, nameof(names), () =>
+                    {
+                        var outputInterface = parent is IActivityBuilder ? typeof(IActivityOutputBase<>) : typeof(IOutputBase<>);
+                        if (parent is IActivityBuilder)
+                            CallGenericInterface(parent, outputInterface, "AddOutputPin", [typeof(Payload)], [name, null], methodParameterCount: 2);
+                        else
+                            CallGenericInterface(parent, outputInterface, "AddOutputPin", [typeof(Payload)], [name], methodParameterCount: 1);
+                    });
                 else
-                    CallGenericInterface(parent, outputInterface, "AddOutputPin", [outputToken], [name], methodParameterCount: 1);
+                {
+                    var outputInterface = parent is IActivityBuilder ? typeof(IActivityOutputBase<>) : typeof(IOutputBase<>);
+                    if (parent is IActivityBuilder)
+                        CallGenericInterface(parent, outputInterface, "AddOutputPin", [outputToken], [name, null], methodParameterCount: 2);
+                    else
+                        CallGenericInterface(parent, outputInterface, "AddOutputPin", [outputToken], [name], methodParameterCount: 1);
+                }
                 break;
             }
             case "final":
@@ -490,9 +565,9 @@ internal sealed partial class BoundActivityDocument(
                 var eventAction = CreateBoundDelegate(
                     typeof(AcceptEventActionDelegateAsync<>).MakeGenericType(eventType),
                     nameof(HandleAcceptedEvent), eventType, binding.Type, binding);
-                if (node.Value<string>("eventName") is { } eventName)
+                if (eventNames.TryGetValue(path, out var acceptedNames))
                     CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptEventAction",
-                        [], [eventName, name!, eventAction, actionCallback], methodParameterCount: 4);
+                        [], [acceptedNames, name!, eventAction, actionCallback], methodParameterCount: 4);
                 else
                     CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptEventAction",
                         [eventType], [name!, eventAction, actionCallback], methodParameterCount: 3);
@@ -579,8 +654,11 @@ internal sealed partial class BoundActivityDocument(
         else
         {
             var token = resolvedTypes[path + "/tokenType"];
-            CallGenericInterface(parent, typeof(IActivitySpecials<>), "AddDecision", [token],
-                [name, CreateCallback(typeof(DecisionBuildAction<>).MakeGenericType(token), callback)], methodParameterCount: 2);
+            var buildAction = CreateCallback(typeof(DecisionBuildAction<>).MakeGenericType(token), callback);
+            if (tokenNames.TryGetValue(path + "/tokenNames", out var names))
+                CallGenericInterface(parent, typeof(IActivitySpecials<>), "AddDecision", [], [names, name, buildAction], methodParameterCount: 3);
+            else
+                CallGenericInterface(parent, typeof(IActivitySpecials<>), "AddDecision", [token], [name, buildAction], methodParameterCount: 2);
         }
     }
 
@@ -606,6 +684,16 @@ internal sealed partial class BoundActivityDocument(
         var activityBase = HasOpenInterface(parent, typeof(IReactiveActivityBase<>))
             ? typeof(IReactiveActivityBase<>)
             : typeof(IActivityBase<>);
+        var namesProperty = kind == "parallel" ? "parallelizationTokenNames" : "iterationTokenNames";
+        if (tokenNames.TryGetValue(path + "/" + namesProperty, out var names))
+        {
+            CallGenericInterface(parent, activityBase, kind == "parallel" ? "AddParallelActivity" : "AddIterativeActivity",
+                [], kind == "parallel"
+                    ? [names, name, CreateCallback(delegateType, callback), chunk, node.Value<int?>("maxConcurrency") ?? -1]
+                    : [names, name, CreateCallback(delegateType, callback), chunk],
+                methodParameterCount: kind == "parallel" ? 5 : 4);
+            return;
+        }
         CallGenericInterface(parent, activityBase, kind == "parallel" ? "AddParallelActivity" : "AddIterativeActivity",
             [token], kind == "parallel"
                 ? [name, CreateCallback(delegateType, callback), chunk, node.Value<int?>("maxConcurrency") ?? -1]
@@ -721,19 +809,26 @@ internal sealed partial class BoundActivityDocument(
             var callbackType = (isElse ? typeof(ElseObjectFlowBuildAction<>) : typeof(ObjectFlowBuildAction<>))
                 .MakeGenericType(token);
             var callback = CreateCallback(callbackType, flowBuilder => ConfigureObjectFlow(flowBuilder, flow, path, token, weight, isElse));
-            if (sourceKind is "decision" or "inputPin")
+            void AddObjectFlow()
             {
-                var flowInterface = sourceKind == "inputPin"
-                    ? typeof(IDecisionFlowBase<,>)
-                    : isElse ? typeof(IElseDecisionFlowBase<,>) : typeof(IDecisionFlowBase<,>);
-                CallGenericInterface(nodeBuilder, flowInterface, isElse ? "AddElseFlow" : "AddFlow", [],
-                    [target, callback], methodParameterCount: 2);
+                if (sourceKind is "decision" or "inputPin")
+                {
+                    var flowInterface = sourceKind == "inputPin"
+                        ? typeof(IDecisionFlowBase<,>)
+                        : isElse ? typeof(IElseDecisionFlowBase<,>) : typeof(IDecisionFlowBase<,>);
+                    CallGenericInterface(nodeBuilder, flowInterface, isElse ? "AddElseFlow" : "AddFlow", [],
+                        [target, callback], methodParameterCount: 2);
+                }
+                else if (isElse)
+                    CallGenericInterface(nodeBuilder, typeof(IElseObjectFlowBase<>), "AddElseFlow", [token],
+                        [target, callback], methodParameterCount: 2);
+                else
+                    CallObjectFlow(nodeBuilder, token, target, callback);
             }
-            else if (isElse)
-                CallGenericInterface(nodeBuilder, typeof(IElseObjectFlowBase<>), "AddElseFlow", [token],
-                    [target, callback], methodParameterCount: 2);
+            if (tokenNames.TryGetValue(path + "/tokenNames", out var names))
+                PayloadFlowScope.With(names, nameof(names), AddObjectFlow);
             else
-                CallObjectFlow(nodeBuilder, token, target, callback);
+                AddObjectFlow();
         }
         else
         {
@@ -784,7 +879,14 @@ internal sealed partial class BoundActivityDocument(
             {
                 var output = resolvedTypes[stagePath + "/outputTokenType"];
                 var callback = CreateObjectTransformation(currentToken, output, binding);
-                flowBuilder = CallTransformation(flowBuilder, currentToken, output, callback, isElse);
+                if (tokenNames.TryGetValue(stagePath + "/outputTokenNames", out var outputNames))
+                    flowBuilder = PayloadFlowScope.With(outputNames, nameof(outputNames),
+                        () => CallTransformation(flowBuilder, currentToken, output, callback, isElse));
+                else if (tokenNames.TryGetValue(stagePath + "/outputTokenName", out var outputName))
+                    flowBuilder = PayloadFlowScope.With(outputName, nameof(outputName),
+                        () => CallTransformation(flowBuilder, currentToken, output, callback, isElse));
+                else
+                    flowBuilder = CallTransformation(flowBuilder, currentToken, output, callback, isElse);
                 ((IFlowMetadataBuilder)flowBuilder).Edge.Operations[^1].ImplementationTypes = [binding.Type];
                 currentToken = output;
             }
@@ -1087,9 +1189,19 @@ internal sealed partial class BoundActivityDocument(
         var method = typeof(BoundActivityDocument).GetMethod(nameof(Initializer), BindingFlags.NonPublic | BindingFlags.Static)!
             .MakeGenericMethod(eventType, binding.Type);
         var callback = Delegate.CreateDelegate(delegateType, binding, method);
-        CallGenericInterface(builder, typeof(IActivityEvents<>), "AddInitializer", [eventType], [callback], methodParameterCount: 1);
         var graph = ((IGraphBuilder)builder).Graph;
-        var eventName = eventType.GetEventName();
+        string eventName;
+        if (eventNames.TryGetValue(path, out var names))
+        {
+            ((ActivityBuilder)(IGraphBuilder)builder).AddPayloadInitializer(names,
+                (Func<IActivityInitializationContext<Payload>, Task<bool>>)callback);
+            eventName = PayloadNameSet.Key(names);
+        }
+        else
+        {
+            CallGenericInterface(builder, typeof(IActivityEvents<>), "AddInitializer", [eventType], [callback], methodParameterCount: 1);
+            eventName = eventType.GetEventName();
+        }
         graph.InitializerImplementations[(eventName, graph.Initializers[eventName].Actions.Count - 1)] = binding.Type;
     }
 

@@ -347,5 +347,9 @@ namespace Stateflows.Activities
         /// <param name="activityVersion">The registered version of the activity definition.</param>
         /// <returns>A task completed when this visitor has finished handling the notification.</returns>
         Task TransformationFlowTypeAddedAsync<TToken, TTransformedToken, TTransformation>(string transformationId, string activityName, int activityVersion) where TTransformation : class, IFlowTransformation<TToken, TTransformedToken> => Task.CompletedTask;
+
+        /// <summary>Reports payload token names declared by an activity element.</summary>
+        Task TokenNamesDeclaredAsync(string elementId, string activityName, int activityVersion,
+            TokenNamesDeclarationKind kind, IReadOnlyList<string> tokenNames) => Task.CompletedTask;
     }
 }

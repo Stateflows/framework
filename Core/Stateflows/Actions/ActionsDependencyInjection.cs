@@ -72,7 +72,7 @@ namespace Stateflows.Actions
                 {
                     register = new ActionsRegister()
                     {
-                        EventsRegister = (stateflowsBuilder as StateflowsBuilder)?.Events,
+                        PayloadsRegister = (stateflowsBuilder as StateflowsBuilder)?.Payloads,
                         TypeMapper = (stateflowsBuilder as StateflowsBuilder)?.TypeMapper
                     };
                     Registers.Add(stateflowsBuilder, register);
@@ -96,6 +96,7 @@ namespace Stateflows.Actions
                         .AddTransient(typeof(IOptionalInputOutputToken<>), typeof(OptionalInputOutputToken<>))
 
                         .AddTransient(typeof(IOutputTokens<>), typeof(OutputTokens<>))
+                        .AddSingleton<IModelElementParameterResolver, PayloadTokenParameterResolver>()
                         .AddTransient(_ =>
                             ActionsContextHolder.ExecutionContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")

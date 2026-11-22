@@ -336,21 +336,21 @@ namespace Entity.IntegrationTests.Tests
 
             Assert.IsTrue(plainFields.Contains("IntValue"));
             Assert.IsNotNull(plainComputation);
-            Assert.IsTrue(plainMutations.Contains(typeof(PlainMutation)));
+            Assert.IsTrue(plainMutations.Contains(Event<PlainMutation>.Name));
             Assert.AreEqual(1, plainDefaultInitializers.Count);
-            Assert.IsTrue(plainInitializers.Contains(typeof(PlainInitializationEvent)));
+            Assert.IsTrue(plainInitializers.Contains(Event<PlainInitializationEvent>.Name));
 
             Assert.IsTrue(typedFields.Contains("IntValue"));
             Assert.IsNotNull(typedComputation);
             Assert.IsNull(typedFieldModel.GetType().GetProperty("ComputationTriggers"));
-            Assert.IsTrue(typedMutations.Contains(typeof(TypedMutation)));
+            Assert.IsTrue(typedMutations.Contains(Event<TypedMutation>.Name));
             Assert.AreEqual(1, typedDefaultInitializers.Count);
-            Assert.IsTrue(typedInitializers.Contains(typeof(TypedInitializationEvent)));
+            Assert.IsTrue(typedInitializers.Contains(Event<TypedInitializationEvent>.Name));
 
             Assert.IsTrue(typedAutoFields.Contains("StringValue"));
             Assert.IsTrue(typedAutoFields.Contains("Length"));
             Assert.IsNotNull(typedAutoComputation);
-            Assert.IsTrue(typedAutoMutations.Contains(typeof(AutoTypedMutationEvent)));
+            Assert.IsTrue(typedAutoMutations.Contains(Event<AutoTypedMutationEvent>.Name));
             Assert.IsTrue(typedAutoProjections.Contains(typeof(AutoTypedProjection)));
             Assert.AreEqual(1, typedAutoDefaultInitializers.Count);
 

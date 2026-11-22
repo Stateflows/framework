@@ -31,6 +31,8 @@ namespace Stateflows.Activities.Inspection.Classes
 
         public System.Type PinTokenType => Node.PinTokenType;
 
+        public IReadOnlyList<string> PinTokenNames => Node.PinTokenNames ?? System.Array.Empty<string>();
+
         public bool Active => Executor.NodesTree.Contains(Node);
 
         public NodeStatus Status => Executor.Context.ActiveNodes.Keys.Contains(Node.Identifier)

@@ -1,12 +1,12 @@
-# JSON state machines, activities and structural events
+# JSON state machines, activities and payloads
 
-## Structural events and requests
+## Payloads and requests
 
-Use `Stateflows.Events.Json.JsonEventDefinition.Parse(json, options).Register(eventsBuilder)`
-inside `stateflows.AddEvents(...)`. Registration uses the core event builders, not a separate
+Use `Stateflows.Payloads.Json.JsonPayloadDefinition.Parse(json, options).Register(eventsBuilder)`
+inside `stateflows.AddPayloads(...)`. Registration uses the core event builders, not a separate
 JSON-specific event registry. `Parse` binds the complete definition before registration;
 invalid definitions throw `System.Text.Json.JsonException`. Core registration errors remain
-core exceptions. The standalone Draft 2020-12 [event schema](event.schema.json),
+core exceptions. The standalone Draft 2020-12 [event schema](payload.schema.json),
 `urn:stateflows:event:1.0`, describes this format and is embedded, copied to the output
 directory, and included in the package's `schemas` directory alongside the behavior schemas.
 Associate it with event definition files through your editor's schema configuration.
@@ -20,8 +20,8 @@ and custom validator options. Duplicate JSON properties are checked during parsi
 
 ```csharp
 using Stateflows.Common.Json;
-using Stateflows.Events;
-using Stateflows.Events.Json;
+using Stateflows.Payloads;
+using Stateflows.Payloads.Json;
 
 var options = new JsonOptions()
     .AddType<Receipt>("responses.receipt")
@@ -29,10 +29,10 @@ var options = new JsonOptions()
         new System.ComponentModel.DataAnnotations.RangeAttribute(
             configuration.GetProperty("minimum").GetInt32(), int.MaxValue));
 
-services.AddStateflows(stateflows => stateflows.AddEvents(events =>
-    JsonEventDefinition.Parse(File.ReadAllText("order-event.json"), options).Register(events)));
+services.AddStateflows(stateflows => stateflows.AddPayloads(events =>
+    JsonPayloadDefinition.Parse(File.ReadAllText("order-event.json"), options).Register(events)));
 
-// Resolve IEventFactory from DI. The default factory also implements IEventsRegister.
+// Resolve IPayloadFactory from DI. The default factory also implements IPayloadsRegister.
 var payload = eventFactory.CreateFromJson("OrderSubmitted",
     """{"quantity":2,"address":{"city":"Paris","ignored":true},"tags":["new"]}""");
 ```
@@ -74,8 +74,8 @@ var payload = eventFactory.CreateFromJson("OrderSubmitted",
 
 The root requires `formatVersion: "1.0"`, a nonblank `name` and a `fields` array (possibly
 empty). Omit `response` for an event; use exactly one of `response.eventName` for a
-structural response or `response.clrType` for a host-registered `JsonOptions.AddType` alias.
-Structural response names are resolved by the core when configuration completes.
+payload response or `response.clrType` for a host-registered `JsonOptions.AddType` alias.
+Payload response names are resolved by the core when configuration completes.
 CLR names, assembly names and arbitrary type loading are never accepted in place of aliases.
 
 Every field requires a distinct, nonblank `name`. A missing or null `type` denotes an object
@@ -116,7 +116,7 @@ instances are used during registration. Custom validators do not imply any gener
 OpenAPI constraint support.
 
 `CreateFromJson` performs shape/type decoding and delegates construction to
-`IEventFactory.Create(name, fields)`. It does **not** run DataAnnotations: the normal core
+`IPayloadFactory.Create(name, fields)`. It does **not** run DataAnnotations: the normal core
 event validation pipeline does that. Missing fields stay missing; explicit null is accepted
 for every field and collection item, leaving `Required` to enforce presence/non-null.
 
@@ -124,7 +124,7 @@ for every field and collection item, leaving `Required` to enforce presence/non-
 
 Only declared fields are decoded; unknown fields are discarded recursively, including inside
 object arrays. Duplicate JSON properties are still rejected even in discarded data.
-Objects become core `StructuralValue` instances, and arrays become core collections.
+Objects become core `PayloadValue` instances, and arrays become core collections.
 There is no `$type` or other CLR metadata interpretation.
 
 | Field types | JSON representation |
@@ -143,19 +143,19 @@ There is no `$type` or other CLR metadata interpretation.
 
 Strings never coerce to numbers or booleans. Invalid payloads throw
 `System.Text.Json.JsonException` with the field path for conversion failures.
-The three-argument extension requires the factory to implement `IEventsRegister`, as the
+The three-argument extension requires the factory to implement `IPayloadsRegister`, as the
 default core implementation does. A custom factory with a separate registry can use
 `factory.CreateFromJson(name, json, register)`.
 
-### Referencing structural events from JSON behaviors
+### Referencing payloads from JSON behaviors
 
-Register structural event definitions with `AddEvents` **before** registering behaviors that
+Register payload definitions with `AddPayloads` **before** registering behaviors that
 reference them. Names are resolved against the host's event registry during behavior
 registration; missing names produce `JSON-003` diagnostics at the `eventName` reference.
 Documents cannot implicitly declare events by referring to them.
 
 State-machine event/internal transitions accept exactly one CLR alias, or one or more
-structural event names. CLR and structural references cannot be mixed:
+payload names. CLR and payload references cannot be mixed:
 
 ```json
 {
@@ -170,20 +170,31 @@ structural event names. CLR and structural references cannot be mixed:
 }
 ```
 
-Every declaration constructs one transition, including a collection of structural names.
-Other structural names do not match it. Multiple CLR references, mixed CLR/structural
-references, and duplicate structural names are rejected. An else transition may contain
-multiple structural names while remaining one fallback edge.
+Every declaration constructs one transition, including a collection of payload names.
+Other payload names do not match it. Multiple CLR references, mixed CLR/payload
+references, and duplicate payload names are rejected. An else transition may contain
+multiple payload names while remaining one fallback edge.
 
-Guards/effects for named triggers implement `ITransitionGuard<StructuralEvent>` /
-`ITransitionEffect<StructuralEvent>`. Transition definitions must expose one contract
+Guards/effects for named triggers implement `ITransitionGuard<Payload>` /
+`ITransitionEffect<Payload>`. Transition definitions must expose one contract
 covering the complete trigger set. Visitors receive the declared CLR type and all effective
-event names; structural schema details can be resolved through the event registry.
-This named JSON syntax applies to
-transitions only: initializer and deferral trigger declarations still use `clrType`.
+event names; payload schema details can be resolved through the event registry.
+State-machine initializers and deferrals declare the events they consume under the
+`events` key, using the same shape as transition `triggers` (one `clrType` or a unique list
+of `eventName` references); the `triggers` key is rejected there. Handlers for named
+events implement `IInitializer<Payload>` / `IDeferralGuard<Payload>`:
 
-Activity accept-event nodes use exactly one of `eventType` (the existing CLR alias) or
-`eventName` (the registered structural name), keeping the existing implementation binding:
+```json
+"initializers": [{
+  "events": [{ "eventName": "orderSubmitted" }, { "eventName": "orderCancelled" }],
+  "handlers": [{ "clrType": "handlers.startOrder" }]
+}]
+```
+
+Activity accept-event nodes and activity initializers use exactly one of `eventType`
+(the existing CLR alias), `eventName` (one registered payload name) or `eventNames`
+(a nonempty, unique list of registered payload names), keeping the existing
+implementation binding:
 
 ```json
 {
@@ -195,12 +206,12 @@ Activity accept-event nodes use exactly one of `eventType` (the existing CLR ali
 }
 ```
 
-`handlers.receiveOrder` must implement `IAcceptEventActionNode<StructuralEvent>`. Its
-`ExecuteAsync(StructuralEvent, CancellationToken)` receives the decoded structural payload;
+`handlers.receiveOrder` must implement `IAcceptEventActionNode<Payload>`. Its
+`ExecuteAsync(Payload, CancellationToken)` receives the decoded payload;
 normal host DI and `IConfigurable<T>` binding still apply. The loader calls the core named
 accept-event builder overload, so routing and visitor descriptors use the registered
-event's name and definition. Time/send/publish nodes and activity initializers retain
-their existing CLR-only `eventType` syntax.
+event's name and definition. Named activity initializers implement `IInitializer<Payload>`.
+Time/send/publish nodes retain their existing CLR-only `eventType` syntax.
 
 ## Behavior definitions
 
@@ -422,9 +433,9 @@ Language-specific union syntax is not part of the JSON format.
 Otherwise declaration order determines evaluation order. `all` / `any` are ordered, nonempty,
 short-circuiting guard groups.
 
-Deferrals are ordered declarations containing `triggers` and an optional `guard`.
-One declared CLR type (possibly a mapped union) owns one guard expression shared by its
-effective event names; omitting it means unconditional deferral.
+Deferrals are ordered declarations containing `events` and an optional `guard`.
+One declared CLR type (possibly a mapped union) or one list of payload names owns one guard
+expression shared by its effective event names; omitting it means unconditional deferral.
 Forbidden deferred event types and conflicts with outgoing transitions use existing graph validation.
 
 ## Behavior-class handlers and hosted behaviors
@@ -489,7 +500,7 @@ that do not exist in the current model.
 
 Structured, parallel and iterative nodes accept `"interleave"` in their existing
 `options` array, mapping to `NodeOptions.Interleave` and parameterless
-`.Interleave()` on the structural builder. Options arrays replace the default
+`.Interleave()` on the structured node builder. Options arrays replace the default
 flags, so include `"implicitJoin"` and `"implicitFork"` when wanted.
 `"reentrant"` and `"interleave"` together fail registration, and actions reject
 `"interleave"`. Existing action-only reentrancy remains unchanged.
@@ -602,36 +613,44 @@ The output token alias declares the transformation's result type and becomes the
 stages and the destination. Control flows accept control guards only; else flows cannot contain
 guards. Weights default to one and must be nonnegative.
 
-Use `inputPin` and `outputPin` to declare typed object boundaries in an Activity scope, including
-structured, parallel, and iterative scopes. Each requires a host-registered `tokenType` alias.
-An input pin routes only object flows of its declared token type; its flow may use the same guard
-and transformation pipeline as other object flows. Output pins are object-flow targets and accept
-tokens compatible with their declared type. Input pin names are generated as
-`{parentName}.{InputPin<TToken>.Name}`; an optional input-pin `name` is only a local JSON alias,
-not the registered node name. Output pins default to `OutputPin<TToken>.Name`; set `name` to use a
-custom globally unique registered name, and target that pin by the supplied name in flows.
-`OutputPin<TToken>` target markers refer only to the default name. Multiple pins with different
-token types can be declared in a scope.
+Use `inputPin` and `outputPin` to declare typed or payload object boundaries in an Activity scope,
+including structured, parallel, and iterative scopes. Typed pins use a host-registered `tokenType`
+alias. Payload pins instead use a nonempty `tokenNames` list of payloads registered through
+`AddPayloads`; the two selectors are mutually exclusive. Object flows follow the same rule with
+`tokenType` or `tokenNames`. Input pins route only their declared token names; output pins are
+object-flow targets and accept compatible names. Input pin names are generated from the declared
+token set; an optional input-pin `name` is only a local JSON alias, not the registered node name.
+Output pins default to a name derived from their token selector; set `name` to use a custom globally
+unique registered name, and target that pin by the supplied name in flows.
+
+Object-flow transformations accept `outputTokenType` for typed output or `outputTokenNames` for
+payload output. A single `outputTokenName` is shorthand for a one-name set. These are mutually
+exclusive; a payload transformation must declare its output names, and producing a name outside the
+declared set fails the flow.
+
+Object decisions use `tokenType` or `tokenNames`. Iterative scopes use `iterationTokenType` or
+`iterationTokenNames`; parallel scopes use `iterationTokenType` or `parallelizationTokenNames`.
+Each pair is mutually exclusive, and all referenced payload names must already be registered.
 
 ```json
 {
   "kind": "structured",
   "name": "normalize",
-  "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "validated" }],
+  "flows": [{ "kind": "object", "tokenNames": ["order.validated"], "target": "validated" }],
   "nodes": [
     {
       "kind": "inputPin",
       "name": "incomingOrder",
-      "tokenType": "tokens.order",
-      "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "validate" }]
+      "tokenNames": ["order.submitted"],
+      "flows": [{ "kind": "object", "tokenNames": ["order.submitted"], "target": "validate" }]
     },
     {
       "kind": "action",
       "name": "validate",
       "implementation": { "clrType": "nodes.validate" },
-      "flows": [{ "kind": "object", "tokenType": "tokens.order", "target": "outgoingOrder" }]
+      "flows": [{ "kind": "object", "tokenNames": ["order.validated"], "target": "outgoingOrder" }]
     },
-    { "kind": "outputPin", "name": "outgoingOrder", "tokenType": "tokens.order" }
+    { "kind": "outputPin", "name": "outgoingOrder", "tokenNames": ["order.validated"] }
   ]
 }
 ```

@@ -30,7 +30,7 @@ public abstract class TokenHolder
 
     /// <summary>Stores the token name after it has been resolved.</summary>
     protected string name;
-    /// <summary>Gets the token name used for structural delivery and identification.</summary>
+    /// <summary>Gets the token name used for payload delivery and identification.</summary>
     public virtual string Name => name ??= GetType().GetTokenName();
     
     private object boxedPayload;
@@ -70,7 +70,10 @@ public class TokenHolder<TToken> : TokenHolder
     }
 
     /// <inheritdoc />
-    public override string Name => name ??= typeof(TToken).GetReadableName(TypedElements.Tokens);
+    /// <remarks>A payload token is named after its payload.</remarks>
+    public override string Name => name ??= Payload is Payload payload
+        ? payload.Name
+        : typeof(TToken).GetReadableName(TypedElements.Tokens);
 
     /// <summary>Gets or sets the token payload.</summary>
     public TToken Payload { get; set; }

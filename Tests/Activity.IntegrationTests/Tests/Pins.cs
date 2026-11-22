@@ -191,7 +191,7 @@ public sealed class Pins : StateflowsTestClass
     [DataRow("reactive")]
     [DataRow("iterative")]
     [DataRow("parallel")]
-    public async Task EveryStructuralBuilderRoutesAndCollectsAllPins(string kind)
+    public async Task EveryPayloadBuilderRoutesAndCollectsAllPins(string kind)
     {
         var activity = Locate($"pins-{kind}");
         Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(new TokensInput().Add(42).Add("hello"))).Status);

@@ -14,6 +14,10 @@ namespace Stateflows.Actions
         public virtual Task ProducedEventAddedAsync<TEvent>(string bindingId, string actionName, int actionVersion, IReadOnlyList<string> eventNames) => Task.CompletedTask;
         public virtual Task InputTokenAddedAsync<TToken>(string pinId, string actionName, int actionVersion) => Task.CompletedTask;
         public virtual Task OutputTokenAddedAsync<TToken>(string pinId, string actionName, int actionVersion) => Task.CompletedTask;
+        public virtual Task InputTokenNamesAddedAsync(string pinId, string actionName, int actionVersion,
+            IReadOnlyList<string> tokenNames) => Task.CompletedTask;
+        public virtual Task OutputTokenNamesAddedAsync(string pinId, string actionName, int actionVersion,
+            IReadOnlyList<string> tokenNames) => Task.CompletedTask;
         public virtual Task ActionConfigurationAddedAsync(string actionId, string actionName, int actionVersion, bool isStateless) => Task.CompletedTask;
     }
 }

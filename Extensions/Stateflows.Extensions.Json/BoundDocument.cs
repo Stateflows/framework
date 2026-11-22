@@ -22,7 +22,7 @@ internal sealed partial class BoundDocument(
     private readonly Dictionary<string, ClrBinding> bindings = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> names = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Type[]> triggers = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string[]> structuralTriggers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string[]> payloadTriggers = new(StringComparer.Ordinal);
     private readonly Dictionary<string, object?> metadata = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BehaviorClass> behaviors = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Dictionary<Type, Type>> eventBindings = new(StringComparer.Ordinal);
@@ -131,19 +131,19 @@ internal sealed partial class BoundDocument(
     private Type[] Mapped(Type type)
         => services.TypeMapper.GetMappedTypes(type)?.ToArray() ?? [];
 
-    private Type[] BindTriggers(JToken parent, string path, bool completion = false)
+    private Type[] BindTriggers(JToken parent, string path, bool completion = false, string property = "triggers")
     {
         if (completion) return triggers[path] = [typeof(Completion)];
         var declared = new List<Type>();
         var covered = new HashSet<Type>();
-        var structural = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var (node, itemPath) in Items(parent, path, "triggers"))
+        var payload = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (node, itemPath) in Items(parent, path, property))
         {
             if (node.Value<string>("eventName") is { } eventName)
             {
-                if (!structural.Add(eventName))
-                    Error(itemPath + "/eventName", $"Structural event '{eventName}' is duplicated.");
-                try { services.Events.GetEvent(eventName); }
+                if (!payload.Add(eventName))
+                    Error(itemPath + "/eventName", $"Payload '{eventName}' is duplicated.");
+                try { services.Payloads.GetPayload(eventName); }
                 catch (ArgumentException exception) { Error(itemPath + "/eventName", exception.Message); }
                 continue;
             }
@@ -161,17 +161,17 @@ internal sealed partial class BoundDocument(
             declared.Add(type);
         }
         if (covered.GroupBy(Event.GetName).Any(g => g.Count() > 1))
-            Error(path + "/triggers", "Different trigger types resolve to the same event name.");
-        if (covered.Contains(typeof(Completion)) && (covered.Count != 1 || structural.Count != 0))
-            Error(path + "/triggers", "Completion cannot be combined with other triggers.");
-        if (declared.Count > 1 || (declared.Count != 0 && structural.Count != 0))
-            Error(path + "/triggers", "Declare exactly one CLR trigger type or a collection of structural event names, never both.");
-        structuralTriggers[path] = structural.ToArray();
-        if (structural.Count != 0)
+            Error(path + "/" + property, "Different trigger types resolve to the same event name.");
+        if (covered.Contains(typeof(Completion)) && (covered.Count != 1 || payload.Count != 0))
+            Error(path + "/" + property, "Completion cannot be combined with other triggers.");
+        if (declared.Count > 1 || (declared.Count != 0 && payload.Count != 0))
+            Error(path + "/" + property, "Declare exactly one CLR trigger type or a collection of payload names, never both.");
+        payloadTriggers[path] = payload.ToArray();
+        if (payload.Count != 0)
         {
-            if (covered.Contains(typeof(StructuralEvent)) || covered.Contains(typeof(StructuralRequest)))
-                Error(path + "/triggers", "A CLR structural-event wildcard cannot be combined with named structural triggers.");
-            declared.Add(typeof(StructuralEvent));
+            if (covered.Contains(typeof(Payload)) || covered.Contains(typeof(PayloadRequest)))
+                Error(path + "/" + property, "A CLR payload wildcard cannot be combined with named payload triggers.");
+            declared.Add(typeof(Payload));
         }
         return triggers[path] = declared.ToArray();
     }
@@ -245,7 +245,7 @@ internal sealed partial class BoundDocument(
             BindClr(node, path, typeof(IDefaultInitializer));
         foreach (var (node, path) in Items(document, "", "initializers"))
         {
-            var declared = BindTriggers(node, path);
+            var declared = BindTriggers(node, path, property: "events");
             foreach (var (handler, handlerPath) in Items(node, path, "handlers"))
                 BindEventClr(handler, handlerPath, typeof(IInitializer<>), declared);
         }
@@ -301,7 +301,7 @@ internal sealed partial class BoundDocument(
             }
             foreach (var (deferral, deferralPath) in Items(node, vertexPath, "deferrals"))
             {
-                var declared = BindTriggers(deferral, deferralPath);
+                var declared = BindTriggers(deferral, deferralPath, property: "events");
                 if (deferral["guard"] is { } guard) BindGuard(guard, deferralPath + "/guard", declared, true);
             }
             if (node["do"] is { } hosted) BindBehavior(hosted, vertexPath + "/do", true, kind);

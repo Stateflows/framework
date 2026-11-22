@@ -15,9 +15,9 @@ namespace Stateflows.Common
         /// <exception cref="InvalidOperationException">The event payload does not represent a request.</exception>
         public static void Respond(this EventHolder eventHolder, EventHolder response)
         {
-            if (eventHolder.BoxedPayload is StructuralRequest request)
+            if (eventHolder.BoxedPayload is PayloadRequest request)
             {
-                if (response.BoxedPayload is StructuralEvent structuralResponse) request.Respond(structuralResponse);
+                if (response.BoxedPayload is Payload payloadResponse) request.Respond(payloadResponse);
                 else request.Respond(response.BoxedPayload);
                 return;
             }

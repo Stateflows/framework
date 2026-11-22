@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using Stateflows.Payloads;
+using Stateflows.Activities.Registration.Builders;
+using Stateflows.Activities.Registration.Interfaces.Internal;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Classes;
@@ -54,6 +58,55 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             => RegistrationMetadata.Initializer(() => AddInitializer<TInitializationEvent>(async c
                 => await (await ((BaseContext)c).NodeScope.GetInitializerAsync<TInitializer, TInitializationEvent>(c)).OnInitializeAsync(c.InitializationEvent)
             ), typeof(TInitializer), typeof(TInitializationEvent));
+
+        /// <summary>Adds an initializer accepting any of the given payload events.</summary>
+        /// <param name="eventNames">Names of registered payloads accepted as initialization events.</param>
+        /// <param name="actionAsync">Asynchronous initialization predicate receiving the context; its
+        /// <c>InitializationEvent</c> is the received <see cref="Payload" />. Return true to accept initialization.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddInitializer(IReadOnlyList<string> eventNames, Func<IActivityInitializationContext<Payload>, Task<bool>> actionAsync)
+        {
+            ((ActivityBuilder)((IGraphBuilder)this)).AddPayloadInitializer(eventNames, actionAsync);
+            return (TReturn)this;
+        }
+
+        /// <summary>Adds an initializer accepting the given payload event.</summary>
+        /// <param name="eventName">Name of a registered payload accepted as initialization event.</param>
+        /// <param name="actionAsync">Asynchronous initialization predicate receiving the context.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddInitializer(string eventName, Func<IActivityInitializationContext<Payload>, Task<bool>> actionAsync)
+            => AddInitializer([eventName], actionAsync);
+
+        /// <summary>Adds an initializer implementation accepting any of the given payload events.</summary>
+        /// <typeparam name="TInitializer">Activity lifecycle handler implementing <see cref="IInitializer&lt;Payload&gt;" />.</typeparam>
+        /// <param name="eventNames">Names of registered payloads accepted as initialization events.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddInitializer<TInitializer>(IReadOnlyList<string> eventNames)
+            where TInitializer : class, IInitializer<Payload>
+        {
+            AddInitializer(eventNames, async c
+                => await (await ((BaseContext)c).NodeScope.GetInitializerAsync<TInitializer, Payload>(c)).OnInitializeAsync(c.InitializationEvent));
+            var graph = ((IGraphBuilder)this).Graph;
+            var key = PayloadNameSet.Key(eventNames);
+            graph.InitializerImplementations[(key, graph.Initializers[key].Actions.Count - 1)] = typeof(TInitializer);
+            return (TReturn)this;
+        }
+
+        /// <summary>Adds an initializer implementation accepting the given payload event.</summary>
+        /// <typeparam name="TInitializer">Activity lifecycle handler implementing <see cref="IInitializer&lt;Payload&gt;" />.</typeparam>
+        /// <param name="eventName">Name of a registered payload accepted as initialization event.</param>
+        /// <returns>The current builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
+        [DebuggerHidden]
+        public TReturn AddInitializer<TInitializer>(string eventName)
+            where TInitializer : class, IInitializer<Payload>
+            => AddInitializer<TInitializer>([eventName]);
 
         /// <summary>Adds an asynchronous activity finalizer.</summary>
         /// <param name="actionAsync">Asynchronous callback invoked when the Activity finalizes.</param>

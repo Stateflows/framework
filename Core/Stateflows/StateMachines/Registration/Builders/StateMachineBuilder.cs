@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using Stateflows.Payloads;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Stateflows.Common;
@@ -78,7 +80,9 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
-            Graph.StateflowsBuilder.Events.RegisterClr(typeof(TInitializationEvent));
+            if (PayloadNameSet.IsPayloadType(typeof(TInitializationEvent)))
+                throw new StateMachineDefinitionException($"Initializer of '{typeof(TInitializationEvent).Name}' requires event names; use the overload taking event names.", Graph.Class);
+            Graph.StateflowsBuilder.Payloads.RegisterClr(typeof(TInitializationEvent));
             
             if (!Graph.InitializerDeclarations.TryGetValue(typeof(TInitializationEvent), out var initializer))
             {
@@ -87,6 +91,28 @@ namespace Stateflows.StateMachines.Registration.Builders
                 Graph.InitializerTypes.Add(typeof(TInitializationEvent));
             }
 
+            var execute = AddInitializerAction(initializer, actionAsync);
+            foreach (var type in Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(typeof(TInitializationEvent)))
+                AddRuntimeInitializer(Graph, Event.GetName(type), execute);
+
+            return this;
+        }
+
+        internal static void AddPayloadInitializer(Graph graph, IReadOnlyList<string> eventNames, Func<IStateMachineInitializationContext<Payload>, Task<bool>> actionAsync)
+        {
+            actionAsync.ThrowIfNull(nameof(actionAsync));
+            eventNames = PayloadNameSet.Validate(eventNames, nameof(eventNames));
+            var key = PayloadNameSet.Key(eventNames);
+            if (!graph.PayloadInitializerDeclarations.TryGetValue(key, out var declaration))
+                graph.PayloadInitializerDeclarations.Add(key, declaration = new PayloadInitializerDeclaration(eventNames, new Logic<StateMachinePredicateAsync>(Constants.Initialize)));
+
+            var execute = AddInitializerAction(declaration.Logic, actionAsync);
+            foreach (var name in eventNames)
+                AddRuntimeInitializer(graph, name, execute);
+        }
+
+        private static StateMachinePredicateAsync AddInitializerAction<TInitializationEvent>(Logic<StateMachinePredicateAsync> initializer, Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
+        {
             var registrationIndex = initializer.Actions.Count;
             StateMachinePredicateAsync execute = c => initializer.Registrations[registrationIndex].ObserveAsync(c, () => c.Executor.RunInScopeAsync(async () =>
             {
@@ -98,15 +124,14 @@ namespace Stateflows.StateMachines.Registration.Builders
                 return await actionAsync(new StateMachineInitializationContext<TInitializationEvent>(c, holder));
             }));
             initializer.Actions.Add(execute);
-            foreach (var type in Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(typeof(TInitializationEvent)))
-            {
-                var name = Event.GetName(type);
-                if (!Graph.Initializers.TryGetValue(name, out var runtime))
-                    Graph.Initializers.Add(name, runtime = new Logic<StateMachinePredicateAsync>(Constants.Initialize));
-                runtime.Actions.Add(execute);
-            }
+            return execute;
+        }
 
-            return this;
+        private static void AddRuntimeInitializer(Graph graph, string name, StateMachinePredicateAsync execute)
+        {
+            if (!graph.Initializers.TryGetValue(name, out var runtime))
+                graph.Initializers.Add(name, runtime = new Logic<StateMachinePredicateAsync>(Constants.Initialize));
+            runtime.Actions.Add(execute);
         }
 
         public IInitializedStateMachineBuilder AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)

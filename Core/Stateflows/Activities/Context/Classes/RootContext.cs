@@ -708,7 +708,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public EventHolder EventHolder => currentEvent.Value?.Holder;
 
-        public EventHolder ExecutionTriggerHolder
+        public EventHolder ExecutionEventHolder
         {
             get
             {

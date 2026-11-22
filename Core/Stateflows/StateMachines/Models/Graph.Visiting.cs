@@ -126,6 +126,13 @@ internal partial class Graph
                 StateflowsBuilder.TypeMapper.GetMappedTypes(type).Select(Event.GetName).Order(StringComparer.Ordinal).ToArray());
             await Guards(visitor, id, InitializerDeclarations[type]);
         }
+        foreach (var pair in PayloadInitializerDeclarations)
+        {
+            var id = InitializerIdentifier(pair.Key);
+            await Typed(visitor, nameof(visitor.InitializerAddedAsync), [typeof(Payload)], id, Name, Version,
+                pair.Value.Names.Order(StringComparer.Ordinal).ToArray());
+            await Guards(visitor, id, pair.Value.Logic);
+        }
         if (DefaultInitializer != null)
         {
             var id = $"{Identifier}/initializer";
@@ -142,7 +149,8 @@ internal partial class Graph
     }
 
     internal static string DeferralIdentifier(Vertex vertex, string trigger) => $"{vertex.DefinitionIdentifier}/deferral:{trigger.Length}:{trigger}";
-    private string InitializerIdentifier(Type type) => $"{Identifier}/initializer:{Event.GetName(type).Length}:{Event.GetName(type)}";
+    private string InitializerIdentifier(Type type) => InitializerIdentifier(Event.GetName(type));
+    private string InitializerIdentifier(string key) => $"{Identifier}/initializer:{key.Length}:{key}";
 
     internal void PrepareOperations()
     {
@@ -190,6 +198,8 @@ internal partial class Graph
         }
         foreach (var pair in InitializerDeclarations)
             Guards(InitializerIdentifier(pair.Key), pair.Value);
+        foreach (var pair in PayloadInitializerDeclarations)
+            Guards(InitializerIdentifier(pair.Key), pair.Value.Logic);
         if (DefaultInitializer != null) Guards($"{Identifier}/initializer", DefaultInitializer);
         Actions($"{Identifier}/finalizer", StateMachineOperation.Finalize, Finalize);
     }

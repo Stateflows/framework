@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
@@ -11,4 +12,7 @@ namespace Stateflows.Activities
         /// <param name="items">The tokens to stage for output.</param>
         void AddRange(IEnumerable<TToken> items);
     }
+
+    /// <summary>Provides output payload tokens selected by a <see cref="TokenNameAttribute"/> parameter.</summary>
+    public interface IOutputTokens : IOutputTokens<Payload>;
 }

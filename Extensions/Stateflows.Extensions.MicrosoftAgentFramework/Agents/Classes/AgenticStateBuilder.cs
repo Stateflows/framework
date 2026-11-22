@@ -1,6 +1,8 @@
 using Stateflows.MAF.AIAgents;
 using Stateflows.StateMachines;
+using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.Extensions.MicrosoftAgentFramework.Agents.Classes;
 
@@ -14,6 +16,36 @@ internal class AgenticStateBuilder(IBehaviorStateBuilder behaviorStateBuilder) :
 
     public IBehaviorStateBuilder AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction = null)
         => behaviorStateBuilder.AddDeferredEvent<TEvent>(buildAction);
+
+    IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent(string eventName, DeferralBuildAction<Payload> buildAction)
+        => behaviorStateBuilder.AddDeferredEvent(eventName, buildAction);
+
+    IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent(IReadOnlyList<string> eventNames, DeferralBuildAction<Payload> buildAction)
+        => behaviorStateBuilder.AddDeferredEvent(eventNames, buildAction);
+
+    IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddTransition(string eventName, string targetStateName, TransitionBuildAction<Payload> transitionBuildAction)
+        => behaviorStateBuilder.AddTransition(eventName, targetStateName, transitionBuildAction);
+
+    IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddTransition(IReadOnlyList<string> eventNames, string targetStateName, TransitionBuildAction<Payload> transitionBuildAction)
+        => behaviorStateBuilder.AddTransition(eventNames, targetStateName, transitionBuildAction);
+
+    IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddInternalTransition(string eventName, InternalTransitionBuildAction<Payload> transitionBuildAction)
+        => behaviorStateBuilder.AddInternalTransition(eventName, transitionBuildAction);
+
+    IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddInternalTransition(IReadOnlyList<string> eventNames, InternalTransitionBuildAction<Payload> transitionBuildAction)
+        => behaviorStateBuilder.AddInternalTransition(eventNames, transitionBuildAction);
+
+    IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddElseTransition(string eventName, string targetStateName, ElseTransitionBuildAction<Payload> transitionBuildAction)
+        => behaviorStateBuilder.AddElseTransition(eventName, targetStateName, transitionBuildAction);
+
+    IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddElseTransition(IReadOnlyList<string> eventNames, string targetStateName, ElseTransitionBuildAction<Payload> transitionBuildAction)
+        => behaviorStateBuilder.AddElseTransition(eventNames, targetStateName, transitionBuildAction);
+
+    IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddElseInternalTransition(string eventName, ElseInternalTransitionBuildAction<Payload> transitionBuildAction)
+        => behaviorStateBuilder.AddElseInternalTransition(eventName, transitionBuildAction);
+
+    IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddElseInternalTransition(IReadOnlyList<string> eventNames, ElseInternalTransitionBuildAction<Payload> transitionBuildAction)
+        => behaviorStateBuilder.AddElseInternalTransition(eventNames, transitionBuildAction);
 
     public IBehaviorStateBuilder AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
         => behaviorStateBuilder.AddTransition<TEvent>(targetStateName, transitionBuildAction);

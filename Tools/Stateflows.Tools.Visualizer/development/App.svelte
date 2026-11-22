@@ -254,17 +254,22 @@
       <h2>Execution capture</h2>
       {#if debugConnection}<p>{debugConnection}</p>{/if}
       <p data-testid="observation-count">{relevant.length} observations for this model / instance</p>
-      <p class="hint">Observed operations, not commit receipts. Bounded to 4096 records. No token payloads captured.</p>
+      <p class="hint">Observed operations, not commit receipts. Bounded to 4096 records. Payload tokens are captured at flow guards and transformations.</p>
       <button onclick={() => { cursor = undefined; selectedId = undefined; }}>Latest observations</button>
       <div class="timeline">
         {#each [...elementRecords].reverse().slice(0, 200) as record (record.sequence)}
-          <button class:chosen={cursor === record.sequence} onclick={() => {
-            mode = 'execution'; cursor = record.sequence; selectedId = record.elementId;
-          }}>
-            <span>#{record.sequence} {record.operation}</span>
-            <strong>{record.status} / {record.stage}</strong>
-            <small title={record.elementId}>{document?.nodes.find(node => node.id === record.elementId)?.label ?? record.elementId}</small>
-          </button>
+          <div class="timeline-entry">
+            <button class:chosen={cursor === record.sequence} onclick={() => {
+              mode = 'execution'; cursor = record.sequence; selectedId = record.elementId;
+            }}>
+              <span>#{record.sequence} {record.operation}</span>
+              <strong>{record.status} / {record.stage}</strong>
+              <small title={record.elementId}>{document?.nodes.find(node => node.id === record.elementId)?.label ?? record.elementId}</small>
+            </button>
+            {#if record.payloadTokens?.length}
+              <pre>{JSON.stringify(record.payloadTokens, null, 2)}</pre>
+            {/if}
+          </div>
         {/each}
       </div>
     </aside>
@@ -292,7 +297,9 @@
   h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; margin: 12px 0 8px; }
   pre { font-size: 10px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 220px; overflow: auto; color: #c4b5fd; }
   .hint { font-size: 11px; line-height: 1.5; margin-bottom: 10px; }
-  .timeline { margin-top: 10px; } .timeline button { display: flex; flex-direction: column; text-align: left; width: 100%; margin-bottom: 5px; font-size: 10px; gap: 4px; }
+  .timeline { margin-top: 10px; } .timeline-entry { margin-bottom: 8px; }
+  .timeline button { display: flex; flex-direction: column; text-align: left; width: 100%; margin-bottom: 5px; font-size: 10px; gap: 4px; }
+  .timeline-entry pre { margin: 4px 0 8px; padding: 6px; background: #101a2b; }
   small { overflow-wrap: anywhere; color: #94a3b8; } .chosen { border-color: #c4b5fd; }
   footer { padding: 8px 20px; display: flex; gap: 20px; font-size: 10px; color: #94a3b8; }
   .error { padding: 10px 20px; background: #651a2d; color: white; }

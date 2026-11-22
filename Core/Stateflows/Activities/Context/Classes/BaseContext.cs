@@ -17,7 +17,7 @@ namespace Stateflows.Activities.Context.Classes
         {
             Context = context;
             NodeScope = nodeScope;
-            executionTriggerHolder = context.ExecutionTriggerHolder;
+            executionTriggerHolder = context.ExecutionEventHolder;
             ExecutionMode = context.IsStreamingExecution ? ExecutionMode.Streamed : ExecutionMode.Transactional;
             nodeScope.TrackContext(this);
         }

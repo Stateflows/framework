@@ -240,6 +240,9 @@ durable retry scheduling, authentication and a deployment/storage design.
 The design follows the framework wiki:
 [Behavioral Groups](https://github.com/Stateflows/framework/wiki/5.3.-Behavioral-Groups),
 [Entities](https://github.com/Stateflows/framework/wiki/5.7.-Entities),
+[Payloads](https://github.com/Stateflows/framework/wiki/4.6.-Payloads) (named
+events and Activity tokens are available separately from this example's typed
+event contracts),
 [Orleans Runtime](https://github.com/Stateflows/framework/wiki/3.1.-Orleans-Runtime),
 [Minimal APIs](https://github.com/Stateflows/framework/wiki/6.4.-Minimal-APIs),
 [FluentValidation](https://github.com/Stateflows/framework/wiki/6.2.-FluentValidation),

@@ -111,6 +111,20 @@ namespace Stateflows.Common.Classes
             {
                 var parameter = parameters[i];
 
+                var parameterResolver = serviceProvider.GetServices<IModelElementParameterResolver>()
+                    .FirstOrDefault(resolver => resolver.CanResolve(parameter));
+                if (parameterResolver != null)
+                {
+                    parameterValues[i] = parameterResolver.Resolve(serviceProvider, parameter);
+                    continue;
+                }
+
+                if (parameter.GetCustomAttribute<TokenNameAttribute>() != null)
+                {
+                    throw new StateflowsDefinitionException(
+                        $"No model-element parameter resolver is registered for parameter '{parameter.Name}' on '{serviceType.Name}'.");
+                }
+
                 if (parameter.ParameterType.IsImplementerOfRawGeneric(typeof(IValueSet)))
                 {
                     parameterValues[i] = await CreateModelElementInstanceAsync(serviceProvider, parameter.ParameterType, "values set");
@@ -404,6 +418,21 @@ namespace Stateflows.Common.Classes
             for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = parameters[i];
+
+                var parameterResolver = serviceProvider.GetServices<IModelElementParameterResolver>()
+                    .FirstOrDefault(resolver => resolver.CanResolve(parameter));
+                if (parameterResolver != null)
+                {
+                    var value = parameterResolver.Resolve(serviceProvider, parameter);
+                    factories[i] = () => Task.FromResult(value);
+                    continue;
+                }
+
+                if (parameter.GetCustomAttribute<TokenNameAttribute>() != null)
+                {
+                    throw new StateflowsDefinitionException(
+                        $"No model-element parameter resolver is registered for parameter '{parameter.Name}' on '{serviceType?.Name}'.");
+                }
 
                 if (parameter.ParameterType.IsImplementerOfRawGeneric(typeof(IValueSet)))
                 {

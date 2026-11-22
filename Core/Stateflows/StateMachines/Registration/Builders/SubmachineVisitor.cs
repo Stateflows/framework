@@ -10,7 +10,7 @@ public class SubmachineVisitor(ITypeMapper typeMapper) : StateMachineVisitor
 {
     /// <summary>Distinct effective CLR payload types.</summary>
     public List<Type> EventTypes { get; } = [];
-    /// <summary>Distinct accepted event names, including structural events.</summary>
+    /// <summary>Distinct accepted event names, including payloads.</summary>
     public HashSet<string> EventNames { get; } = [];
     /// <summary>Declared CLR event types with their effective names.</summary>
     public Dictionary<Type, HashSet<string>> EventBindings { get; } = [];
@@ -20,7 +20,7 @@ public class SubmachineVisitor(ITypeMapper typeMapper) : StateMachineVisitor
         EventNames.UnionWith(names);
         if (!EventBindings.TryGetValue(typeof(TEvent), out var binding)) EventBindings[typeof(TEvent)] = binding = [];
         binding.UnionWith(names);
-        if (typeof(TEvent) != typeof(Stateflows.Common.StructuralEvent))
+        if (typeof(TEvent) != typeof(Stateflows.Common.Payload))
             foreach (var type in typeMapper.GetMappedTypes(typeof(TEvent)))
                 if (!EventTypes.Contains(type)) EventTypes.Add(type);
         return Task.CompletedTask;

@@ -74,7 +74,10 @@ internal sealed partial class BoundDocument
             {
                 var binding = bindings[handlerPath];
                 var dispatch = EventDispatch<Func<Context.Classes.RootContext, Task<bool>>>(handlerPath, "InitializerHandler");
-                Invoke("AddInitializerBinding", [triggers[path].Single()], binding, builder, dispatch);
+                if (payloadTriggers.TryGetValue(path, out var names) && names.Length != 0)
+                    JsonExecution.AddPayloadInitializerBinding(binding, builder, names, dispatch);
+                else
+                    Invoke("AddInitializerBinding", [triggers[path].Single()], binding, builder, dispatch);
             }
         foreach (var (_, path) in Items(document, "", "finalizers"))
         {
@@ -209,32 +212,31 @@ internal sealed partial class BoundDocument
     private void ConstructTransition(JToken node, string path, Vertex vertex)
     {
         var declared = triggers[path];
-        if (structuralTriggers.TryGetValue(path, out var structural) && structural.Length != 0)
+        if (payloadTriggers.TryGetValue(path, out var payload) && payload.Length != 0)
         {
-            ConstructTransition(node, path, vertex, declared.Single(), structural);
+            ConstructTransition(node, path, vertex, declared.Single(), payload);
         }
         else ConstructTransition(node, path, vertex, declared.Single(), null);
     }
 
-    private void ConstructTransition(JToken node, string path, Vertex vertex, Type triggerType, string[]? structuralNames)
+    private void ConstructTransition(JToken node, string path, Vertex vertex, Type triggerType, string[]? payloadNames)
     {
         var actual = Mapped(triggerType);
         var completion = actual.Length == 1 && actual[0] == typeof(Completion);
         if (completion && node.Value<string>("kind") == "event")
             Error(path + "/kind", "Completion-triggered targeted transitions must use kind 'default'.", "SM-019");
-        var trigger = structuralNames == null ? Event.GetName(triggerType)
-            : structuralNames.Length == 1 ? structuralNames[0] : System.Text.Json.JsonSerializer.Serialize(structuralNames.Order(StringComparer.Ordinal));
+        var trigger = payloadNames == null ? Event.GetName(triggerType)
+            : Stateflows.Payloads.PayloadNameSet.Key(payloadNames);
         var target = node.Value<string>("kind") == "internal" ? "" : names[path + "/target"];
         var otherwise = node.Value<bool?>("else") == true;
         Edge edge;
-        if (structuralNames != null)
+        if (payloadNames != null)
         {
             Edge? namedEdge = null;
-            new StateBuilder(vertex).AddTransitionInternal<StructuralEvent>(target, otherwise,
-                builder => namedEdge = ((TransitionBuilder<StructuralEvent>)builder).Edge, trigger);
+            new StateBuilder(vertex).AddTransitionInternal<Payload>(target, otherwise,
+                builder => namedEdge = ((TransitionBuilder<Payload>)builder).Edge, payloadNames);
             edge = namedEdge!;
             edge.SourcePath = path;
-            edge.StructuralEventNames = structuralNames;
             edge.IsLocal = node.Value<bool?>("local") ?? true;
         }
         else
@@ -264,7 +266,7 @@ internal sealed partial class BoundDocument
         if (node.Value<bool?>("local") is { } local && local != edge.IsLocal)
             Error(path + "/local", "A transition definition changed the explicitly declared local/external setting.", "JSON-005");
         if (edge.TriggerType != triggerType || edge.Trigger != trigger ||
-            !(edge.StructuralEventNames ?? []).SequenceEqual(structuralNames ?? []))
+            !(edge.PayloadNames ?? []).SequenceEqual(payloadNames ?? []))
             Error(path + "/triggers", "A transition definition changed the explicitly declared trigger set.", "JSON-005");
         var transitionBuilder = new TransitionBuilder<object>(edge);
         if (node["guard"] is { } guard)
@@ -379,6 +381,19 @@ internal sealed partial class BoundDocument
             var evaluate = CompileGuard(guard, path + "/guard", vertex, null, registration, false);
             logic.Registrations[0] = registration;
             logic.Actions.Add(c => evaluate(c));
+        }
+        if (payloadTriggers.TryGetValue(path, out var payloadNames) && payloadNames.Length != 0)
+        {
+            var deferred = payloadNames.FirstOrDefault(vertex.Deferrals.ContainsKey);
+            if (deferred != null)
+                Error(path, $"Event '{deferred}' is already deferred.", "SM-035");
+            else
+            {
+                vertex.AddPayloadDeferral(payloadNames, logic);
+                foreach (var name in payloadNames)
+                    vertex.DeferralPaths.Add(name, path);
+            }
+            return;
         }
         foreach (var type in triggers[path].SelectMany(Mapped).Distinct())
         {

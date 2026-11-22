@@ -24,6 +24,8 @@ namespace Stateflows.Activities.Models
         internal bool IsTransformation { get; init; }
         internal Type InputType { get; init; }
         internal Type OutputType { get; init; }
+        internal System.Collections.Generic.IReadOnlyList<string> InputTokenNames { get; init; }
+        internal System.Collections.Generic.IReadOnlyList<string> OutputTokenNames { get; init; }
         internal Type[] ImplementationTypes { get; set; } = [];
         internal ActivityGuardKind GuardKind { get; set; } = ActivityGuardKind.Leaf;
         internal ActivityOperationRegistration Registration { get; set; }
