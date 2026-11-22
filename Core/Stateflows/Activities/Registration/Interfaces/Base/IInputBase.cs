@@ -18,13 +18,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <summary>Adds an input pin for payload tokens with the specified names.</summary>
         /// <param name="tokenNames">Payload token names admitted by the pin.</param>
         /// <param name="buildAction">Callback configuring the pin's outgoing flows.</param>
-        TReturn AddInputPin(IReadOnlyList<string> tokenNames, System.Action<IInputPinBuilder<Payload>> buildAction)
+        TReturn AddPayloadInputPin(IReadOnlyList<string> tokenNames, System.Action<IInputPinBuilder<Payload>> buildAction)
             => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => AddInputPin<Payload>(buildAction));
-
-        /// <summary>Adds an input pin for payload tokens with the specified name.</summary>
-        /// <param name="tokenName">Payload token name admitted by the pin.</param>
-        /// <param name="buildAction">Callback configuring the pin's outgoing flows.</param>
-        TReturn AddInputPin(string tokenName, System.Action<IInputPinBuilder<Payload>> buildAction)
-            => AddInputPin(new[] { tokenName }, buildAction);
     }
 }

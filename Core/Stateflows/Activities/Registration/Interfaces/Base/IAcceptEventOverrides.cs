@@ -11,17 +11,6 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
     public interface IAcceptEventOverrides<out TReturn>
     {
-        /// <summary>Selects and replaces the matching inherited node.</summary>
-        /// <param name="eventName">Registered payload name accepted or published by this node.</param>
-        /// <param name="actionNodeName">Registered name of this node in its containing Activity scope.</param>
-        /// <param name="buildAction">Callback configuring the selected inherited element's replacement behavior. Its
-        /// builder is scoped to that element.</param>
-        /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.-Behaviors#definition-reuse-and-versions" />
-        TReturn UseAcceptEventAction(string eventName, string actionNodeName,
-            OverridenAcceptEventActionBuildAction<Payload> buildAction)
-            => UseAcceptEventAction(new[] { eventName }, actionNodeName, buildAction);
 
         /// <summary>Selects and replaces the matching inherited node accepting exactly the specified payload names.</summary>
         /// <param name="eventNames">Registered payload names accepted by the inherited node; matched by set equality.</param>
@@ -31,7 +20,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        TReturn UseAcceptEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
+        TReturn UseAcceptPayloadEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
             OverridenAcceptEventActionBuildAction<Payload> buildAction)
         {
             PayloadNameSet.Validate(eventNames, nameof(eventNames));

@@ -5,7 +5,7 @@ using StateMachine.IntegrationTests.Tests.DefinitionRules;
 
 namespace StateMachine.IntegrationTests.Tests;
 
-/// <summary>T0.18 / T2.17: the named class overloads sit beside the typed ones without changing their resolution.</summary>
+/// <summary>Payload and CLR-typed builder methods resolve independently.</summary>
 [TestClass]
 public class PayloadOverloadResolution
 {
@@ -49,14 +49,14 @@ public class PayloadOverloadResolution
     public void NamedInitializerClassOverloadsResolveToNamedMembers()
     {
         var list = new DefinitionModel();
-        ((IStateMachineBuilder)list.Builder).AddInitializer<PayloadInitializer>(["a", "b"]);
+        ((IStateMachineBuilder)list.Builder).AddPayloadInitializer<PayloadInitializer>(["a", "b"]);
         Assert.AreEqual(1, list.Graph.PayloadInitializerDeclarations.Count);
         Assert.AreEqual(0, list.Graph.InitializerDeclarations.Count);
 
-        var sugar = new DefinitionModel();
-        ((IStateMachineBuilder)sugar.Builder).AddInitializer<PayloadInitializer>("a");
-        Assert.AreEqual(1, sugar.Graph.PayloadInitializerDeclarations.Count);
-        Assert.AreEqual(0, sugar.Graph.InitializerDeclarations.Count);
+        var single = new DefinitionModel();
+        ((IStateMachineBuilder)single.Builder).AddPayloadInitializer<PayloadInitializer>(["a"]);
+        Assert.AreEqual(1, single.Graph.PayloadInitializerDeclarations.Count);
+        Assert.AreEqual(0, single.Graph.InitializerDeclarations.Count);
     }
 
     [TestMethod]
@@ -68,12 +68,60 @@ public class PayloadOverloadResolution
             .AddInitialState("typed", b => b.AddDeferredEvent<Ping>())
             .AddState("typedClass", b => b.AddDeferredEvent<Ping, PingGuard>())
             .AddState("named", b => b
-                .AddDeferredEvent<PayloadGuard>(["a", "b"])
-                .AddDeferredEvent<PayloadGuard>("c")
-                .AddDeferredEvent("d")
-                .AddDeferredEvent(["e"], b => b.AddGuard(_ => true)));
+                .AddDeferredPayloadEvent<PayloadGuard>(["a", "b"])
+                .AddDeferredPayloadEvent<PayloadGuard>(["c"])
+                .AddDeferredPayloadEvent(["d"])
+                .AddDeferredPayloadEvent(["e"], b => b.AddGuard(_ => true)));
         CollectionAssert.AreEquivalent(new[] { Event<Ping>.Name }, model.Graph.Vertices["typed"].Deferrals.Keys.ToArray());
         CollectionAssert.AreEquivalent(new[] { Event<Ping>.Name }, model.Graph.Vertices["typedClass"].Deferrals.Keys.ToArray());
         CollectionAssert.AreEquivalent(new[] { "a", "b", "c", "d", "e" }, model.Graph.Vertices["named"].Deferrals.Keys.ToArray());
+    }
+
+    public class TypedTargetsMachine : IStateMachine
+    {
+        public static void Build(IStateMachineBuilder builder) => builder
+            .AddInitialState("waiting", b => b
+                .AddPayloadTransition<PayloadTransitions.Done>(["a"])
+                .AddElsePayloadTransition<PayloadTransitions.Fallback>(["a"]))
+            .AddState<PayloadTransitions.Done>()
+            .AddState<PayloadTransitions.Fallback>();
+    }
+
+    [TestMethod]
+    public void PayloadTransitionTargetAndImplementationOverloadsKeepExplicitNames()
+    {
+        var model = new DefinitionModel(initialize: false);
+        ((IStateMachineBuilder)model.Builder)
+            .AddInitialState("waiting", b => b
+                .AddPayloadTransition<PayloadTransitions.Done>(["inline"])
+                .AddPayloadTransition<PayloadTransitions.RegisteredTransition>(["named"], "done")
+                .AddPayloadTransition<PayloadTransitions.RegisteredTransition, PayloadTransitions.Done>(["typed"])
+                .AddElsePayloadTransition<PayloadTransitions.Fallback>(["inline"])
+                .AddElsePayloadTransition<PayloadTransitions.RecordEffect>(["named"], "fallback")
+                .AddElsePayloadTransition<PayloadTransitions.RecordEffect, PayloadTransitions.Fallback>(["typed"]));
+
+        var edges = model.Graph.AllEdges;
+        Assert.AreEqual(6, edges.Count);
+        Assert.IsTrue(edges.All(edge => edge.TriggerType == typeof(Payload) && edge.PayloadNames!.Count == 1));
+        foreach (var edge in edges.Where(edge => edge.ImplementationType == typeof(PayloadTransitions.RegisteredTransition)))
+        {
+            Assert.AreEqual(1, edge.Guards.Actions.Count);
+            Assert.AreEqual(2, edge.Effects.Actions.Count);
+        }
+        Assert.AreEqual(State<PayloadTransitions.Done>.Name, edges.Single(edge => edge.PayloadNames![0] == "typed" && !edge.IsElse).TargetName);
+        Assert.AreEqual(State<PayloadTransitions.Fallback>.Name, edges.Single(edge => edge.PayloadNames![0] == "typed" && edge.IsElse).TargetName);
+    }
+
+    [TestMethod]
+    public void PayloadTransitionSelectorsResolveTypedTargetsWithoutReplacingImplementations()
+    {
+        var model = new DefinitionModel(initialize: false);
+        ((IStateMachineBuilder)model.Builder)
+            .UseStateMachine<TypedTargetsMachine>(b => b.UseState("waiting", b => b
+                .UsePayloadTransition<PayloadTransitions.Done>(["a"], b => b.AddEffect(_ => Task.CompletedTask))
+                .UseElsePayloadTransition<PayloadTransitions.Fallback>(["a"], b => b.AddEffect(_ => Task.CompletedTask))));
+
+        Assert.AreEqual(2, model.Graph.AllEdges.Count);
+        Assert.IsTrue(model.Graph.AllEdges.All(edge => edge.ImplementationType == null && edge.Effects.Actions.Count == 1));
     }
 }

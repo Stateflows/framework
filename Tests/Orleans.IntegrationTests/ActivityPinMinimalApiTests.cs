@@ -124,9 +124,9 @@ public sealed class ActivityPinMinimalApiTests
                 .AddActivity("pin-configured", activity => activity
                     .AddInputPin<int>(pin => pin.AddFlow<OutputPin<int>>()).AddOutputPin<int>())
                 .AddActivity("pin-payload", activity => activity
-                    .AddInputPin("pinMessage", pin => pin.AddFlow("pin-message-output"))
-                    .AddOutputPin("pinMessage", "pin-message-output", _ => { })
-                    .AddInputPin("pinQuery", _ => { }))));
+                    .AddPayloadInputPin(["pinMessage"], pin => pin.AddFlow("pin-message-output"))
+                    .AddPayloadOutputPin(["pinMessage"], "pin-message-output", _ => { })
+                    .AddPayloadInputPin(["pinQuery"], _ => { }))));
 
         app = builder.Build();
         app.UseAuthentication();
@@ -384,7 +384,7 @@ public sealed class ActivityPinMinimalApiTests
             .AddPayloads(events => events.AddPayload("int32", _ => { }))
             .AddActivities(activities => activities.AddActivity("payload-collision", activity => activity
                 .AddInputPin<int>(_ => { })
-                .AddInputPin("int32", _ => { }))));
+                .AddPayloadInputPin(["int32"], _ => { }))));
         using var collisionApp = builder.Build();
         var exception = Assert.Throws<InvalidOperationException>(() => collisionApp.MapStateflowsMinimalAPIsEndpoints());
         StringAssert.Contains(exception.Message, "same endpoint");

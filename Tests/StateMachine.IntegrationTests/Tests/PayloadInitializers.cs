@@ -54,29 +54,29 @@ public class PayloadInitializers : StateflowsTestClass
                 .AddPayload("other", b => b.AddField("ok", FieldType.Boolean)))
             .AddStateMachines(b => b
                 .AddStateMachine("single", b => b
-                    .AddInitializer("start", async c =>
+                    .AddPayloadInitializer(["start"], async c =>
                     {
                         InitializedBy = c.InitializationEvent.Name;
                         return c.InitializationEvent.Get<bool>("ok");
                     })
                     .AddInitialState("ready"))
                 .AddStateMachine("many", b => b
-                    .AddInitializer(["start", "begin"], async c =>
+                    .AddPayloadInitializer(["start", "begin"], async c =>
                     {
                         InitializedBy = c.InitializationEvent.Name;
                         return true;
                     })
                     .AddInitialState("ready"))
                 .AddStateMachine("class", b => b
-                    .AddInitializer<StartInitializer>(["start", "begin"])
+                    .AddPayloadInitializer<StartInitializer>(["start", "begin"])
                     .AddInitialState("ready"))
                 .AddStateMachine("classSugar", b => b
-                    .AddInitializer<StartInitializer>("start")
+                    .AddPayloadInitializer<StartInitializer>(["start"])
                     .AddInitialState("ready"))
                 .AddStateMachine("mixed", b => b
                     .AddInitializer<SomeEvent>(async c => true)
-                    .AddInitializer("start", async c => true)
-                    .AddInitializer(["begin", "other"], async c => true)
+                    .AddPayloadInitializer(["start"], async c => true)
+                    .AddPayloadInitializer(["begin", "other"], async c => true)
                     .AddInitialState("ready")));
 
     private async Task<IStateMachineBehavior> Locate(string name)
@@ -180,5 +180,5 @@ public class PayloadInitializers : StateflowsTestClass
     [DataRow(new[] { " " })]
     [DataRow(new[] { "start", "start" })]
     public void InvalidNameSetsAreRejected(string[] names)
-        => Assert.ThrowsExactly<ArgumentException>(() => ((IStateMachineBuilder)new DefinitionModel().Builder).AddInitializer(names, async c => true));
+        => Assert.ThrowsExactly<ArgumentException>(() => ((IStateMachineBuilder)new DefinitionModel().Builder).AddPayloadInitializer(names, async c => true));
 }

@@ -44,21 +44,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <paramref name="transformedNames"/>, otherwise the flow fails with <see cref="ArgumentException"/>.</param>
         /// <returns>The flow builder for the transformed token type.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken>(IReadOnlyList<string> transformedNames, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
+        IObjectFlowBuilder<TTransformedToken> AddPayloadTransformation<TTransformedToken>(IReadOnlyList<string> transformedNames, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
             where TTransformedToken : Payload
             => PayloadFlowScope.With(transformedNames, nameof(transformedNames), () => AddTransformation(transformationAsync));
-
-        /// <summary>Adds a transformation that converts the current token to a payload token with the given name.
-        /// </summary>
-        /// <typeparam name="TTransformedToken">Payload token type produced by the transformation.</typeparam>
-        /// <param name="transformedName">Name of the payload token the transformation produces.</param>
-        /// <param name="transformationAsync">Transformation delegate; it must return a payload named
-        /// <paramref name="transformedName"/>.</param>
-        /// <returns>The flow builder for the transformed token type.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken>(string transformedName, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
-            where TTransformedToken : Payload
-            => AddTransformation([transformedName], transformationAsync);
 
         /// <summary>Adds a class-based transformation that converts the current token to a payload token carrying one
         /// of the given names.</summary>
@@ -67,22 +55,10 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
         /// <returns>The flow builder for the transformed token type.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>(IReadOnlyList<string> transformedNames)
+        IObjectFlowBuilder<TTransformedToken> AddPayloadTransformation<TTransformedToken, TTransformation>(IReadOnlyList<string> transformedNames)
             where TTransformedToken : Payload
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
             => PayloadFlowScope.With(transformedNames, nameof(transformedNames), () => AddTransformation<TTransformedToken, TTransformation>());
-
-        /// <summary>Adds a class-based transformation that converts the current token to a payload token with the
-        /// given name.</summary>
-        /// <typeparam name="TTransformedToken">Payload token type produced by the transformation.</typeparam>
-        /// <typeparam name="TTransformation">Transformation class.</typeparam>
-        /// <param name="transformedName">Name of the payload token the transformation produces.</param>
-        /// <returns>The flow builder for the transformed token type.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>(string transformedName)
-            where TTransformedToken : Payload
-            where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation<TTransformedToken, TTransformation>([transformedName]);
     }
 
     /// <summary>Configures a weighted typed object flow and its guard or transformation.</summary>
@@ -119,21 +95,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <paramref name="transformedNames"/>, otherwise the flow fails with <see cref="ArgumentException"/>.</param>
         /// <returns>The flow builder for the transformed token type.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken>(IReadOnlyList<string> transformedNames, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
+        IObjectFlowBuilderWithWeight<TTransformedToken> AddPayloadTransformation<TTransformedToken>(IReadOnlyList<string> transformedNames, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
             where TTransformedToken : Payload
             => PayloadFlowScope.With(transformedNames, nameof(transformedNames), () => AddTransformation(transformationAsync));
-
-        /// <summary>Adds a transformation that converts the current token to a payload token with the given name.
-        /// </summary>
-        /// <typeparam name="TTransformedToken">Payload token type produced by the transformation.</typeparam>
-        /// <param name="transformedName">Name of the payload token the transformation produces.</param>
-        /// <param name="transformationAsync">Transformation delegate; it must return a payload named
-        /// <paramref name="transformedName"/>.</param>
-        /// <returns>The flow builder for the transformed token type.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken>(string transformedName, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
-            where TTransformedToken : Payload
-            => AddTransformation([transformedName], transformationAsync);
 
         /// <summary>Adds a class-based transformation that converts the current token to a payload token carrying one
         /// of the given names.</summary>
@@ -142,22 +106,10 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
         /// <returns>The flow builder for the transformed token type.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>(IReadOnlyList<string> transformedNames)
+        IObjectFlowBuilderWithWeight<TTransformedToken> AddPayloadTransformation<TTransformedToken, TTransformation>(IReadOnlyList<string> transformedNames)
             where TTransformedToken : Payload
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
             => PayloadFlowScope.With(transformedNames, nameof(transformedNames), () => AddTransformation<TTransformedToken, TTransformation>());
-
-        /// <summary>Adds a class-based transformation that converts the current token to a payload token with the
-        /// given name.</summary>
-        /// <typeparam name="TTransformedToken">Payload token type produced by the transformation.</typeparam>
-        /// <typeparam name="TTransformation">Transformation class.</typeparam>
-        /// <param name="transformedName">Name of the payload token the transformation produces.</param>
-        /// <returns>The flow builder for the transformed token type.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>(string transformedName)
-            where TTransformedToken : Payload
-            where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation<TTransformedToken, TTransformation>([transformedName]);
     }
 
     /// <summary>Configures a weighted fallback object flow, including optional transformation.</summary>
@@ -193,21 +145,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <paramref name="transformedNames"/>, otherwise the flow fails with <see cref="ArgumentException"/>.</param>
         /// <returns>The flow builder for the transformed token type.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IElseObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken>(IReadOnlyList<string> transformedNames, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
+        IElseObjectFlowBuilderWithWeight<TTransformedToken> AddPayloadTransformation<TTransformedToken>(IReadOnlyList<string> transformedNames, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
             where TTransformedToken : Payload
             => PayloadFlowScope.With(transformedNames, nameof(transformedNames), () => AddTransformation(transformationAsync));
-
-        /// <summary>Adds a transformation that converts the current token to a payload token with the given name.
-        /// </summary>
-        /// <typeparam name="TTransformedToken">Payload token type produced by the transformation.</typeparam>
-        /// <param name="transformedName">Name of the payload token the transformation produces.</param>
-        /// <param name="transformationAsync">Transformation delegate; it must return a payload named
-        /// <paramref name="transformedName"/>.</param>
-        /// <returns>The flow builder for the transformed token type.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IElseObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken>(string transformedName, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
-            where TTransformedToken : Payload
-            => AddTransformation([transformedName], transformationAsync);
 
         /// <summary>Adds a class-based transformation that converts the current token to a payload token carrying one
         /// of the given names.</summary>
@@ -216,22 +156,10 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
         /// <returns>The flow builder for the transformed token type.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IElseObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>(IReadOnlyList<string> transformedNames)
+        IElseObjectFlowBuilderWithWeight<TTransformedToken> AddPayloadTransformation<TTransformedToken, TTransformation>(IReadOnlyList<string> transformedNames)
             where TTransformedToken : Payload
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
             => PayloadFlowScope.With(transformedNames, nameof(transformedNames), () => AddTransformation<TTransformedToken, TTransformation>());
-
-        /// <summary>Adds a class-based transformation that converts the current token to a payload token with the
-        /// given name.</summary>
-        /// <typeparam name="TTransformedToken">Payload token type produced by the transformation.</typeparam>
-        /// <typeparam name="TTransformation">Transformation class.</typeparam>
-        /// <param name="transformedName">Name of the payload token the transformation produces.</param>
-        /// <returns>The flow builder for the transformed token type.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IElseObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>(string transformedName)
-            where TTransformedToken : Payload
-            where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation<TTransformedToken, TTransformation>([transformedName]);
     }
 
     /// <summary>Configures a fallback object flow, including its weight and optional transformation.</summary>
@@ -268,21 +196,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <paramref name="transformedNames"/>, otherwise the flow fails with <see cref="ArgumentException"/>.</param>
         /// <returns>The flow builder for the transformed token type.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IElseObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken>(IReadOnlyList<string> transformedNames, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
+        IElseObjectFlowBuilder<TTransformedToken> AddPayloadTransformation<TTransformedToken>(IReadOnlyList<string> transformedNames, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
             where TTransformedToken : Payload
             => PayloadFlowScope.With(transformedNames, nameof(transformedNames), () => AddTransformation(transformationAsync));
-
-        /// <summary>Adds a transformation that converts the current token to a payload token with the given name.
-        /// </summary>
-        /// <typeparam name="TTransformedToken">Payload token type produced by the transformation.</typeparam>
-        /// <param name="transformedName">Name of the payload token the transformation produces.</param>
-        /// <param name="transformationAsync">Transformation delegate; it must return a payload named
-        /// <paramref name="transformedName"/>.</param>
-        /// <returns>The flow builder for the transformed token type.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IElseObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken>(string transformedName, TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
-            where TTransformedToken : Payload
-            => AddTransformation([transformedName], transformationAsync);
 
         /// <summary>Adds a class-based transformation that converts the current token to a payload token carrying one
         /// of the given names.</summary>
@@ -291,22 +207,10 @@ namespace Stateflows.Activities.Registration.Interfaces
         /// <param name="transformedNames">Names of the payload tokens the transformation may produce.</param>
         /// <returns>The flow builder for the transformed token type.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IElseObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>(IReadOnlyList<string> transformedNames)
+        IElseObjectFlowBuilder<TTransformedToken> AddPayloadTransformation<TTransformedToken, TTransformation>(IReadOnlyList<string> transformedNames)
             where TTransformedToken : Payload
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
             => PayloadFlowScope.With(transformedNames, nameof(transformedNames), () => AddTransformation<TTransformedToken, TTransformation>());
-
-        /// <summary>Adds a class-based transformation that converts the current token to a payload token with the
-        /// given name.</summary>
-        /// <typeparam name="TTransformedToken">Payload token type produced by the transformation.</typeparam>
-        /// <typeparam name="TTransformation">Transformation class.</typeparam>
-        /// <param name="transformedName">Name of the payload token the transformation produces.</param>
-        /// <returns>The flow builder for the transformed token type.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IElseObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>(string transformedName)
-            where TTransformedToken : Payload
-            where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation<TTransformedToken, TTransformation>([transformedName]);
     }
 
     /// <summary>Configures guards for a typed object flow.</summary>

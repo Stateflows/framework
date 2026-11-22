@@ -116,20 +116,20 @@ namespace Entity.IntegrationTests.Tests
                 .AddStateMachines(s => s
                     .AddStateMachine("payloadDoAction", sm => sm
                         .AddInitialState("working", st => st
-                            .AddDoAction(_ => Task.CompletedTask, ab => ab.AddConsumedEvent("hostedShip"))))
+                            .AddDoAction(_ => Task.CompletedTask, ab => ab.AddConsumedPayloadEvent(["hostedShip"]))))
                     .AddStateMachine("payloadApi", sm => sm
                         .AddInitialState("waiting", st => st
-                            .AddInternalTransition("query", t => t.AddEffect(c =>
+                            .AddInternalPayloadTransition(["query"], t => t.AddEffect(c =>
                                 c.Event.Respond(c.Behavior.ServiceProvider.GetRequiredService<IPayloadFactory>()
                                     .Create("reply", v => v.Set("orderId", c.Event.Get<string>("orderId"))))))
-                            .AddInternalTransition("clrQuery", t => t.AddEffect(c =>
+                            .AddInternalPayloadTransition(["clrQuery"], t => t.AddEffect(c =>
                                 c.Event.Respond(new PayloadClrReply { OrderId = c.Event.Get<string>("orderId"), Count = 2 })))
-                            .AddInternalTransition("rules")
-                            .AddTransition("submit", "hosting"))
+                            .AddInternalPayloadTransition(["rules"])
+                            .AddPayloadTransition(["submit"], "hosting"))
                         .AddState("hosting", st => st
                             .AddDoActivity(a => a
                                 .AddInitial(i => i.AddControlFlow("receive"))
-                                .AddAcceptEventAction("hostedPing", "receive", c =>
+                                .AddAcceptPayloadEventAction(["hostedPing"], "receive", c =>
                                 {
                                     hostedPingValue = c.Event.Get<string>("value");
                                     return Task.CompletedTask;
@@ -137,13 +137,13 @@ namespace Entity.IntegrationTests.Tests
                 .AddActivities(a => a
                     .AddActivity("payloadActivity", ac => ac
                         .AddInitial(i => i.AddControlFlow("receive"))
-                        .AddAcceptEventAction("ping", "receive", _ => Task.CompletedTask)))
+                        .AddAcceptPayloadEventAction(["ping"], "receive", _ => Task.CompletedTask)))
                 .AddActions(a => a
-                    .AddAction("payloadAction", _ => Task.CompletedTask, ab => ab.AddConsumedEvent("ping")))
+                    .AddAction("payloadAction", _ => Task.CompletedTask, ab => ab.AddConsumedPayloadEvent(["ping"])))
                 .AddOneOf()
                 .AddEntities(e => e
                     .AddEntity<IPayloadApiEntityTemplate>("payloadEntity", b => b
-                        .AddInitializer("submit", c => c.Entity.Value = "init")
+                        .AddPayloadInitializer(["submit"], c => c.Entity.Value = "init")
                         .AddMutation<OneOf.OneOf<PayloadEntityApproved, PayloadEntityRejected>>(c => c.Entity.Value = "mapped")))
             );
 
@@ -194,10 +194,10 @@ namespace Entity.IntegrationTests.Tests
                             }
                             else
                             {
-                                s.AddInternalTransition("orders.ship");
+                                s.AddInternalPayloadTransition(["orders.ship"]);
                             }
 
-                            s.AddInternalTransition("billing.ship");
+                            s.AddInternalPayloadTransition(["billing.ship"]);
                         }))));
 
             var collidingApp = builder.Build();

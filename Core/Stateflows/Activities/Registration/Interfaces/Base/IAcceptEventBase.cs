@@ -14,18 +14,6 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
     public interface IAcceptEventBase<out TReturn>
     {
-        /// <summary>Adds an action node that activates for the specified event while the node is active.</summary>
-        /// <param name="eventName">Registered payload name accepted or published by this node.</param>
-        /// <param name="actionNodeName">Registered name of this node in its containing Activity scope.</param>
-        /// <param name="eventActionAsync">Asynchronous callback invoked with the accepted event and node context.</param>
-        /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
-        /// </param>
-        /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-        TReturn AddAcceptEventAction(string eventName, string actionNodeName,
-            AcceptEventActionDelegateAsync<Payload> eventActionAsync,
-            AcceptEventActionBuildAction<Payload> buildAction = null)
-            => AddAcceptEventAction(new[] { eventName }, actionNodeName, eventActionAsync, buildAction);
 
         /// <summary>Adds an action node that activates for any of the specified payload events while the node is active.</summary>
         /// <param name="eventNames">Registered payload names accepted by this node.</param>
@@ -36,7 +24,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        TReturn AddAcceptEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
+        TReturn AddAcceptPayloadEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
             AcceptEventActionDelegateAsync<Payload> eventActionAsync,
             AcceptEventActionBuildAction<Payload> buildAction = null)
         {
@@ -54,20 +42,22 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <returns>The current builder.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        TReturn AddAcceptEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
+        TReturn AddAcceptPayloadEventAction(IReadOnlyList<string> eventNames, string actionNodeName,
             AcceptEventActionBuildAction<Payload> buildAction = null)
-            => AddAcceptEventAction(eventNames, actionNodeName, _ => Task.CompletedTask, buildAction);
+            => AddAcceptPayloadEventAction(eventNames, actionNodeName, _ => Task.CompletedTask, buildAction);
 
-        /// <summary>Adds an action node that activates for the specified event while the node is active.</summary>
-        /// <param name="eventName">Registered payload name accepted or published by this node.</param>
-        /// <param name="actionNodeName">Registered name of this node in its containing Activity scope.</param>
-        /// <param name="buildAction">Optional callback configuring the element selected by this registration method.
-        /// </param>
-        /// <returns>The current builder.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.5.2.1.10.-Accept-Event-Action-Node" />
-        TReturn AddAcceptEventAction(string eventName, string actionNodeName,
-            AcceptEventActionBuildAction<Payload> buildAction = null)
-            => AddAcceptEventAction(eventName, actionNodeName, _ => Task.CompletedTask, buildAction);
+        /// <summary>Adds a typed action node accepting the specified payload event names.</summary>
+        TReturn AddAcceptPayloadEventAction<TAcceptEventAction>(IReadOnlyList<string> eventNames, string actionNodeName,
+            AcceptEventActionBuildAction<Payload, TAcceptEventAction> buildAction = null)
+            where TAcceptEventAction : class, IAcceptEventActionNode<Payload>
+            => AddAcceptEventActionImplementation<Payload, TAcceptEventAction>(actionNodeName, buildAction,
+                PayloadNameSet.Validate(eventNames, nameof(eventNames)));
+
+        /// <summary>Adds a typed payload event action using its implementation's default node name.</summary>
+        TReturn AddAcceptPayloadEventAction<TAcceptEventAction>(IReadOnlyList<string> eventNames,
+            AcceptEventActionBuildAction<Payload, TAcceptEventAction> buildAction = null)
+            where TAcceptEventAction : class, IAcceptEventActionNode<Payload>
+            => AddAcceptPayloadEventAction(eventNames, ActivityNode<TAcceptEventAction>.Name, buildAction);
 
         #region AddAcceptEventAction
         /// <summary>Adds an action node that activates for the specified event while the node is active.</summary>
@@ -137,8 +127,13 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddAcceptEventAction<TEvent, TAcceptEventAction>(string actionNodeName, AcceptEventActionBuildAction<TEvent, TAcceptEventAction> buildAction = null)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
+            => AddAcceptEventActionImplementation<TEvent, TAcceptEventAction>(actionNodeName, buildAction);
+
+        private TReturn AddAcceptEventActionImplementation<TEvent, TAcceptEventAction>(string actionNodeName,
+            AcceptEventActionBuildAction<TEvent, TAcceptEventAction> buildAction, IReadOnlyList<string> payloadNames = null)
+            where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
         {
-            var result = AddAcceptEventAction<TEvent>(
+            ((BaseActivityBuilder)this).AddAcceptEventAction<TEvent>(
                 actionNodeName,
                 async c =>
                 {
@@ -155,15 +150,16 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                 {
                     var nodeBuilder = (NodeBuilder)b;
                     buildAction?.Invoke(new AcceptEventNodeBuilder<TEvent, TAcceptEventAction>(nodeBuilder.Node, nodeBuilder.ActivityBuilder));
-                }
+                },
+                payloadNames
             );
 
             var graph = ((IGraphBuilder)this).Graph;
             graph.AllNamedNodes[actionNodeName].ImplementationType = typeof(TAcceptEventAction);
-        graph.AllNamedNodes[actionNodeName].OperationTypes[(ActivityOperationKind.Execute, graph.AllNamedNodes[actionNodeName].Action.Actions.Count - 1)] = typeof(TAcceptEventAction);
+            graph.AllNamedNodes[actionNodeName].OperationTypes[(ActivityOperationKind.Execute, graph.AllNamedNodes[actionNodeName].Action.Actions.Count - 1)] = typeof(TAcceptEventAction);
             graph.AllNamedNodes[actionNodeName].ImplementationEventType = typeof(TEvent);
 
-            return result;
+            return (TReturn)this;
         }
         #endregion
         

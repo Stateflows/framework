@@ -55,13 +55,13 @@ namespace Action.IntegrationTests.Tests
                         ReceivedNames.AddRange(events.Select(e => e.Name));
                         ReceivedId = events.FirstOrDefault(e => e.Name == "order")?.Get<int>("id") ?? 0;
                     }, a => a
-                        .AddConsumedEvent("order")
-                        .AddConsumedEvent("cancel")
-                        .AddConsumedEvent("order")
+                        .AddConsumedPayloadEvent(["order"])
+                        .AddConsumedPayloadEvent(["cancel"])
+                        .AddConsumedPayloadEvent(["order"])
                         .AddConsumedEvent<SomeEvent>()
                     )
                     .AddAction("listed", async c => ReceivedNames.AddRange(c.GetTokensOfType<Payload>().Select(e => e.Name)),
-                        a => a.AddConsumedEvent(["order", "cancel"]))
+                        a => a.AddConsumedPayloadEvent(["order", "cancel"]))
                 );
         }
 
@@ -118,7 +118,7 @@ namespace Action.IntegrationTests.Tests
         [DataRow(new[] { "order", "order" })]
         public void InvalidConsumedEventSetsAreRejected(string[] names)
             => Assert.ThrowsExactly<ArgumentException>(() => new ServiceCollection().AddStateflows(b => b
-                .AddActions(a => a.AddAction("invalid", async c => { }, x => x.AddConsumedEvent(names)))));
+                .AddActions(a => a.AddAction("invalid", async c => { }, x => x.AddConsumedPayloadEvent(names)))));
 
         [TestMethod]
         public void UnregisteredConsumedEventNameFailsAtBuild()
@@ -126,7 +126,7 @@ namespace Action.IntegrationTests.Tests
             var services = new ServiceCollection();
 
             Assert.ThrowsExactly<ActionDefinitionException>(() => services.AddStateflows(b => b
-                .AddActions(a => a.AddAction("missing", async c => { }, x => x.AddConsumedEvent("notRegistered")))
+                .AddActions(a => a.AddAction("missing", async c => { }, x => x.AddConsumedPayloadEvent(["notRegistered"])))
             ));
         }
     }

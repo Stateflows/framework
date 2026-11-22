@@ -32,10 +32,10 @@ public sealed partial class BehaviorNotificationTests
                     .AddRequest<PayloadClrResponse>("structural-clr-query", b => b.AddField("value", FieldType.Int32)))
                 .AddStateMachines(b => b.AddStateMachine("structural-orleans", b => b
                     .AddInitialState("ready", b => b
-                        .AddInternalTransition("structural-query", b => b.AddEffect(c =>
+                        .AddInternalPayloadTransition(["structural-query"], b => b.AddEffect(c =>
                             c.Event.Respond(c.Behavior.ServiceProvider.GetRequiredService<IPayloadFactory>()
                                 .Create("structural-response", b => b.Set("value", c.Event.Get<int>("value"))))))
-                        .AddInternalTransition("structural-clr-query", b => b.AddEffect(c =>
+                        .AddInternalPayloadTransition(["structural-clr-query"], b => b.AddEffect(c =>
                             c.Event.Respond(new DerivedPayloadClrResponse { Value = c.Event.Get<int>("value") }))))))))
             .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Warning))
             .UseOrleans(silo => silo

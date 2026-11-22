@@ -24,23 +24,11 @@ public interface IActionUtils<out TReturn>
     /// <returns>The current builder.</returns>
     TReturn AddConsumedEvent<TEvent>();
 
-    /// <summary>Declares that the action consumes events with the specified name.</summary>
-    /// <param name="eventName">The event name.</param>
-    /// <returns>The current builder.</returns>
-    TReturn AddConsumedEvent(string eventName);
-
     /// <summary>Declares that the action consumes payload events with any of the specified names.</summary>
     /// <param name="eventNames">Registered payload names consumed by the action.</param>
     /// <returns>The current builder.</returns>
     /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-    TReturn AddConsumedEvent(System.Collections.Generic.IReadOnlyList<string> eventNames)
-    {
-        var names = Stateflows.Payloads.PayloadNameSet.Validate(eventNames, nameof(eventNames));
-        var result = default(TReturn);
-        foreach (var name in names)
-            result = AddConsumedEvent(name);
-        return result;
-    }
+    TReturn AddConsumedPayloadEvent(System.Collections.Generic.IReadOnlyList<string> eventNames);
 
     /// <summary>Declares that the action produces events of the specified type.</summary>
     /// <typeparam name="TEvent">The event type produced.</typeparam>
@@ -57,37 +45,13 @@ public interface IActionUtils<out TReturn>
     /// <returns>The current builder.</returns>
     TReturn AddProducedToken<TToken>();
 
-    /// <summary>Declares that the action consumes payload tokens with the specified name.</summary>
-    /// <param name="tokenName">The registered payload token name.</param>
-    /// <returns>The current builder.</returns>
-    TReturn AddConsumedPayloadToken(string tokenName);
-
     /// <summary>Declares that the action consumes payload tokens with any of the specified names.</summary>
     /// <param name="tokenNames">The registered payload token names.</param>
     /// <returns>The current builder.</returns>
-    TReturn AddConsumedPayloadToken(System.Collections.Generic.IReadOnlyList<string> tokenNames)
-    {
-        var names = Stateflows.Payloads.PayloadNameSet.Validate(tokenNames, nameof(tokenNames));
-        var result = default(TReturn);
-        foreach (var name in names)
-            result = AddConsumedPayloadToken(name);
-        return result;
-    }
-
-    /// <summary>Declares that the action produces payload tokens with the specified name.</summary>
-    /// <param name="tokenName">The registered payload token name.</param>
-    /// <returns>The current builder.</returns>
-    TReturn AddProducedPayloadToken(string tokenName);
+    TReturn AddConsumedPayloadToken(System.Collections.Generic.IReadOnlyList<string> tokenNames);
 
     /// <summary>Declares that the action produces payload tokens with any of the specified names.</summary>
     /// <param name="tokenNames">The registered payload token names.</param>
     /// <returns>The current builder.</returns>
-    TReturn AddProducedPayloadToken(System.Collections.Generic.IReadOnlyList<string> tokenNames)
-    {
-        var names = Stateflows.Payloads.PayloadNameSet.Validate(tokenNames, nameof(tokenNames));
-        var result = default(TReturn);
-        foreach (var name in names)
-            result = AddProducedPayloadToken(name);
-        return result;
-    }
+    TReturn AddProducedPayloadToken(System.Collections.Generic.IReadOnlyList<string> tokenNames);
 }

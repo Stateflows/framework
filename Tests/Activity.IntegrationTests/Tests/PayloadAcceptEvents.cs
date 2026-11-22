@@ -14,11 +14,20 @@ public class PayloadAcceptEvents : StateflowsTestClass
     private IPayloadFactory Factory => ServiceProvider.GetRequiredService<IPayloadFactory>();
     internal static readonly List<string> Accepted = [];
 
+    public sealed class Receiver : IAcceptEventActionNode<Payload>
+    {
+        public Task ExecuteAsync(Payload @event, CancellationToken cancellationToken)
+        {
+            Record("class:" + @event.Name);
+            return Task.CompletedTask;
+        }
+    }
+
     public class BaseActivity : IActivity
     {
         public static void Build(IActivityBuilder builder) => builder
             .AddInitial(b => b.AddControlFlow("receive"))
-            .AddAcceptEventAction(["submit", "cancel"], "receive", async c => Record(c.Event.Name),
+            .AddAcceptPayloadEventAction(["submit", "cancel"], "receive", async c => Record(c.Event.Name),
                 b => b.AddControlFlow("done"))
             .AddAction("done", _ => Task.CompletedTask);
     }
@@ -60,13 +69,21 @@ public class PayloadAcceptEvents : StateflowsTestClass
             .AddActivities(b => b
                 .AddActivity("listed", b => b
                     .AddInitial(b => b.AddControlFlow("receive"))
-                    .AddAcceptEventAction(["submit", "cancel"], "receive", async c => Record(c.Event.Name),
+                    .AddAcceptPayloadEventAction(["submit", "cancel"], "receive", async c => Record(c.Event.Name),
                         b => b.AddControlFlow("done"))
+                    .AddAction("done", _ => Task.CompletedTask))
+                .AddActivity("typed-default", b => b
+                    .AddInitial(b => b.AddControlFlow<Receiver>())
+                    .AddAcceptPayloadEventAction<Receiver>(["submit", "cancel"], b => b.AddControlFlow("done"))
+                    .AddAction("done", _ => Task.CompletedTask))
+                .AddActivity("typed-named", b => b
+                    .AddInitial(b => b.AddControlFlow("receive"))
+                    .AddAcceptPayloadEventAction<Receiver>(["submit", "cancel"], "receive", b => b.AddControlFlow("done"))
                     .AddAction("done", _ => Task.CompletedTask))
                 .AddActivity("overridden", b => b
                     .UseActivity<BaseActivity>(b => b
-                        .UseAcceptEventAction(["cancel", "submit"], "receive", b => b
-                            .ChangeAcceptedEvent(["other", "extra"])))));
+                        .UseAcceptPayloadEventAction(["cancel", "submit"], "receive", b => b
+                            .ChangeAcceptedPayloadEvent(["other", "extra"])))));
 
     private async Task<IActivityBehavior> Start(string name)
     {
@@ -84,6 +101,19 @@ public class PayloadAcceptEvents : StateflowsTestClass
         Assert.AreEqual(EventStatus.NotConsumed, (await activity.SendAsync(Factory.Create("other", _ => { }))).Status);
         Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(Factory.Create(name, _ => { }))).Status);
         CollectionAssert.AreEqual(new[] { name }, Accepted.ToArray());
+        Assert.AreEqual(BehaviorStatus.Finalized, (await activity.GetStatusAsync()).Response.BehaviorStatus);
+    }
+
+    [TestMethod]
+    [DataRow("typed-default", "submit")]
+    [DataRow("typed-default", "cancel")]
+    [DataRow("typed-named", "submit")]
+    [DataRow("typed-named", "cancel")]
+    public async Task TypedPayloadActionExecutesItsImplementation(string activityName, string eventName)
+    {
+        var activity = await Start(activityName);
+        Assert.AreEqual(EventStatus.Consumed, (await activity.SendAsync(Factory.Create(eventName, _ => { }))).Status);
+        CollectionAssert.AreEqual(new[] { "class:" + eventName }, Accepted.ToArray());
         Assert.AreEqual(BehaviorStatus.Finalized, (await activity.GetStatusAsync()).Response.BehaviorStatus);
     }
 
@@ -120,12 +150,12 @@ public class PayloadAcceptEvents : StateflowsTestClass
     [TestMethod]
     public void OverrideByDifferentSetIsRejected()
         => Assert.ThrowsExactly<InvalidOperationException>(() => NewBuilder()
-            .UseActivity<BaseActivity>(b => b.UseAcceptEventAction("submit", "receive", _ => { })));
+            .UseActivity<BaseActivity>(b => b.UseAcceptPayloadEventAction(["submit"], "receive", _ => { })));
 
     [TestMethod]
     [DataRow(new string[0])]
     [DataRow(new[] { "" })]
     [DataRow(new[] { "submit", "submit" })]
     public void InvalidNameSetsAreRejected(string[] names)
-        => Assert.ThrowsExactly<ArgumentException>(() => NewBuilder().AddAcceptEventAction(names, "receive"));
+        => Assert.ThrowsExactly<ArgumentException>(() => NewBuilder().AddAcceptPayloadEventAction(names, "receive"));
 }

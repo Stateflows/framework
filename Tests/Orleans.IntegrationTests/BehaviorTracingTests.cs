@@ -287,8 +287,8 @@ public sealed class BehaviorTracingTests
                                     .AddAcceptEventAction<TracedEvent>(_ => Task.CompletedTask)))))
                     .AddPayloads(events => events.AddPayload("tracePayload", _ => { }))
                     .AddActivities(activities => activities.AddActivity("payload-traced", activity => activity
-                        .AddInputPin("tracePayload", pin => pin.AddFlow("payload-output"))
-                        .AddOutputPin("tracePayload", "payload-output", pin => pin.SetTimeToLive(300))))
+                        .AddPayloadInputPin(["tracePayload"], pin => pin.AddFlow("payload-output"))
+                        .AddPayloadOutputPin(["tracePayload"], "payload-output", pin => pin.SetTimeToLive(300))))
                 )
                 .AddOpenTelemetry().WithTracing(tracing =>
                     tracing.AddProcessor(new CapturingProcessor(spans, instance, captureAll))

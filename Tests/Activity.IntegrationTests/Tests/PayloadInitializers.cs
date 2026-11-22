@@ -58,7 +58,7 @@ public class PayloadInitializers : StateflowsTestClass
                 .AddPayload("other", b => b.AddField("ok", FieldType.Boolean)))
             .AddActivities(b => b
                 .AddActivity("single", b => b
-                    .AddInitializer("start", async c =>
+                    .AddPayloadInitializer(["start"], async c =>
                     {
                         InitializedBy = c.InitializationEvent.Name;
                         return c.InitializationEvent.Get<bool>("ok");
@@ -66,7 +66,7 @@ public class PayloadInitializers : StateflowsTestClass
                     .AddInitial(b => b.AddControlFlow("run"))
                     .AddAction("run", async c => Executed = true))
                 .AddActivity("many", b => b
-                    .AddInitializer(["start", "begin"], async c =>
+                    .AddPayloadInitializer(["start", "begin"], async c =>
                     {
                         InitializedBy = c.InitializationEvent.Name;
                         return true;
@@ -74,11 +74,11 @@ public class PayloadInitializers : StateflowsTestClass
                     .AddInitial(b => b.AddControlFlow("run"))
                     .AddAction("run", async c => Executed = true))
                 .AddActivity("class", b => b
-                    .AddInitializer<StartInitializer>(["start", "begin"])
+                    .AddPayloadInitializer<StartInitializer>(["start", "begin"])
                     .AddInitial(b => b.AddControlFlow("run"))
                     .AddAction("run", async c => Executed = true))
                 .AddActivity("classSugar", b => b
-                    .AddInitializer<StartInitializer>("start")
+                    .AddPayloadInitializer<StartInitializer>(["start"])
                     .AddInitial(b => b.AddControlFlow("run"))
                     .AddAction("run", async c => Executed = true))
                 .AddActivity("oneOf", b => b
@@ -91,8 +91,8 @@ public class PayloadInitializers : StateflowsTestClass
                     .AddAction("run", async c => Executed = true))
                 .AddActivity("mixed", b => b
                     .AddInitializer<SomeEvent>(async c => true)
-                    .AddInitializer("start", async c => true)
-                    .AddInitializer(["begin", "other"], async c => true)
+                    .AddPayloadInitializer(["start"], async c => true)
+                    .AddPayloadInitializer(["begin", "other"], async c => true)
                     .AddInitial(b => b.AddControlFlow("run"))
                     .AddAction("run", async c => Executed = true)));
 
@@ -212,5 +212,5 @@ public class PayloadInitializers : StateflowsTestClass
     [DataRow(new[] { " " })]
     [DataRow(new[] { "start", "start" })]
     public void InvalidNameSetsAreRejected(string[] names)
-        => Assert.ThrowsExactly<ArgumentException>(() => NewBuilder().AddInitializer(names, async c => true));
+        => Assert.ThrowsExactly<ArgumentException>(() => NewBuilder().AddPayloadInitializer(names, async c => true));
 }

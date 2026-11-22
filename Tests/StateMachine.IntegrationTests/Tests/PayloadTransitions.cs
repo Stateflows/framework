@@ -21,9 +21,9 @@ public class PayloadTransitions : StateflowsTestClass
     {
         public static void Build(IStateMachineBuilder builder) => builder
             .AddInitialState("waiting", b => b
-                .AddTransition(["submit", "cancel"], "done", b => b.AddGuard(_ => true))
-                .AddInternalTransition(["ping", "pong"])
-                .AddElseTransition(["submit", "cancel"], "fallback"))
+                .AddPayloadTransition(["submit", "cancel"], "done", b => b.AddGuard(_ => true))
+                .AddInternalPayloadTransition(["ping", "pong"])
+                .AddElsePayloadTransition(["submit", "cancel"], "fallback"))
             .AddState("done")
             .AddState("fallback");
     }
@@ -31,7 +31,7 @@ public class PayloadTransitions : StateflowsTestClass
     public class SimpleMachine : IStateMachine
     {
         public static void Build(IStateMachineBuilder builder) => builder
-            .AddInitialState("waiting", b => b.AddTransition(["submit", "cancel"], "done"))
+            .AddInitialState("waiting", b => b.AddPayloadTransition(["submit", "cancel"], "done"))
             .AddState("done");
     }
 
@@ -47,6 +47,23 @@ public class PayloadTransitions : StateflowsTestClass
             Record("class:" + @event.Name);
             return Task.CompletedTask;
         }
+    }
+
+    public sealed class Done : IState;
+    public sealed class Fallback : IState;
+
+    public sealed class RegisteredTransition : ITransitionGuard<Payload>, ITransitionEffect<Payload>, ITransitionDefinition<Payload>
+    {
+        public Task<bool> GuardAsync(Payload @event) => Task.FromResult(@event.Get<bool>("ok"));
+        public Task EffectAsync(Payload @event)
+        {
+            Record("class:" + @event.Name);
+            return Task.CompletedTask;
+        }
+
+        void ITransitionDefinition<Payload>.Build(ITransitionBuilder<Payload> builder) => Build(builder);
+        public static void Build(ITransitionBuilder<Payload> builder)
+            => builder.AddEffect(async c => Record("definition:" + c.Event.Name));
     }
 
     [TestInitialize]
@@ -76,42 +93,53 @@ public class PayloadTransitions : StateflowsTestClass
             .AddStateMachines(b => b
                 .AddStateMachine("external", b => b
                     .AddInitialState("waiting", b => b
-                        .AddTransition(["submit", "cancel"], "done", b => b
+                        .AddPayloadTransition(["submit", "cancel"], "done", b => b
                             .AddGuard(c => c.Event.Get<bool>("ok"))
                             .AddEffect(async c => Record(c.Event.Name)))
-                        .AddElseTransition(["submit", "cancel"], "fallback", b => b
+                        .AddElsePayloadTransition(["submit", "cancel"], "fallback", b => b
                             .AddEffect(async c => Record("else:" + c.Event.Name))))
                     .AddState("done")
                     .AddState("fallback"))
                 .AddStateMachine("internal", b => b
                     .AddInitialState("waiting", b => b
-                        .AddInternalTransition(["ping", "pong"], b => b
+                        .AddInternalPayloadTransition(["ping", "pong"], b => b
                             .AddGuard(c => c.Event.Name == "ping")
                             .AddEffect(async c => Record(c.Event.Name)))
-                        .AddElseInternalTransition(["ping", "pong"], b => b
+                        .AddElseInternalPayloadTransition(["ping", "pong"], b => b
                             .AddEffect(async c => Record("else:" + c.Event.Name)))))
                 .AddStateMachine("classes", b => b
                     .AddInitialState("waiting", b => b
-                        .AddTransition(["submit", "cancel"], "done", b => b
+                        .AddPayloadTransition(["submit", "cancel"], "done", b => b
                             .AddGuard<OkGuard>()
                             .AddEffect<RecordEffect>()))
                     .AddState("done"))
+                .AddStateMachine("registered", b => b
+                    .AddInitialState("waiting", b => b
+                        .AddPayloadTransition<RegisteredTransition, Done>(["submit", "cancel"],
+                            b => b.AddEffect(async c => Record("callback:" + c.Event.Name)))
+                        .AddElsePayloadTransition<RecordEffect, Fallback>(["submit", "cancel"]))
+                    .AddState<Done>()
+                    .AddState<Fallback>())
+                .AddStateMachine("registered-internal", b => b
+                    .AddInitialState("waiting", b => b
+                        .AddInternalPayloadTransition<RegisteredTransition>(["submit", "cancel"])
+                        .AddElseInternalPayloadTransition<RecordEffect>(["submit", "cancel"])))
                 .AddStateMachine("mapped", b => b
                     .AddInitialState("waiting", b => b
                         .AddTransition<OneOf<SomeEvent, OtherEvent>>("typed")
-                        .AddTransition(["submit", "cancel"], "named"))
+                        .AddPayloadTransition(["submit", "cancel"], "named"))
                     .AddState("typed")
                     .AddState("named"))
                 .AddStateMachine("overridden", b => b
                     .UseStateMachine<BaseMachine>(b => b
                         .UseState("waiting", b => b
-                            .UseTransition(["cancel", "submit"], "done", b => b.AddEffect(async c => Record(c.Event.Name)))
-                            .UseInternalTransition(["pong", "ping"], b => b.AddEffect(async c => Record(c.Event.Name)))
-                            .UseElseTransition(["cancel", "submit"], "fallback", b => b.AddEffect(async c => Record("else"))))))
+                            .UsePayloadTransition(["cancel", "submit"], "done", b => b.AddEffect(async c => Record(c.Event.Name)))
+                            .UseInternalPayloadTransition(["pong", "ping"], b => b.AddEffect(async c => Record(c.Event.Name)))
+                            .UseElsePayloadTransition(["cancel", "submit"], "fallback", b => b.AddEffect(async c => Record("else"))))))
                 .AddStateMachine("retriggered", b => b
                     .UseStateMachine<SimpleMachine>(b => b
                         .UseState("waiting", b => b
-                            .UseTransition(["submit", "cancel"], "done", b => b.ChangeTrigger(["other", "ping"]))))));
+                            .UsePayloadTransition(["submit", "cancel"], "done", b => b.ChangePayloadTrigger(["other", "ping"]))))));
 
     private async Task<IStateMachineBehavior> Start(string name)
     {
@@ -144,6 +172,29 @@ public class PayloadTransitions : StateflowsTestClass
         Assert.AreEqual(EventStatus.Consumed, (await machine.SendAsync(Factory.Create(name, b => b.Set("ok", true)))).Status);
         Assert.AreEqual("done", await State(machine));
         CollectionAssert.AreEqual(new[] { "class:" + name }, Effects.ToArray());
+    }
+
+    [TestMethod]
+    [DataRow("submit", true)]
+    [DataRow("cancel", false)]
+    public async Task RegisteredPayloadTransitionsRunClassAndDefinitionHooks(string name, bool accepted)
+    {
+        var machine = await Start("registered");
+        Assert.AreEqual(EventStatus.Consumed, (await machine.SendAsync(Factory.Create(name, b => b.Set("ok", accepted)))).Status);
+        Assert.AreEqual(accepted ? State<Done>.Name : State<Fallback>.Name, await State(machine));
+        CollectionAssert.AreEqual(accepted
+            ? new[] { "class:" + name, "definition:" + name, "callback:" + name }
+            : new[] { "class:" + name }, Effects.ToArray());
+    }
+
+    [TestMethod]
+    public async Task RegisteredInternalPayloadTransitionsRunClassAndFallbackEffects()
+    {
+        var machine = await Start("registered-internal");
+        await machine.SendAsync(Factory.Create("submit", b => b.Set("ok", true)));
+        await machine.SendAsync(Factory.Create("cancel", b => b.Set("ok", false)));
+        Assert.AreEqual("waiting", await State(machine));
+        CollectionAssert.AreEqual(new[] { "class:submit", "definition:submit", "class:cancel" }, Effects.ToArray());
     }
 
     [TestMethod]
@@ -206,12 +257,12 @@ public class PayloadTransitions : StateflowsTestClass
     [TestMethod]
     public void OverrideBySubsetIsRejected()
         => Assert.ThrowsExactly<StateMachineOverrideException>(() => new DefinitionModel(initialize: false).Builder
-            .UseStateMachine<BaseMachine>(b => b.UseState("waiting", b => b.UseTransition("submit", "done", _ => { }))));
+            .UseStateMachine<BaseMachine>(b => b.UseState("waiting", b => b.UsePayloadTransition(["submit"], "done", _ => { }))));
 
     [TestMethod]
     public void SameNameSetInDifferentOrderIsDuplicate()
         => Assert.ThrowsExactly<TransitionDefinitionException>(() => new DefinitionModel(initialize: false).Builder
-            .AddInitialState("s", b => b.AddTransition(["submit", "cancel"], "t").AddTransition(["cancel", "submit"], "t")));
+            .AddInitialState("s", b => b.AddPayloadTransition(["submit", "cancel"], "t").AddPayloadTransition(["cancel", "submit"], "t")));
 
     [TestMethod]
     [DataRow(new string[0])]
@@ -220,8 +271,8 @@ public class PayloadTransitions : StateflowsTestClass
     public void InvalidNameSetsAreRejected(string[] names)
     {
         Assert.ThrowsExactly<ArgumentException>(() => new DefinitionModel(initialize: false).Builder
-            .AddInitialState("s", b => b.AddTransition(names, "t")));
+            .AddInitialState("s", b => b.AddPayloadTransition(names, "t")));
         Assert.ThrowsExactly<ArgumentException>(() => new DefinitionModel(initialize: false).Builder
-            .AddInitialState("s", b => b.AddInternalTransition(names)));
+            .AddInitialState("s", b => b.AddInternalPayloadTransition(names)));
     }
 }

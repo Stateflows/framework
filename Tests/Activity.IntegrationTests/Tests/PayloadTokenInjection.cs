@@ -78,9 +78,9 @@ public sealed class PayloadTokenInjection : StateflowsTestClass
                 .AddPayload("second", _ => { })
                 .AddPayload("other", _ => { }))
             .AddActivities(b => b.AddActivity("named-token-injection", b => b
-                .AddInputPin(["first", "second"], pin => pin.AddFlow<NamedTokenAction>())
-                .AddAction<NamedTokenAction>(action => action.AddFlow(["first", "second"], "output"))
-                .AddOutputPin(["first", "second"], "output", pin => pin.SetTimeToLive(300).SetRetain(true))));
+                .AddPayloadInputPin(["first", "second"], pin => pin.AddFlow<NamedTokenAction>())
+                .AddAction<NamedTokenAction>(action => action.AddPayloadFlow(["first", "second"], "output"))
+                .AddPayloadOutputPin(["first", "second"], "output", pin => pin.SetTimeToLive(300).SetRetain(true))));
 
     [TestMethod]
     public async Task TokenNameFiltersInputAndOutputCollections()

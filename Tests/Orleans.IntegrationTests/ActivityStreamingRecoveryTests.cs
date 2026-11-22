@@ -323,7 +323,7 @@ public sealed class ActivityStreamingRecoveryTests
                     .AddPayloads(payloads => payloads.AddPayload("recovery-payload", payload =>
                         payload.AddField("value", Stateflows.Common.FieldType.Int32)))
                     .AddActivities(activities => activities.AddActivity("recovery-payload", activity => activity
-                        .AddInputPin(["recovery-payload"], pin => pin.AddFlow("work"))
+                        .AddPayloadInputPin(["recovery-payload"], pin => pin.AddFlow("work"))
                         .AddAction("work", async context =>
                         {
                             var payloads = context.GetTokensOfType<Payload>().ToArray();
@@ -332,7 +332,7 @@ public sealed class ActivityStreamingRecoveryTests
                             if (payloads.Any(payload => payload.Get<int>("value") == 1))
                                 await probe.GatedAsync(context.Behavior.Id.Instance, "payload");
                             context.PassAllTokensOn();
-                        }, node => node.AddFlow(["recovery-payload"], "after"))
+                        }, node => node.AddPayloadFlow(["recovery-payload"], "after"))
                         .AddAction("after", context =>
                         {
                             foreach (var payload in context.GetTokensOfType<Payload>())

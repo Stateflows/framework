@@ -90,7 +90,7 @@ public class PayloadFlows : StateflowsTestClass
     {
         public static void Build(IActivityBuilder builder) => builder
             .AddInitial(b => b.AddControlFlow("produce"))
-            .AddAction("produce", ProduceAbc, b => b.AddFlow(["a", "b"], "sink"))
+            .AddAction("produce", ProduceAbc, b => b.AddPayloadFlow(["a", "b"], "sink"))
             .AddAction("sink", c => RecordPayloads(c, "sink"));
     }
 
@@ -119,62 +119,62 @@ public class PayloadFlows : StateflowsTestClass
                     .AddObserver<PayloadInspectionObserver>()
                     .AddInitial(b => b.AddControlFlow("produce"))
                     .AddAction("produce", ProduceAbc, b => b
-                        .AddFlow(["a", "b"], "ab")
-                        .AddFlow("c", "c"))
+                        .AddPayloadFlow(["a", "b"], "ab")
+                        .AddPayloadFlow(["c"], "c"))
                     .AddAction("ab", c => RecordPayloads(c, "ab"))
                     .AddAction("c", c => RecordPayloads(c, "c")))
                 .AddActivity("typedToPayload", b => b
                     .AddInitial(b => b.AddControlFlow("produce"))
                     .AddAction("produce", async c => c.Output(7), b => b
-                        .AddFlow<int>("delegate", b => b.AddTransformation<Payload>("a", async c => Make("a", c.Token)))
-                        .AddFlow<int, Payload, FromNumber>("a", "class"))
+                        .AddFlow<int>("delegate", b => b.AddPayloadTransformation<Payload>(["a"], async c => Make("a", c.Token)))
+                        .AddPayloadFlow<int, Payload, FromNumber>(["a"], "class"))
                     .AddAction("delegate", c => RecordPayloads(c, "delegate"))
                     .AddAction("class", c => RecordPayloads(c, "class")))
                 .AddActivity("payloadToTyped", b => b
                     .AddInitial(b => b.AddControlFlow("produce"))
                     .AddAction("produce", ProduceAbc, b => b
-                        .AddFlow("b", "delegate", b => b.AddTransformation(async c => c.Token.Get<int>("v")))
-                        .AddFlow<int, ToNumber>(["a", "c"], "class"))
+                        .AddPayloadFlow(["b"], "delegate", b => b.AddTransformation(async c => c.Token.Get<int>("v")))
+                        .AddPayloadFlow<int, ToNumber>(["a", "c"], "class"))
                     .AddAction("delegate", c => RecordInts(c, "delegate"))
                     .AddAction("class", c => RecordInts(c, "class")))
                 .AddActivity("payloadToPayload", b => b
                     .AddInitial(b => b.AddControlFlow("produce"))
                     .AddAction("produce", ProduceAbc, b => b
-                        .AddFlow("a", "delegate", b => b
-                            .AddTransformation<Payload>(["b", "x"], async c => Make("x", c.Token.Get<int>("v") + 100)))
-                        .AddFlow<Payload, Renamer>("c", "b", "class"))
+                        .AddPayloadFlow(["a"], "delegate", b => b
+                            .AddPayloadTransformation<Payload>(["b", "x"], async c => Make("x", c.Token.Get<int>("v") + 100)))
+                        .AddPayloadFlow<Payload, Renamer>(["c"], ["b"], "class"))
                     .AddAction("delegate", c => RecordPayloads(c, "delegate"))
                     .AddAction("class", c => RecordPayloads(c, "class")))
                 .AddActivity("chain", b => b
                     .AddInitial(b => b.AddControlFlow("produce"))
                     .AddAction("produce", ProduceAbc, b => b
-                        .AddFlow("a", "sink", b => b
+                        .AddPayloadFlow(["a"], "sink", b => b
                             .AddTransformation(async c => c.Token.Get<int>("v"))
                             .AddGuard(async c => c.Token > 0)
-                            .AddTransformation<Payload>("b", async c => Make("b", c.Token + 1))
+                            .AddPayloadTransformation<Payload>(["b"], async c => Make("b", c.Token + 1))
                             .AddGuard(async c => c.Token.Name == "b")
-                            .AddTransformation<Payload, Renamer>(["b"])))
+                            .AddPayloadTransformation<Payload, Renamer>(["b"])))
                     .AddAction("sink", c => RecordPayloads(c, "sink")))
                 .AddActivity("wrongName", b => b
                     .AddInitial(b => b.AddControlFlow("produce"))
                     .AddAction("produce", ProduceAbc, b => b
-                        .AddFlow("a", "sink", b => b.AddTransformation<Payload>("b", async c => Make("x"))))
+                        .AddPayloadFlow(["a"], "sink", b => b.AddPayloadTransformation<Payload>(["b"], async c => Make("x"))))
                     .AddAction("sink", c => RecordPayloads(c, "sink")))
                 .AddActivity("guards", b => b
                     .AddInitial(b => b.AddControlFlow("produce"))
                     .AddAction("produce", ProduceAbc, b => b
-                        .AddFlow<OnlyOdd>(["a", "b", "c"], "sink"))
+                        .AddPayloadFlow<OnlyOdd>(["a", "b", "c"], "sink"))
                     .AddAction("sink", c => RecordPayloads(c, "sink")))
                 .AddActivity("acceptEvent", b => b
                     .AddInitial(b => b.AddControlFlow("receive"))
-                    .AddAcceptEventAction("submit", "receive", async c => c.Output(c.Event), b => b
-                        .AddFlow("submit", "sink"))
+                    .AddAcceptPayloadEventAction(["submit"], "receive", async c => c.Output(c.Event), b => b
+                        .AddPayloadFlow(["submit"], "sink"))
                     .AddAction("sink", c => RecordPayloads(c, "sink")))
                 .AddActivity("overlap", b => b
                     .AddInitial(b => b.AddControlFlow("produce"))
                     .AddAction("produce", ProduceAbc, b => b
                         .AddFlow<object>("wildcard")
-                        .AddFlow("a", "named"))
+                        .AddPayloadFlow(["a"], "named"))
                     .AddAction("wildcard", async c =>
                     {
                         foreach (var token in c.GetTokensOfType<object>())
@@ -209,7 +209,7 @@ public class PayloadFlows : StateflowsTestClass
     }
 
     [TestMethod]
-    public void PublicApiUsesTokenVocabularyAndListOnlyPayloadOverloads()
+    public void PublicApiUsesExplicitListOnlyPayloadBuilders()
     {
         var namespaces = new[]
         {
@@ -228,7 +228,13 @@ public class PayloadFlows : StateflowsTestClass
         foreach (var type in types)
         foreach (var member in type.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
         {
-            if (member.Name.Contains("Payload", StringComparison.OrdinalIgnoreCase) && !allowedPayloadMembers.Contains(member.Name))
+            var payloadBuilder = member is MethodInfo payloadMethod &&
+                (type.Namespace?.Contains(".Registration", StringComparison.Ordinal) == true ||
+                    type.Name.StartsWith("IEntityBuilder", StringComparison.Ordinal)) &&
+                member.Name.Contains("Payload", StringComparison.Ordinal) &&
+                payloadMethod.GetParameters().FirstOrDefault()?.ParameterType == typeof(IReadOnlyList<string>);
+            if (member.Name.Contains("Payload", StringComparison.OrdinalIgnoreCase) &&
+                !allowedPayloadMembers.Contains(member.Name) && !payloadBuilder)
                 violations.Add($"{type.FullName}.{member.Name} uses Payload vocabulary");
             if (member.Name.Contains("Trigger", StringComparison.OrdinalIgnoreCase) &&
                 !IsTransitionMember(type, member))
@@ -250,33 +256,26 @@ public class PayloadFlows : StateflowsTestClass
             }
         }
 
-        var activityInterfaces = types.Where(type => type.IsInterface).ToArray();
-        var listOnlyNames = new HashSet<string>(StringComparer.Ordinal)
+        var nameParameters = new HashSet<string>(StringComparer.Ordinal)
         {
-            "AddFlow", "UseFlow", "AddIterativeActivity", "UseIterativeActivity",
-            "AddParallelActivity", "UseParallelActivity"
+            "eventName", "eventNames", "tokenName", "tokenNames", "transformedName", "transformedNames",
+            "parallelizationTokenName", "parallelizationTokenNames", "iterationTokenName", "iterationTokenNames"
         };
-        var listOnlyOverloads = activityInterfaces.SelectMany(type => type.GetMethods())
-            .Where(method => listOnlyNames.Contains(method.Name) && HasStringListFirstParameter(method))
-            .Where(method => method.Name is "AddFlow" or "UseFlow"
-                ? method.GetGenericArguments().Any(HasActivityNodeConstraint)
-                : method.GetGenericArguments().Any(HasActivityConstraint))
-            .DistinctBy(MethodSignature)
-            .ToArray();
-        foreach (var method in listOnlyOverloads)
+        foreach (var method in types.Where(type => type.IsInterface &&
+                     (type.Namespace?.Contains(".Registration", StringComparison.Ordinal) == true ||
+                         type.Name.StartsWith("IEntityBuilder", StringComparison.Ordinal)))
+                     .SelectMany(type => type.GetMethods()))
         {
-            var parameters = method.GetParameters();
-            var constraints = GenericConstraintSignature(method);
-            var hasSingleNameForm = activityInterfaces.SelectMany(type => type.GetMethods())
-                .Any(candidate => candidate.Name == method.Name &&
-                    candidate.GetGenericArguments().Length == method.GetGenericArguments().Length &&
-                    candidate.GetParameters().Length == parameters.Length &&
-                    candidate.GetParameters()[0].ParameterType == typeof(string) &&
-                    candidate.GetParameters().Skip(1).Select(parameter => parameter.ParameterType)
-                        .SequenceEqual(parameters.Skip(1).Select(parameter => parameter.ParameterType)) &&
-                    GenericConstraintSignature(candidate) == constraints);
-            if (hasSingleNameForm)
-                violations.Add($"{method.DeclaringType?.FullName}.{method.Name} has a string-first overload");
+            foreach (var parameter in method.GetParameters().Where(parameter => nameParameters.Contains(parameter.Name!)))
+            {
+                if (!method.Name.Contains("Payload", StringComparison.Ordinal))
+                    violations.Add($"{method.DeclaringType?.FullName}.{method.Name} has no Payload marker");
+                if (parameter.ParameterType != typeof(IReadOnlyList<string>))
+                    violations.Add($"{method.DeclaringType?.FullName}.{method.Name} has single-name sugar");
+            }
+            if (method.Name is "UsePayloadParallelActivity" or "UsePayloadIterativeActivity" &&
+                method.IsGenericMethod)
+                violations.Add($"{method.DeclaringType?.FullName}.{method.Name} selects an implementation class");
         }
 
         Assert.AreEqual(0, violations.Count, string.Join(Environment.NewLine, violations.Order()));
@@ -285,22 +284,6 @@ public class PayloadFlows : StateflowsTestClass
             => member.Name.Contains("Transition", StringComparison.Ordinal) ||
                 type.Name.Contains("Transition", StringComparison.Ordinal);
 
-        static bool HasStringListFirstParameter(MethodInfo method)
-            => method.GetParameters().FirstOrDefault()?.ParameterType == typeof(IReadOnlyList<string>);
-
-        static bool HasActivityNodeConstraint(Type parameter)
-            => parameter.GetGenericParameterConstraints().Contains(typeof(IActivityNode));
-
-        static bool HasActivityConstraint(Type parameter)
-            => parameter.GetGenericParameterConstraints().Contains(typeof(IActivity));
-
-        static string MethodSignature(MethodInfo method)
-            => $"{method.DeclaringType?.FullName}.{method.Name}`{method.GetGenericArguments().Length}(" +
-                string.Join(",", method.GetParameters().Select(parameter => parameter.ParameterType.ToString())) + ")";
-
-        static string GenericConstraintSignature(MethodInfo method)
-            => string.Join("|", method.GetGenericArguments().Select(parameter =>
-                string.Join(",", parameter.GetGenericParameterConstraints().Select(constraint => constraint.ToString()).Order())));
     }
 
     [TestMethod]
@@ -366,11 +349,34 @@ public class PayloadFlows : StateflowsTestClass
     {
         var builder = NewBuilder();
         ((IActivityBuilder)builder)
-            .AddAction("produce", ProduceAbc, b => b.AddFlow<Sink>(["b"]))
+            .AddAction("produce", ProduceAbc, b => b.AddPayloadFlow<Sink>(["b"]))
             .AddAction<Sink>();
         var edge = builder.Graph.AllEdgesList.Single();
         Assert.AreEqual(ActivityNode<Sink>.Name, edge.TargetName);
         CollectionAssert.AreEqual(new[] { "b" }, edge.TokenNames!.ToArray());
+    }
+
+    [TestMethod]
+    public void TypedTargetTransformationsKeepBothNameSets()
+    {
+        var builder = NewBuilder();
+        ((IActivityBuilder)builder)
+            .AddAction("toNumber", ProduceAbc, b => b.AddPayloadFlow<int, ToNumber, Sink>(["a"]))
+            .AddAction("rename", ProduceAbc, b => b.AddPayloadFlow<Payload, Renamer, Sink>(["a"], ["b"]))
+            .AddAction("fromNumber", _ => Task.CompletedTask, b => b.AddPayloadFlow<int, Payload, FromNumber, Sink>(["a"]))
+            .AddAction<Sink>();
+        var edges = builder.Graph.AllEdgesList;
+        Assert.IsTrue(edges.All(edge => edge.TargetName == ActivityNode<Sink>.Name));
+        var number = edges.Single(edge => edge.SourceName == "toNumber");
+        CollectionAssert.AreEqual(new[] { "a" }, number.TokenNames!.ToArray());
+        Assert.AreEqual(typeof(int), number.TargetTokenType);
+        Assert.IsNull(number.TargetTokenNames);
+        var rename = edges.Single(edge => edge.SourceName == "rename");
+        CollectionAssert.AreEqual(new[] { "a" }, rename.TokenNames!.ToArray());
+        CollectionAssert.AreEqual(new[] { "b" }, rename.TargetTokenNames!.ToArray());
+        var fromNumber = edges.Single(edge => edge.SourceName == "fromNumber");
+        Assert.AreEqual(typeof(int), fromNumber.TokenType);
+        CollectionAssert.AreEqual(new[] { "a" }, fromNumber.TargetTokenNames!.ToArray());
     }
 
     private static ActivityBuilder NewBuilder()
@@ -382,10 +388,10 @@ public class PayloadFlows : StateflowsTestClass
         var builder = NewBuilder();
         ((IActivityBuilder)builder)
             .AddAction("produce", ProduceAbc, b => b
-                .AddFlow(["b", "a"], "plain")
-                .AddFlow("a", "toTyped", b => b.AddTransformation(async c => 1))
-                .AddFlow<int>("toPayload", b => b.AddTransformation<Payload>(["x"], async c => Make("x")))
-                .AddFlow<Payload, Renamer>(["a"], ["b"], "renamed"));
+                .AddPayloadFlow(["b", "a"], "plain")
+                .AddPayloadFlow(["a"], "toTyped", b => b.AddTransformation(async c => 1))
+                .AddFlow<int>("toPayload", b => b.AddPayloadTransformation<Payload>(["x"], async c => Make("x")))
+                .AddPayloadFlow<Payload, Renamer>(["a"], ["b"], "renamed"));
         var edges = builder.Graph.AllEdgesList.ToDictionary(e => e.TargetName);
         CollectionAssert.AreEquivalent(new[] { "a", "b" }, edges["plain"].TokenNames!.ToArray());
         CollectionAssert.AreEquivalent(new[] { "a", "b" }, edges["plain"].TargetTokenNames!.ToArray());
@@ -423,9 +429,9 @@ public class PayloadFlows : StateflowsTestClass
     public void InvalidNameSetsAreRejected(string[] names)
     {
         Assert.ThrowsExactly<ArgumentException>(() => ((IActivityBuilder)NewBuilder())
-            .AddAction("produce", ProduceAbc, b => b.AddFlow(names, "sink")));
+            .AddAction("produce", ProduceAbc, b => b.AddPayloadFlow(names, "sink")));
         Assert.ThrowsExactly<ArgumentException>(() => ((IActivityBuilder)NewBuilder())
-            .AddAction("produce", ProduceAbc, b => b.AddFlow<int>("sink", b => b.AddTransformation<Payload>(names, async c => Make("a")))));
+            .AddAction("produce", ProduceAbc, b => b.AddFlow<int>("sink", b => b.AddPayloadTransformation<Payload>(names, async c => Make("a")))));
     }
 
     [TestMethod]

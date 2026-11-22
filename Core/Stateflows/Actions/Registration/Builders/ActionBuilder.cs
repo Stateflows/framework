@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions.Models;
@@ -108,15 +109,16 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
         return this;
     }
 
-    public IActionBuilder AddConsumedEvent(string eventName)
+    public IActionBuilder AddConsumedPayloadEvent(IReadOnlyList<string> eventNames)
     {
-        System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-        if (!Model.ConsumedEventNames.Contains(eventName))
+        var names = Stateflows.Payloads.PayloadNameSet.Validate(eventNames, nameof(eventNames));
+        foreach (var name in names)
         {
-            Model.ConsumedEventNames.Add(eventName);
-            if (!Model.ConsumedBindingOrder.Contains(typeof(Stateflows.Common.Payload)))
-                Model.ConsumedBindingOrder.Add(typeof(Stateflows.Common.Payload));
+            if (!Model.ConsumedEventNames.Contains(name))
+                Model.ConsumedEventNames.Add(name);
         }
+        if (!Model.ConsumedBindingOrder.Contains(typeof(Stateflows.Common.Payload)))
+            Model.ConsumedBindingOrder.Add(typeof(Stateflows.Common.Payload));
 
         return this;
     }
@@ -144,22 +146,28 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
         return this;
     }
 
-    public IActionBuilder AddConsumedPayloadToken(string tokenName)
+    public IActionBuilder AddConsumedPayloadToken(IReadOnlyList<string> tokenNames)
     {
-        var name = Stateflows.Payloads.PayloadNameSet.Validate([tokenName], nameof(tokenName))[0];
-        if (!Model.ConsumedPayloadTokenNames.Contains(name, StringComparer.Ordinal))
-            Model.ConsumedPayloadTokenNames.Add(name);
+        var names = Stateflows.Payloads.PayloadNameSet.Validate(tokenNames, nameof(tokenNames));
+        foreach (var name in names)
+        {
+            if (!Model.ConsumedPayloadTokenNames.Contains(name, StringComparer.Ordinal))
+                Model.ConsumedPayloadTokenNames.Add(name);
+        }
         if (!Model.ConsumedTokenTypes.Contains(typeof(Stateflows.Common.Payload)))
             Model.ConsumedTokenTypes.Add(typeof(Stateflows.Common.Payload));
 
         return this;
     }
 
-    public IActionBuilder AddProducedPayloadToken(string tokenName)
+    public IActionBuilder AddProducedPayloadToken(IReadOnlyList<string> tokenNames)
     {
-        var name = Stateflows.Payloads.PayloadNameSet.Validate([tokenName], nameof(tokenName))[0];
-        if (!Model.ProducedPayloadTokenNames.Contains(name, StringComparer.Ordinal))
-            Model.ProducedPayloadTokenNames.Add(name);
+        var names = Stateflows.Payloads.PayloadNameSet.Validate(tokenNames, nameof(tokenNames));
+        foreach (var name in names)
+        {
+            if (!Model.ProducedPayloadTokenNames.Contains(name, StringComparer.Ordinal))
+                Model.ProducedPayloadTokenNames.Add(name);
+        }
         if (!Model.ProducedTokenTypes.Contains(typeof(Stateflows.Common.Payload)))
             Model.ProducedTokenTypes.Add(typeof(Stateflows.Common.Payload));
 
@@ -203,8 +211,8 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedEvent<TEvent>()
         => AddConsumedEvent<TEvent>() as IActionBuilder<TAction>;
 
-    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedEvent(string eventName)
-        => AddConsumedEvent(eventName) as IActionBuilder<TAction>;
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedPayloadEvent(IReadOnlyList<string> eventNames)
+        => AddConsumedPayloadEvent(eventNames) as IActionBuilder<TAction>;
 
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddProducedEvent<TEvent>()
         => AddProducedEvent<TEvent>() as IActionBuilder<TAction>;
@@ -215,11 +223,11 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddProducedToken<TToken>()
         => AddProducedToken<TToken>() as IActionBuilder<TAction>;
 
-    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedPayloadToken(string tokenName)
-        => AddConsumedPayloadToken(tokenName) as IActionBuilder<TAction>;
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedPayloadToken(IReadOnlyList<string> tokenNames)
+        => AddConsumedPayloadToken(tokenNames) as IActionBuilder<TAction>;
 
-    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddProducedPayloadToken(string tokenName)
-        => AddProducedPayloadToken(tokenName) as IActionBuilder<TAction>;
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddProducedPayloadToken(IReadOnlyList<string> tokenNames)
+        => AddProducedPayloadToken(tokenNames) as IActionBuilder<TAction>;
 
     IActionBuilder<TAction> IActionObservability<IActionBuilder<TAction>>.AddInterceptor(ActionInterceptorFactoryAsync interceptorFactory)
         => AddInterceptor(interceptorFactory) as IActionBuilder<TAction>;

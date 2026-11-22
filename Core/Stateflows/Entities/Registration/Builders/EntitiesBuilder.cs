@@ -121,7 +121,7 @@ namespace Stateflows.Entities.Registration.Builders
                 var eventNames = method.GetCustomAttribute<MutationAttribute>()!.EventNames;
                 if (eventNames.Count != 0)
                 {
-                    builder.AddMutation(eventNames,
+                    builder.AddPayloadMutation(eventNames,
                         context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [context.MutationEvent]));
                     continue;
                 }
@@ -143,7 +143,7 @@ namespace Stateflows.Entities.Registration.Builders
                 var eventNames = method.GetCustomAttribute<InitializerAttribute>()!.EventNames;
                 if (eventNames.Count != 0)
                 {
-                    builder.AddInitializer(eventNames,
+                    builder.AddPayloadInitializer(eventNames,
                         context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [context.InitializationEvent]));
                     continue;
                 }

@@ -17,13 +17,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <summary>Adds an output pin for payload tokens with the specified names.</summary>
         /// <param name="tokenNames">Payload token names admitted by the pin.</param>
         /// <param name="pinName">Optional globally unique node name.</param>
-        TReturn AddOutputPin(IReadOnlyList<string> tokenNames, string? pinName = null)
+        TReturn AddPayloadOutputPin(IReadOnlyList<string> tokenNames, string? pinName = null)
             => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => AddOutputPin<Payload>(pinName));
-
-        /// <summary>Adds an output pin for payload tokens with the specified name.</summary>
-        /// <param name="tokenName">Payload token name admitted by the pin.</param>
-        /// <param name="pinName">Optional globally unique node name.</param>
-        TReturn AddOutputPin(string tokenName, string? pinName = null)
-            => AddOutputPin(new[] { tokenName }, pinName);
     }
 }

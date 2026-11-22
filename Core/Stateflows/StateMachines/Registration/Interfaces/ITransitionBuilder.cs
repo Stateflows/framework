@@ -49,20 +49,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces
             return result;
         }
 
-        /// <summary>Changes a compatible inherited transition to match an explicitly named payload.</summary>
-        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
-        /// null, empty, or whitespace.</param>
-        /// <returns>A builder for the same transition whose callbacks receive the payload.</returns>
-        /// <exception cref="System.ArgumentException">The event name is null, empty, or whitespace.</exception>
-        /// <exception cref="System.InvalidOperationException">The original trigger cannot accept a
-        /// <see cref="Payload" /> payload.</exception>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
-        IOverridenTransitionBuilder<Payload> ChangeTrigger(string eventName)
-        {
-            System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            return ChangeTrigger(new[] { eventName });
-        }
-
         /// <summary>Changes a compatible inherited transition to match any of the given payload names.</summary>
         /// <param name="eventNames">Registered payload names to match. Must contain at least one name; names must be
         /// distinct and must not be null, empty, or whitespace.</param>
@@ -71,7 +57,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         /// <exception cref="System.InvalidOperationException">The original trigger cannot accept a
         /// <see cref="Payload" /> payload.</exception>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        IOverridenTransitionBuilder<Payload> ChangeTrigger(System.Collections.Generic.IReadOnlyList<string> eventNames)
+        IOverridenTransitionBuilder<Payload> ChangePayloadTrigger(System.Collections.Generic.IReadOnlyList<string> eventNames)
         {
             var names = Stateflows.Payloads.PayloadNameSet.Validate(eventNames, nameof(eventNames));
             if (!typeof(TEvent).IsAssignableFrom(typeof(Payload)))

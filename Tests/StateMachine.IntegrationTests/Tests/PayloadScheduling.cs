@@ -26,7 +26,7 @@ public class PayloadScheduling : StateflowsTestClass
             .AddScheduling()
             .AddStateMachines(b => b.AddStateMachine("recipient", b => b
                 .AddInitialState("ready", b => b
-                    .AddInternalTransition("scheduled", b => b.AddEffect(c => { received.TrySetResult(c.Event); })))));
+                    .AddInternalPayloadTransition(["scheduled"], b => b.AddEffect(c => { received.TrySetResult(c.Event); })))));
 
     [TestMethod]
     public async Task PersistsAndDeliversNamedEventWithExactScalarType()

@@ -62,7 +62,7 @@ public sealed class PayloadTokenInjection : StateflowsTestClass
                 .AddPayload("other", _ => { }))
             .AddActions(b => b
                 .AddAction<NamedTokenAction>("named-token-injection", 1, action => action
-                    .AddConsumedPayloadToken("first")
+                    .AddConsumedPayloadToken(["first"])
                     .AddProducedPayloadToken(["first"])));
 
     [TestMethod]

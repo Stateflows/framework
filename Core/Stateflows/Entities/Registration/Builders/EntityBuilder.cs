@@ -52,11 +52,11 @@ namespace Stateflows.Entities.Registration.Builders
 
         public IEntityBuilder<TTemplate> AddInitializer<TInitializationEvent>(InitializerAction<TTemplate, TInitializationEvent> action)
         {
-            RejectPayloadType<TInitializationEvent>("initializer", "AddInitializer(eventNames, action)");
+            RejectPayloadType<TInitializationEvent>("initializer", "AddPayloadInitializer(eventNames, action)");
             return SetInitializer(MappedEventNames<TInitializationEvent>(), Event.GetName(typeof(TInitializationEvent)), action);
         }
 
-        public IEntityBuilder<TTemplate> AddInitializer(IReadOnlyList<string> eventNames, InitializerAction<TTemplate, Payload> action)
+        public IEntityBuilder<TTemplate> AddPayloadInitializer(IReadOnlyList<string> eventNames, InitializerAction<TTemplate, Payload> action)
         {
             eventNames = PayloadNameSet.Validate(eventNames, nameof(eventNames));
             return SetInitializer(eventNames, PayloadNameSet.Key(eventNames), action);
@@ -125,11 +125,11 @@ namespace Stateflows.Entities.Registration.Builders
 
         public IEntityBuilder<TTemplate> AddMutation<TMutationEvent>(MutationAction<TTemplate, TMutationEvent> mutationAction)
         {
-            RejectPayloadType<TMutationEvent>("mutation", "AddMutation(eventNames, mutationAction)");
+            RejectPayloadType<TMutationEvent>("mutation", "AddPayloadMutation(eventNames, mutationAction)");
             return SetMutation(MappedEventNames<TMutationEvent>(), Event.GetName(typeof(TMutationEvent)), mutationAction);
         }
 
-        public IEntityBuilder<TTemplate> AddMutation(IReadOnlyList<string> eventNames, MutationAction<TTemplate, Payload> mutationAction)
+        public IEntityBuilder<TTemplate> AddPayloadMutation(IReadOnlyList<string> eventNames, MutationAction<TTemplate, Payload> mutationAction)
         {
             eventNames = PayloadNameSet.Validate(eventNames, nameof(eventNames));
             return SetMutation(eventNames, PayloadNameSet.Key(eventNames), mutationAction);

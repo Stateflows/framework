@@ -19,21 +19,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
     public interface IStateTransitions<out TReturn>
     {
-        /// <summary>Adds an event-triggered transition from the current state.</summary>
-        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
-        /// null, empty, or whitespace.</param>
-        /// <param name="targetStateName">Registered name of the target vertex. The target must be defined in the machine;
-        /// this method does not create it.</param>
-        /// <param name="transitionBuildAction">Optional callback configuring the transition's guards, effects, and
-        /// local/external target semantics. Callbacks receive the payload payload.</param>
-        /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
-        TReturn AddTransition(string eventName, string targetStateName, TransitionBuildAction<Payload> transitionBuildAction = null)
-        {
-            System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            return AddTransition(new[] { eventName }, targetStateName, transitionBuildAction);
-        }
 
         /// <summary>Adds a transition from the current state triggered by any of the given payload names.</summary>
         /// <param name="eventNames">Registered payload names to match. Must contain at least one name; names must be
@@ -44,7 +29,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
         /// <seealso href="https://github.com/Stateflows/framework/wiki/4.6.-Payloads" />
-        TReturn AddTransition(IReadOnlyList<string> eventNames, string targetStateName, TransitionBuildAction<Payload> transitionBuildAction = null)
+        TReturn AddPayloadTransition(IReadOnlyList<string> eventNames, string targetStateName, TransitionBuildAction<Payload> transitionBuildAction = null)
         {
             var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));
             System.ArgumentException.ThrowIfNullOrWhiteSpace(targetStateName);
@@ -53,26 +38,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return (TReturn)this;
         }
 
-        /// <summary>Adds an internal transition without exiting or re-entering the current state.</summary>
-        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
-        /// null, empty, or whitespace.</param>
-        /// <param name="transitionBuildAction">Optional callback configuring the transition's guards and effects. Callbacks
-        /// receive the payload payload.</param>
-        /// <returns>The source-state builder for continued configuration.</returns>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
-        TReturn AddInternalTransition(string eventName, InternalTransitionBuildAction<Payload> transitionBuildAction = null)
-        {
-            System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            return AddInternalTransition(new[] { eventName }, transitionBuildAction);
-        }
-
         /// <summary>Adds an internal transition triggered by any of the given payload names.</summary>
         /// <param name="eventNames">Registered payload names to match.</param>
         /// <param name="transitionBuildAction">Optional callback configuring the transition's guards and effects.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
-        TReturn AddInternalTransition(IReadOnlyList<string> eventNames, InternalTransitionBuildAction<Payload> transitionBuildAction = null)
+        TReturn AddInternalPayloadTransition(IReadOnlyList<string> eventNames, InternalTransitionBuildAction<Payload> transitionBuildAction = null)
         {
             var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));
             new StateBuilder(((IVertexBuilder)this).Vertex).AddTransitionInternal<Payload>(
@@ -81,32 +52,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return (TReturn)this;
         }
 
-        /// <summary>Adds a fallback event-triggered transition from the current state.</summary>
-        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
-        /// null, empty, or whitespace.</param>
-        /// <param name="targetStateName">Registered name of the target vertex. The target must be defined in the machine;
-        /// this method does not create it.</param>
-        /// <param name="transitionBuildAction">Optional callback configuring the transition's effects and local/external
-        /// target semantics. Callbacks receive the payload payload.</param>
-        /// <returns>The source-state builder for continued configuration.</returns>
-        /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
-        /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.1.-Transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
-        TReturn AddElseTransition(string eventName, string targetStateName, ElseTransitionBuildAction<Payload> transitionBuildAction = null)
-        {
-            System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            return AddElseTransition(new[] { eventName }, targetStateName, transitionBuildAction);
-        }
-
         /// <summary>Adds a fallback transition triggered by any of the given payload names.</summary>
         /// <param name="eventNames">Registered payload names to match.</param>
         /// <param name="targetStateName">Registered name of the target vertex.</param>
         /// <param name="transitionBuildAction">Optional callback configuring the transition's effects.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
-        TReturn AddElseTransition(IReadOnlyList<string> eventNames, string targetStateName, ElseTransitionBuildAction<Payload> transitionBuildAction = null)
+        TReturn AddElsePayloadTransition(IReadOnlyList<string> eventNames, string targetStateName, ElseTransitionBuildAction<Payload> transitionBuildAction = null)
         {
             var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));
             System.ArgumentException.ThrowIfNullOrWhiteSpace(targetStateName);
@@ -115,29 +67,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return (TReturn)this;
         }
 
-        /// <summary>Adds a fallback internal transition without exiting or re-entering the current state.</summary>
-        /// <param name="eventName">Registered payload name to match, not the CLR wrapper type name. Must not be
-        /// null, empty, or whitespace.</param>
-        /// <param name="transitionBuildAction">Optional callback configuring the transition's effects. Callbacks receive
-        /// the payload payload.</param>
-        /// <returns>The source-state builder for continued configuration.</returns>
-        /// <remarks>The fallback is considered when ordinary matching transitions reject their paths. It has effects but no
-        /// guard of its own.</remarks>
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.2.4.3.-Internal-Transition" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/4.1.-Events#define-structural-events" />
-        /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
-        TReturn AddElseInternalTransition(string eventName, ElseInternalTransitionBuildAction<Payload> transitionBuildAction = null)
-        {
-            System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-            return AddElseInternalTransition(new[] { eventName }, transitionBuildAction);
-        }
-
         /// <summary>Adds a fallback internal transition triggered by any of the given payload names.</summary>
         /// <param name="eventNames">Registered payload names to match.</param>
         /// <param name="transitionBuildAction">Optional callback configuring the transition's effects.</param>
         /// <returns>The source-state builder for continued configuration.</returns>
         /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.3.-Evaluation-of-Transitions#else-transitions" />
-        TReturn AddElseInternalTransition(IReadOnlyList<string> eventNames, ElseInternalTransitionBuildAction<Payload> transitionBuildAction = null)
+        TReturn AddElseInternalPayloadTransition(IReadOnlyList<string> eventNames, ElseInternalTransitionBuildAction<Payload> transitionBuildAction = null)
         {
             var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));
             new StateBuilder(((IVertexBuilder)this).Vertex).AddTransitionInternal<Payload>(
@@ -145,6 +80,66 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 b => transitionBuildAction?.Invoke((IElseInternalTransitionBuilder<Payload>)b), names);
             return (TReturn)this;
         }
+
+        /// <summary>Adds a payload transition to the vertex identified by its type.</summary>
+        TReturn AddPayloadTransition<TTargetState>(IReadOnlyList<string> eventNames, TransitionBuildAction<Payload> transitionBuildAction = null)
+            where TTargetState : class, IVertex
+            => AddPayloadTransition(eventNames, State<TTargetState>.Name, transitionBuildAction);
+
+        /// <summary>Adds a payload transition using a transition implementation's definition, guard, and effect hooks.</summary>
+        TReturn AddPayloadTransition<TTransition>(IReadOnlyList<string> eventNames, string targetStateName,
+            TransitionBuildAction<Payload> transitionBuildAction = null)
+            where TTransition : class, ITransition<Payload>
+            => AddPayloadTransition(eventNames, targetStateName, b =>
+            {
+                b.AddTransitionEvents<TTransition, Payload>();
+                transitionBuildAction?.Invoke(b);
+            });
+
+        /// <summary>Adds a typed payload transition to the vertex identified by its type.</summary>
+        TReturn AddPayloadTransition<TTransition, TTargetState>(IReadOnlyList<string> eventNames, TransitionBuildAction<Payload> transitionBuildAction = null)
+            where TTransition : class, ITransition<Payload>
+            where TTargetState : class, IVertex
+            => AddPayloadTransition<TTransition>(eventNames, State<TTargetState>.Name, transitionBuildAction);
+
+        /// <summary>Adds an internal payload transition using a transition implementation's hooks.</summary>
+        TReturn AddInternalPayloadTransition<TTransition>(IReadOnlyList<string> eventNames, InternalTransitionBuildAction<Payload> transitionBuildAction = null)
+            where TTransition : class, ITransition<Payload>
+            => AddInternalPayloadTransition(eventNames, b =>
+            {
+                ((ITransitionBuilder<Payload>)b).AddTransitionEvents<TTransition, Payload>();
+                transitionBuildAction?.Invoke(b);
+            });
+
+        /// <summary>Adds a fallback payload transition to the vertex identified by its type.</summary>
+        TReturn AddElsePayloadTransition<TTargetState>(IReadOnlyList<string> eventNames, ElseTransitionBuildAction<Payload> transitionBuildAction = null)
+            where TTargetState : class, IVertex
+            => AddElsePayloadTransition(eventNames, State<TTargetState>.Name, transitionBuildAction);
+
+        /// <summary>Adds a fallback payload transition using an effect implementation.</summary>
+        TReturn AddElsePayloadTransition<TTransition>(IReadOnlyList<string> eventNames, string targetStateName,
+            ElseTransitionBuildAction<Payload> transitionBuildAction = null)
+            where TTransition : class, ITransitionEffect<Payload>
+            => AddElsePayloadTransition(eventNames, targetStateName, b =>
+            {
+                b.AddElseTransitionEvents<TTransition, Payload>();
+                transitionBuildAction?.Invoke(b);
+            });
+
+        /// <summary>Adds a typed fallback payload transition to the vertex identified by its type.</summary>
+        TReturn AddElsePayloadTransition<TTransition, TTargetState>(IReadOnlyList<string> eventNames, ElseTransitionBuildAction<Payload> transitionBuildAction = null)
+            where TTransition : class, ITransitionEffect<Payload>
+            where TTargetState : class, IVertex
+            => AddElsePayloadTransition<TTransition>(eventNames, State<TTargetState>.Name, transitionBuildAction);
+
+        /// <summary>Adds an internal fallback payload transition using an effect implementation.</summary>
+        TReturn AddElseInternalPayloadTransition<TTransition>(IReadOnlyList<string> eventNames, ElseInternalTransitionBuildAction<Payload> transitionBuildAction = null)
+            where TTransition : class, ITransitionEffect<Payload>
+            => AddElseInternalPayloadTransition(eventNames, b =>
+            {
+                ((IElseTransitionBuilder<Payload>)b).AddElseTransitionEvents<TTransition, Payload>();
+                transitionBuildAction?.Invoke(b);
+            });
 
         #region AddTransition
         /// <summary>Adds an event-triggered transition from the current state.</summary>

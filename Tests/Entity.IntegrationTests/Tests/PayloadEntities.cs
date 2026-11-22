@@ -153,20 +153,20 @@ namespace Entity.IntegrationTests.Tests
             builder
                 .AddEntities(entities => entities
                     .AddEntity<IPayloadEntityTemplate>("builderPayload", b => b
-                        .AddInitializer(["order.placed", "order.imported"], c => c.Entity.Value = $"init:{c.InitializationEvent.Name}")
-                        .AddMutation(["order.cancelled", "order.expired"], c => c.Entity.Value = $"{c.MutationEvent.Name}:{c.MutationEvent.Get<string>("value")}")
+                        .AddPayloadInitializer(["order.placed", "order.imported"], c => c.Entity.Value = $"init:{c.InitializationEvent.Name}")
+                        .AddPayloadMutation(["order.cancelled", "order.expired"], c => c.Entity.Value = $"{c.MutationEvent.Name}:{c.MutationEvent.Get<string>("value")}")
                         .AddMutation<OneOf<PayloadEntityApproved, PayloadEntityRejected>>(c =>
                             c.Entity.Value = c.MutationEvent.Match(a => $"approved:{a.By}", r => $"rejected:{r.Reason}")))
                     .AddEntity<IPayloadEntityTemplate>("sugarPayload", b => b
-                        .AddInitializer("order.placed", c => c.Entity.Value = "init")
-                        .AddMutation("order.cancelled", c => c.Entity.Value = "cancelled"))
+                        .AddPayloadInitializer(["order.placed"], c => c.Entity.Value = "init")
+                        .AddPayloadMutation(["order.cancelled"], c => c.Entity.Value = "cancelled"))
                     .AddEntity<IPayloadEntityTemplate>("classPayload", b => b
                         .AddDefaultInitializer(c => c.Entity.Value = "default")
-                        .AddMutation<CloseOrderMutation>(["order.cancelled", "order.expired"]))
+                        .AddPayloadMutation<CloseOrderMutation>(["order.cancelled", "order.expired"]))
                     .AddEntity<IPayloadEntityTemplate>("overriddenPayload", b => b
                         .AddDefaultInitializer(c => c.Entity.Value = "default")
-                        .AddMutation(["order.cancelled", "order.expired"], c => c.Entity.Value = "first")
-                        .AddMutation("order.expired", c => c.Entity.Value = "second"))
+                        .AddPayloadMutation(["order.cancelled", "order.expired"], c => c.Entity.Value = "first")
+                        .AddPayloadMutation(["order.expired"], c => c.Entity.Value = "second"))
                     .AddEntity<IPayloadEntityTemplate>("mappedInitializer", b => b
                         .AddInitializer<OneOf<PayloadEntityApproved, PayloadEntityRejected>>(c =>
                             c.Entity.Value = c.InitializationEvent.Match(a => $"approved:{a.By}", r => $"rejected:{r.Reason}")))
@@ -385,7 +385,7 @@ namespace Entity.IntegrationTests.Tests
         {
             var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddInitializer<Payload>(_ => { })));
             Assert.IsInstanceOfType<InvalidOperationException>(exception);
-            StringAssert.Contains(exception.Message, "AddInitializer(eventNames, action)");
+            StringAssert.Contains(exception.Message, "AddPayloadInitializer(eventNames, action)");
         }
 
         [TestMethod]
@@ -393,7 +393,7 @@ namespace Entity.IntegrationTests.Tests
         {
             var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddMutation<Payload>(_ => { })));
             Assert.IsInstanceOfType<InvalidOperationException>(exception);
-            StringAssert.Contains(exception.Message, "AddMutation(eventNames, mutationAction)");
+            StringAssert.Contains(exception.Message, "AddPayloadMutation(eventNames, mutationAction)");
         }
 
         [TestMethod]
@@ -409,7 +409,7 @@ namespace Entity.IntegrationTests.Tests
         [DataRow(new[] { "order.placed", "order.placed" })]
         public void InvalidBuilderNames_AreRejected(string[] names)
         {
-            var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddMutation(names, _ => { })));
+            var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddPayloadMutation(names, _ => { })));
             Assert.IsInstanceOfType<ArgumentException>(exception);
         }
 
@@ -448,7 +448,7 @@ namespace Entity.IntegrationTests.Tests
         [TestMethod]
         public void UnregisteredPayloadName_IsRejected()
         {
-            var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddMutation(["order.unknown"], _ => { })));
+            var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddPayloadMutation(["order.unknown"], _ => { })));
             Assert.IsInstanceOfType<InvalidOperationException>(exception);
             StringAssert.Contains(exception.Message, "'order.unknown' which is not registered");
         }
@@ -456,7 +456,7 @@ namespace Entity.IntegrationTests.Tests
         [TestMethod]
         public void UnregisteredInitializerName_IsRejected()
         {
-            var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddInitializer("order.unknown", _ => { })));
+            var exception = DefinitionError(e => e.AddEntity<IPayloadEntityTemplate>("bad", b => b.AddPayloadInitializer(["order.unknown"], _ => { })));
             Assert.IsInstanceOfType<InvalidOperationException>(exception);
             StringAssert.Contains(exception.Message, "initializer event 'order.unknown'");
         }

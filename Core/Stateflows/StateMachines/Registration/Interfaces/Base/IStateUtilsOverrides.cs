@@ -26,7 +26,7 @@ public interface IStateUtilsOverrides<out TReturn>
     /// <param name="buildAction">Optional callback configuring the inherited deferral guard.</param>
     /// <returns>The current state builder after extending the inherited deferral rule.</returns>
     /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
-    TReturn UseDeferredEvent(IReadOnlyList<string> eventNames, OverridenDeferralBuildAction<Payload> buildAction = null)
+    TReturn UseDeferredPayloadEvent(IReadOnlyList<string> eventNames, OverridenDeferralBuildAction<Payload> buildAction = null)
     {
         var names = PayloadNameSet.Validate(eventNames, nameof(eventNames));
         var vertex = ((IVertexBuilder)this).Vertex;
@@ -34,16 +34,5 @@ public interface IStateUtilsOverrides<out TReturn>
             throw new StateMachineOverrideException($"Deferral of events '{PayloadNameSet.Key(names)}' not found in overriden state '{vertex.Name}'", vertex.Graph.Class);
         buildAction?.Invoke(new EventDeferralBuilder<Payload>(vertex, logic));
         return (TReturn)this;
-    }
-
-    /// <summary>Extends an inherited payload deferral rule declared for exactly the given payload name.</summary>
-    /// <param name="eventName">Payload name of the inherited deferral.</param>
-    /// <param name="buildAction">Optional callback configuring the inherited deferral guard.</param>
-    /// <returns>The current state builder after extending the inherited deferral rule.</returns>
-    /// <seealso href="https://github.com/Stateflows/framework/wiki/5.4.1.2.-In-State-Event-Deferrals" />
-    TReturn UseDeferredEvent(string eventName, OverridenDeferralBuildAction<Payload> buildAction = null)
-    {
-        System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
-        return UseDeferredEvent(new[] { eventName }, buildAction);
     }
 }

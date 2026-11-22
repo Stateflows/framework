@@ -54,7 +54,7 @@ public class ClearScriptPayloads : StateflowsTestClass
             .AddStateMachines(b => b
                 .AddStateMachine("scriptedPayload", b => b
                     .AddInitialState("waiting", b => b
-                        .AddTransition("submit", "done", b => b
+                        .AddPayloadTransition(["submit"], "done", b => b
                             .AddGuard_ClearScript(Guard)
                             .AddEffect_ClearScript(Effect)))
                     .AddState("done")));

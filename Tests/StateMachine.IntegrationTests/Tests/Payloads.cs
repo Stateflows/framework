@@ -49,31 +49,31 @@ public class Payloads : StateflowsTestClass
             .AddStateMachines(b => b
                 .AddStateMachine("structural", b => b
                     .AddInitialState("waiting", b => b
-                        .AddTransition("submit", "done", b => b
+                        .AddPayloadTransition(["submit"], "done", b => b
                             .AddGuard(c => c.Event.Get<int>("quantity") > 0)))
                     .AddState("done"))
                 .AddStateMachine("payloadRequests", b => b
                     .AddInitialState("waiting", b => b
-                        .AddInternalTransition("query", b => b.AddEffect(c =>
+                        .AddInternalPayloadTransition(["query"], b => b.AddEffect(c =>
                             c.Event.Respond(c.Behavior.ServiceProvider.GetRequiredService<IPayloadFactory>()
                                 .Create("response", b => b.Set("orderId", c.Event.Get<string>("orderId"))))))
-                        .AddInternalTransition("clrQuery", b => b.AddEffect(c =>
+                        .AddInternalPayloadTransition(["clrQuery"], b => b.AddEffect(c =>
                             c.Event.Respond(new DerivedClrResponse { OrderId = c.Event.Get<string>("orderId") })))))
                 .AddStateMachine("payloadDeferred", b => b
                     .AddInitialState("waiting", b => b
-                        .AddDeferredEvent("submit")
-                        .AddTransition("other", "ready"))
-                    .AddState("ready", b => b.AddTransition("submit", "done"))
+                        .AddDeferredPayloadEvent(["submit"])
+                        .AddPayloadTransition(["other"], "ready"))
+                    .AddState("ready", b => b.AddPayloadTransition(["submit"], "done"))
                     .AddState("done"))
                 .AddStateMachine("payloadElse", b => b
                     .AddInitialState("waiting", b => b
-                        .AddTransition("submit", "normal", b => b.AddGuard(_ => false))
-                        .AddElseTransition("submit", "fallback"))
+                        .AddPayloadTransition(["submit"], "normal", b => b.AddGuard(_ => false))
+                        .AddElsePayloadTransition(["submit"], "fallback"))
                     .AddState("normal")
                     .AddState("fallback")))
             .AddActivities(b => b.AddActivity("payloadActivity", b => b
                 .AddInitial(b => b.AddControlFlow("receive"))
-                .AddAcceptEventAction("submit", "receive", c =>
+                .AddAcceptPayloadEventAction(["submit"], "receive", c =>
                 {
                     accepted = c.Event.Get<string>("orderId");
                     return Task.CompletedTask;

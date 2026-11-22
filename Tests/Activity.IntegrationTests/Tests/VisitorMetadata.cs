@@ -213,9 +213,9 @@ public sealed class VisitorMetadata
                             .AddOrExpression(branch => branch
                                 .AddNegatedGuard<Deny>()
                                 .AddAndExpression(inner => inner.AddGuard<Allow>().AddGuard(_ => true)))))
-                    .AddDeferredEvent("structural-one", guards => guards.AddNegatedGuard<Deny>())
-                    .AddDeferredEvent("structural-two", guards => guards.AddGuard<Allow>())
-                    .AddDeferredEvent("embedded", guards => guards
+                    .AddDeferredPayloadEvent(["structural-one"], guards => guards.AddNegatedGuard<Deny>())
+                    .AddDeferredPayloadEvent(["structural-two"], guards => guards.AddGuard<Allow>())
+                    .AddDeferredPayloadEvent(["embedded"], guards => guards
                         .AddGuardAction<EmbeddedAction>().AddGuardActivity<EmbeddedActivity>())))));
         using var services = collection.BuildServiceProvider();
         var visitor = new DeferralVisitor();

@@ -13,7 +13,7 @@ public class PayloadOverrides : StateflowsTestClass
     public class BasePayloadMachine : IStateMachine
     {
         public static void Build(IStateMachineBuilder builder) => builder
-            .AddInitialState("waiting", b => b.AddTransition("first", "done"))
+            .AddInitialState("waiting", b => b.AddPayloadTransition(["first"], "done"))
             .AddState("done");
     }
 
@@ -43,7 +43,7 @@ public class PayloadOverrides : StateflowsTestClass
                 .AddPayload("second", _ => { }))
             .AddStateMachines(b => b.AddStateMachine("changed", b => b
                 .UseStateMachine<BasePayloadMachine>(b => b
-                    .UseState("waiting", b => b.UseTransition("first", "done", b => b.ChangeTrigger("second"))))));
+                    .UseState("waiting", b => b.UsePayloadTransition(["first"], "done", b => b.ChangePayloadTrigger(["second"]))))));
 
     [TestMethod]
     public async Task ChangesNamedTriggerAndItsDiscoveredContract()

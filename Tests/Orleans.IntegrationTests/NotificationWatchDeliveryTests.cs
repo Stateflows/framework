@@ -261,12 +261,12 @@ public sealed class NotificationWatchDeliveryTests
                 .AddRequest<WatchedNotificationsReply>("watchedQuery", ev => ev.AddField("count", FieldType.Int32)))
             .AddStateMachines(machines => machines.AddStateMachine("watch-delivery", machine => machine
                 .AddInitialState("ready", state => state
-                    .AddInternalTransition("watchedEvent", transition => transition.AddEffect(context =>
+                    .AddInternalPayloadTransition(["watchedEvent"], transition => transition.AddEffect(context =>
                     {
                         for (var index = 0; index < context.Event.Get<int>("count"); index++)
                             context.Behavior.Publish(new WatchedNotification(index));
                     }))
-                    .AddInternalTransition("watchedQuery", transition => transition.AddEffect(context =>
+                    .AddInternalPayloadTransition(["watchedQuery"], transition => transition.AddEffect(context =>
                     {
                         for (var index = 0; index < context.Event.Get<int>("count"); index++)
                             context.Behavior.Publish(new WatchedNotification(index));

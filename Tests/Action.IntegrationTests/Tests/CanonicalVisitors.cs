@@ -123,7 +123,7 @@ public sealed class CanonicalVisitors
             .AddPayloads(events => events.AddPayload("first", _ => { }).AddPayload("second", _ => { }))
             .AddActions(actions => actions
                 .AddAction<Implementation>("canonical-action", 1, action => action
-                    .AddConsumedEvent("first").AddConsumedEvent<Ping>().AddConsumedEvent("second").AddConsumedEvent("first"))
+                    .AddConsumedPayloadEvent(["first"]).AddConsumedEvent<Ping>().AddConsumedPayloadEvent(["second"]).AddConsumedPayloadEvent(["first"]))
                 .AddAction("canonical-action", 2, _ => Task.CompletedTask)));
         using var provider = services.BuildServiceProvider();
         var register = provider.GetRequiredService<IActionsRegister>();

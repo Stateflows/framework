@@ -29,14 +29,14 @@ public class PayloadDeferrals : StateflowsTestClass
     {
         public static void Build(IStateMachineBuilder builder) => builder
             .AddInitialState("waiting", b => b
-                .AddDeferredEvent(["submit", "cancel"])
-                .AddTransition("go", "processing"))
+                .AddDeferredPayloadEvent(["submit", "cancel"])
+                .AddPayloadTransition(["go"], "processing"))
             .AddState("processing", Processing);
     }
 
     private static void Processing(IStateBuilder b) => b
-        .AddInternalTransition("submit", b => b.AddEffect(async c => { lock (Handled) Handled.Add(c.Event.Name); }))
-        .AddInternalTransition("cancel", b => b.AddEffect(async c => { lock (Handled) Handled.Add(c.Event.Name); }));
+        .AddInternalPayloadTransition(["submit"], b => b.AddEffect(async c => { lock (Handled) Handled.Add(c.Event.Name); }))
+        .AddInternalPayloadTransition(["cancel"], b => b.AddEffect(async c => { lock (Handled) Handled.Add(c.Event.Name); }));
 
     private sealed class DeferralVisitor : StateMachineVisitor
     {
@@ -70,39 +70,39 @@ public class PayloadDeferrals : StateflowsTestClass
             .AddStateMachines(b => b
                 .AddStateMachine("many", b => b
                     .AddInitialState("waiting", b => b
-                        .AddDeferredEvent(["submit", "cancel"])
-                        .AddTransition("go", "processing"))
+                        .AddDeferredPayloadEvent(["submit", "cancel"])
+                        .AddPayloadTransition(["go"], "processing"))
                     .AddState("processing", Processing))
                 .AddStateMachine("guardClass", b => b
                     .AddInitialState("waiting", b => b
-                        .AddDeferredEvent<OkGuard>(["submit", "cancel"])
-                        .AddTransition("go", "processing"))
+                        .AddDeferredPayloadEvent<OkGuard>(["submit", "cancel"])
+                        .AddPayloadTransition(["go"], "processing"))
                     .AddState("processing", Processing))
                 .AddStateMachine("guardClassSingle", b => b
                     .AddInitialState("waiting", b => b
-                        .AddDeferredEvent<OkGuard>("submit")
-                        .AddTransition("go", "processing"))
+                        .AddDeferredPayloadEvent<OkGuard>(["submit"])
+                        .AddPayloadTransition(["go"], "processing"))
                     .AddState("processing", Processing))
                 .AddStateMachine("composite", b => b
                     .AddInitialCompositeState("parent", b => b
-                        .AddDeferredEvent(["submit", "cancel"])
+                        .AddDeferredPayloadEvent(["submit", "cancel"])
                         .AddInitialState("child")
-                        .AddTransition("go", "processing"))
+                        .AddPayloadTransition(["go"], "processing"))
                     .AddState("processing", Processing))
                 .AddStateMachine("orthogonal", b => b
                     .AddInitialState("start", b => b.AddDefaultTransition("parallel"))
                     .AddOrthogonalState("parallel", b => b
-                        .AddDeferredEvent(["submit", "cancel"])
+                        .AddDeferredPayloadEvent(["submit", "cancel"])
                         .AddRegion(r => r.AddInitialState("left"))
                         .AddRegion(r => r.AddInitialState("right"))
-                        .AddTransition("go", "processing"))
+                        .AddPayloadTransition(["go"], "processing"))
                     .AddState("processing", Processing))
                 .AddStateMachine("inherited", b => b
                     .UseStateMachine<BaseDeferringMachine>(b => { }))
                 .AddStateMachine("overridden", b => b
                     .UseStateMachine<BaseDeferringMachine>(b => b
                         .UseState("waiting", b => b
-                            .UseDeferredEvent(["cancel", "submit"], b => b.AddGuard(c => c.Event.Get<bool>("ok")))))));
+                            .UseDeferredPayloadEvent(["cancel", "submit"], b => b.AddGuard(c => c.Event.Get<bool>("ok")))))));
 
     private IStateMachineBehavior Locate(string name)
     {
@@ -167,7 +167,7 @@ public class PayloadDeferrals : StateflowsTestClass
     [TestMethod]
     public void OverrideOfDifferentSetIsRejected()
         => Assert.ThrowsExactly<StateMachineOverrideException>(() => new DefinitionModel(initialize: false).Builder
-            .UseStateMachine<BaseDeferringMachine>(b => b.UseState("waiting", b => b.UseDeferredEvent("submit"))));
+            .UseStateMachine<BaseDeferringMachine>(b => b.UseState("waiting", b => b.UseDeferredPayloadEvent(["submit"]))));
 
     [TestMethod]
     public async Task VisitorReportsNameSet()
@@ -191,7 +191,7 @@ public class PayloadDeferrals : StateflowsTestClass
     [TestMethod]
     public void NameDeferredTwiceIsRejected()
         => Assert.ThrowsExactly<DeferralDefinitionException>(() => new DefinitionModel(initialize: false).Builder
-            .AddInitialState("s", b => b.AddDeferredEvent("submit").AddDeferredEvent(["cancel", "submit"])));
+            .AddInitialState("s", b => b.AddDeferredPayloadEvent(["submit"]).AddDeferredPayloadEvent(["cancel", "submit"])));
 
     [TestMethod]
     [DataRow(new string[0])]
@@ -200,5 +200,5 @@ public class PayloadDeferrals : StateflowsTestClass
     [DataRow(new[] { "submit", "submit" })]
     public void InvalidNameSetsAreRejected(string[] names)
         => Assert.ThrowsExactly<ArgumentException>(() => new DefinitionModel(initialize: false).Builder
-            .AddInitialState("s", b => b.AddDeferredEvent(names)));
+            .AddInitialState("s", b => b.AddDeferredPayloadEvent(names)));
 }

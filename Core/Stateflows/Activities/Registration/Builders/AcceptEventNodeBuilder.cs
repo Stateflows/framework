@@ -39,10 +39,7 @@ namespace Stateflows.Activities.Registration.Builders
         IOverridenAcceptEventActionBuilder<TEvent> IOverridenControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent>>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => UseControlFlow(targetNodeName, buildAction) as IOverridenAcceptEventActionBuilder<TEvent>;
 
-        public IOverridenAcceptEventActionBuilder<Payload> ChangeAcceptedEvent(string eventName)
-            => ChangeAcceptedEvent(new[] { eventName });
-
-        public IOverridenAcceptEventActionBuilder<Payload> ChangeAcceptedEvent(IReadOnlyList<string> eventNames)
+        public IOverridenAcceptEventActionBuilder<Payload> ChangeAcceptedPayloadEvent(IReadOnlyList<string> eventNames)
         {
             PayloadNameSet.Validate(eventNames, nameof(eventNames));
             if (!typeof(TEvent).IsAssignableFrom(typeof(Payload)))

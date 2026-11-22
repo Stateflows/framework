@@ -347,7 +347,7 @@ public sealed class CanonicalVisitors
             .AddPayloads(events => events.AddPayload("named", _ => { }))
             .AddActivities(activities => activities.AddActivity("event-bindings", 1, activity => activity
                 .AddAcceptEventAction<OneOf<First, Second>>("union", _ => Task.CompletedTask)
-                .AddAcceptEventAction("named", "structural", _ => Task.CompletedTask))));
+                .AddAcceptPayloadEventAction(["named"], "structural", _ => Task.CompletedTask))));
         using var provider = services.BuildServiceProvider();
         var visitor = new DoActivityVisitor(provider.GetRequiredService<ITypeMapper>());
         await ((ActivitiesRegister)provider.GetRequiredService<IActivitiesRegister>()).VisitActivityAsync("event-bindings", 1, visitor);

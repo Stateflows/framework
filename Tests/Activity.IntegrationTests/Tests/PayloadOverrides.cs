@@ -15,7 +15,7 @@ public class PayloadOverrides : StateflowsTestClass
     {
         public static void Build(IActivityBuilder builder) => builder
             .AddInitial(b => b.AddControlFlow("receive"))
-            .AddAcceptEventAction("first", "receive", _ => Task.CompletedTask,
+            .AddAcceptPayloadEventAction(["first"], "receive", _ => Task.CompletedTask,
                 b => b.AddControlFlow("done"))
             .AddAction("done", _ => Task.CompletedTask);
     }
@@ -23,8 +23,8 @@ public class PayloadOverrides : StateflowsTestClass
     public class BasePayloadNodeActivity : IActivity
     {
         public static void Build(IActivityBuilder builder) => builder
-            .AddInputPin(["first", "second"], pin => pin.AddFlow("decision"))
-            .AddDecision(["first", "second"], "decision", decision => decision.AddFlow("capture"))
+            .AddPayloadInputPin(["first", "second"], pin => pin.AddFlow("decision"))
+            .AddPayloadDecision(["first", "second"], "decision", decision => decision.AddFlow("capture"))
             .AddAction("capture", c =>
             {
                 lock (Captured)
@@ -50,12 +50,12 @@ public class PayloadOverrides : StateflowsTestClass
             .AddActivities(b => b
                 .AddActivity("changed", b => b
                     .UseActivity<BasePayloadActivity>(b => b
-                        .UseAcceptEventAction("first", "receive", b => b.ChangeAcceptedEvent("second"))))
+                        .UseAcceptPayloadEventAction(["first"], "receive", b => b.ChangeAcceptedPayloadEvent(["second"]))))
                 .AddActivity("changed-nodes", b => b
                     .UseActivity<BasePayloadNodeActivity>(b => b
-                        .UseInputPin(["second", "first"], pin => pin.UseFlow("decision", _ => { }))
-                        .UseDecision(["second", "first"], "decision", decision =>
-                            decision.UseFlow(["second", "first"], "capture")))));
+                        .UsePayloadInputPin(["second", "first"], pin => pin.UseFlow("decision", _ => { }))
+                        .UsePayloadDecision(["second", "first"], "decision", decision =>
+                            decision.UsePayloadFlow(["second", "first"], "capture")))));
 
     [TestMethod]
     public async Task ChangesNamedAcceptedEventWithoutLosingItsHandler()

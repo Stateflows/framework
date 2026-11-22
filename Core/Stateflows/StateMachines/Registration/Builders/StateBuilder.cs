@@ -140,7 +140,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateBuilder AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
         {
             if (Stateflows.Payloads.PayloadNameSet.IsPayloadType(typeof(TEvent)))
-                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Payload events can be deferred only by name; use AddDeferredEvent(eventNames, ...).", Vertex.Graph.Class);
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Payload events can be deferred only by name; use AddDeferredPayloadEvent(eventNames, ...).", Vertex.Graph.Class);
 
             if (typeof(TEvent) == typeof(Completion))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);

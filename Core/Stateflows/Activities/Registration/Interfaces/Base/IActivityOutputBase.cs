@@ -23,25 +23,12 @@ public interface IActivityOutputBase<out TReturn>
     /// <param name="tokenNames">Payload token names emitted by the pin.</param>
     /// <param name="pinName">Optional globally unique node name.</param>
     /// <param name="buildAction">Optional callback configuring publication settings.</param>
-    TReturn AddOutputPin(IReadOnlyList<string> tokenNames, string? pinName, PublishEventActionBuildAction buildAction)
+    TReturn AddPayloadOutputPin(IReadOnlyList<string> tokenNames, string? pinName, PublishEventActionBuildAction buildAction)
         => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => AddOutputPin<Payload>(pinName, buildAction));
 
     /// <summary>Adds a publishing output pin for payload tokens with the specified names.</summary>
     /// <param name="tokenNames">Payload token names emitted by the pin.</param>
     /// <param name="buildAction">Optional callback configuring publication settings.</param>
-    TReturn AddOutputPin(IReadOnlyList<string> tokenNames, PublishEventActionBuildAction buildAction)
-        => AddOutputPin(tokenNames, null, buildAction);
-
-    /// <summary>Adds a publishing output pin for payload tokens with the specified name.</summary>
-    /// <param name="tokenName">Payload token name emitted by the pin.</param>
-    /// <param name="pinName">Optional globally unique node name.</param>
-    /// <param name="buildAction">Optional callback configuring publication settings.</param>
-    TReturn AddOutputPin(string tokenName, string? pinName, PublishEventActionBuildAction buildAction)
-        => AddOutputPin(new[] { tokenName }, pinName, buildAction);
-
-    /// <summary>Adds a publishing output pin for payload tokens with the specified name.</summary>
-    /// <param name="tokenName">Payload token name emitted by the pin.</param>
-    /// <param name="buildAction">Optional callback configuring publication settings.</param>
-    TReturn AddOutputPin(string tokenName, PublishEventActionBuildAction buildAction)
-        => AddOutputPin(new[] { tokenName }, buildAction);
+    TReturn AddPayloadOutputPin(IReadOnlyList<string> tokenNames, PublishEventActionBuildAction buildAction)
+        => AddPayloadOutputPin(tokenNames, null, buildAction);
 }

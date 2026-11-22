@@ -45,8 +45,8 @@ public sealed class PlantUmlPins : StateflowsTestClass
                 .AddInputPin<int>(input => input.AddFlow<OutputPin<int>>())
                 .AddOutputPin<int>())
             .AddActivity("diagram-payload-pins", activity => activity
-                .AddInputPin(new[] { "first", "second" }, pin => pin.AddFlow("payload-output"))
-                .AddOutputPin(new[] { "first", "second" }, "payload-output", _ => { }))
+                .AddPayloadInputPin(new[] { "first", "second" }, pin => pin.AddFlow("payload-output"))
+                .AddPayloadOutputPin(new[] { "first", "second" }, "payload-output", _ => { }))
             .AddActivity("diagram-pin-alias", activity => activity
                 .AddInputPin<int>(pin => pin.AddFlow("pin0"))
                 .AddAction("pin0", context =>

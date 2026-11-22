@@ -5,7 +5,7 @@ using Stateflows.Common.Registration.Builders;
 
 namespace Activity.IntegrationTests.Tests;
 
-/// <summary>T0.18 / T2.17: the named initializer class overloads sit beside the typed ones without changing their resolution.</summary>
+/// <summary>Payload and CLR-typed initializer methods resolve independently.</summary>
 [TestClass]
 public class PayloadOverloadResolution
 {
@@ -42,12 +42,12 @@ public class PayloadOverloadResolution
     public void NamedInitializerClassOverloadsResolveToNamedMembers()
     {
         var list = NewBuilder();
-        ((IActivityBuilder)list).AddInitializer<PayloadInitializer>(["b", "a"]);
+        ((IActivityBuilder)list).AddPayloadInitializer<PayloadInitializer>(["b", "a"]);
         CollectionAssert.AreEqual(new[] { "a|b" }, list.Graph.Initializers.Keys.ToArray());
 
-        var sugar = NewBuilder();
-        ((IActivityBuilder)sugar).AddInitializer<PayloadInitializer>("a");
-        CollectionAssert.AreEqual(new[] { "a" }, sugar.Graph.Initializers.Keys.ToArray());
-        Assert.AreEqual(1, sugar.Graph.PayloadInitializerNames.Count);
+        var single = NewBuilder();
+        ((IActivityBuilder)single).AddPayloadInitializer<PayloadInitializer>(["a"]);
+        CollectionAssert.AreEqual(new[] { "a" }, single.Graph.Initializers.Keys.ToArray());
+        Assert.AreEqual(1, single.Graph.PayloadInitializerNames.Count);
     }
 }

@@ -30,14 +30,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <summary>Overrides the input pin for payload tokens with the specified names.</summary>
         /// <param name="tokenNames">Payload token names admitted by the pin.</param>
         /// <param name="buildAction">Callback configuring the pin's outgoing flows.</param>
-        TReturn UseInputPin(IReadOnlyList<string> tokenNames, System.Action<IOverridenInputPinBuilder<Payload>> buildAction)
+        TReturn UsePayloadInputPin(IReadOnlyList<string> tokenNames, System.Action<IOverridenInputPinBuilder<Payload>> buildAction)
             => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => UseInputPin<Payload>(buildAction));
-
-        /// <summary>Overrides the input pin for payload tokens with the specified name.</summary>
-        /// <param name="tokenName">Payload token name admitted by the pin.</param>
-        /// <param name="buildAction">Callback configuring the pin's outgoing flows.</param>
-        TReturn UseInputPin(string tokenName, System.Action<IOverridenInputPinBuilder<Payload>> buildAction)
-            => UseInputPin(new[] { tokenName }, buildAction);
 
         #region AddJoin
         /// <summary>Overrides a named join node and its outgoing flows.</summary>
@@ -151,27 +145,14 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         /// <param name="tokenNames">Payload token names accepted by the decision.</param>
         /// <param name="decisionNodeName">Registered name of the decision node.</param>
         /// <param name="buildAction">Callback configuring the decision's outgoing flows.</param>
-        TReturn UseDecision(IReadOnlyList<string> tokenNames, string decisionNodeName, OverridenDecisionBuildAction<Payload> buildAction)
+        TReturn UsePayloadDecision(IReadOnlyList<string> tokenNames, string decisionNodeName, OverridenDecisionBuildAction<Payload> buildAction)
             => PayloadFlowScope.With(tokenNames, nameof(tokenNames), () => UseDecision<Payload>(decisionNodeName, buildAction));
 
         /// <summary>Overrides the default-named decision for payload tokens with the specified names.</summary>
         /// <param name="tokenNames">Payload token names accepted by the decision.</param>
         /// <param name="buildAction">Callback configuring the decision's outgoing flows.</param>
-        TReturn UseDecision(IReadOnlyList<string> tokenNames, OverridenDecisionBuildAction<Payload> buildAction)
-            => UseDecision(tokenNames, DecisionNode.GetName(tokenNames), buildAction);
-
-        /// <summary>Overrides a decision for payload tokens with the specified name.</summary>
-        /// <param name="tokenName">Payload token name accepted by the decision.</param>
-        /// <param name="decisionNodeName">Registered name of the decision node.</param>
-        /// <param name="buildAction">Callback configuring the decision's outgoing flows.</param>
-        TReturn UseDecision(string tokenName, string decisionNodeName, OverridenDecisionBuildAction<Payload> buildAction)
-            => UseDecision(new[] { tokenName }, decisionNodeName, buildAction);
-
-        /// <summary>Overrides the default-named decision for payload tokens with the specified name.</summary>
-        /// <param name="tokenName">Payload token name accepted by the decision.</param>
-        /// <param name="buildAction">Callback configuring the decision's outgoing flows.</param>
-        TReturn UseDecision(string tokenName, OverridenDecisionBuildAction<Payload> buildAction)
-            => UseDecision(new[] { tokenName }, buildAction);
+        TReturn UsePayloadDecision(IReadOnlyList<string> tokenNames, OverridenDecisionBuildAction<Payload> buildAction)
+            => UsePayloadDecision(tokenNames, DecisionNode.GetName(tokenNames), buildAction);
         #endregion
         
         #region AddDataStore

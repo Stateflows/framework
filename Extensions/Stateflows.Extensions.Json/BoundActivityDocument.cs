@@ -515,7 +515,7 @@ internal sealed partial class BoundActivityDocument(
                 var builderType = typeof(IInputPinBuilder<>).MakeGenericType(token);
                 var buildAction = CreateCallback(typeof(Action<>).MakeGenericType(builderType), callback);
                 if (tokenNames.TryGetValue(path + "/tokenNames", out var names))
-                    CallGenericInterface(parent, typeof(IInputBase<>), "AddInputPin", [], [names, buildAction], methodParameterCount: 2);
+                    CallGenericInterface(parent, typeof(IInputBase<>), "AddPayloadInputPin", [], [names, buildAction], methodParameterCount: 2);
                 else
                     CallGenericInterface(parent, typeof(IInputBase<>), "AddInputPin", [token], [buildAction], methodParameterCount: 1);
                 break;
@@ -566,7 +566,7 @@ internal sealed partial class BoundActivityDocument(
                     typeof(AcceptEventActionDelegateAsync<>).MakeGenericType(eventType),
                     nameof(HandleAcceptedEvent), eventType, binding.Type, binding);
                 if (eventNames.TryGetValue(path, out var acceptedNames))
-                    CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptEventAction",
+                    CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptPayloadEventAction",
                         [], [acceptedNames, name!, eventAction, actionCallback], methodParameterCount: 4);
                 else
                     CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptEventAction",
@@ -656,7 +656,7 @@ internal sealed partial class BoundActivityDocument(
             var token = resolvedTypes[path + "/tokenType"];
             var buildAction = CreateCallback(typeof(DecisionBuildAction<>).MakeGenericType(token), callback);
             if (tokenNames.TryGetValue(path + "/tokenNames", out var names))
-                CallGenericInterface(parent, typeof(IActivitySpecials<>), "AddDecision", [], [names, name, buildAction], methodParameterCount: 3);
+                CallGenericInterface(parent, typeof(IActivitySpecials<>), "AddPayloadDecision", [], [names, name, buildAction], methodParameterCount: 3);
             else
                 CallGenericInterface(parent, typeof(IActivitySpecials<>), "AddDecision", [token], [name, buildAction], methodParameterCount: 2);
         }
@@ -687,7 +687,7 @@ internal sealed partial class BoundActivityDocument(
         var namesProperty = kind == "parallel" ? "parallelizationTokenNames" : "iterationTokenNames";
         if (tokenNames.TryGetValue(path + "/" + namesProperty, out var names))
         {
-            CallGenericInterface(parent, activityBase, kind == "parallel" ? "AddParallelActivity" : "AddIterativeActivity",
+            CallGenericInterface(parent, activityBase, kind == "parallel" ? "AddPayloadParallelActivity" : "AddPayloadIterativeActivity",
                 [], kind == "parallel"
                     ? [names, name, CreateCallback(delegateType, callback), chunk, node.Value<int?>("maxConcurrency") ?? -1]
                     : [names, name, CreateCallback(delegateType, callback), chunk],

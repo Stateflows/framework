@@ -34,35 +34,35 @@ public sealed class PayloadNamedNodes : StateflowsTestClass
                 .AddPayload("other", _ => { }))
             .AddActivities(b => b
                 .AddActivity("named-input-output", b => b
-                    .AddInputPin(["first", "second"], pin => pin.AddFlow("capture"))
+                    .AddPayloadInputPin(["first", "second"], pin => pin.AddFlow("capture"))
                     .AddAction("capture", c =>
                     {
                         Record(c.GetTokensOfType<Payload>());
                         c.PassAllTokensOn();
                         return Task.CompletedTask;
-                    }, b => b.AddFlow(["first", "second"], "output"))
-                    .AddOutputPin(["first", "second"], "output", pin => pin.SetTimeToLive(300).SetRetain(true)))
+                    }, b => b.AddPayloadFlow(["first", "second"], "output"))
+                    .AddPayloadOutputPin(["first", "second"], "output", pin => pin.SetTimeToLive(300).SetRetain(true)))
                 .AddActivity("named-decision", b => b
-                    .AddInputPin(["first", "second", "other"], pin => pin.AddFlow("decision"))
-                    .AddDecision(["first", "second"], "decision", decision => decision.AddFlow("capture"))
+                    .AddPayloadInputPin(["first", "second", "other"], pin => pin.AddFlow("decision"))
+                    .AddPayloadDecision(["first", "second"], "decision", decision => decision.AddFlow("capture"))
                     .AddAction("capture", c =>
                     {
                         Record(c.GetTokensOfType<Payload>());
                         return Task.CompletedTask;
                     }))
                 .AddActivity("named-iterative", b => b
-                    .AddInputPin(["first", "second", "other"], pin => pin.AddFlow("iteration"))
-                    .AddIterativeActivity(["first", "second"], "iteration", scope => scope
-                        .AddInputPin(["first", "second", "other"], pin => pin.AddFlow("capture"))
+                    .AddPayloadInputPin(["first", "second", "other"], pin => pin.AddFlow("iteration"))
+                    .AddPayloadIterativeActivity(["first", "second"], "iteration", scope => scope
+                        .AddPayloadInputPin(["first", "second", "other"], pin => pin.AddFlow("capture"))
                         .AddAction("capture", c =>
                         {
                             RecordInvocation();
                             return Task.CompletedTask;
                         })))
                 .AddActivity("named-parallel", b => b
-                    .AddInputPin(["first", "second", "other"], pin => pin.AddFlow("parallel"))
-                    .AddParallelActivity(["first", "second"], "parallel", scope => scope
-                        .AddInputPin(["first", "second", "other"], pin => pin.AddFlow("capture"))
+                    .AddPayloadInputPin(["first", "second", "other"], pin => pin.AddFlow("parallel"))
+                    .AddPayloadParallelActivity(["first", "second"], "parallel", scope => scope
+                        .AddPayloadInputPin(["first", "second", "other"], pin => pin.AddFlow("capture"))
                         .AddAction("capture", c =>
                         {
                             RecordInvocation();
@@ -111,14 +111,14 @@ public sealed class PayloadNamedNodes : StateflowsTestClass
     {
         var builder = new ActivityBuilder("definition", 1, null!, new StateflowsBuilder(new ServiceCollection()), null, null);
         ((IActivityBuilder)builder)
-            .AddInputPin("first", _ => { })
-            .AddOutputPin("second", _ => { })
-            .AddDecision(["first", "second"], _ => { })
-            .AddIterativeActivity(["first", "second"], _ => { })
-            .AddParallelActivity(["first", "second"], _ => { })
+            .AddPayloadInputPin(["first"], _ => { })
+            .AddPayloadOutputPin(["second"], _ => { })
+            .AddPayloadDecision(["first", "second"], _ => { })
+            .AddPayloadIterativeActivity(["first", "second"], _ => { })
+            .AddPayloadParallelActivity(["first", "second"], _ => { })
             .AddStructuredActivity("nested", scope => scope
-                .AddIterativeActivity<IterativeMarker>(["first"], _ => { })
-                .AddParallelActivity<ParallelMarker>(["second"], _ => { }));
+                .AddPayloadIterativeActivity<IterativeMarker>(["first"], _ => { })
+                .AddPayloadParallelActivity<ParallelMarker>(["second"], _ => { }));
 
         var names = builder.Graph.AllNodes.Values.Select(node => node.Name).ToArray();
         Assert.IsTrue(names.Any(name => name.EndsWith(InputPin.GetName(["first"]), StringComparison.Ordinal)));
